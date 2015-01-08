@@ -18,36 +18,18 @@
  */
 
 
-#define GPU 0
+/*star for our development controls and incremental coding.
+GPU 0 removes all of the GPU and runtime code
+GPU 1 adds back in all of the CPU and runtime code*/
+#define GPU 1
 
-//test test
+
 #include <signal.h>
-//#include <arch/arm/emu/context.h>
-//#include <arch/arm/emu/isa.h>
-//#include <arch/arm/emu/syscall.h>
-//#include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
 #include <arch/common/asm.h>
 #include <arch/common/emu.h>
 #include <arch/common/timing.h>
 #include <arch/common/runtime.h>
-//#include <arch/evergreen/emu/emu.h>
-//#include <arch/evergreen/emu/isa.h>
-//#include <arch/evergreen/timing/faults.h>
-//#include <arch/evergreen/timing/gpu.h>
-//#include <arch/evergreen/timing/uop.h>
-//#include <arch/fermi/asm/asm.h>
-//#include <arch/fermi/emu/emu.h>
-//#include <arch/fermi/emu/isa.h>
-//#include <arch/fermi/timing/gpu.h>
-//#include <arch/kepler/asm/asm.h>
-//#include <arch/mips/emu/context.h>
-//#include <arch/mips/emu/isa.h>
-//#include <arch/mips/timing/cpu.h>
-//#include <arch/southern-islands/asm/asm.h>
-//#include <arch/southern-islands/emu/emu.h>
-//#include <arch/southern-islands/emu/isa.h>
-//#include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
@@ -56,13 +38,6 @@
 #include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>
-//#include <driver/cuda/cuda.h>
-//#include <driver/glu/glu.h>
-//#include <driver/glut/glut.h>
-//#include <driver/glew/glew.h>
-//#include <driver/opencl/opencl.h>
-//#include <driver/opencl-old/evergreen/opencl.h>
-//#include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -76,18 +51,29 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
-//#include <dram/dram-system.h>
 #include <sys/time.h>
-//#include <visual/common/visual.h>
 #include <instrumentation/stats.h>
-//#include <src/memory/test.h>
 #include <cgm-mem/cgm-mem.h>
+
+
+#if GPU
+#include <arch/si/asm/asm.h>
+#include <arch/si/emu/emu.h>
+#include <arch/si/emu/isa.h>
+#include <arch/si/timing/gpu.h>
+#include <driver/opencl/opencl.h>
+//#include <driver/cuda/cuda.h>
+//#include <driver/glu/glu.h>
+//#include <driver/glut/glut.h>
+//#include <driver/glew/glew.h>
+//#include <driver/opencl-old/evergreen/opencl.h>
+//#include <driver/opengl/opengl.h>
+#endif
 
 
 //star >> added version here because eclipse was complaining.
 //this are pointers to strings its like saying visual_file_name[].
 //The version number is defined by either make or configure.
-
 static char *m2sversion = "4.2";
 static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
@@ -111,13 +97,6 @@ static char *x86_sys_debug_file_name = "";
 static char *x86_trace_cache_debug_file_name = "";
 static enum arch_sim_kind_t x86_sim_kind = arch_sim_kind_functional;
 
-/*static char *evg_disasm_file_name = "";
-static char *evg_isa_debug_file_name = "";
-static char *evg_opencl_debug_file_name = "";
-static char *evg_opengl_disasm_file_name = "";
-static int evg_opengl_disasm_shader_index = 1;
-static char *evg_stack_debug_file_name = "";
-static enum arch_sim_kind_t evg_sim_kind = arch_sim_kind_functional;*/
 
 static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
@@ -125,33 +104,8 @@ static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
 static enum arch_sim_kind_t si_sim_kind = arch_sim_kind_functional;
 
-/*static char *frm_disasm_file_name = "";
-static char *frm_isa_debug_file_name = "";
-static char *frm_gpu_debug_file_name = "";
-static enum arch_sim_kind_t frm_sim_kind = arch_sim_kind_functional;*/
-
-/*static char *kpl_disasm_file_name = "";*/
-
-/*static char *arm_disasm_file_name = "";
-static char *arm_loader_debug_file_name = "";
-static char *arm_isa_debug_file_name = "";
-static char *arm_sys_debug_file_name = "";
-static char *arm_call_debug_file_name = "";
-static enum arch_sim_kind_t arm_sim_kind = arch_sim_kind_functional;*/
-
-/*static char *mips_disasm_file_name = "";
-static char *mips_loader_debug_file_name = "";
-static char *mips_isa_debug_file_name = "";
-static char *mips_sys_debug_file_name = "";
-static char *mips_call_debug_file_name = "";
-static enum arch_sim_kind_t mips_sim_kind = arch_sim_kind_functional;*/
-
 static char *mem_debug_file_name = "";
-
 static char *net_debug_file_name = "";
-
-/*static char *dram_debug_file_name = "";*/
-
 static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
 static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric digits) */
@@ -159,7 +113,6 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 static X86Cpu *x86_cpu;
-
 
 static char *m2s_help =
 		"Syntax:\n"
@@ -656,14 +609,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Visualization tool */
-		//if (!strcmp(argv[argi], "--visual"))
-		//{
-		//	m2s_need_argument(argc, argv, argi);
-		//	visual_file_name = argv[++argi];
-		//	continue;
-		//}
-
 
 		/*
 		 * x86 CPU Options
@@ -858,18 +803,19 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		}
 
 
+#if GPU
 		/*
 		 * Southern Islands GPU Options
 		 */
 
-		/* Help for Southern Islands configuration file
+		//Help for Southern Islands configuration file
 		if (!strcmp(argv[argi], "--si-help"))
 		{
 			fprintf(stderr, "%s", si_gpu_config_help);
 			continue;
 		}
 
-		 Southern Islands GPU occupancy calculation plots
+		//Southern Islands GPU occupancy calculation plots
 		if (!strcmp(argv[argi], "--si-calc"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -877,7 +823,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Southern Islands ISA debug file
+		//Southern Islands ISA debug file
 		if (!strcmp(argv[argi], "--si-debug-isa"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -885,7 +831,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Southern Islands GPU configuration file
+		//Southern Islands GPU configuration file
 		if (!strcmp(argv[argi], "--si-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -893,7 +839,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Dump Southern Islands default configuration file
+		//Dump Southern Islands default configuration file
 		if (!strcmp(argv[argi], "--si-dump-default-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -901,7 +847,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Souther Islands disassembler
+		//Souther Islands disassembler
 		if (!strcmp(argv[argi], "--si-disasm"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -909,7 +855,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Souther Islands OpenGL shader binary disassembler
+		//Souther Islands OpenGL shader binary disassembler
 		if (!strcmp(argv[argi], "--si-disasm-opengl"))
 		{
 			if (argc != 4)
@@ -920,7 +866,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Southern Islands OpenGL binary
+		//Southern Islands OpenGL binary
 		if (!strcmp(argv[argi], "--si-shader-binary"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -928,7 +874,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Maximum number of cycles
+		//Maximum number of cycles
 		if (!strcmp(argv[argi], "--si-max-cycles"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -940,7 +886,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Maximum number of instructions
+		//Maximum number of instructions
 		if (!strcmp(argv[argi], "--si-max-inst"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -952,7 +898,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Maximum number of kernels
+		//Maximum number of kernels
 		if (!strcmp(argv[argi], "--si-max-kernels"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -960,7 +906,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Southern Islands GPU timing report
+		//Southern Islands GPU timing report
 		if (!strcmp(argv[argi], "--si-report"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -968,13 +914,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		 Southern Islands simulation accuracy
+		//Southern Islands simulation accuracy
 		if (!strcmp(argv[argi], "--si-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_sim_kind = str_map_string_err_msg(&arch_sim_kind_map, argv[++argi], "invalid value for --si-sim.");
 			continue;
-		}*/
+		}
+
+#endif
 
 		/*
 		 * Memory System Options
@@ -1126,7 +1074,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	/* Options only allowed for x86 detailed simulation */
 	if (x86_sim_kind == arch_sim_kind_functional)
 	{
-
 		char *msg = "option '%s' not valid for functional x86 simulation.\n\tPlease use option '--x86-sim detailed' as well.\n";
 
 		if (*x86_config_file_name)
@@ -1137,15 +1084,19 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--x86-report");
 	}
 
+	if (*x86_disasm_file_name && argc > 3)
+		fatal("option '--x86-disasm' is incompatible with other options.");
+	if (!*net_sim_network_name && net_sim_last_option)
+		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
+	if (*net_sim_network_name && !*net_config_file_name)
+		fatal("option '--net-sim' requires '--net-config'");
 
 
-/*
-	 Options that only make sense for GPU detailed simulation
+	//Options that only make sense for GPU detailed simulation
+#if GPU
 	if (si_sim_kind == arch_sim_kind_functional)
 	{
-		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-				"\tPlease use option '--si-sim detailed' as well.\n";
-
+		char *msg = "option '%s' not valid for functional GPU simulation.\n\tPlease use option '--si-sim detailed' as well.\n";
 		if (*si_gpu_config_file_name)
 			fatal(msg, "--si-config");
 		if (si_emu_max_cycles)
@@ -1153,26 +1104,18 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (*si_gpu_report_file_name)
 			fatal(msg, "--si-report");
 	}
-*/
-
-	
-
 
 	//star >> checking for presence of an option and to many or to little parameters.
 	/* Other checks */
-	/*if (*si_disasm_file_name && argc > 3)
+	if (*si_disasm_file_name && argc > 3)
 		fatal("option '--si-disasm' is incompatible with any other options.");
 	if (*si_gpu_dump_default_config_file_name && argc > 3)
 		fatal("option '--si-dump-default-config' is incompatible with any other options.");
 	if (*si_opengl_disasm_file_name && argc != 4)
-		fatal("option '--si-disasm-opengl' is incompatible with any other options.");	*/
+		fatal("option '--si-disasm-opengl' is incompatible with any other options.");
+#endif
 
-	if (*x86_disasm_file_name && argc > 3)
-		fatal("option '--x86-disasm' is incompatible with other options.");
-	if (!*net_sim_network_name && net_sim_last_option)
-		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
-	if (*net_sim_network_name && !*net_config_file_name)
-		fatal("option '--net-sim' requires '--net-config'");
+
 
 	//star >> this casts away command line entries until all entries have been processed.
 	/* Discard arguments used as options */
@@ -1186,15 +1129,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 static void m2s_load_programs(int argc, char **argv)
 {
 
-	/*struct config_t *config;
-	char section[MAX_STRING_SIZE];
-	char exe_full_path[MAX_STRING_SIZE];
-	char *exe_file_name;
-	char *cwd_path;*/
-
 	Elf32_Ehdr ehdr;
-
-	/*int id;*/
 
 	/* Load guest program specified in the command line */
 	if (argc > 1)
@@ -1206,22 +1141,14 @@ static void m2s_load_programs(int argc, char **argv)
 		//star >> e_machine contains architecture type i.e. Intel 80386 (EM_386) for x86 simulation
 		switch (ehdr.e_machine)
 		{
-		//star >> each function in this switch comes from different places...
-		case EM_386:
-			//star >> from EMU.c/.h
-			X86EmuLoadContextFromCommandLine(x86_emu, argc - 1, argv + 1);
+			//star >> each function in this switch comes from different places...
+			case EM_386:
+				//star >> from EMU.c/.h
+				X86EmuLoadContextFromCommandLine(x86_emu, argc - 1, argv + 1);
+
 			break;
 
-		//star >> taking these cases out because these arn't needed for x86 only applciations
-		//case EM_ARM:
-		//	arm_ctx_load_from_command_line(argc - 1, argv + 1);
-		//	break;
-
-		//case EM_MIPS:
-		//	mips_ctx_load_from_command_line(argc - 1, argv + 1);
-		//	break;
-
-		default:
+			default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
 		}
 	}
@@ -1260,11 +1187,6 @@ static void m2s_load_programs(int argc, char **argv)
 		case EM_386:
 			X86EmuLoadContextsFromConfig(x86_emu, config, section);
 			break;
-
-		//star >> commented out here as well.
-		//case EM_ARM:
-		//	arm_ctx_load_from_ctx_config(config, section);
-		//	break;
 
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
@@ -1512,82 +1434,36 @@ static void m2s_loop(void)
 int main(int argc, char **argv)
 {
 
+
 	/* Global initialization and welcome message */
 	m2s_init();
-
-
 
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
 
-
 	//star >> given command line "--x86-disasm" this will output a disassembly in formatted text then exit.
 	/* x86 disassembler tool */
-	/*if (*x86_disasm_file_name)
-		x86_asm_disassemble_binary(x86_disasm_file_name);*/
+	if (*x86_disasm_file_name)
+		x86_asm_disassemble_binary(x86_disasm_file_name);
 
-	/* Evergreen disassembler tool */
-	//if (*evg_disasm_file_name)
-	//	evg_emu_disasm(evg_disasm_file_name);
-
-	/* Southern Islands disassembler tool
+#if GPU
+	/* Southern Islands disassembler tool */
 	  if (*si_disasm_file_name)
-		si_disasm(si_disasm_file_name);*/
-
-	/* Evergreen OpenGL disassembler tool */
-	//if (*evg_opengl_disasm_file_name)
-	//	evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
+		  si_disasm(si_disasm_file_name);
 
 	/* Southern Islands OpenGL disassembler tool */
-	//  if (*si_opengl_disasm_file_name)
-	//	si_emu_opengl_disasm(si_opengl_disasm_file_name, si_opengl_disasm_shader_index);
-
-	/* Fermi disassembler tool */
-	//if (*frm_disasm_file_name)
-	//	frm_disasm(frm_disasm_file_name);
-
-	/* Kepler disassembler tool */
-	//if (*kpl_disasm_file_name)
-	//	kpl_disasm(kpl_disasm_file_name);
-
-	/* ARM disassembler tool */
-	//if (*arm_disasm_file_name)
-	//	arm_emu_disasm(arm_disasm_file_name);
-
-	/* MIPS disassembler tool */
-	//if (*mips_disasm_file_name)
-	//	mips_emu_disasm(mips_disasm_file_name);
-
-	//star >> given "--visual" and a m2s trace file via command line this starts the visualization tool.
-	// Exits when visualization tool is closed.
-	/* Memory hierarchy visualization tool */
-	//  if (*visual_file_name)
-	//  visual_run(visual_file_name);
-
-	/* Network simulation tool */
-	//if (*net_sim_network_name)
-	//	net_sim(net_debug_file_name);
-
-	/* DRAM simulation Tool*/
-	//if (*dram_sim_system_name)
-	//	dram_system_sim(dram_debug_file_name);
+	  if (*si_opengl_disasm_file_name)
+		  si_emu_opengl_disasm(si_opengl_disasm_file_name, si_opengl_disasm_shader_index);
 
 	/* Southern Islands dump config file */
-	 /* if (*si_gpu_dump_default_config_file_name)
-		si_gpu_dump_default_config(si_gpu_dump_default_config_file_name);*/
+	 if (*si_gpu_dump_default_config_file_name)
+		 si_gpu_dump_default_config(si_gpu_dump_default_config_file_name);
+#endif
 
 	/* Debug */
 	//star >> may need to uncomment some of these if there are problems.
 	debug_init();
 	elf_debug_category = debug_new_category(elf_debug_file_name);
-	net_debug_category = debug_new_category(net_debug_file_name);
-	//dram_debug_category = debug_new_category(dram_debug_file_name);
-	//glu_debug_category = debug_new_category(glu_debug_file_name);
-	//glut_debug_category = debug_new_category(glut_debug_file_name);
-	//glew_debug_category = debug_new_category(glew_debug_file_name);
-	//opengl_debug_category = debug_new_category(opengl_debug_file_name);
-	//opencl_debug_category = debug_new_category(opencl_debug_file_name);
-	//cuda_debug_category = debug_new_category(cuda_debug_file_name);
 	x86_context_debug_category = debug_new_category(x86_ctx_debug_file_name);
 	x86_context_isa_debug_category = debug_new_category(x86_isa_debug_file_name);
 	x86_context_call_debug_category = debug_new_category(x86_call_debug_file_name);
@@ -1595,44 +1471,40 @@ int main(int argc, char **argv)
 	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
 	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
-	//evg_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
-	//evg_isa_debug_category = debug_new_category(evg_isa_debug_file_name);
-	//evg_stack_debug_category = debug_new_category(evg_stack_debug_file_name);  /* GPU-REL */
-	//evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	//si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
-	//frm_isa_debug_category = debug_new_category(frm_isa_debug_file_name);
-	//arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
-	//arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
-	//arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
-	//arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
-	//mips_loader_debug_category = debug_new_category(mips_loader_debug_file_name);
-	//mips_isa_inst_debug_category = debug_new_category(mips_isa_debug_file_name);
-	//mips_sys_debug_category = debug_new_category(mips_sys_debug_file_name);
-	//mips_isa_call_debug_category = debug_new_category(mips_call_debug_file_name);
+	net_debug_category = debug_new_category(net_debug_file_name);
+
+#if GPU
+	opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
+	//glu_debug_category = debug_new_category(glu_debug_file_name);
+	//glut_debug_category = debug_new_category(glut_debug_file_name);
+	//glew_debug_category = debug_new_category(glew_debug_file_name);
+	//opengl_debug_category = debug_new_category(opengl_debug_file_name);
+	//cuda_debug_category = debug_new_category(cuda_debug_file_name);
+#endif
 
 	/* Initialization of runtimes */
 	//star >> runtime_inti() creates an empty runtime list of type list_t
 	runtime_init();
 
 
-
 	//star add these various runtimes to the runtime list
-	//star todo add in #ifdef to seperate out the CPU and GPU code.
-
-	//star >> commented out cuda (Nvidia) drivers etc.
+#if GPU
+	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
 	//runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325, (runtime_abi_func_t) evg_opencl_abi_call);
 	//runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
 	//runtime_register("OpenGL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
 	//runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
 	//runtime_register("CudaRT", "cudart", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
-	//runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
 	//runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) glew_abi_call);
 	//runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
+#endif
 
 	/* Initialization of drivers */
 	//star >> this does nothing at the moment? opencl_init() is an empty function in onpencl.c.
 	//opencl_init();
 	//cuda_init();
+
 
 	/* Initialization of libraries */
 	esim_init();
@@ -1640,32 +1512,21 @@ int main(int argc, char **argv)
 
 	//star >> looks like all architectures are registered whether you need them or not.
 	/* Initialization of architectures */
-	//arch_arm = arch_register("ARM", "arm", arm_sim_kind, arm_emu_init, arm_emu_done, arm_cpu_read_config, arm_cpu_init, arm_cpu_done);
-	//arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind, evg_emu_init, evg_emu_done, evg_gpu_read_config, evg_gpu_init, evg_gpu_done);
-	//arch_fermi = arch_register("Fermi", "frm", frm_sim_kind, frm_emu_init, frm_emu_done, frm_gpu_read_config, frm_gpu_init, frm_gpu_done);
-	//arch_mips = arch_register("MIPS", "mips", mips_sim_kind, mips_emu_init, mips_emu_done, mips_cpu_read_config, mips_cpu_init, mips_cpu_done);
 
 	//star >> x86_emu_init calls openGL, GLUT, etc libraries.
 	//sets up the architecture for x86 arch_x86 is a pointer to a struct.
-	//arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind, si_emu_init, si_emu_done, si_gpu_read_config, si_gpu_init, si_gpu_done);
+
+#if GPU
+	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind, si_emu_init, si_emu_done, si_gpu_read_config, si_gpu_init, si_gpu_done);
+#endif
+
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind, x86_emu_init, x86_emu_done, X86CpuReadConfig, NULL, NULL);
 	arch_init();
 
-
-	//arch_set_emu(arch_arm, asEmu(arm_emu));
-	//arch_set_timing(arch_arm, asTiming(arm_cpu));
-
-	//arch_set_emu(arch_evergreen, asEmu(evg_emu));
-	//arch_set_timing(arch_evergreen, asTiming(evg_gpu));
-
-	//arch_set_emu(arch_fermi, asEmu(frm_emu));
-	//arch_set_timing(arch_fermi, asTiming(frm_gpu));
-
-	//arch_set_emu(arch_mips, asEmu(mips_emu));
-	//arch_set_timing(arch_mips, asTiming(mips_cpu));
-
-	//arch_set_emu(arch_southern_islands, asEmu(si_emu));
-	//arch_set_timing(arch_southern_islands, asTiming(si_gpu));
+#if GPU
+	arch_set_emu(arch_southern_islands, asEmu(si_emu));
+	arch_set_timing(arch_southern_islands, asTiming(si_gpu));
+#endif
 
 	/* x86
 	 * The code above and below is in an intermediate state on the process
