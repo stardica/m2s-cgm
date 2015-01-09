@@ -1,0 +1,160 @@
+
+;Radeon HD 7870 Configuration file
+;7870 is 20 CUs
+
+
+;parameters for the GPU.
+[ Device ]
+;Frequency for the Southern Islands GPU in MHz (default 1000).
+;Number of compute units in the GPU (default 32).
+Frequency = 1000
+NumComputeUnits = 1
+
+;parameters for the Compute Units.
+[ ComputeUnit ]
+; Number of wavefront pools/SIMDs per compute unit (Default = 4).
+;The maximum number of work groups that can be scheduled to a wavefront pool at a time (Default = 10).
+;The maximum number of wavefronts that can be scheduled to a wavefront pool at a time (Default = 10).
+;Number of vector registers per compute unit. These are divided evenly between all wavefront pools/SIMDs (Default = 65536).
+;Number of scalar registers per compute unit. These are shared by all wavefront pools/SIMDs (Default = 2048).
+NumWavefrontPools = 4
+MaxWorkGroupsPerWavefrontPool = 10
+MaxWavefrontsPerWavefrontPool = 10
+NumVectorRegisters = 65536
+NumScalarRegisters = 2048
+
+;parameters for fetch and issue.
+[ FrontEnd ]
+;Latency of instruction memory in number of cycles (Default = 5).
+;Maximum number of instructions fetched per cycle (Default = 4).
+;Size of the buffer holding fetched instructions (Default = 10)
+;Latency of the decode stage in number of cycles (Default = 1).
+;Number of instructions that can be issued per cycle (Default = 5).
+;Maximum number of instructions that can be issued of each type (SIMD, scalar, etc.) in a single cycle (Default = 1).
+FetchLatency = 5
+FetchWidth = 4
+FetchBufferSize = 10
+IssueLatency = 1
+IssueWidth = 5
+MaxInstIssuedPerType = 1
+
+;parameters for the SIMD Units.
+[ SIMDUnit ]
+;Number of lanes per SIMD.  This must divide the wavefront size (64) evenly. (Default = 16)
+;Width -> Maximum number of instructions processed per cycle (Default = 1).
+;Size of the buffer holding issued instructions. (Default = 1)
+;Latency of the decode stage in number of cycles. (Default = 1)
+;Number of instructions that can be decoded per cycle. (Default = 1)
+;Size of the buffer holding decoded instructions. (Default = 1)
+;Number of cycles it takes to read operands from the register files, execute the SIMD ALU operation, and write the results out to the register file for a single subwavefront. It makes sense to combine the three stages since they wavefront is pipelined across all of them and can therefore be in different stages at the same time. (Default = 8)
+;Size of the buffer holding instructions that have began the read-exec-write stages. (Default = 2)
+NumSIMDLanes = 16
+Width = 1
+IssueBufferSize = 1 
+DecodeLatency = 1 
+;DecodeWidth = 1 
+DecodeBufferSize = 1 
+ReadExecWriteLatency = 1 
+ReadExecWriteBufferSize = 1 
+
+;parameters for the Scalar Units.
+[ ScalarUnit ]
+;Maximum number of instructions processed per cycle.  (Default = 1)
+;Size of the buffer holding issued instructions.  (Default = 4)
+;Latency of the decode stage in number of cycles.  (Default = 1)
+;Number of instructions that can be decoded per cycle.  (Default = 1)
+;Latency of register file access in number of cycles for reads.  (Default = 1)
+;Size of the buffer holding register read instructions. (Default = 1)
+;Latency of ALU execution in number of cycles. (Default = 4)
+;Size of the buffer holding in-flight memory instructions and executing ALU instructions.  (Default = 16)
+;Latency of register file writes in number of cycles. (Default = 1)
+;Size of the buffer holding register write instructions. (Default = 1)
+Width = 1
+IssueBufferSize = 4
+DecodeLatency = 1
+;DecodeWidth = 1
+ReadLatency = 1
+ReadBufferSize = 1
+ALULatency = 4
+ExecBufferSize = 16
+WriteLatency = 1
+WriteBufferSize = 1
+
+
+;parameters for the Branch Units.
+[ BranchUnit ]
+;Maximum number of instructions processed per cycle.  (Default = 1)
+;Size of the buffer holding issued instructions.  (Default = 4)
+;Latency of the decode stage in number of cycles.  (Default = 1)
+;Number of instructions that can be decoded per cycle.  (Default = 1)
+;Latency of register file access in number of cycles for reads.  (Default = 1)
+;Size of the buffer holding register read instructions.  (Default = 1)
+;Latency of execution in number of cycles.  (Default = 1)
+;Size of the buffer holding executing instructions.  (Default = 1)
+;Latency of register file writes in number of cycles.  (Default = 1)
+;Size of the buffer holding register write instructions.  (Default = 1)
+Width = 1
+IssueBufferSize = 4
+DecodeLatency = 1
+;DecodeWidth = 1
+ReadLatency = 1
+ReadBufferSize = 1
+ExecLatency = 1
+ExecBufferSize = 1
+WriteLatency = 1
+WriteBufferSize = 1
+
+;parameters for the LDS Units.
+[ LDSUnit ]
+;Maximum number of instructions processed per cycle.  (Default = 1)
+;Size of the buffer holding issued instructions.  (Default = 4)
+;Latency of the decode stage in number of cycles.  (Default = 1)
+;Number of instructions that can be decoded per cycle.  (Default = 1)
+;Latency of register file access in number of cycles for reads.  (Default = 1)
+;Size of the buffer holding register read instructions.  (Default = 1)
+;Maximum number of in-flight memory accesses.  (Default = 32)
+;Latency of register file writes in number of cycles.  (Default = 1)
+;Size of the buffer holding register write instructions.  (Default = 1)
+Width = 1
+IssueBufferSize = 4
+DecodeLatency = 1
+;DecodeWidth = 1
+ReadLatency = 1
+ReadBufferSize = 1
+MaxInflightMem = 32
+WriteLatency = 1
+WriteBufferSize = 1
+
+;parameters for the Vector Memory Units.
+[VectorMemUnit]
+;Maximum number of instructions processed per cycle.  (Default = 1)
+;Size of the buffer holding issued instructions.  (Default = 4)
+;Latency of the decode stage in number of cycles.  (Default = 1)
+;Number of instructions that can be decoded per cycle.  (Default = 1)
+;Latency of register file access in number of cycles for reads.  (Default = 1)
+;Size of the buffer holding register read instructions.  (Default = 1)
+;Maximum number of in-flight memory accesses.  (Default = 32)
+;Latency of register file writes in number of cycles.  (Default = 1)
+;Size of the buffer holding register write instructions.  (Default = 1)
+Width = 1
+IssueBufferSize = 4
+DecodeLatency = 1
+;DecodeWidth = 1
+ReadLatency = 1
+ReadBufferSize = 1
+MaxInflightMem = 32
+WriteLatency = 1
+WriteBufferSize = 1
+
+;defines the parameters of the Local Data Shareon each compute unit.
+;[LDS]
+;LDS capacity per compute unit. This value must be equal to or larger than BlockSize * Banks.  (Default = 64 KB)
+;Minimum amount of LDS memory allocated at a time for each work-group.  (Default = 16)
+;Access block size, used for access coalescing purposes among work-items.  (Default = 64)
+;Latency for an access in number of cycles.  (Default = 2)
+;Number of ports.  (Default = 4)
+;Size = 64
+;AllocSize = 16
+;BlockSize = 64
+;Latency = 2
+;Ports = 4
