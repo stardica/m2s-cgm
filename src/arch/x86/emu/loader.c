@@ -239,10 +239,6 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 				free(ptr);
 			} else {
 
-				//printf("%A\n", section->buffer.ptr);
-				//fflush(stdout);
-				//getchar();
-
 				mem_access(mem, section->header->sh_addr, section->header->sh_size, section->buffer.ptr, mem_access_init);
 			}
 		}

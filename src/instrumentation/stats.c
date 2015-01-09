@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <instrumentation/stats.h>
 #include <arch/x86/timing/uop.h>
+#include <arch/x86/emu/context.h>
 #include <lib/util/list.h>
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/fetch-queue.h>
@@ -101,6 +102,16 @@ struct Uop_Status_t *Uop_status_init(void){
 	getchar();
 	return;
 }*/
+
+
+/* Context */
+void PrintContext(X86Context *self){
+
+	printf("Context Created PID %d\n", self->pid);
+	fflush(stdout);
+
+	return;
+}
 
 void instrumentation_done(void){
 

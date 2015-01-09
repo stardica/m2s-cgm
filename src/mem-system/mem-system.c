@@ -130,7 +130,7 @@ void mem_system_init(void)
 	mem_config_read();
 
 	//star >> added instrumentation here
-	PrintModNetList(mem_system->mod_list, mem_system->net_list);
+	//PrintModNetList(mem_system->mod_list, mem_system->net_list);
 
 	/* Try to open report file */
 	if (*mem_report_file_name && !file_can_open_for_write(mem_report_file_name))

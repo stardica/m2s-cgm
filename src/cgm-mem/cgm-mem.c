@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+//star todo take any borrowed files and move then to our cgm-mem directory.
+#include <mem-system/mem-system.h> //borrowed
 #include <cgm-mem/cgm-mem.h>
 #include <cgm-mem/queue.h>
 #include <cgm-mem/cache.h>
@@ -35,6 +38,13 @@ eventcount *stop;
  (1) create test script
  (2) integrate with M2S single core CPU, then multicore CPU, then multicore CPU with GPU.
 */
+
+void cgm_mem_init(void){
+
+
+
+	return;
+}
 
 /*int main(int argc, char **argv){
 

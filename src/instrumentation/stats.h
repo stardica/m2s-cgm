@@ -7,6 +7,7 @@
 
 #include <pthread.h>
 #include <arch/x86/timing/uop.h>
+#include <arch/x86/emu/context.h>
 #include <arch/x86/timing/load-store-queue.h>
 #include <lib/util/list.h>
 #include <lib/util/list.h>
@@ -99,6 +100,8 @@ void MemEvent(int event, struct mod_stack_t *stack);
 void PrintMessage(int code);
 void PrintModNetList(struct list_t *mem_mod_list, struct list_t *net_list);
 
+//context
+void PrintContext(X86Context *self);
 
 //dump stats
 void PrintStats(void);
@@ -107,3 +110,4 @@ void PrintCycle(void);
 
 
 #endif /* STATS_H_ */
+

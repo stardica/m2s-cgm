@@ -211,7 +211,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		//star >> added for instrumentation
 		//pthread_mutex_lock(&instrumentation_mutex);
 		//FetchQueueOccupancy(list_count(self->fetch_queue));
-		FectchStats(uop, ctx->pid);
+		//FectchStats(uop, ctx->pid);
 		//pthread_mutex_unlock(&instrumentation_mutex);
 
 

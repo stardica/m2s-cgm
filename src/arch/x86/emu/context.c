@@ -81,8 +81,14 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 
 void X86ContextCreate(X86Context *self, X86Emu *emu)
 {
+
+
+
 	/* Baseline initialization */
 	X86ContextDoCreate(self, emu);
+
+	//star >> added this
+	PrintContext(self);
 
 	/* Loader */
 	self->loader = x86_loader_create();

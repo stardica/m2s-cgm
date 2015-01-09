@@ -708,7 +708,11 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	/* Create context */
 	//star >> new is a macro defined in class.c/.h.
 	//star >> Creates the CTX pointer to type struct class_t.
+
+	//runs x86contextcreate()
 	ctx = new(X86Context, self);
+
+
 
 	//star ctx loader points to ctx
 	loader = ctx->loader;

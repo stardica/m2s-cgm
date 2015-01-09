@@ -119,7 +119,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		//star >> entered instrumentation here
 		pthread_mutex_lock(&instrumentation_mutex);
-		CommitStats(uop, ctx->pid);
+		//CommitStats(uop, ctx->pid);
 		pthread_mutex_unlock(&instrumentation_mutex);
 
 

@@ -31,6 +31,7 @@ extern eventcount *stop;
 
 
 //function prototypes
+void cgm_mem_init(void);
 void cgm_mem_structure_init(void);
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);

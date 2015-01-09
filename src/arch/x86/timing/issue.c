@@ -66,7 +66,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			break;
 
 		pthread_mutex_lock(&instrumentation_mutex);
-		IssuedLSQStats(store);
+		//IssuedLSQStats(store);
 		pthread_mutex_unlock(&instrumentation_mutex);
 
 		/* Remove store from store queue */
@@ -147,7 +147,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		//star >> added instrumentation here.
 		pthread_mutex_lock(&instrumentation_mutex);
-		IssuedLSQStats(load);
+		//IssuedLSQStats(load);
 		pthread_mutex_unlock(&instrumentation_mutex);
 
 
@@ -259,7 +259,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		}
 
 		pthread_mutex_lock(&instrumentation_mutex);
-		IssuedLSQStats(prefetch);
+		//IssuedLSQStats(prefetch);
 		pthread_mutex_unlock(&instrumentation_mutex);
 
 		/* Remove from prefetch queue */

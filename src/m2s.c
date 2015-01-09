@@ -20,8 +20,10 @@
 
 /*star for our development controls and incremental coding.
 GPU 0 removes all of the GPU and runtime code
-GPU 1 adds back in all of the CPU and runtime code*/
-#define GPU 1
+GPU 1 adds back in all of the CPU and runtime code
+CGM takes in and out the new memory system*/
+#define GPU 0
+#define CGM 0
 
 
 #include <signal.h>
@@ -1144,6 +1146,7 @@ static void m2s_load_programs(int argc, char **argv)
 			//star >> each function in this switch comes from different places...
 			case EM_386:
 				//star >> from EMU.c/.h
+
 				X86EmuLoadContextFromCommandLine(x86_emu, argc - 1, argv + 1);
 
 			break;
@@ -1153,7 +1156,7 @@ static void m2s_load_programs(int argc, char **argv)
 		}
 	}
 
-	//the rest of this function isn't run for our exmaples
+	//the rest of this function isn't run for our examples
 	/* Continue processing the context configuration file, if specified. */
 	if (!*ctx_config_file_name)
 		return;
@@ -1498,21 +1501,20 @@ int main(int argc, char **argv)
 	//runtime_register("CudaRT", "cudart", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
 	//runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) glew_abi_call);
 	//runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
-#endif
 
-	/* Initialization of drivers */
+	/* Initialization of GPU drivers */
 	//star >> this does nothing at the moment? opencl_init() is an empty function in onpencl.c.
-	//opencl_init();
+	opencl_init();
 	//cuda_init();
+#endif
 
 
 	/* Initialization of libraries */
 	esim_init();
 	trace_init(trace_file_name);
 
-	//star >> looks like all architectures are registered whether you need them or not.
 	/* Initialization of architectures */
-
+	//star >> looks like all architectures are registered whether you need them or not.
 	//star >> x86_emu_init calls openGL, GLUT, etc libraries.
 	//sets up the architecture for x86 arch_x86 is a pointer to a struct.
 
@@ -1550,21 +1552,20 @@ int main(int argc, char **argv)
 	}
 
 	//star >> added instrumentation
-	instrumentation_init();
+	//instrumentation_init();
 
-	//init memory system
-	cgm_mem_threads_init();
-
-	//this is old m2s code for the memory system and network.
 	/* Network and memory system */
+#if CGM
+	//this is the replacement memory system.
+	cgm_mem_init();
+	cgm_mem_threads_init();
+#else
+	//this is old m2s code for the memory system and network.
 	net_init();
 	mem_system_init();
+#endif
+
 	mmu_init();
-
-
-
-	//star added stop here for testing purposes.
-	//stop();
 
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
@@ -1572,14 +1573,9 @@ int main(int argc, char **argv)
 	//if (x86_load_checkpoint_file_name[0])
 	//	X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
-
 	/* Load programs */
-
 	//star >> stars the ELF parsing work.
 	m2s_load_programs(argc, argv);
-
-
-
 
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();
@@ -1612,16 +1608,26 @@ int main(int argc, char **argv)
 	arch_done();
 
 	/* Finalization of runtimes */
+#if GPU
 	runtime_done();
+#endif
 
 	/* Finalization of network and memory system */
-	mmu_done();
+#if CGM
+	//star todo add in the cgm-mem done func
+	simulate(cleanup);
+#else
 	mem_system_done();
 	net_done();
+#endif
+
+	mmu_done();
 
 	/* Finalization of drivers */
-	//opencl_done();
+#if GPU
+	opencl_done();
 	//cuda_done();
+#endif
 
 	/* Finalization of libraries */
 	esim_done();
@@ -1629,14 +1635,10 @@ int main(int argc, char **argv)
 	debug_done();
 	mhandle_done();
 
-
 	//star >> added our own stats output here.
 	//PrintStats();
 	//PrintUopList();
-	instrumentation_done();
-
-	//star >> testing our memory simulation run function.
-	simulate(cleanup);
+	//instrumentation_done();
 
 	/* End */
 	return 0;
