@@ -82,13 +82,8 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 void X86ContextCreate(X86Context *self, X86Emu *emu)
 {
 
-
-
 	/* Baseline initialization */
 	X86ContextDoCreate(self, emu);
-
-	//star >> added this
-	PrintContext(self);
 
 	/* Loader */
 	self->loader = x86_loader_create();
@@ -96,11 +91,16 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	/* Memory */
 	self->address_space_index = mmu_address_space_new();
 	self->mem = mem_create();
+
 	self->spec_mem = spec_mem_create(self->mem);
 
 	/* Signal handlers and file descriptor table */
 	self->signal_handler_table = x86_signal_handler_table_create();
 	self->file_desc_table = x86_file_desc_table_create();
+
+	//star >> added this
+	PrintContext(self);
+	//printf("mem size %lld\n", sizeof(self->mem->pages));
 }
 
 

@@ -107,7 +107,7 @@ struct Uop_Status_t *Uop_status_init(void){
 /* Context */
 void PrintContext(X86Context *self){
 
-	printf("Context Created PID %d\n", self->pid);
+	printf("---Context Created PID %d---\n", self->pid);
 	fflush(stdout);
 
 	return;
@@ -605,11 +605,11 @@ void PrintUopList(void){
 	return;
 }
 
-void PrintCycle(void){
+void PrintCycle(int skip){
 
-	if((Current_Cycle % 1000000) == 0)
+	if((Current_Cycle % skip) == 0)
 	{
-		printf("Running OK. Current Cycle is %lld \n", Current_Cycle);
+		printf("Running. Current Cycle is %lld \n", Current_Cycle);
 		fflush(stdout);
 	}
 

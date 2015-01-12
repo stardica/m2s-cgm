@@ -469,18 +469,36 @@ unsigned int mem_map_space_down(struct mem_t *mem, unsigned int addr, int size)
  * access 'size' bytes at 'addr'. These two fields do not need to be
  * aligned to page boundaries.
  * If some page already exists, add permissions. */
+
+//star >>    memory image         the address        size     permission settings
 void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm)
 {
 	unsigned int tag1, tag2, tag;
 	struct mem_page_t *page;
 
 	/* Calculate page boundaries */
+
 	tag1 = addr & ~(MEM_PAGE_SIZE-1);
 	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
+
+	//star ~(MEM_PAGE_SIZE -1) is always 0xfffff000
+	/*printf("tag 1:\n");
+	printf("address %#x\n", addr);
+	printf("tag1 %#x\n", tag1);*/
+
+	/*printf("tag 2:\n");
+	printf("address %#x\n", addr);
+	printf("size %#x\n", size);
+	printf("(addr + size - 1) %#x\n", (addr + size - 1));
+	printf("tag2 %#x\n", tag2);
+	getchar();*/
+
+
 
 	/* Allocate pages */
 	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE)
 	{
+
 		page = mem_page_get(mem, tag);
 		if (!page)
 			page = mem_page_create(mem, tag, perm);

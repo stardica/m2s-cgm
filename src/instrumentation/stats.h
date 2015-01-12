@@ -106,7 +106,7 @@ void PrintContext(X86Context *self);
 //dump stats
 void PrintStats(void);
 void PrintUopList(void);
-void PrintCycle(void);
+void PrintCycle(int skip);
 
 
 #endif /* STATS_H_ */

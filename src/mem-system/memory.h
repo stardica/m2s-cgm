@@ -46,6 +46,10 @@ struct mem_page_t
 	unsigned int tag;
 	enum mem_access_t perm;  /* Access permissions; combination of flags */
 	struct mem_page_t *next;
+	//star >> here is the data in the memory
+	//Unsigned char is 8 bits (2^3) 0x00 - 0xFF
+	//This must point to a string 4KB in length
+	//each byte is addressable by (2^12) 0x000 - 0xFFF
 	unsigned char *data;
 };
 

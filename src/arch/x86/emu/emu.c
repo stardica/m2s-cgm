@@ -712,8 +712,6 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	//runs x86contextcreate()
 	ctx = new(X86Context, self);
 
-
-
 	//star ctx loader points to ctx
 	loader = ctx->loader;
 
@@ -721,7 +719,6 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	//star >> adding arguments to loader context args and envs
 	X86ContextAddArgsVector(ctx, argc, argv);
 	X86ContextAddEnv(ctx, "");
-
 
 	/* Get current directory */
 	loader->cwd = getcwd(buf, sizeof buf);
@@ -736,6 +733,7 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	/* Load executable */
 	//star >> loads the ELF file.
 	X86ContextLoadExe(ctx, argv[0]);
+
 
 
 }

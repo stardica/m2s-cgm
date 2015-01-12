@@ -530,8 +530,7 @@ static struct str_map_t sys_open_flags_map =
 	}
 };
 
-static struct x86_file_desc_t *x86_sys_open_virtual(X86Context *ctx,
-		char *path, int flags, int mode)
+static struct x86_file_desc_t *x86_sys_open_virtual(X86Context *ctx, char *path, int flags, int mode)
 {
 	char temp_path[MAX_PATH_SIZE];
 	struct x86_file_desc_t *desc;

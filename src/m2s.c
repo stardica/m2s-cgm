@@ -22,7 +22,8 @@
 GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
-#define GPU 0
+#define SKIP 1000000
+#define GPU 1
 #define CGM 0
 
 
@@ -1156,6 +1157,9 @@ static void m2s_load_programs(int argc, char **argv)
 		}
 	}
 
+
+
+
 	//the rest of this function isn't run for our examples
 	/* Continue processing the context configuration file, if specified. */
 	if (!*ctx_config_file_name)
@@ -1374,6 +1378,9 @@ static void m2s_loop(void)
 	signal(SIGUSR1, &m2s_signal_handler);
 	signal(SIGUSR2, &m2s_signal_handler);
 
+	printf("---Simulation Start---\n");
+	fflush(stdout);
+
 	/* Simulation loop */
 	while (!esim_finish)
 	{
@@ -1407,7 +1414,7 @@ static void m2s_loop(void)
 		m2s_loop_iter++;
 
 		//star >> added this to get some output while running long benchmarks.
-		PrintCycle();
+		PrintCycle(SKIP);
 
 
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)
@@ -1576,6 +1583,8 @@ int main(int argc, char **argv)
 	/* Load programs */
 	//star >> stars the ELF parsing work.
 	m2s_load_programs(argc, argv);
+
+
 
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();

@@ -205,14 +205,23 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 	char flags_str[200];
 
 	x86_loader_debug("\nLoading ELF sections\n");
+
+	//star >> 32bits
 	loader->bottom = 0xffffffff;
+
+	//star >> added
+	printf("Loader bottom %#x\n", loader->bottom);
+	fflush(stdout);
+
 	for (i = 0; i < list_count(elf_file->section_list); i++)
 	{
 		section = list_get(elf_file->section_list, i);
 
 		perm = mem_access_init | mem_access_read;
 		str_map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
-		x86_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n", i, section->name, section->header->sh_offset, section->header->sh_addr, section->header->sh_size, flags_str);
+		x86_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n", i,
+							section->name, section->header->sh_offset, section->header->sh_addr,
+							section->header->sh_size, flags_str);
 
 		/* Process section */
 		if (section->header->sh_flags & SHF_ALLOC)
@@ -511,6 +520,10 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	char stdout_file_full_path[MAX_STRING_SIZE];
 	char exe_full_path[MAX_STRING_SIZE];
 
+	//star >> added this
+	printf("---Loading exe---\n");
+	fflush(stdout);
+
 
 	/* Alternative stdin */
 	X86ContextGetFullPath(self, loader->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
@@ -542,11 +555,19 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	
 	/* Load program into memory */
 	X86ContextGetFullPath(self, exe, exe_full_path, MAX_STRING_SIZE);
+
+
+	//gets and points to the elf_file
 	loader->elf_file = elf_file_create_from_path(exe_full_path);
+	//sets the exe path
 	loader->exe = str_set(NULL, exe_full_path);
+
+
 
 	/* Read sections and program entry */
 	X86ContextLoadELFSections(self, loader->elf_file);
+
+
 	loader->prog_entry = loader->elf_file->header->e_entry;
 
 	/* Set heap break to the highest written address rounded up to
@@ -557,8 +578,12 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	 * we have to load the program interpreter. This means we are dealing with
 	 * a dynamically linked application. */
 	X86ContextLoadProgramHeaders(self);
+
 	if (loader->interp)
+	{
+		printf("Interpreter discovered reloading\n");
 		X86ContextLoadInterp(self);
+	}
 
 	/* Stack */
 	X86ContextLoadStack(self);
@@ -568,6 +593,13 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	self->regs->eip = loader->interp ? loader->interp_prog_entry : loader->prog_entry;
 	self->regs->esp = loader->environ_base;
 
+
+	//star added
+	printf("stdin_file \"%s\"\n", loader->stdin_file);
+	printf("stdout_file \"%s\"\n", 	loader->stdout_file);
+	printf("elf_file \"%s\"\n", loader->elf_file->path);
+	printf("Exe Path \"%s\"\n", loader->exe);
+	fflush(stdout);
 
 	//star >> test code.
 	//PrintMem(mem);
