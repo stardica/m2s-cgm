@@ -23,7 +23,7 @@ GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
 #define SKIP 1000000
-#define GPU 1
+#define GPU 0
 #define CGM 0
 
 
@@ -1157,9 +1157,6 @@ static void m2s_load_programs(int argc, char **argv)
 		}
 	}
 
-
-
-
 	//the rest of this function isn't run for our examples
 	/* Continue processing the context configuration file, if specified. */
 	if (!*ctx_config_file_name)
@@ -1380,6 +1377,7 @@ static void m2s_loop(void)
 
 	printf("---Simulation Start---\n");
 	fflush(stdout);
+	getchar();
 
 	/* Simulation loop */
 	while (!esim_finish)

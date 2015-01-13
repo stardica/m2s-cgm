@@ -218,6 +218,7 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 		section = list_get(elf_file->section_list, i);
 
 		perm = mem_access_init | mem_access_read;
+		//star >> elf section flags
 		str_map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
 		x86_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n", i,
 							section->name, section->header->sh_offset, section->header->sh_addr,
@@ -233,9 +234,17 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 				perm |= mem_access_exec;
 
 			/* Load section */
+			//creates or loads the memory page as required by the address.
 			mem_map(mem, section->header->sh_addr, section->header->sh_size, perm);
+
+			//star >> sets the heap break
 			mem->heap_break = MAX(mem->heap_break, section->header->sh_addr + section->header->sh_size);
 			loader->bottom = MIN(loader->bottom, section->header->sh_addr);
+
+			/*printf("----------------\n");
+			printf("heap_break %#x\n", mem->heap_break);
+			printf("laoder bottom %#x\n", loader->bottom);
+			fflush(stdout);*/
 
 			/* If section type is SHT_NOBITS (sh_type=8), initialize to 0.
 			 * Otherwise, copy section contents from ELF file. */
@@ -246,7 +255,9 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 				ptr = xcalloc(1, section->header->sh_size);
 				mem_access(mem, section->header->sh_addr, section->header->sh_size, ptr, mem_access_init);
 				free(ptr);
-			} else {
+			}
+
+			else {
 
 				mem_access(mem, section->header->sh_addr, section->header->sh_size, section->buffer.ptr, mem_access_init);
 			}
@@ -520,10 +531,6 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	char stdout_file_full_path[MAX_STRING_SIZE];
 	char exe_full_path[MAX_STRING_SIZE];
 
-	//star >> added this
-	printf("---Loading exe---\n");
-	fflush(stdout);
-
 
 	/* Alternative stdin */
 	X86ContextGetFullPath(self, loader->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
@@ -599,6 +606,8 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	printf("stdout_file \"%s\"\n", 	loader->stdout_file);
 	printf("elf_file \"%s\"\n", loader->elf_file->path);
 	printf("Exe Path \"%s\"\n", loader->exe);
+	printf("prog_entry %#x\n", loader->prog_entry);
+	printf("heap_break %#x\n", mem->heap_break);
 	fflush(stdout);
 
 	//star >> test code.

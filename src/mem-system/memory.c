@@ -40,12 +40,24 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr)
 	unsigned int index, tag;
 	struct mem_page_t *prev, *page;
 
+	//star >> gets the index from the tag
+	//tag = 0x08048000
+	//example 0x00008048 % 0x400 = 0x48 (index)
 	tag = addr & ~(MEM_PAGE_SIZE - 1);
 	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
+
+	/*printf("balh 0x%08x\n", (addr >> MEM_LOG_PAGE_SIZE));
+	printf("balh 0x%08x\n", MEM_PAGE_COUNT);
+	printf("balh 0x%08x\n", index);
+	getchar();*/
+
+
+	//star index used to get index from pages[].
 	page = mem->pages[index];
 	prev = NULL;
 	
 	/* Look for page */
+	//just goes down the list of pages hased to pages[index].
 	while (page && page->tag != tag)
 	{
 		prev = page;
@@ -53,6 +65,8 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr)
 	}
 	
 	/* Place page into list head */
+	//if both prev and page are found then insert the page at the top.
+	//why?
 	if (prev && page)
 	{
 		prev->next = page->next;
@@ -120,6 +134,7 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, unsigned int addr, 
 	page->perm = perm;
 	
 	/* Insert in pages hash table */
+	//star >> inserts the page at the top of the hash table.
 	page->next = mem->pages[index];
 	mem->pages[index] = page;
 	mem_mapped_space += MEM_PAGE_SIZE;
@@ -127,6 +142,7 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, unsigned int addr, 
 
 	/* Return */
 	return page;
+
 }
 
 
@@ -289,10 +305,26 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int s
 	/* Write/initialize access */
 	if (access == mem_access_write || access == mem_access_init)
 	{
+
+		//printf("mem_access_write or _init\n");
+
 		if (!page->data)
+		{
+			printf("initializing empty data in page\n");
 			page->data = xcalloc(1, MEM_PAGE_SIZE);
+		}
 
 		memcpy(page->data + offset, buf, size);
+
+		/*printf("Wrote to memory\n");
+		printf("address: 0x%08x\n", addr);
+		printf("page: 0x%08x\n", page->tag);
+		printf("offset: 0x%08x\n", offset);
+		printf("data size 0x%x\n", size);
+		printf("data %s\n", (char *)page->data);
+		fflush(stdout);*/
+
+		//getchar();
 		return;
 	}
 
@@ -313,6 +345,11 @@ void mem_access(struct mem_t *mem, unsigned int addr, int size, void *buf, enum 
 	{
 		offset = addr & (MEM_PAGE_SIZE - 1);
 		chunksize = MIN(size, MEM_PAGE_SIZE - offset);
+
+		/*printf("chunksize %d", chunksize);
+		fflush(stdout);
+		getchar();*/
+
 		mem_access_page_boundary(mem, addr, chunksize, buf, access);
 
 		size -= chunksize;
@@ -478,32 +515,50 @@ void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t p
 
 	/* Calculate page boundaries */
 
+	//star >> ~(MEM_PAGE_SIZE-1) give the lower 12 bits. Works with 4KB page sizes.
+	//~(MEM_PAGE_SIZE -1) is always 0xfffff000 for 4KB pages.
+	//tag1 is the page tag and tag2 is the end page tag
+	//i.e does your data fit on one or more pages.
 	tag1 = addr & ~(MEM_PAGE_SIZE-1);
 	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
-	//star ~(MEM_PAGE_SIZE -1) is always 0xfffff000
-	/*printf("tag 1:\n");
-	printf("address %#x\n", addr);
-	printf("tag1 %#x\n", tag1);*/
+	//printf("mem page size: 0x%08x %d", (MEM_PAGE_SIZE -1), (MEM_PAGE_SIZE));
 
-	/*printf("tag 2:\n");
-	printf("address %#x\n", addr);
-	printf("size %#x\n", size);
-	printf("(addr + size - 1) %#x\n", (addr + size - 1));
-	printf("tag2 %#x\n", tag2);
-	getchar();*/
+	printf("---mem map---\n");
+	printf("virtual Address 0x%08x\n", addr);
+	printf("section size %#x\n", size);
 
-
+	printf("tag 1: 0x%08x\n", tag1);
+	printf("tag 2: 0x%08x\n", tag2);
 
 	/* Allocate pages */
+	//adds pages depending on how many you need.
 	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE)
 	{
 
 		page = mem_page_get(mem, tag);
+
+		if (page)
+		{
+			printf("Mem page found\n");
+		}
+
+
 		if (!page)
+		{
 			page = mem_page_create(mem, tag, perm);
+			printf("Mem page NOT found\n");
+		}
+
+
 		page->perm |= perm;
+
 	}
+
+	printf("Total mapped memory space %ld\n", mem_mapped_space);
+
+	//getchar();
+
 }
 
 
