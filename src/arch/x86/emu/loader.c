@@ -609,6 +609,7 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	printf("heap_break %#x\n", mem->heap_break);
 	fflush(stdout);
 
+
 	//star >> test code.
 	//PrintMem(mem);
 

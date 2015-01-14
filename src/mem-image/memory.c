@@ -556,7 +556,6 @@ void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t p
 	}
 
 	printf("Total mapped memory space %ld\n", mem_mapped_space);
-
 	//getchar();
 
 }
