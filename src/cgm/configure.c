@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cgm-mem/configure.h>
-#include <cgm-mem/ini-parse.h>
-#include <cgm-mem/queue.h>
-#include <cgm-mem/cache.h>
-#include <cgm-mem/cgm-mem.h>
+#include <cgm/configure.h>
+#include <cgm/ini-parse.h>
+#include <cgm/queue.h>
+#include <cgm/cache.h>
+#include <cgm/cgm-mem.h>
 
 
 int cgmmem_check_config = 0;

@@ -24,8 +24,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
-#include <mem-system/spec-mem.h>
+#include <mem-image/memory.h>
+#include <mem-image/spec-mem.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/isa.h>

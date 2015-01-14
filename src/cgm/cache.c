@@ -7,11 +7,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <cgm-mem/cache.h>
+#include <cgm/cache.h>
 #include <lib/util/list.h>
-#include <cgm-mem/queue.h>
-#include <cgm-mem/tasking.h>
-#include <cgm-mem/cgm-mem.h>
+#include <cgm/queue.h>
+#include <cgm/tasking.h>
+#include <cgm/cgm-mem.h>
 
 
 //L1 caches

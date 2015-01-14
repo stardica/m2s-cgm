@@ -11,14 +11,14 @@
 
 //star todo take any borrowed files and move then to our cgm-mem directory.
 #include <mem-system/mem-system.h> //borrowed
-#include <cgm-mem/cgm-mem.h>
-#include <cgm-mem/queue.h>
-#include <cgm-mem/cache.h>
-#include <cgm-mem/mem-ctrl.h>
-#include <cgm-mem/configure.h>
-#include <cgm-mem/sys-agent.h>
-#include <cgm-mem/ini-parse.h>
-#include <cgm-mem/tasking.h>
+#include <cgm/cgm-mem.h>
+#include <cgm/queue.h>
+#include <cgm/cache.h>
+#include <cgm/mem-ctrl.h>
+#include <cgm/configure.h>
+#include <cgm/sys-agent.h>
+#include <cgm/ini-parse.h>
+#include <cgm/tasking.h>
 
 
 char test_mem[256] = {NULL};

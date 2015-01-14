@@ -33,11 +33,12 @@
 #include <network/node.h>
 #include <network/routing-table.h>
 
+#include <mem-image/mmu.h>
+
 #include <mem-system/cache.h>
 #include <mem-system/command.h>
 #include <mem-system/directory.h>
 #include <mem-system/mem-system.h>
-#include <mem-system/mmu.h>
 #include <mem-system/module.h>
 #include <mem-system/prefetcher.h>
 

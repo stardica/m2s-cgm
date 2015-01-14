@@ -25,7 +25,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
-#include <mem-system/mmu.h>
+#include <mem-image/mmu.h>
 
 
 /*

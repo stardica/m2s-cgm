@@ -14,12 +14,13 @@
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/fetch-queue.h>
 #include <arch/x86/timing/load-store-queue.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
 #include <mem-system/mod-stack.h>
 #include <mem-system/nmoesi-protocol.h>
 #include <mem-system/module.h>
 #include <mem-system/cache.h>
 #include <network/network.h>
+
 
 //star >> instrumentation variables
 

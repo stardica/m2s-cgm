@@ -7,7 +7,7 @@
 
 
 #include <lib/util/list.h>
-#include <cgm-mem/tasking.h>
+#include <cgm/tasking.h>
 
 
 #ifndef QUEUE_H_

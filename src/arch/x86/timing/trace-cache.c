@@ -24,7 +24,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
+
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>

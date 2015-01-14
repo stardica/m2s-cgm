@@ -9,7 +9,7 @@
 #ifndef CGMMEM_H_
 #define CGMMEM_H_
 
-#include <cgm-mem/tasking.h>
+#include <cgm/tasking.h>
 
 
 //test memory is 8bit i.e. 0x00 - 0xFF

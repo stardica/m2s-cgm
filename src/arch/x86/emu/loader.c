@@ -27,9 +27,8 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
 #include <instrumentation/stats.h>
-
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/file-desc.h>
 #include <arch/x86/emu/loader.h>

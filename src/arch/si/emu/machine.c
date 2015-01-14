@@ -22,7 +22,7 @@
 
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
 
 #include "isa.h"
 #include "machine.h"

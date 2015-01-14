@@ -25,7 +25,9 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
+
+
 
 #include <driver/opencl/opencl.h>
 #include <driver/opencl/si-kernel.h>

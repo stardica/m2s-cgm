@@ -21,7 +21,7 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
-#include <mem-system/mmu.h>
+#include <mem-image/mmu.h>
 #include <mem-system/module.h>
 #include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>

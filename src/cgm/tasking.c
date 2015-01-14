@@ -35,8 +35,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <cgm-mem/contexts.h>
-#include <cgm-mem/tasking.h>
+#include <cgm/contexts.h>
+#include <cgm/tasking.h>
 
 typedef char boolean;
 

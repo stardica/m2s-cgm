@@ -23,7 +23,7 @@ GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
 #define SKIP 1000000
-#define GPU 0
+#define GPU 1
 #define CGM 0
 
 
@@ -52,11 +52,11 @@ CGM takes in and out the new memory system*/
 #include <lib/util/class.h>
 #include <mem-system/config.h>
 #include <mem-system/mem-system.h>
-#include <mem-system/mmu.h>
+#include <mem-image/mmu.h>
 #include <network/net-system.h>
 #include <sys/time.h>
 #include <instrumentation/stats.h>
-#include <cgm-mem/cgm-mem.h>
+#include <cgm/cgm-mem.h>
 
 
 #if GPU
@@ -1375,7 +1375,7 @@ static void m2s_loop(void)
 	signal(SIGUSR1, &m2s_signal_handler);
 	signal(SIGUSR2, &m2s_signal_handler);
 
-	printf("---Simulation Start---\n");
+	printf("---Simulation Start Press Enter to Continue---\n");
 	fflush(stdout);
 	getchar();
 

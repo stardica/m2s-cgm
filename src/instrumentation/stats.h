@@ -5,19 +5,22 @@
  *      Author: stardica
  */
 
+#ifndef STATS_H_
+#define STATS_H_
+
 #include <pthread.h>
 #include <arch/x86/timing/uop.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/timing/load-store-queue.h>
 #include <lib/util/list.h>
 #include <lib/util/list.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
 #include <mem-system/mod-stack.h>
 #include <mem-system/nmoesi-protocol.h>
 
 
-#ifndef STATS_H_
-#define STATS_H_
+
+
 
 #define MAXUOPID 10
 pthread_mutex_t instrumentation_mutex;

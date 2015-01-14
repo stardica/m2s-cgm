@@ -28,9 +28,9 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <mem-system/memory.h>
-#include <mem-system/mmu.h>
-#include <mem-system/spec-mem.h>
+#include <mem-image/memory.h>
+#include <mem-image/spec-mem.h>
+#include <mem-image/mmu.h>
 #include <instrumentation/stats.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>

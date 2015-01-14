@@ -6,7 +6,7 @@
  */
 
 
-#include <cgm-mem/sys-agent.h>
+#include <cgm/sys-agent.h>
 
 
 void sysagent_init(void){

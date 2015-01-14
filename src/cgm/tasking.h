@@ -32,7 +32,7 @@
 
 #include <setjmp.h>
 
-#include <cgm-mem/contexts.h>
+#include <cgm/contexts.h>
 //#include "mytime.h"
 
 #define TASKING_MAGIC_NUMBER 0x5a5a5a5a

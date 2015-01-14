@@ -30,7 +30,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <mem-system/memory.h>
+#include <mem-image/memory.h>
 #include <instrumentation/stats.h>
 #include <arch/x86/timing/bpred.h>
 #include <arch/x86/timing/commit.h>

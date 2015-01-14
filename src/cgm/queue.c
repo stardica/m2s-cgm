@@ -7,9 +7,9 @@
 
 
 #include <stdio.h>
-#include <cgm-mem/queue.h>
-#include <cgm-mem/cgm-mem.h>
-#include <cgm-mem/tasking.h>
+#include <cgm/queue.h>
+#include <cgm/cgm-mem.h>
+#include <cgm/tasking.h>
 
 
 int queue_size = 8;
