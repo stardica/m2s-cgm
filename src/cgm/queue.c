@@ -8,8 +8,9 @@
 
 #include <stdio.h>
 #include <cgm/queue.h>
-#include <cgm/cgm-mem.h>
+#include <cgm/cgm.h>
 #include <cgm/tasking.h>
+#include <cgm/packet.h>
 
 
 int queue_size = 8;
@@ -33,9 +34,6 @@ struct list_t *q_l2_0_L2L1dReply;
 struct list_t *q_l3_0_L2Request;
 struct list_t *q_l3_0_L3Reply;
 
-//Memory controller
-struct list_t *q_mc_0_L3Request;
-struct list_t *q_mc_0_L3Reply;
 
 //struct queue_data_packet_t *queue_data_packet;
 
@@ -74,12 +72,6 @@ void queue_init(void){
 	q_l3_0_L3Reply = list_create();
 	q_l3_0_L3Reply->name = "q_l3_0_L3Reply";
 
-	//Memory controller
-	q_mc_0_L3Request = list_create();
-	q_mc_0_L3Request->name = "q_mc_0_L3Request";
-	q_mc_0_L3Reply = list_create();
-	q_mc_0_L3Reply->name = "q_mc_0_L3Reply";
-
 
 	return;
 }
@@ -105,7 +97,7 @@ struct queue_data_packet_t * data_packet_create(void){
 
 	struct queue_data_packet_t * new_data_packet;
 
-	new_data_packet = (void *) malloc(sizeof(struct queue_data_packet_t));
+	new_data_packet = (void *) malloc(sizeof(struct cgm_packet_t));
 
 	return new_data_packet;
 }

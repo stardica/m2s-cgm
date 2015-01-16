@@ -33,7 +33,7 @@ enum list_err_t
 struct list_t
 {
 	/* Public */
-	char *name; /* Name of the queue */
+	char *name; /* star added, Name of the queue */
 	int count;  /* Number of elements in the list */
 	int error_code;  /* Error code updated by functions */
 

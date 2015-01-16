@@ -733,17 +733,17 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	/* Load executable */
 
 	//star >> added this
-	printf("---Loading ELF---\n");
-	fflush(stdout);
+
 
 	//star >> loads the ELF file.
 	X86ContextLoadExe(ctx, argv[0]);
 
-	//star >> added this
-	printf("---Finished Loading ELF---\n");
+	printf("---ELF loaded with total mapped memory space %ldKb---\n", (mem_mapped_space/1024));
 	fflush(stdout);
 
-
+	//star >> added this
+	//char * filename = "/home/stardica/Desktop/m2s-cgm/Release/mem-dump";
+	//mem_dump(ctx->mem, filename, 0, (8192- 1));
 
 }
 

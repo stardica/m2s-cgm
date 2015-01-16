@@ -310,7 +310,7 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int s
 
 		if (!page->data)
 		{
-			printf("initializing empty data in page\n");
+			//printf("initializing empty data in page\n");
 			page->data = xcalloc(1, MEM_PAGE_SIZE);
 		}
 
@@ -524,12 +524,12 @@ void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t p
 
 	//printf("mem page size: 0x%08x %d", (MEM_PAGE_SIZE -1), (MEM_PAGE_SIZE));
 
-	printf("---mem map---\n");
+	/*printf("---mem map---\n");
 	printf("virtual Address 0x%08x\n", addr);
 	printf("section size %#x\n", size);
 
 	printf("tag 1: 0x%08x\n", tag1);
-	printf("tag 2: 0x%08x\n", tag2);
+	printf("tag 2: 0x%08x\n", tag2);*/
 
 	/* Allocate pages */
 	//adds pages depending on how many you need.
@@ -538,16 +538,16 @@ void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t p
 
 		page = mem_page_get(mem, tag);
 
-		if (page)
+		/*if (page)
 		{
 			printf("Mem page found\n");
-		}
+		}*/
 
 
 		if (!page)
 		{
 			page = mem_page_create(mem, tag, perm);
-			printf("Mem page NOT found\n");
+			//printf("Mem page NOT found\n");
 		}
 
 
@@ -555,7 +555,7 @@ void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t p
 
 	}
 
-	printf("Total mapped memory space %ld\n", mem_mapped_space);
+	//printf("Total mapped memory space %ld\n", mem_mapped_space);
 	//getchar();
 
 }

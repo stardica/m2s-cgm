@@ -200,7 +200,7 @@ long long mod_access(struct mod_t *mod,
 
 	/* Schedule */
 	//star >> instrumented here.
-	MemEvent(event, stack);
+	//MemEvent(event, stack);
 	esim_execute_event(event, stack);
 
 

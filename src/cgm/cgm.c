@@ -11,7 +11,7 @@
 
 //star todo take any borrowed files and move then to our cgm-mem directory.
 #include <mem-system/mem-system.h> //borrowed
-#include <cgm/cgm-mem.h>
+#include <cgm/cgm.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
 #include <cgm/mem-ctrl.h>
@@ -19,6 +19,8 @@
 #include <cgm/sys-agent.h>
 #include <cgm/ini-parse.h>
 #include <cgm/tasking.h>
+#include <cgm/packet.h>
+
 
 
 char test_mem[256] = {NULL};
@@ -35,13 +37,12 @@ eventcount *start;
 eventcount *stop;
 
 /*star todo:
- (1) create test script
  (2) integrate with M2S single core CPU, then multicore CPU, then multicore CPU with GPU.
 */
 
-void cgm_mem_init(void){
+void cgm_init(void){
 
-
+	memctrl_init();
 
 	return;
 }
@@ -279,7 +280,7 @@ void store_issue(char * string){
 
 
 	//star todo initialize data_packet
-	struct queue_data_packet_t * data_packet;
+	struct cgm_packet_t * data_packet;
 	data_packet = data_packet_create();
 
 	char *inst = NULL;
@@ -314,7 +315,7 @@ void store_issue(char * string){
 
 void load_issue(char * string){
 
-	struct queue_data_packet_t * data_packet;
+	struct cgm_packet_t * data_packet;
 	data_packet = data_packet_create();
 
 	char *inst = NULL;
@@ -339,7 +340,7 @@ void load_issue(char * string){
 
 void load_fetch(char * string){
 
-	struct queue_data_packet_t * data_packet;
+	struct cgm_packet_t * data_packet;
 	data_packet = data_packet_create();
 
 	char *inst = NULL;

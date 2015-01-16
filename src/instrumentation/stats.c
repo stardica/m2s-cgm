@@ -108,8 +108,9 @@ struct Uop_Status_t *Uop_status_init(void){
 /* Context */
 void PrintContext(X86Context *self){
 
-	printf("---Context Created PID %d---\n", self->pid);
+	printf("---Context created PID %d with address space ID %d---\n", self->pid, self->address_space_index);
 	fflush(stdout);
+	//getchar();
 
 	return;
 }
@@ -610,7 +611,7 @@ void PrintCycle(int skip){
 
 	if((Current_Cycle % skip) == 0)
 	{
-		printf("Running. Current Cycle is %lld \n", Current_Cycle);
+		printf("---Cycles %lld---\n", Current_Cycle);
 		fflush(stdout);
 	}
 

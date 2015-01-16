@@ -997,18 +997,25 @@ int X86CpuRun(Timing *self)
 
 	/* One more cycle of x86 timing simulation */
 	self->cycle++;
+
 	//star added for instrumentation
 	Current_Cycle = self->cycle;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */
+
 	X86CpuEmptyTraceList(cpu);
 
 	/* Processor stages */
+
+
 	X86CpuRunStages(cpu);
 
 	/* Process host threads generating events */
 	X86EmuProcessEvents(emu);
+
+
+
 
 	/* Still simulating */
 	return TRUE;
@@ -1028,7 +1035,12 @@ void X86CpuRunStages(X86Cpu *self)
 	X86CpuIssue(self);
 	X86CpuDispatch(self);
 	X86CpuDecode(self);
+
+
+
 	X86CpuFetch(self);
+
+
 
 	/* Update stats for structures occupancy */
 	if (x86_cpu_occupancy_stats)

@@ -56,6 +56,8 @@ static int X86ThreadCanFetch(X86Thread *self)
 	unsigned int phy_addr;
 	unsigned int block;
 
+
+
 	/* Context must be running */
 	if (!ctx || !X86ContextGetState(ctx, X86ContextRunning))
 		return 0;
@@ -71,14 +73,23 @@ static int X86ThreadCanFetch(X86Thread *self)
 	
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
+
+	//star todo simulation fails here when inserting CGM.
+	//we need to initialize some of the memory related members in x86thread
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
+
+
 	if (block != self->fetch_block)
 	{
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
 		if (!mod_can_access(self->inst_mod, phy_addr))
+		{
 			return 0;
+		}
 	}
 	
+
+
 	/* We can fetch */
 	return 1;
 }
@@ -308,6 +319,9 @@ static void X86ThreadFetch(X86Thread *self)
 
 	int taken;
 
+
+
+
 	/* Try to fetch from trace cache first */
 	//star no trace cache this is ignored.
 	if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
@@ -433,15 +447,21 @@ static void X86CoreFetch(X86Core *self)
 			//fflush(stdout);
 
 			/* Round-robin fetch */
+
 			for (i = 0; i < x86_cpu_num_threads; i++)
 			{
 				self->fetch_current = (self->fetch_current + 1) % x86_cpu_num_threads;
 				thread = self->threads[self->fetch_current];
+
+
 				if (X86ThreadCanFetch(thread))
 				{
 					X86ThreadFetch(thread);
 					break;
 				}
+
+
+
 			}
 			break;
 		}
@@ -515,7 +535,6 @@ static void X86CoreFetch(X86Core *self)
 	}*/
 
 	default:
-		
 		panic("%s: wrong fetch policy", __FUNCTION__);
 	}
 }

@@ -37,19 +37,6 @@ extern struct list_t *q_l2_0_L2L1dReply;
 extern struct list_t *q_l3_0_L2Request;
 extern struct list_t *q_l3_0_L3Reply;
 
-//Memory controller
-extern struct list_t *q_mc_0_L3Request;
-extern struct list_t *q_mc_0_L3Reply;
-
-//data
-extern struct queue_data_packet_t{
-
-	char * queue_name;
-	char * task;
-	int address;
-	char data;
-
-};
 
 extern eventcount *queue_has_data;
 

@@ -6,8 +6,8 @@
  */
 
 
-#ifndef CGMMEM_H_
-#define CGMMEM_H_
+#ifndef CGM_H_
+#define CGM_H_
 
 #include <cgm/tasking.h>
 
@@ -31,7 +31,7 @@ extern eventcount *stop;
 
 
 //function prototypes
-void cgm_mem_init(void);
+void cgm_init(void);
 void cgm_mem_structure_init(void);
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);
@@ -51,4 +51,4 @@ void store_issue(char * string);
 
 
 
-#endif /* CGMMEM_H_ */
+#endif /* CGM_H_ */

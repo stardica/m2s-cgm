@@ -13,6 +13,7 @@
 #include <string.h>
 
 //star todo remember to change these as needed.
+// get these to read in via command line.
 #define CGMMEMCONFIGPATH "/home/stardica/Desktop/cgm-mem/src/Config.ini"
 #define HOSTSIMCONFIGPATH "/home/stardica/Desktop/m2s-cgm/bin/SimpleSingleCore/Intel-i7-4790k-CPU-Config-Single-Core.ini"
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0

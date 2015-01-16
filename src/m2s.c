@@ -23,7 +23,7 @@ GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
 #define SKIP 1000000
-#define GPU 1
+#define GPU 0
 #define CGM 0
 
 
@@ -56,7 +56,8 @@ CGM takes in and out the new memory system*/
 #include <network/net-system.h>
 #include <sys/time.h>
 #include <instrumentation/stats.h>
-#include <cgm/cgm-mem.h>
+#include <cgm/cgm.h>
+#include <mem-image/memory.h>
 
 
 #if GPU
@@ -1375,9 +1376,9 @@ static void m2s_loop(void)
 	signal(SIGUSR1, &m2s_signal_handler);
 	signal(SIGUSR2, &m2s_signal_handler);
 
-	printf("---Simulation Start Press Enter to Continue---\n");
+	printf("---Simulation Start---\n");
 	fflush(stdout);
-	getchar();
+
 
 	/* Simulation loop */
 	while (!esim_finish)
@@ -1397,6 +1398,7 @@ static void m2s_loop(void)
 		//getchar();
 
 
+
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation.
 		 * The argument 'num_timing_active' is interpreted as a flag TRUE/FALSE. */
@@ -1411,13 +1413,12 @@ static void m2s_loop(void)
 		 * 128k iterations. This avoids a constant overhead of system calls. */
 		m2s_loop_iter++;
 
-		//star >> added this to get some output while running long benchmarks.
+		//star >> added this to get some status output while running long benchmarks.
 		PrintCycle(SKIP);
 
 
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)
 			esim_finish = esim_finish_max_time;
-
 
 
 		/* Signal received */
@@ -1562,8 +1563,7 @@ int main(int argc, char **argv)
 	/* Network and memory system */
 #if CGM
 	//this is the replacement memory system.
-	cgm_mem_init();
-	cgm_mem_threads_init();
+	cgm_init();
 #else
 	//this is old m2s code for the memory system and network.
 	net_init();
@@ -1571,6 +1571,8 @@ int main(int argc, char **argv)
 #endif
 
 	mmu_init();
+
+
 
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
@@ -1583,10 +1585,11 @@ int main(int argc, char **argv)
 	m2s_load_programs(argc, argv);
 
 
-
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();
 
+	printf("---Simulation End---\n");
+	fflush(stdout);
 
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */

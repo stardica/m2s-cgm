@@ -415,6 +415,7 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 	{
 		/* Get architecture */
 		arch = arch_list[i];
+
 		//star >> never enters here if set to detailed.
 		if (arch->sim_kind == arch_sim_kind_functional)
 		{
@@ -433,6 +434,7 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 		}
 		else
 		{
+
 			//star >> testing control.
 			//printf("Entered here 2\n");
 			//fflush(stdout);
@@ -452,9 +454,12 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			//printf("Run = %d\n", run);
 			//fflush(stdout);
 
+
+
 			/* Timing simulation iteration */
 			if (run)
 			{
+
 				/* Do it... */
 				arch->active = timing->Run(timing);
 

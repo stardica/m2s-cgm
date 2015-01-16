@@ -209,8 +209,8 @@ void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file)
 	loader->bottom = 0xffffffff;
 
 	//star >> added
-	printf("Loader bottom %#x\n", loader->bottom);
-	fflush(stdout);
+	/*printf("Loader bottom %#x\n", loader->bottom);
+	fflush(stdout);*/
 
 	for (i = 0; i < list_count(elf_file->section_list); i++)
 	{
@@ -587,7 +587,7 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 
 	if (loader->interp)
 	{
-		printf("Interpreter discovered reloading\n");
+		//printf("Interpreter discovered reloading\n");
 		X86ContextLoadInterp(self);
 	}
 
@@ -601,14 +601,13 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 
 
 	//star added
-	printf("stdin_file \"%s\"\n", loader->stdin_file);
+	/*printf("stdin_file \"%s\"\n", loader->stdin_file);
 	printf("stdout_file \"%s\"\n", 	loader->stdout_file);
 	printf("elf_file \"%s\"\n", loader->elf_file->path);
 	printf("Exe Path \"%s\"\n", loader->exe);
 	printf("prog_entry %#x\n", loader->prog_entry);
 	printf("heap_break %#x\n", mem->heap_break);
-	fflush(stdout);
-
+	fflush(stdout);*/
 
 	//star >> test code.
 	//PrintMem(mem);

@@ -13,7 +13,7 @@
 #include <cgm/ini-parse.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
-#include <cgm/cgm-mem.h>
+#include <cgm/cgm.h>
 
 
 int cgmmem_check_config = 0;

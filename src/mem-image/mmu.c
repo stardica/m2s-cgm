@@ -257,9 +257,10 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr)
 	assert(page);
 	phy_addr = page->phy_addr | offset;
 	//star testing.
-	//printf("virtual address %d\n", vtl_addr);
-	//printf("physical address %d\n", phy_addr);
-	//fflush(stdout);
+	/*printf("virtual address 0x%08x\n", vtl_addr);
+	printf("physical address 0x%08x\n", phy_addr);
+	fflush(stdout);
+	getchar();*/
 	return phy_addr;
 }
 

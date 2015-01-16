@@ -91,7 +91,6 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	/* Memory */
 	self->address_space_index = mmu_address_space_new();
 	self->mem = mem_create();
-
 	self->spec_mem = spec_mem_create(self->mem);
 
 	/* Signal handlers and file descriptor table */
@@ -100,7 +99,7 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 
 	//star >> added this
 	PrintContext(self);
-	//printf("mem size %lld\n", sizeof(self->mem->pages));
+
 }
 
 

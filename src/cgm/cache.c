@@ -11,7 +11,7 @@
 #include <lib/util/list.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
-#include <cgm/cgm-mem.h>
+#include <cgm/cgm.h>
 
 
 //L1 caches
