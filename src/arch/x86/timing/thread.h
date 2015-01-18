@@ -22,6 +22,7 @@
 
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
+#include <cgm/mem-ctrl.h>
 
 
 
@@ -87,8 +88,16 @@ CLASS_BEGIN(X86Thread, Object)
 	long long fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
 
 	/* Entries to the memory system */
+#if CGM
+
+	//star todo change this when we add in the caches.
+	//current configured with a cacheless memory system.
+	struct mem_ctrl_t *mem_ctrl_ptr;
+
+#else
 	struct mod_t *data_mod;  /* Entry for data */
 	struct mod_t *inst_mod;  /* Entry for instructions */
+#endif
 
 	/* Cycle in which last micro-instruction committed */
 	long long last_commit_cycle;

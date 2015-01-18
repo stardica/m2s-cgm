@@ -76,12 +76,29 @@ static int X86ThreadCanFetch(X86Thread *self)
 
 	//star todo simulation fails here when inserting CGM.
 	//we need to initialize some of the memory related members in x86thread
-	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 
+#if CGM
+
+#else
+	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
+#endif
+
+	/*printf("blocksize 0x%08x\n",self->inst_mod->block_size);
+	printf("~(self->inst_mod->block_size - 1) 0x%08x\n", ~(self->inst_mod->block_size - 1));
+	printf("self->fetch_block 0x%08x\n", self->fetch_block);
+	printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
+	printf("block 0x%08x\n", block);
+	fflush(stdout);
+	getchar();*/
 
 	if (block != self->fetch_block)
 	{
+		/*printf("entered access");
+		fflush(stdout);
+		getchar();*/
+
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
+
 		if (!mod_can_access(self->inst_mod, phy_addr))
 		{
 			return 0;
@@ -251,6 +268,10 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
  * Return true if there was a hit and fetching succeeded. */
 static int X86ThreadFetchTraceCache(X86Thread *self)
 {
+
+	printf("thread fetch trace catch\n");
+	fflush(stdout);
+	getchar();
 	struct x86_uop_t *uop;
 
 	int mpred;
@@ -268,12 +289,9 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 		return 0;
 	
 	/* Access BTB, branch predictor, and trace cache */
-	eip_branch = X86ThreadGetNextBranch(self,
-			self->fetch_neip, self->inst_mod->block_size);
-	mpred = eip_branch ? X86ThreadLookupBranchPredMultiple(self,
-			eip_branch, x86_trace_cache_branch_max) : 0;
-	hit = X86ThreadLookupTraceCache(self, self->fetch_neip, mpred,
-			&mop_count, &mop_array, &neip);
+	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->inst_mod->block_size);
+	mpred = eip_branch ? X86ThreadLookupBranchPredMultiple(self, eip_branch, x86_trace_cache_branch_max) : 0;
+	hit = X86ThreadLookupTraceCache(self, self->fetch_neip, mpred, &mop_count, &mop_array, &neip);
 	if (!hit)
 		return 0;
 	

@@ -190,6 +190,11 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 		assert(data_module_name);
 	}
 
+#if CGM
+
+		//star todo link memory modules here.
+
+#else
 	/* Assign data module */
 	thread->data_mod = mem_system_get_mod(data_module_name);
 	if (!thread->data_mod)
@@ -205,7 +210,9 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 			"\tThe given module name must match a module declared in a section\n"
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, inst_module_name);
-	
+#endif
+
+
 	/* Add modules to entry list */
 	linked_list_add(arch_x86->mem_entry_mod_list, thread->data_mod);
 	if (thread->data_mod != thread->inst_mod)

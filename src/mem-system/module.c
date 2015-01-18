@@ -107,9 +107,9 @@ void mod_dump(struct mod_t *mod, FILE *f)
  */
 
 
-// star >> example usage
+//star >> example usage
 //mod_access(self->inst_mod, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
-// mod_access(self->data_mod, mod_access_store, store->phy_addr, NULL, core->event_queue, store, client_info);
+//mod_access(self->data_mod, mod_access_store, store->phy_addr, NULL, core->event_queue, store, client_info);
 //mod_access(self->data_mod, mod_access_load, load->phy_addr, NULL, core->event_queue, load, client_info);
 
 long long mod_access(struct mod_t *mod,
