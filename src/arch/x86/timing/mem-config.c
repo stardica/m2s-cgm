@@ -109,6 +109,8 @@ void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
 
 void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section)
 {
+
+
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Core *core;
 	X86Thread *thread;

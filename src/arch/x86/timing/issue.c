@@ -62,22 +62,31 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			break;
 
 		/* Check that memory system entry is ready */
+#if CGM
+		//star todo handle the check
+#else
 		if (!mod_can_access(self->data_mod, store->phy_addr))
 			break;
+#endif
 
-		pthread_mutex_lock(&instrumentation_mutex);
-		//IssuedLSQStats(store);
-		pthread_mutex_unlock(&instrumentation_mutex);
+		//star >> added this
+		/*pthread_mutex_lock(&instrumentation_mutex);
+		IssuedLSQStats(store);
+		pthread_mutex_unlock(&instrumentation_mutex);*/
 
 		/* Remove store from store queue */
 		X86ThreadRemoveFromSQ(self);
 
+#if CGM
+		//star todo
+#else
 		/* create and fill the mod_client_info_t object */
 		client_info = mod_client_info_create(self->data_mod);
 		client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
 		mod_access(self->data_mod, mod_access_store, store->phy_addr, NULL, core->event_queue, store, client_info);
+#endif
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -135,39 +144,44 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		load->ready = 1;
 
+#if CGM
+		//star todo add the memory access check here.
 
+#else
 		/* Check that memory system is accessible */
-		//star >> why would you need to check if memory system is accessible?
 		if (!mod_can_access(self->data_mod, load->phy_addr))
 		{
+
+#endif
 			linked_list_next(lq);
 			continue;
 		}
 
 
-		//star >> added instrumentation here.
+		/*//star >> added instrumentation here.
 		pthread_mutex_lock(&instrumentation_mutex);
-		//IssuedLSQStats(load);
-		pthread_mutex_unlock(&instrumentation_mutex);
-
-
+		IssuedLSQStats(load);
+		pthread_mutex_unlock(&instrumentation_mutex);*/
 
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load);
 		X86ThreadRemoveFromLQ(self);
 
+
+#if CGM
+		//star todo
+
+#else
 		/* create and fill the mod_client_info_t object */
 		//star >> repos is just a repository of objects.
 		client_info = mod_client_info_create(self->data_mod);
 		client_info->prefetcher_eip = load->eip;
 
-
 		/* Access memory system */
-		//star >> todo find where the cache return writes to the event queue
-
-
+		//star added test.
 		//PrintUOPStatus(load);
 		mod_access(self->data_mod, mod_access_load, load->phy_addr, NULL, core->event_queue, load, client_info);
+#endif
 
 
 
@@ -211,7 +225,6 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 {
 
-
 	X86Core *core = self->core;
 	X86Cpu *cpu = self->cpu;
 
@@ -234,6 +247,10 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 			continue;
 		}
 
+
+#if CGM
+
+#else
 		/* 
 		 * Make sure its not been prefetched recently. This is just to avoid unnecessary
 		 * memory traffic. Even though the cache will realize a "hit" on redundant
@@ -241,6 +258,8 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		 */
 		if (prefetch_history_is_redundant(core->prefetch_history, self->data_mod, prefetch->phy_addr))
 		{
+
+#endif
 			/* remove from queue. do not prefetch. */
 			assert(prefetch->uinst->opcode == x86_uinst_prefetch);
 			X86ThreadRemovePreQ(self);
@@ -251,23 +270,35 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 		prefetch->ready = 1;
 
+#if CGM
+		//star todo
+
+#else
 		/* Check that memory system is accessible */
 		if (!mod_can_access(self->data_mod, prefetch->phy_addr))
 		{
+#endif
+
 			linked_list_next(preq);
 			continue;
 		}
 
+		/*//star >> added this
 		pthread_mutex_lock(&instrumentation_mutex);
-		//IssuedLSQStats(prefetch);
-		pthread_mutex_unlock(&instrumentation_mutex);
+		IssuedLSQStats(prefetch);
+		pthread_mutex_unlock(&instrumentation_mutex);*/
 
 		/* Remove from prefetch queue */
 		assert(prefetch->uinst->opcode == x86_uinst_prefetch);
 		X86ThreadRemovePreQ(self);
 
+#if CGM
+		//star todo
+
+#else
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);
+#endif
 
 		/* Record prefetched address */
 		prefetch_history_record(core->prefetch_history, prefetch->phy_addr);

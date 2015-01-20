@@ -34,7 +34,7 @@ int prefetch_history_is_redundant(struct prefetch_history_t *ph, struct mod_t *m
 
 	if(mod->kind != mod_kind_cache)
 	{
-		 //Doesn't make much sense to prefetch if the memory being accessed is not a cache memory.
+		//Doesn't make much sense to prefetch if the memory being accessed is not a cache memory.
 		return 1;
 	}
 

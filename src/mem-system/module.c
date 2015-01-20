@@ -719,6 +719,7 @@ struct mod_client_info_t *mod_client_info_create(struct mod_t *mod)
 	/* Create object */
 	client_info = repos_create_object(mod->client_info_repos);
 
+
 	/* Return */
 	return client_info;
 }

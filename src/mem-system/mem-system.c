@@ -124,10 +124,12 @@ void mem_system_init(void)
 	 * memory configuration file with 'mem_config_read', since the latter
 	 * function inserts caches and networks in 'mem_system', and relies on
 	 * these lists to have been created. */
+
 	mem_system = mem_system_create();
 
 	/* Read memory configuration file */
 	mem_config_read();
+
 
 	//star >> added instrumentation here
 	//PrintModNetList(mem_system->mod_list, mem_system->net_list);

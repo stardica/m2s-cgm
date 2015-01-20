@@ -1341,6 +1341,12 @@ static void mem_config_trace(void)
 
 static void mem_config_read_commands(struct config_t *config)
 {
+
+	/*printf("mem_config_read_commands\n");
+	fflush(stdout);
+	getchar();*/
+
+
 	char *section = "Commands";
 	char *command_line;
 	char command_var[MAX_STRING_SIZE];

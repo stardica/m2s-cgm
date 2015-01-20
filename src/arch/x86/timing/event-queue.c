@@ -163,4 +163,3 @@ void X86ThreadRecoverEventQueue(X86Thread *self)
 		linked_list_next(event_queue);
 	}
 }
-

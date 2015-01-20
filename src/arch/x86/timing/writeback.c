@@ -103,8 +103,6 @@ void X86CoreWriteback(X86Core *self)
 }
 
 
-
-
 /*
  * Class 'X86Cpu'
  */

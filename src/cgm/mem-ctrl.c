@@ -72,16 +72,18 @@ void memctrl_queues_init(void){
 
 	//assign pointer to queueus;
 	//star todo create list with size.
+	//star todo add timing functions
+	//NOte: The first iteration just turns around the request in the same cycle
 	mem_ctrl->fetch_request_queue = list_create();
-	mem_ctrl->fetch_reply_queue = list_create();
+	//mem_ctrl->fetch_reply_queue = list_create();
 	mem_ctrl->issue_request_queue = list_create();
-	mem_ctrl->issue_reply_queue = list_create();
+	//mem_ctrl->issue_reply_queue = list_create();
 
 
 	mem_ctrl->fetch_request_queue->name = "Fetch.Request";
-	mem_ctrl->fetch_reply_queue->name = "Fetch.Reply";
+	//mem_ctrl->fetch_reply_queue->name = "Fetch.Reply";
 	mem_ctrl->issue_request_queue->name = "Issue.Request";
-	mem_ctrl->issue_reply_queue->name = "Issue.Reply";
+	//mem_ctrl->issue_reply_queue->name = "Issue.Reply";
 
 	return;
 

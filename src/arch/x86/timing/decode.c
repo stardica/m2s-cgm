@@ -77,8 +77,15 @@ static void X86ThreadDecode(X86Thread *self)
 		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
+#if CGM
+		//star todo pass the module here
+		//mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address)
+		//needs the log_block_size and the access hash table.
+#else
 		if (!mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address))
 		{
+#endif
+
 			do
 			{
 

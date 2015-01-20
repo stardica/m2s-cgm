@@ -78,10 +78,10 @@ static int X86ThreadCanFetch(X86Thread *self)
 	//we need to initialize some of the memory related members in x86thread
 
 #if CGM
+	//star todo add our entry here.
 
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
-#endif
 
 	/*printf("blocksize 0x%08x\n",self->inst_mod->block_size);
 	printf("~(self->inst_mod->block_size - 1) 0x%08x\n", ~(self->inst_mod->block_size - 1));
@@ -104,8 +104,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 			return 0;
 		}
 	}
-	
-
+#endif
 
 	/* We can fetch */
 	return 1;
@@ -289,7 +288,13 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 		return 0;
 	
 	/* Access BTB, branch predictor, and trace cache */
+#if CGM
+	//star todo We only need to fill this in if we are going to add in the trace cache stuff.
+#else
 	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->inst_mod->block_size);
+#endif
+
+
 	mpred = eip_branch ? X86ThreadLookupBranchPredMultiple(self, eip_branch, x86_trace_cache_branch_max) : 0;
 	hit = X86ThreadLookupTraceCache(self, self->fetch_neip, mpred, &mop_count, &mop_array, &neip);
 	if (!hit)
@@ -337,9 +342,6 @@ static void X86ThreadFetch(X86Thread *self)
 
 	int taken;
 
-
-
-
 	/* Try to fetch from trace cache first */
 	//star no trace cache this is ignored.
 	if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
@@ -354,8 +356,13 @@ static void X86ThreadFetch(X86Thread *self)
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
 	//virtual addresses.
-	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 
+#if CGM
+	//star todo (1) give the block size
+	//			(2) access our memory
+
+#else
+	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 
 	if (block != self->fetch_block)
 	{
@@ -368,14 +375,13 @@ static void X86ThreadFetch(X86Thread *self)
 		/* MMU statistics */
 		if (*mmu_report_file_name)
 			mmu_access_page(phy_addr, mmu_access_execute);
-
-
-
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
 	while ((self->fetch_neip & ~(self->inst_mod->block_size - 1)) == block)
 	{
+#endif
+
 		/* If instruction caused context to suspend or finish */
 		if (!X86ContextGetState(ctx, X86ContextRunning))
 			break;
@@ -402,9 +408,6 @@ static void X86ThreadFetch(X86Thread *self)
 			break;
 		if (!uop)  /* no uop was produced by this macro-instruction */
 			continue;
-
-
-
 
 		/* Instruction detected as branches by the BTB are checked for branch
 		 * direction in the branch predictor. If they are predicted taken,

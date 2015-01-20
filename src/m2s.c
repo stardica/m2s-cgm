@@ -22,8 +22,8 @@
 GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
-#define SKIP 1000000
-#define GPU 0
+#define SKIP 500000
+#define GPU 1
 #define CGM 0
 
 
@@ -1443,7 +1443,6 @@ static void m2s_loop(void)
 int main(int argc, char **argv)
 {
 
-
 	/* Global initialization and welcome message */
 	m2s_init();
 
@@ -1546,6 +1545,7 @@ int main(int argc, char **argv)
 	 * better once the process finish. But now we need to release 4.2...
 	 */
 
+
 	X86CpuInit();
 
 
@@ -1561,13 +1561,17 @@ int main(int argc, char **argv)
 	//instrumentation_init();
 
 	/* Network and memory system */
+
+
 #if CGM
 	//this is the replacement memory system.
 	cgm_init();
 #else
 	//this is old m2s code for the memory system and network.
+
 	net_init();
 	mem_system_init();
+
 #endif
 
 	mmu_init();
