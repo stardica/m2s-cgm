@@ -10,7 +10,6 @@
 #include <string.h>
 
 //star todo take any borrowed files and move then to our cgm-mem directory.
-#include <mem-system/mem-system.h> //borrowed
 #include <cgm/cgm.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
@@ -30,6 +29,8 @@ int host_sim_cpu_thread_num;
 int host_sim_cpu_fetch_queue_size;
 int host_sim_cpu_lsq_queue_size;
 
+char *cgm_config_file_name_and_path;
+
 long long int mem_cycle = 0;
 
 //globals for tasking
@@ -42,7 +43,22 @@ eventcount *stop;
 
 void cgm_init(void){
 
+	//star todo add error checking.
 	memctrl_init();
+
+	return;
+}
+
+void cgm_configure(void){
+
+	//star todo add error checking.
+	cgm_mem_configure();
+
+
+
+
+	//print_config();
+
 
 	return;
 }
@@ -95,13 +111,13 @@ void cgm_mem_structure_init(void){
 	sysagent_init();
 
 	//create microcontroller structure
-	memctrl_init();
+	//memctrl_init();
 
 	//star todo create memory image, mshr, and directory table.
-	testmem_init();
+	//testmem_init();
 
 	//configure memory structures
-	error = cgmmem_configure();
+	//error = cgmmem_configure();
 
 	if(error == 1)
 	{

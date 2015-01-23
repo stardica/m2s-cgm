@@ -9,28 +9,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <arch/common/arch.h>
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/string.h>
+#include <mem-system/mem-system.h>
+#include <mem-system/module.h>
+#include <arch/x86/timing/core.h>
+#include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/mem-config.h>
+#include <arch/x86/timing/thread.h>
+
 #include <cgm/configure.h>
+#include <cgm/cgm.h>
 #include <cgm/ini-parse.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
-#include <cgm/cgm.h>
+#include <cgm/mem-ctrl.h>
+
 
 
 int cgmmem_check_config = 0;
 /*struct queue_config_t *q_config;
 struct cache_config_t *c_config;*/
 
-int cgmmem_configure(void){
+int cgm_mem_configure(void){
 
 	int error = 0;
 
 	//star todo add parsing for mem-ctrl and memory image
 
 	//star >> we dont need to pass a struct to the ini_parse function for it to work. Passing NULL is fine.
-	/*q_config = (void *) malloc(sizeof(struct queue_config_t));
-	c_config = (void *) malloc(sizeof(struct cache_config_t));
+	//q_config = (void *) malloc(sizeof(struct queue_config_t));
+	//c_config = (void *) malloc(sizeof(struct cache_config_t));
 
-	if(!q_config)
+	/*if(!q_config)
 	{
 
 		printf("Unable to create struct q_config\n");
@@ -42,62 +57,68 @@ int cgmmem_configure(void){
 		return 1;
 	}*/
 
+
 	//get some host sim configuration stats
-	error = ini_parse(HOSTSIMCONFIGPATH, cpu_config, NULL);
+	/*error = ini_parse(HOSTSIMCONFIGPATH, cpu_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for cpu configuration.\n");
 		return 1;
-	}
+	}*/
 
 	//get check value
-	error = ini_parse(CGMMEMCONFIGPATH, check_config, NULL);
+	/*error = ini_parse(CGMMEMCONFIGPATH, check_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for check configuration.\n");
 		return 1;
-	}
+	}*/
 
 	//get queue configuration
-	error = ini_parse(CGMMEMCONFIGPATH, queue_config, NULL);
+	/*error = ini_parse(CGMMEMCONFIGPATH, queue_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for queue configuration.\n");
 		return 1;
-	}
+	}*/
 
 	//get cache configuration
-	error = ini_parse(CGMMEMCONFIGPATH, cache_config, NULL);
+	/*error = ini_parse(CGMMEMCONFIGPATH, cache_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for cache configuration.\n");
 		return 1;
-	}
+	}*/
 
-	//star >> uncomment these when these functions are ready.
+	//get sysagent configuration
 	/*error = ini_parse(CONFIGPATH, sysagent_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for sysagent configuration.\n");
 		return 1;
-	}
+	}*/
 
-	error = ini_parse(CONFIGPATH, memctrl_config, NULL);
+	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for memctrl configuration.\n");
 		return 1;
-	}*/
+	}
+
 
 	return 0;
 
 }
 
-int cpu_config(void* user, const char* section, const char* name, const char* value){
+int cpu_config(void){
 
+	Timing *timing;
+
+
+	//timing->arch
 
 	//star >> for M2S config.ini files..
-	if(MATCH("General", "Cores"))
+	/*if(MATCH("General", "Cores"))
 	{
 		//temp->size = atoi(value);
 		host_sim_cpu_core_num = atoi(value);
@@ -123,7 +144,7 @@ int cpu_config(void* user, const char* section, const char* name, const char* va
 		//temp->size = atoi(value);
 		host_sim_cpu_lsq_queue_size = atoi(value);
 
-	}
+	}*/
 
 	return 0;
 
@@ -315,6 +336,31 @@ int sysagent_config(void* user, const char* section, const char* name, const cha
 
 int memctrl_config(void* user, const char* section, const char* name, const char* value){
 
+	if(MATCH("MemCtrl", "Name"))
+	{
+		mem_ctrl->name = strdup(value);
+	}
+
+	if(MATCH("MemCtrl", "BlockSize"))
+	{
+		mem_ctrl->block_size = atoi(value);
+		mem_ctrl->log_block_size = LOG2(mem_ctrl->block_size);
+	}
+
+	if(MATCH("MemCtrl", "Latency"))
+	{
+		mem_ctrl->latency = atoi(value);
+	}
+
+	if(MATCH("MemCtrl", "DirLatency"))
+	{
+		mem_ctrl->dir_latency = atoi(value);
+	}
+
+	if(MATCH("MemCtrl", "Ports"))
+	{
+		mem_ctrl->ports= atoi(value);
+	}
 
 	return 0;
 }
@@ -322,7 +368,7 @@ int memctrl_config(void* user, const char* section, const char* name, const char
 void print_config(void){
 
 	//print config before runtime
-	printf("CPU:\n");
+	/*printf("CPU:\n");
 	printf("Number of cpus %d\n", host_sim_cpu_num);
 	printf("Cores per cpu %d\n", host_sim_cpu_core_num);
 	printf("Threads per core %d\n", host_sim_cpu_thread_num);
@@ -368,6 +414,16 @@ void print_config(void){
 	printf("Cache L3 mshr size = %d\n", l3_cache->mshr_size);
 	printf("Cache L3 directory latency = %d\n", l3_cache->directory_latency);
 	printf("Cache L3 Ports = %d\n", l3_cache->num_ports);
-	printf("\n");
+	printf("\n");*/
+	printf("mem_ctrl:\n");
+	printf("%d\n", mem_ctrl->block_size);
+	printf("%d\n", mem_ctrl->log_block_size);
+	printf("%d\n", mem_ctrl->latency);
+	printf("%d\n", mem_ctrl->dir_latency);
+	printf("%d\n", mem_ctrl->ports);
+	printf("%s\n", mem_ctrl->fetch_request_queue->name);
+	printf("%s\n", mem_ctrl->issue_request_queue->name);
+	fflush(stdout);
+	getchar();
 	return;
 }

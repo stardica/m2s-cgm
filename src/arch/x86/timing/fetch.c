@@ -80,6 +80,8 @@ static int X86ThreadCanFetch(X86Thread *self)
 #if CGM
 	//star todo add our entry here.
 
+	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
+
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 

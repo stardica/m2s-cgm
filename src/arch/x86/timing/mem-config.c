@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <stdio.h>
 #include <arch/common/arch.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
@@ -29,6 +29,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/mem-config.h>
 #include <arch/x86/timing/thread.h>
+#include <cgm/mem-ctrl.h>
 
 
 void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
@@ -109,7 +110,6 @@ void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
 
 void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section)
 {
-
 
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Core *core;
@@ -192,9 +192,16 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 		assert(data_module_name);
 	}
 
-#if CGM
 
+#if CGM
 		//star todo link memory modules here.
+		//do this somewhere else?
+
+	thread->mem_ctrl_ptr = mem_ctrl;
+
+		printf("thread %s\n", thread->mem_ctrl_ptr->name);
+		fflush(stdout);
+		getchar;
 
 #else
 	/* Assign data module */
@@ -225,11 +232,14 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 	mem_debug("\t\tEntry for instructions -> %s\n", thread->inst_mod->name);
 	mem_debug("\t\tEntry for data -> %s\n", thread->data_mod->name);
 	mem_debug("\n");
+
+	return;
 }
 
 
 void X86CpuMemConfigCheck(Timing *self, struct config_t *config)
 {
+
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Core *core;
 	X86Thread *thread;

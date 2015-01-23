@@ -22,6 +22,8 @@ extern int host_sim_cpu_lsq_queue_size;
 
 extern long long int mem_cycle;
 
+extern char *cgm_config_file_name_and_path;
+
 #define TESTSCRIPTPATH "/home/stardica/Desktop/cgm-mem/src/TestScript.ini"
 
 // globals for tasking
@@ -32,6 +34,9 @@ extern eventcount *stop;
 
 //function prototypes
 void cgm_init(void);
+void cgm_configure(void);
+
+
 void cgm_mem_structure_init(void);
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);

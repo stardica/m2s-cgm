@@ -22,12 +22,13 @@
 GPU 0 removes all of the GPU and runtime code
 GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system*/
-#define SKIP 500000
-#define GPU 1
+#define SKIP 1000000
+#define GPU 0
 #define CGM 0
 
 
 #include <signal.h>
+#include <sys/time.h>
 #include <arch/common/arch.h>
 #include <arch/common/asm.h>
 #include <arch/common/emu.h>
@@ -50,15 +51,18 @@ CGM takes in and out the new memory system*/
 #include <lib/util/string.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/class.h>
+
+#if CGM
+#include <cgm/cgm.h>
+#else
 #include <mem-system/config.h>
 #include <mem-system/mem-system.h>
-#include <mem-image/mmu.h>
 #include <network/net-system.h>
-#include <sys/time.h>
-#include <instrumentation/stats.h>
-#include <cgm/cgm.h>
-#include <mem-image/memory.h>
+#endif
 
+#include <mem-image/memory.h>
+#include <mem-image/mmu.h>
+#include <instrumentation/stats.h>
 
 #if GPU
 #include <arch/si/asm/asm.h>
@@ -936,6 +940,16 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--mem-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
+
+
+#if CGM
+			cgm_config_file_name_and_path = argv[++argi];
+			//printf("\nconfig file name is %s\n", cgm_config_file_name_and_path);
+			//fflush(stdout);
+			//getchar();
+			continue;
+		}
+#else
 			mem_config_file_name = argv[++argi];
 			continue;
 		}
@@ -1055,9 +1069,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			net_sim_network_name = argv[++argi];
 			continue;
 		}
-
+#endif
 		
-
 		/*
 		 * Rest
 		 */
@@ -1090,11 +1103,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	if (*x86_disasm_file_name && argc > 3)
 		fatal("option '--x86-disasm' is incompatible with other options.");
+
+#if CGM
+
+#else
 	if (!*net_sim_network_name && net_sim_last_option)
 		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
 	if (*net_sim_network_name && !*net_config_file_name)
 		fatal("option '--net-sim' requires '--net-config'");
-
+#endif
 
 	//Options that only make sense for GPU detailed simulation
 #if GPU
@@ -1478,8 +1495,14 @@ int main(int argc, char **argv)
 	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
 	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
 	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
+
+#if CGM
+	//star took out mem debug
+#else
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
+#endif
+
 
 #if GPU
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
@@ -1546,6 +1569,7 @@ int main(int argc, char **argv)
 	 */
 
 
+
 	X86CpuInit();
 
 
@@ -1565,7 +1589,9 @@ int main(int argc, char **argv)
 
 #if CGM
 	//this is the replacement memory system.
+	//cgm_init(x86_cpu->cores->threads);
 	cgm_init();
+	cgm_configure();
 #else
 	//this is old m2s code for the memory system and network.
 
@@ -1629,7 +1655,7 @@ int main(int argc, char **argv)
 	/* Finalization of network and memory system */
 #if CGM
 	//star todo add in the cgm-mem done func
-	simulate(cleanup);
+	//simulate(cleanup);
 #else
 	mem_system_done();
 	net_done();

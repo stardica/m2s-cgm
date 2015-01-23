@@ -10,22 +10,15 @@
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
 
-//Arbitration
-//1 = round robin
-#define ARBITRATE 1
 
+//structure declarations
 struct mem_ctrl_t *mem_ctrl;
-
-//queues
-struct list_t *FetchRequest;
-struct list_t *FetchReply;
-struct list_t *IssueRequest;
-struct list_t *IssueReply;
 
 //events
 eventcount *mem_ctrl_has_request;
 eventcount *mem_ctrl_has_reply;
 eventcount *mem_ctrl_serviced;
+
 
 //star todo add memory controller logic.
 
@@ -43,47 +36,17 @@ struct mem_ctrl_t  *memctrl_create(void){
 
 	struct mem_ctrl_t *new_mem_ctrl = (void *) malloc(sizeof(struct mem_ctrl_t));
 
-	new_mem_ctrl->name = "mem_ctrl";
-	new_mem_ctrl->block_size = 256;
-	new_mem_ctrl->log_block_size = log(new_mem_ctrl->block_size)/log(2);
-	new_mem_ctrl->latency = 300;
-	new_mem_ctrl->dir_latency = 12;
-
-	/*printf("%d\n", new_mem_ctrl->block_size);
-	printf("%d\n", new_mem_ctrl->log_block_size);
-	fflush(stdout);
-	getchar();*/
-
 	return new_mem_ctrl;
 }
 
 void memctrl_queues_init(void){
 
-	//create memory controller queues
-	/*FetchRequest = list_create();
-	FetchRequest->name = "Fetch.Request";
-	FetchReply = list_create();
-	FetchReply->name = "Fetch.Reply";
-
-	IssueRequest = list_create();
-	IssueRequest->name = "Issue.Request";
-	IssueReply = list_create();
-	IssueReply->name = "Issue.Reply";*/
-
-	//assign pointer to queueus;
-	//star todo create list with size.
-	//star todo add timing functions
-	//NOte: The first iteration just turns around the request in the same cycle
+	//star todo create list with size? or just check the size when insterting into list?
 	mem_ctrl->fetch_request_queue = list_create();
-	//mem_ctrl->fetch_reply_queue = list_create();
 	mem_ctrl->issue_request_queue = list_create();
-	//mem_ctrl->issue_reply_queue = list_create();
 
-
-	mem_ctrl->fetch_request_queue->name = "Fetch.Request";
-	//mem_ctrl->fetch_reply_queue->name = "Fetch.Reply";
-	mem_ctrl->issue_request_queue->name = "Issue.Request";
-	//mem_ctrl->issue_reply_queue->name = "Issue.Reply";
+	mem_ctrl->fetch_request_queue->name = "mem_ctrl.Fetch.Request";
+	mem_ctrl->issue_request_queue->name = "mem_ctrl.Issue.Request";
 
 	return;
 
@@ -117,7 +80,6 @@ void memctrl_tasking_init(void){
 //the CPU advances mem-ctrl with a memory request here
 void memctrl_ctrl_request(void){
 
-
 	return;
 }
 
@@ -125,7 +87,6 @@ void memctrl_ctrl_request(void){
 void memctrl_ctrl_reply(void){
 
 	return;
-
 }
 
 //do some work.
