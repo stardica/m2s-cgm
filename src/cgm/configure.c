@@ -10,16 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <arch/common/arch.h>
 #include <lib/util/config.h>
-#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/linked-list.h>
-#include <lib/util/string.h>
-#include <mem-system/mem-system.h>
-#include <mem-system/module.h>
+#include <arch/common/arch.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
-#include <arch/x86/timing/mem-config.h>
 #include <arch/x86/timing/thread.h>
 
 #include <cgm/configure.h>
@@ -39,24 +35,13 @@ int cgm_mem_configure(void){
 
 	int error = 0;
 
-	//star todo add parsing for mem-ctrl and memory image
-
-	//star >> we dont need to pass a struct to the ini_parse function for it to work. Passing NULL is fine.
-	//q_config = (void *) malloc(sizeof(struct queue_config_t));
-	//c_config = (void *) malloc(sizeof(struct cache_config_t));
-
-	/*if(!q_config)
+	//configure the memory controller
+	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
+	if (error < 0)
 	{
-
-		printf("Unable to create struct q_config\n");
+		printf("Unable to open Config.ini for memctrl configuration.\n");
 		return 1;
-
-	}else if (!c_config)
-	{
-		printf("Unable to create struct cache_config\n");
-		return 1;
-	}*/
-
+	}
 
 	//get some host sim configuration stats
 	/*error = ini_parse(HOSTSIMCONFIGPATH, cpu_config, NULL);
@@ -98,57 +83,109 @@ int cgm_mem_configure(void){
 		return 1;
 	}*/
 
-	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for memctrl configuration.\n");
-		return 1;
-	}
-
 
 	return 0;
 
 }
 
-int cpu_config(void){
+int cgm_cpu_configure(void){
+
+	//star todo run the CPU mem config call back function.
 
 	Timing *timing;
+	struct arch_t *arch;
+	//char arch_name_trimmed = "x86";
+	arch = arch_get("x86");
+	timing = arch->timing;
 
+	//star >> uses the call back pointer for MemConfigDefault, but runs our cpu_configure function.
+	//we don't use the config struct, so pass null and set everything by hand.
 
-	//timing->arch
-
-	//star >> for M2S config.ini files..
-	/*if(MATCH("General", "Cores"))
+	if (MSG==1)
 	{
-		//temp->size = atoi(value);
-		host_sim_cpu_core_num = atoi(value);
-
+		printf("timing->MemConfigDefault(timing, NULL);\n");
+		fflush(stdout);
+		getchar();
 	}
 
-	if(MATCH("General", "Threads"))
-	{
-		//temp->size = atoi(value);
-		host_sim_cpu_thread_num = atoi(value);
+	timing->MemConfigDefault(timing, NULL);
 
-	}
 
-	if(MATCH("Queues", "FetchQueueSize"))
-	{
-		//temp->size = atoi(value);
-		host_sim_cpu_fetch_queue_size = atoi(value);
-
-	}
-
-	if(MATCH("Queues", "LsqSize"))
-	{
-		//temp->size = atoi(value);
-		host_sim_cpu_lsq_queue_size = atoi(value);
-
-	}*/
-
-	return 0;
-
+	return 1;
 }
+
+int cgm_gpu_configure(void){
+
+	return 1;
+}
+
+
+int cpu_configure(Timing *self, struct config_t *config){
+
+	//star todo configure the CPU/Core/Thread here
+	//this function does all the stuff that arch/x86/timing/mem-config.h/c has to do.
+
+	if (MSG ==1)
+	{
+		printf("cpu_configure start\n");
+		fflush(stdout);
+		getchar();
+	}
+
+	X86Cpu *cpu = asX86Cpu(self);
+	X86Core *core;
+	X86Thread *thread;
+
+	int core_index;
+	int thread_index;
+
+	//star todo pull these automatically.
+	core_index = 0;
+	thread_index = 0;
+
+	core = cpu->cores[core_index];
+	thread = core->threads[thread_index];
+
+	//star todo link memory modules here.
+	//do this somewhere else?
+
+	//assign entry into memory system
+	thread->mem_ctrl_ptr = mem_ctrl;
+
+	//add to memory entry list list?
+	linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
+
+	if(MSG==1)
+	{
+		printf("cpu_configure end\n");
+		printf("Thread mem entry name is %s", thread->mem_ctrl_ptr->name);
+		fflush(stdout);
+		getchar();
+	}
+
+	return 1;
+}
+
+int gpu_configure(Timing *self, struct config_t *config){
+
+	//star todo configure the GPU here. LDS and other memory archs
+
+
+	return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int check_config(void* user, const char* section, const char* name, const char* value){
 
@@ -359,7 +396,16 @@ int memctrl_config(void* user, const char* section, const char* name, const char
 
 	if(MATCH("MemCtrl", "Ports"))
 	{
-		mem_ctrl->ports= atoi(value);
+		mem_ctrl->ports = atoi(value);
+	}
+
+	if(MATCH("MemCtrl", "QueueSize"))
+	{
+		mem_ctrl->queue_size = atoi(value);
+	}
+	if(MATCH("MemCtrl", "MSHRSize"))
+	{
+		mem_ctrl->mshr_size = atoi(value);
 	}
 
 	return 0;
@@ -415,15 +461,14 @@ void print_config(void){
 	printf("Cache L3 directory latency = %d\n", l3_cache->directory_latency);
 	printf("Cache L3 Ports = %d\n", l3_cache->num_ports);
 	printf("\n");*/
-	printf("mem_ctrl:\n");
-	printf("%d\n", mem_ctrl->block_size);
-	printf("%d\n", mem_ctrl->log_block_size);
-	printf("%d\n", mem_ctrl->latency);
-	printf("%d\n", mem_ctrl->dir_latency);
-	printf("%d\n", mem_ctrl->ports);
-	printf("%s\n", mem_ctrl->fetch_request_queue->name);
-	printf("%s\n", mem_ctrl->issue_request_queue->name);
+	printf("---Memory Controller Initialized---\n");
+	printf("block_size = %d\n", mem_ctrl->block_size);
+	printf("log_block_size = %d\n", mem_ctrl->log_block_size);
+	printf("latency = %d\n", mem_ctrl->latency);
+	printf("dir_latency = %d\n", mem_ctrl->dir_latency);
+	printf("Number of queues = %d\n", mem_ctrl->ports);
+	printf("Queue name = %s\n", mem_ctrl->fetch_request_queue->name);
+	printf("Queue name = %s\n", mem_ctrl->issue_request_queue->name);
 	fflush(stdout);
-	getchar();
 	return;
 }

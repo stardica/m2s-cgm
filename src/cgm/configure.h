@@ -9,15 +9,16 @@
 #ifndef CONFIGURE_H_
 #define CONFIGURE_H_
 
-//#include <stdio.h>
-//#include <string.h>
-
+#include <lib/util/config.h>
+#include <arch/common/arch.h>
+#include <arch/x86/timing/core.h>
+#include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/thread.h>
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define LOG2(x) ((int) rint((log((double) (x))) / (log(2.0))))
 
 //global variables
-extern int cgmmem_check_config;
 
 /*extern struct queue_config_t{
 
@@ -34,11 +35,19 @@ extern struct cache_config_t{
 extern struct queue_config_t *q_config;
 extern struct cache_config_t *c_config;*/
 
+extern int cgmmem_check_config;
+
+
 int cgm_mem_configure(void);
-int cpu_config(void);
+int cgm_cpu_configure(void);
+int cgm_gpu_configure(void);
+int cpu_configure(Timing *self, struct config_t *config);
+int gpu_configure(Timing *self, struct config_t *config);
+
+
 int check_config(void* user, const char* section, const char* name, const char* value);
 
-
+//
 void print_config(void);
 int queue_config(void* user, const char* section, const char* name, const char* value);
 int cache_config(void* user, const char* section, const char* name, const char* value);

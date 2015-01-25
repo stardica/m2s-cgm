@@ -16,7 +16,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <stdio.h>
 #include <arch/common/arch.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/si/timing/gpu.h>
@@ -970,12 +970,16 @@ static void mem_config_read_entries(struct config_t *config)
 			fatal("%s: section [%s]: Variable 'Arch' is missing.\n%s", mem_config_file_name, section, mem_err_config_note);
 
 		/* Get architecture */
+
+		//star >> pulls and sets the arch from the arch name name in the config struct.
 		str_trim(arch_name_trimmed, sizeof arch_name_trimmed, arch_name);
 		arch = arch_get(arch_name_trimmed);
+
 		if (!arch)
 		{
 			arch_get_names(arch_list_names, sizeof arch_list_names);
-			fatal("%s: section [%s]: '%s' is an invalid value for 'Arch'.\n\tPossible values are %s.\n%s", mem_config_file_name, section, arch_name_trimmed, arch_list_names, mem_err_config_note);
+			fatal("%s: section [%s]: '%s' is an invalid value for 'Arch'.\n\tPossible values are %s.\n%s",
+					mem_config_file_name, section, arch_name_trimmed, arch_list_names, mem_err_config_note);
 		}
 
 		/* An architecture with an entry in the memory configuration file must
@@ -984,8 +988,7 @@ static void mem_config_read_entries(struct config_t *config)
 			fatal("%s: section [%s]: %s architecture not under detailed simulation.\n"
 				"\tA CPU/GPU architecture uses functional simulation by default. Please\n"
 				"\tactivate detailed simulation for the %s architecture using command-line\n"
-				"\toption '--%s-sim detailed' to use this memory entry.\n",
-				mem_config_file_name, section, arch->name, arch->name, arch->prefix);
+				"\toption '--%s-sim detailed' to use this memory entry.\n", mem_config_file_name, section, arch->name, arch->name, arch->prefix);
 
 		/* Call function to process entry. Each architecture implements its own ways
 		 * to process entries to the memory hierarchy. */
@@ -1394,6 +1397,7 @@ void mem_config_read(void)
 	/* Load memory system configuration file. If no file name has been given
 	 * by the user, create a default configuration for each architecture. */
 	config = config_create(mem_config_file_name);
+
 	if (!*mem_config_file_name)
 	{
 		/* Create Frequency domain */

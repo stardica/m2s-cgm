@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <m2s.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
@@ -74,24 +74,34 @@ static int X86ThreadCanFetch(X86Thread *self)
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
 
-	//star todo simulation fails here when inserting CGM.
-	//we need to initialize some of the memory related members in x86thread
 
+
+//star looks like this is working ok.
 #if CGM
-	//star todo add our entry here.
-
 	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
-
+	if (MSG == 1)
+	{
+		printf("blocksize %d\n",self->mem_ctrl_ptr->block_size);
+		printf("~(self->mem_ctrl_ptr->block_size - 1) 0x%08x\n", ~(self->mem_ctrl_ptr->block_size - 1));
+		printf("self->fetch_block 0x%08x\n", self->fetch_block);
+		printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
+		printf("block 0x%08x\n", block);
+		fflush(stdout);
+		getchar();
+	}
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
-
-	/*printf("blocksize 0x%08x\n",self->inst_mod->block_size);
-	printf("~(self->inst_mod->block_size - 1) 0x%08x\n", ~(self->inst_mod->block_size - 1));
-	printf("self->fetch_block 0x%08x\n", self->fetch_block);
-	printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
-	printf("block 0x%08x\n", block);
-	fflush(stdout);
-	getchar();*/
+	if (MSG == 1)
+	{
+		printf("blocksize %d\n",self->inst_mod->block_size);
+		printf("~(self->inst_mod->block_size - 1) 0x%08x\n", ~(self->inst_mod->block_size - 1));
+		printf("self->fetch_block 0x%08x\n", self->fetch_block);
+		printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
+		printf("block 0x%08x\n", block);
+		fflush(stdout);
+		getchar();
+	}
+#endif
 
 	if (block != self->fetch_block)
 	{
@@ -100,13 +110,16 @@ static int X86ThreadCanFetch(X86Thread *self)
 		getchar();*/
 
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
-
+#if CGM
+		if (!memctrl_can_access(self->mem_ctrl_ptr, phy_addr))
+		{
+#else
 		if (!mod_can_access(self->inst_mod, phy_addr))
 		{
+#endif
 			return 0;
 		}
 	}
-#endif
 
 	/* We can fetch */
 	return 1;
@@ -292,6 +305,7 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 	/* Access BTB, branch predictor, and trace cache */
 #if CGM
 	//star todo We only need to fill this in if we are going to add in the trace cache stuff.
+	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->mem_ctrl_ptr->block_size);
 #else
 	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->inst_mod->block_size);
 #endif
@@ -360,9 +374,29 @@ static void X86ThreadFetch(X86Thread *self)
 	//virtual addresses.
 
 #if CGM
-	//star todo (1) give the block size
-	//			(2) access our memory
+	//star todo (1) give the block size (DONE)
+	//			(2) access memory with our function.
+	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
+	//block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
+	if (block != self->fetch_block)
+	{
+		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
+		self->fetch_block = block;
+		self->fetch_address = phy_addr;
 
+		//star todo replace the mod access fucntion with our own.
+		//right now it points to the mem_ctrl fetch request queue.
+		self->fetch_access = mod_access(self->mem_ctrl_ptr->fetch_request_queue, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
+		self->btb_reads++;
+
+		/* MMU statistics */
+		if (*mmu_report_file_name)
+			mmu_access_page(phy_addr, mmu_access_execute);
+	}
+
+	/* Fetch all instructions within the block up to the first predict-taken branch. */
+	while ((self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1)) == block)
+	{
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 

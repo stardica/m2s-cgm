@@ -53,12 +53,11 @@ void cgm_configure(void){
 
 	//star todo add error checking.
 	cgm_mem_configure();
+	print_config();
 
-
-
-
-	//print_config();
-
+	//star todo use the call back functions for each arch (x86Cpu and SIGpu)
+	cgm_cpu_configure();
+	cgm_gpu_configure();
 
 	return;
 }

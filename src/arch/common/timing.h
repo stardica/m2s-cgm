@@ -20,6 +20,7 @@
 #ifndef ARCH_COMMON_TIMING_H
 #define ARCH_COMMON_TIMING_H
 
+#include <m2s.h>
 #include <lib/util/class.h>
 
 /* Forward declarations */
@@ -56,9 +57,20 @@ CLASS_BEGIN(Timing, Object)
 	/* Function related with the creation of default memory hierarchies and
 	 * processing of memory configuration files. These are all abstract
 	 * functions that must be overridden by children. */
+
+#if CGM
+	//star todo when we are done rename these after completly removing the old mem-system.
+	void (*MemConfigDefault)(Timing *self, struct config_t *config);
+
+	//star todo these arn't used yet and may not need to be used.
+	void (*MemConfigCheck)(Timing *self, struct config_t *config);
+	void (*MemConfigParseEntry)(Timing *self, struct config_t *config,char *section);
+
+#else
 	void (*MemConfigDefault)(Timing *self, struct config_t *config);
 	void (*MemConfigCheck)(Timing *self, struct config_t *config);
 	void (*MemConfigParseEntry)(Timing *self, struct config_t *config,char *section);
+#endif
 
 CLASS_END(Timing)
 

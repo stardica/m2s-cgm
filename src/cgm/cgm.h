@@ -12,8 +12,7 @@
 #include <cgm/tasking.h>
 
 
-//test memory is 8bit i.e. 0x00 - 0xFF
-extern char test_mem[256];
+//extern char test_mem[256];
 extern int host_sim_cpu_num;
 extern int host_sim_cpu_core_num;
 extern int host_sim_cpu_thread_num;
@@ -37,6 +36,9 @@ void cgm_init(void);
 void cgm_configure(void);
 
 
+
+//here down is old code
+//recycle these.
 void cgm_mem_structure_init(void);
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);

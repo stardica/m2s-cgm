@@ -216,6 +216,7 @@ int mod_can_access(struct mod_t *mod, unsigned int addr)
 
 	/* There must be a free port */
 	assert(mod->num_locked_ports <= mod->num_ports);
+
 	if (mod->num_locked_ports == mod->num_ports)
 		return 0;
 

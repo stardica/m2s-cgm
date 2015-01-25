@@ -17,18 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-/*star for our development controls and incremental coding.
-GPU 0 removes all of the GPU and runtime code
-GPU 1 adds back in all of the CPU and runtime code
-CGM takes in and out the new memory system*/
-#define SKIP 1000000
-#define GPU 0
-#define CGM 0
-
-
 #include <signal.h>
 #include <sys/time.h>
+#include <m2s.h>
 #include <arch/common/arch.h>
 #include <arch/common/asm.h>
 #include <arch/common/emu.h>
@@ -940,8 +931,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--mem-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
-
-
 #if CGM
 			cgm_config_file_name_and_path = argv[++argi];
 			//printf("\nconfig file name is %s\n", cgm_config_file_name_and_path);
@@ -976,8 +965,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			mem_report_file_name = argv[++argi];
 			continue;
 		}
-
-
 
 		/*
 		 * Network Options
@@ -1397,6 +1384,7 @@ static void m2s_loop(void)
 	fflush(stdout);
 
 
+
 	/* Simulation loop */
 	while (!esim_finish)
 	{
@@ -1404,16 +1392,6 @@ static void m2s_loop(void)
 		 * of architectures actively running emulation, as well as the number of
 		 * architectures running an active timing simulation. */
 		arch_run(&num_emu_active, &num_timing_active);
-
-
-		//Star >> m2s_loop_iter print.
-		//printf("loop = %lld\n", m2s_loop_iter);
-		//printf("Time: %lld\n", esim_real_time());
-		//printf("Events: %d\n", esim_event_count());
-		//fflush(stdout);
-		//esim_dump(stderr, 0);
-		//getchar();
-
 
 
 		/* Event-driven simulation. Only process events and advance to next global
@@ -1569,7 +1547,6 @@ int main(int argc, char **argv)
 	 */
 
 
-
 	X86CpuInit();
 
 
@@ -1585,6 +1562,7 @@ int main(int argc, char **argv)
 	//instrumentation_init();
 
 	/* Network and memory system */
+
 
 
 #if CGM
@@ -1613,6 +1591,7 @@ int main(int argc, char **argv)
 	/* Load programs */
 	//star >> stars the ELF parsing work.
 	m2s_load_programs(argc, argv);
+
 
 
 	/* Multi2Sim Central Simulation Loop */
@@ -1682,5 +1661,4 @@ int main(int argc, char **argv)
 
 	/* End */
 	return 0;
-
 }

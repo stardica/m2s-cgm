@@ -77,6 +77,21 @@ void memctrl_tasking_init(void){
 }
 
 
+int memctrl_can_access(struct mem_ctrl_t *ctrl, unsigned int addr){
+
+	//unsigned int phy_address = addr;
+	struct mem_ctrl_t *mem_ctrl_ptr = ctrl;
+
+	//check if request queue is full
+	if(mem_ctrl_ptr->queue_size <= list_count(mem_ctrl_ptr->fetch_request_queue))
+	{
+		return 0;
+	}
+
+	// mem_ctrl is accessible.
+	return 1;
+}
+
 //the CPU advances mem-ctrl with a memory request here
 void memctrl_ctrl_request(void){
 

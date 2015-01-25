@@ -15,13 +15,15 @@
 
 extern struct mem_ctrl_t{
 
+	//Physical Characteristics
 	char *name;
 	int block_size;
 	int log_block_size;
 	int latency;
 	int dir_latency;
 	int ports;
-	//int mshr_size;
+	int mshr_size;
+	int queue_size;
 
 	//pointers to queues
 	struct list_t *fetch_request_queue;
@@ -44,6 +46,8 @@ void memctrl_init(void);
 struct mem_ctrl_t *memctrl_create(void);
 void memctrl_queues_init(void);
 void memctrl_tasking_init(void);
+int memctrl_can_access(struct mem_ctrl_t *ctrl, unsigned int addr);
+
 void memctrl_ctrl_request(void);
 void memctrl_ctrl_reply(void);
 void memctrl_ctrl_service(void);

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <m2s.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -64,6 +64,8 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* Check that memory system entry is ready */
 #if CGM
 		//star todo handle the check
+		if (!mod_can_access(self->mem_ctrl_ptr, store->phy_addr))
+			break;
 #else
 		if (!mod_can_access(self->data_mod, store->phy_addr))
 			break;
@@ -79,6 +81,13 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 #if CGM
 		//star todo
+		/* create and fill the mod_client_info_t object */
+		client_info = mod_client_info_create(self->mem_ctrl_ptr);
+		client_info->prefetcher_eip = store->eip;
+
+		/* Issue store */
+		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_store, store->phy_addr, NULL, core->event_queue, store, client_info);
+
 #else
 		/* create and fill the mod_client_info_t object */
 		client_info = mod_client_info_create(self->data_mod);
@@ -146,7 +155,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 #if CGM
 		//star todo add the memory access check here.
-
+		if (!mod_can_access(self->mem_ctrl_ptr->issue_request_queue, load->phy_addr))
+		{
 #else
 		/* Check that memory system is accessible */
 		if (!mod_can_access(self->data_mod, load->phy_addr))
@@ -169,7 +179,18 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 
 #if CGM
-		//star todo
+		//star todo	(1) fill in the mod data client request.
+		//			(2) fix the mod_access function.
+
+		/* create and fill the mod_client_info_t object */
+		//star >> repos is just a repository of objects.
+		client_info = mod_client_info_create(self->mem_ctrl_ptr);
+		client_info->prefetcher_eip = load->eip;
+
+		/* Access memory system */
+		//star added test.
+		//PrintUOPStatus(load);
+		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_load, load->phy_addr, NULL, core->event_queue, load, client_info);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -182,8 +203,6 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		//PrintUOPStatus(load);
 		mod_access(self->data_mod, mod_access_load, load->phy_addr, NULL, core->event_queue, load, client_info);
 #endif
-
-
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -249,7 +268,8 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 
 #if CGM
-
+		if (prefetch_history_is_redundant(core->prefetch_history, self->mem_ctrl_ptr, prefetch->phy_addr))
+		{
 #else
 		/* 
 		 * Make sure its not been prefetched recently. This is just to avoid unnecessary
@@ -258,7 +278,6 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		 */
 		if (prefetch_history_is_redundant(core->prefetch_history, self->data_mod, prefetch->phy_addr))
 		{
-
 #endif
 			/* remove from queue. do not prefetch. */
 			assert(prefetch->uinst->opcode == x86_uinst_prefetch);
@@ -272,13 +291,13 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 #if CGM
 		//star todo
-
+		if (!mod_can_access(self->mem_ctrl_ptr->issue_request_queue, prefetch->phy_addr))
+		{
 #else
 		/* Check that memory system is accessible */
 		if (!mod_can_access(self->data_mod, prefetch->phy_addr))
 		{
 #endif
-
 			linked_list_next(preq);
 			continue;
 		}
@@ -294,7 +313,8 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 #if CGM
 		//star todo
-
+		/* Access memory system */
+		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);
 #else
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);

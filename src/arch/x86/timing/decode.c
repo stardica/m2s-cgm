@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <m2s.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 #include <mem-system/module.h>
@@ -78,9 +78,11 @@ static void X86ThreadDecode(X86Thread *self)
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
 #if CGM
-		//star todo pass the module here
+		//star todo pass the module here fix this
 		//mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address)
 		//needs the log_block_size and the access hash table.
+		if (!mod_in_flight_access(self->mem_ctrl_ptr->log_block_size, uop->fetch_access, uop->fetch_address))
+		{
 #else
 		if (!mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address))
 		{
@@ -100,8 +102,6 @@ static void X86ThreadDecode(X86Thread *self)
 
 				/* Next */
 				uop = list_get(fetchq, 0);
-
-
 
 			} while (uop && uop->mop_index);
 		}

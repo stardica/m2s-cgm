@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <m2s.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
@@ -30,8 +30,6 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <mem-image/memory.h>
-#include <instrumentation/stats.h>
 #include <arch/x86/timing/bpred.h>
 #include <arch/x86/timing/commit.h>
 #include <arch/x86/timing/core.h>
@@ -44,7 +42,6 @@
 #include <arch/x86/timing/inst-queue.h>
 #include <arch/x86/timing/issue.h>
 #include <arch/x86/timing/load-store-queue.h>
-#include <arch/x86/timing/mem-config.h>
 #include <arch/x86/timing/reg-file.h>
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/sched.h>
@@ -53,6 +50,12 @@
 #include <arch/x86/timing/uop-queue.h>
 #include <arch/x86/timing/writeback.h>
 
+#include <instrumentation/stats.h>
+
+//memory related
+#include <mem-image/memory.h>
+#include <arch/x86/timing/mem-config.h>
+#include <cgm/configure.h>
 
 /*
  * Global variables
@@ -493,9 +496,24 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 	asObject(self)->Dump = X86CpuDump;
 	asTiming(self)->DumpSummary = X86CpuDumpSummary;
 	asTiming(self)->Run = X86CpuRun;
-	asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
+
+#if CGM
+	//star todo add mem config check
+	asTiming(self)->MemConfigDefault = cpu_configure;
+	//asTiming(self)->MemConfigParseEntry = X86CpuMemConfigParseEntry;
+	//asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
+	if(MSG ==1)
+	{
+		printf("asTiming(self)->MemConfigDefault = cpu_configure;\n");
+		fflush(stdout);
+		getchar();
+	}
+
+#else
 	asTiming(self)->MemConfigDefault = X86CpuMemConfigDefault;
 	asTiming(self)->MemConfigParseEntry = X86CpuMemConfigParseEntry;
+	asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
+#endif
 
 
 	/* Trace */
@@ -995,6 +1013,7 @@ int X86CpuRun(Timing *self)
 	if (esim_finish)
 		return TRUE;
 
+
 	/* One more cycle of x86 timing simulation */
 	self->cycle++;
 
@@ -1004,12 +1023,14 @@ int X86CpuRun(Timing *self)
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */
 
-	X86CpuEmptyTraceList(cpu);
 
+	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */
 
-
 	X86CpuRunStages(cpu);
+
+
+
 
 	/* Process host threads generating events */
 	X86EmuProcessEvents(emu);
@@ -1035,6 +1056,7 @@ void X86CpuRunStages(X86Cpu *self)
 	X86CpuIssue(self);
 	X86CpuDispatch(self);
 	X86CpuDecode(self);
+
 	X86CpuFetch(self);
 
 

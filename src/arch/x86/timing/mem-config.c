@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <m2s.h>
 #include <arch/common/arch.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
@@ -136,6 +137,7 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 
 	/* Check right presence of sections */
 	unified_present = config_var_exists(config, section, "Module");
+
 	data_inst_present = config_var_exists(config, section, "DataModule") && config_var_exists(config, section, "InstModule");
 	if (!(unified_present ^ data_inst_present))
 		fatal("%s: section [%s]: invalid combination of modules.\n"
@@ -193,17 +195,6 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 	}
 
 
-#if CGM
-		//star todo link memory modules here.
-		//do this somewhere else?
-
-	thread->mem_ctrl_ptr = mem_ctrl;
-
-		printf("thread %s\n", thread->mem_ctrl_ptr->name);
-		fflush(stdout);
-		getchar;
-
-#else
 	/* Assign data module */
 	thread->data_mod = mem_system_get_mod(data_module_name);
 	if (!thread->data_mod)
@@ -219,13 +210,11 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 			"\tThe given module name must match a module declared in a section\n"
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, inst_module_name);
-#endif
-
 
 	/* Add modules to entry list */
 	linked_list_add(arch_x86->mem_entry_mod_list, thread->data_mod);
 	if (thread->data_mod != thread->inst_mod)
-		linked_list_add(arch_x86->mem_entry_mod_list, thread->inst_mod);
+	linked_list_add(arch_x86->mem_entry_mod_list, thread->inst_mod);
 
 	/* Debug */
 	mem_debug("\tx86 Core %d, Thread %d\n", core_index, thread_index);
