@@ -186,6 +186,7 @@ struct mod_t
 		int bucket_list_max;
 	} access_hash_table[MOD_ACCESS_HASH_TABLE_SIZE];
 
+
 	/* Architecture accessing this module. For versions of Multi2Sim where it is
 	 * allowed to have multiple architectures sharing the same subset of the
 	 * memory hierarchy, the field is used to check this restriction. */

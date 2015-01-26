@@ -111,7 +111,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
 #if CGM
-		if (!memctrl_can_access(self->mem_ctrl_ptr, phy_addr))
+		if (!memctrl_can_fetch_access(self->mem_ctrl_ptr, phy_addr))
 		{
 #else
 		if (!mod_can_access(self->inst_mod, phy_addr))
@@ -376,8 +376,9 @@ static void X86ThreadFetch(X86Thread *self)
 #if CGM
 	//star todo (1) give the block size (DONE)
 	//			(2) access memory with our function.
-	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
 	//block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
+	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
+
 	if (block != self->fetch_block)
 	{
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
@@ -386,7 +387,9 @@ static void X86ThreadFetch(X86Thread *self)
 
 		//star todo replace the mod access fucntion with our own.
 		//right now it points to the mem_ctrl fetch request queue.
-		self->fetch_access = mod_access(self->mem_ctrl_ptr->fetch_request_queue, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
+		//self->fetch_access = mod_access(self->mem_ctrl_ptr->fetch_request_queue, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
+		//long long mod_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+		self->fetch_access = memctrl_fetch_access(self->mem_ctrl_ptr->fetch_request_queue, mem_ctrl_access_load, phy_addr, NULL, NULL);
 		self->btb_reads++;
 
 		/* MMU statistics */

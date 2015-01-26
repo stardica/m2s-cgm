@@ -19,5 +19,9 @@ struct cgm_packet_t *packet_create(void){
 
 	new_packet = (void *) malloc(sizeof(struct cgm_packet_t));
 
+	new_packet->access_id = 0;
+	new_packet->address = 0;
+	new_packet->in_flight = 0;
+
 	return new_packet;
 }

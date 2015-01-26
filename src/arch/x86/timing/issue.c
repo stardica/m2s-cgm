@@ -22,7 +22,10 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <mem-image/mmu.h>
+
+#include <cgm/mem-ctrl.h>
 #include <mem-system/module.h>
+
 #include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
@@ -64,7 +67,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* Check that memory system entry is ready */
 #if CGM
 		//star todo handle the check
-		if (!mod_can_access(self->mem_ctrl_ptr, store->phy_addr))
+		if (!memctrl_can_issue_access(self->mem_ctrl_ptr, store->phy_addr))
 			break;
 #else
 		if (!mod_can_access(self->data_mod, store->phy_addr))
@@ -155,7 +158,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 #if CGM
 		//star todo add the memory access check here.
-		if (!mod_can_access(self->mem_ctrl_ptr->issue_request_queue, load->phy_addr))
+		if (!memctrl_can_issue_access(self->mem_ctrl_ptr, load->phy_addr))
 		{
 #else
 		/* Check that memory system is accessible */
@@ -291,7 +294,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 #if CGM
 		//star todo
-		if (!mod_can_access(self->mem_ctrl_ptr->issue_request_queue, prefetch->phy_addr))
+		if (!memctrl_can_issue_access(self->mem_ctrl_ptr, prefetch->phy_addr))
 		{
 #else
 		/* Check that memory system is accessible */

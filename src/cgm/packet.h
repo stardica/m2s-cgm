@@ -12,17 +12,14 @@
 //data
 extern struct cgm_packet_t{
 
+	long long access_id;
+	int in_flight;
 	unsigned int address;
-
-	char *queue_name;
-	char *task;
-	char *data;
+	void *data;
 };
-
-struct cgm_packet_t *packet_create(void);
 
 
 //star todo create functions to load/access the packet as needed by the various memory system elements.
-
+struct cgm_packet_t *packet_create(void);
 
 #endif /* PACKET_H_ */

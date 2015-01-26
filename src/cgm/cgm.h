@@ -45,15 +45,14 @@ void cgm_mem_threads_init(void);
 void cgm_mem_sim_loop(void);
 void testmem_init(void);
 void cleanup(void);
-
+void cgm_mem_dump(void);
 
 //for testing purposes
-int system_test(void);
-void cgm_mem_dump(void);
-void test_run(void* user, const char* section, const char* name, const char* value);
-void load_fetch(char * string);
-void load_issue(char * string);
-void store_issue(char * string);
+//int system_test(void);
+//void test_run(void* user, const char* section, const char* name, const char* value);
+//void load_fetch(char * string);
+//void load_issue(char * string);
+//void store_issue(char * string);
 
 
 

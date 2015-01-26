@@ -8,6 +8,7 @@
 #define MEMCTRL_H_
 
 #include <lib/util/list.h>
+#include <lib/util/linked-list.h>
 #include <cgm/tasking.h>
 
 //Behavioral switches
@@ -24,13 +25,25 @@ extern struct mem_ctrl_t{
 	int ports;
 	int mshr_size;
 	int queue_size;
+	long long access_id;
 
 	//pointers to queues
 	struct list_t *fetch_request_queue;
 	struct list_t *issue_request_queue;
 
+	//access record
+	struct list_t *memctrl_accesses;
+
 };
 
+enum mem_ctrl_access_kind_t
+{
+	mem_ctrl_access_invalid = 0,
+	mem_ctrl_access_load,
+	mem_ctrl_access_store,
+	mem_ctrl_access_nc_store,
+	mem_ctrl_access_prefetch
+};
 
 //global structures
 extern struct mem_ctrl_t *mem_ctrl;
@@ -46,7 +59,11 @@ void memctrl_init(void);
 struct mem_ctrl_t *memctrl_create(void);
 void memctrl_queues_init(void);
 void memctrl_tasking_init(void);
-int memctrl_can_access(struct mem_ctrl_t *ctrl, unsigned int addr);
+int memctrl_can_issue_access(struct mem_ctrl_t *ctrl, unsigned int addr);
+int memctrl_can_fetch_access(struct mem_ctrl_t *ctrl, unsigned int addr);
+int memctrl_in_flight_access(struct mem_ctrl_t *ctrl, long long id);
+long long memctrl_fetch_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+long long memctrl_issue_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 
 void memctrl_ctrl_request(void);
 void memctrl_ctrl_reply(void);

@@ -9,10 +9,12 @@
 #include <cgm/mem-ctrl.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
+#include <cgm/packet.h>
 
 
 //structure declarations
 struct mem_ctrl_t *mem_ctrl;
+
 
 //events
 eventcount *mem_ctrl_has_request;
@@ -44,9 +46,11 @@ void memctrl_queues_init(void){
 	//star todo create list with size? or just check the size when insterting into list?
 	mem_ctrl->fetch_request_queue = list_create();
 	mem_ctrl->issue_request_queue = list_create();
+	mem_ctrl->memctrl_accesses = list_create();
 
 	mem_ctrl->fetch_request_queue->name = "mem_ctrl.Fetch.Request";
 	mem_ctrl->issue_request_queue->name = "mem_ctrl.Issue.Request";
+	mem_ctrl->memctrl_accesses->name = "mem_ctrl.Accesses";
 
 	return;
 
@@ -77,7 +81,7 @@ void memctrl_tasking_init(void){
 }
 
 
-int memctrl_can_access(struct mem_ctrl_t *ctrl, unsigned int addr){
+int memctrl_can_fetch_access(struct mem_ctrl_t *ctrl, unsigned int addr){
 
 	//unsigned int phy_address = addr;
 	struct mem_ctrl_t *mem_ctrl_ptr = ctrl;
@@ -90,6 +94,77 @@ int memctrl_can_access(struct mem_ctrl_t *ctrl, unsigned int addr){
 
 	// mem_ctrl is accessible.
 	return 1;
+}
+
+int memctrl_can_issue_access(struct mem_ctrl_t *ctrl, unsigned int addr){
+
+	//unsigned int phy_address = addr;
+	struct mem_ctrl_t *mem_ctrl_ptr = ctrl;
+
+	//check if request queue is full
+	if(mem_ctrl_ptr->queue_size <= list_count(mem_ctrl_ptr->issue_request_queue))
+	{
+		return 0;
+	}
+
+	// mem_ctrl is accessible.
+	return 1;
+}
+
+//this does what it needs to do.
+//need to retire acceses as they finish.
+int memctrl_in_flight_access(struct mem_ctrl_t *ctrl, long long id){
+
+	struct mem_ctrl_t *mem_ctrl_ptr = ctrl;
+	struct cgm_packet_t *packet;
+	int count = 0;
+	int index = 0;
+
+	count = list_count(mem_ctrl_ptr->memctrl_accesses);
+
+	/* Look for access */
+	for (index = 0; index <= count; index++)
+	{
+		//take memctrl access out of queue and check it's status.
+		packet = list_get(mem_ctrl_ptr->memctrl_accesses, index);
+		if (packet->access_id == id)
+		{
+			return 1;
+		}
+	}
+
+	/* Not found */
+	return 0;
+
+}
+
+
+long long memctrl_fetch_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	//star todo take data from fetch or issue
+	//set packet id to access id.
+	mem_ctrl->access_id++;
+	new_packet->access_id = mem_ctrl->access_id;
+	new_packet->in_flight = 1;
+
+	//insert into request queue
+
+	//sort by enqueue queue.
+	list_enqueue(mem_ctrl->fetch_request_queue, new_packet);
+
+	list_enqueue(mem_ctrl->issue_request_queue, new_packet);
+
+
+	//add to list of accesses.
+	list_enqueue(mem_ctrl->memctrl_accesses, new_packet);
+
+
+	//reply to CPU based on fetch or issue.
+	//retire in flight access.
+
+	return mem_ctrl->access_id;
 }
 
 //the CPU advances mem-ctrl with a memory request here
@@ -122,5 +197,6 @@ void memctrl_ctrl_service(void){
 		}
 
 	return;
+
 }
 

@@ -162,11 +162,11 @@ void cgm_mem_sim_loop(void){
 
 	int error = 0;
 
-	error = system_test();
+	/*error = system_test();
 	if(error == 1)
 	{
 		printf("failed in system_test()\n");
-	}
+	}*/
 
 
 	return;
@@ -221,7 +221,7 @@ void cgm_mem_dump(void){
 	return;
 }
 
-int system_test(void){
+/*int system_test(void){
 
 	//star todo read and run scripted memory interaction for testing.
 	int error = 0;
@@ -230,7 +230,7 @@ int system_test(void){
 	{
 		//printf("in while\n");
 
-		error = ini_parse(TESTSCRIPTPATH, test_run, NULL);
+		//error = ini_parse(TESTSCRIPTPATH, test_run, NULL);
 		if (error < 0)
 		{
 			printf("Unable to open Config.ini for queue configuration.\n");
@@ -251,9 +251,9 @@ int system_test(void){
 	}
 
 	return 0;
-}
+}*/
 
-void test_run(void* user, const char* section, const char* name, const char* value){
+/*void test_run(void* user, const char* section, const char* name, const char* value){
 
 	char *inst_string = NULL;
 
@@ -289,9 +289,9 @@ void test_run(void* user, const char* section, const char* name, const char* val
 	}
 
 	return;
-}
+}*/
 
-void store_issue(char * string){
+/*void store_issue(char * string){
 
 
 	//star todo initialize data_packet
@@ -326,9 +326,9 @@ void store_issue(char * string){
 	queue_insert(q_l1d_0_CoreRequest, data_packet);
 
 	return;
-}
+}*/
 
-void load_issue(char * string){
+/*void load_issue(char * string){
 
 	struct cgm_packet_t * data_packet;
 	data_packet = data_packet_create();
@@ -349,11 +349,11 @@ void load_issue(char * string){
 	queue_insert(q_l1d_0_CoreRequest, data_packet);
 
 	return;
-}
+}*/
 
 
 
-void load_fetch(char * string){
+/*void load_fetch(char * string){
 
 	struct cgm_packet_t * data_packet;
 	data_packet = data_packet_create();
@@ -374,7 +374,7 @@ void load_fetch(char * string){
 	queue_insert(q_l1i_0_CoreRequest, data_packet);
 
 	return;
-}
+}*/
 
 void cleanup(void){
 
