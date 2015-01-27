@@ -6,10 +6,13 @@
  */
 
 #include <math.h>
+#include <stdlib.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
+
+#include <lib/util/linked-list.h>
 
 
 //structure declarations
@@ -22,7 +25,9 @@ eventcount *mem_ctrl_has_reply;
 eventcount *mem_ctrl_serviced;
 
 
-//star todo add memory controller logic.
+//star todo (1) Add memory controller logic.
+//			(2) Add a mutex for master access record queue.
+//			(3)
 
 void memctrl_init(void){
 
@@ -92,7 +97,7 @@ int memctrl_can_fetch_access(struct mem_ctrl_t *ctrl, unsigned int addr){
 		return 0;
 	}
 
-	// mem_ctrl is accessible.
+	// mem_ctrl queue is accessible.
 	return 1;
 }
 
@@ -107,7 +112,7 @@ int memctrl_can_issue_access(struct mem_ctrl_t *ctrl, unsigned int addr){
 		return 0;
 	}
 
-	// mem_ctrl is accessible.
+	// mem_ctrl queue is accessible.
 	return 1;
 }
 
@@ -127,7 +132,13 @@ int memctrl_in_flight_access(struct mem_ctrl_t *ctrl, long long id){
 	{
 		//take memctrl access out of queue and check it's status.
 		packet = list_get(mem_ctrl_ptr->memctrl_accesses, index);
-		if (packet->access_id == id)
+
+		//return 0 if list is empty. return 1 is packet is found
+		if (!packet)
+		{
+			return 0;
+		}
+		else if(packet->access_id == id)
 		{
 			return 1;
 		}
@@ -143,29 +154,48 @@ long long memctrl_fetch_access(struct list_t *request_queue, enum mem_ctrl_acces
 
 	struct cgm_packet_t *new_packet = packet_create();
 
-	//star todo take data from fetch or issue
+	//star todo take data from fetch
 	//set packet id to access id.
 	mem_ctrl->access_id++;
 	new_packet->access_id = mem_ctrl->access_id;
 	new_packet->in_flight = 1;
 
-	//insert into request queue
-
-	//sort by enqueue queue.
-	list_enqueue(mem_ctrl->fetch_request_queue, new_packet);
-
-	list_enqueue(mem_ctrl->issue_request_queue, new_packet);
-
-
-	//add to list of accesses.
+	//add to master list of accesses.
+	//may need a mutex
 	list_enqueue(mem_ctrl->memctrl_accesses, new_packet);
 
 
-	//reply to CPU based on fetch or issue.
-	//retire in flight access.
+	//insert into memctrl request queue
+	//list_enqueue(mem_ctrl->fetch_request_queue, new_packet);
+
+	//mem_ctrl do work here
+	//remove from queue, process, and put on reply queue.
+
+	//retire access in master list.
+	list_dequeue(mem_ctrl->memctrl_accesses);
+	free(new_packet);
 
 	return mem_ctrl->access_id;
 }
+
+void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	new_packet->in_flight = 1;
+	new_packet->event_queue = event_queue;
+	new_packet->data = event_queue_item;
+
+
+
+	//put back on the event queue.
+	linked_list_add(new_packet->event_queue, new_packet->data);
+	free(new_packet);
+
+	return;
+}
+
+
 
 //the CPU advances mem-ctrl with a memory request here
 void memctrl_ctrl_request(void){

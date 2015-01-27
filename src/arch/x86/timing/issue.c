@@ -66,7 +66,6 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 		/* Check that memory system entry is ready */
 #if CGM
-		//star todo handle the check
 		if (!memctrl_can_issue_access(self->mem_ctrl_ptr, store->phy_addr))
 			break;
 #else
@@ -83,13 +82,18 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		X86ThreadRemoveFromSQ(self);
 
 #if CGM
-		//star todo
+		//star todo ?
 		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create(self->mem_ctrl_ptr);
-		client_info->prefetcher_eip = store->eip;
+		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
+		//client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
-		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_store, store->phy_addr, NULL, core->event_queue, store, client_info);
+		//void memctrl_issue_lspq_access(struct list_t *request_queue,
+		//								 enum mem_ctrl_access_kind_t access_kind,
+		//								 unsigned int addr,
+		//								 struct linked_list_t *event_queue,
+		//								 void *event_queue_item);{
+		memctrl_issue_lspq_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_store, store->phy_addr, core->event_queue, store);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -187,13 +191,13 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* create and fill the mod_client_info_t object */
 		//star >> repos is just a repository of objects.
-		client_info = mod_client_info_create(self->mem_ctrl_ptr);
-		client_info->prefetcher_eip = load->eip;
+		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
+		//client_info->prefetcher_eip = load->eip;
 
 		/* Access memory system */
 		//star added test.
 		//PrintUOPStatus(load);
-		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_load, load->phy_addr, NULL, core->event_queue, load, client_info);
+		memctrl_issue_lspq_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_store, load->phy_addr, core->event_queue, load);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -317,7 +321,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 #if CGM
 		//star todo
 		/* Access memory system */
-		mod_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);
+		memctrl_issue_lspq_access(self->mem_ctrl_ptr->issue_request_queue, mod_access_prefetch, prefetch->phy_addr, core->event_queue, prefetch);
 #else
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);

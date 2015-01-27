@@ -88,8 +88,16 @@ static void X86ThreadDecode(X86Thread *self)
 		{
 #endif
 
+			//printf("entered decode.\n");
+			//fflush(stdout);
+			//getchar();
+
 			do
 			{
+
+				//printf("entered do.\n");
+				//fflush(stdout);
+				//getchar();
 
 				/* Move from fetch queue to uop queue */
 

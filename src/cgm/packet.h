@@ -5,6 +5,7 @@
  *      Author: stardica
  */
 
+#include <lib/util/linked-list.h>
 
 #ifndef PACKET_H_
 #define PACKET_H_
@@ -16,6 +17,7 @@ extern struct cgm_packet_t{
 	int in_flight;
 	unsigned int address;
 	void *data;
+	struct linked_list_t *event_queue;
 };
 
 
