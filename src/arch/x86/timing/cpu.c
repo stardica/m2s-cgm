@@ -498,8 +498,10 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 	asTiming(self)->Run = X86CpuRun;
 
 #if CGM
-	//star todo add mem config check
+
 	asTiming(self)->MemConfigDefault = cpu_configure;
+
+	//star todo add mem config check
 	//asTiming(self)->MemConfigParseEntry = X86CpuMemConfigParseEntry;
 	//asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
 	if(MSG ==1)

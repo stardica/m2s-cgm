@@ -103,7 +103,7 @@ int cgm_cpu_configure(void){
 
 	if (MSG==1)
 	{
-		printf("timing->MemConfigDefault(timing, NULL);\n");
+		printf("CPU timing->MemConfigDefault(timing, NULL);\n");
 		fflush(stdout);
 		getchar();
 	}
@@ -116,13 +116,34 @@ int cgm_cpu_configure(void){
 
 int cgm_gpu_configure(void){
 
+	Timing *timing;
+	struct arch_t *arch;
+	//char arch_name_trimmed = "x86";
+	arch = arch_get("SouthernIslands");
+
+	timing = arch->timing;
+
+
+	//star >> uses the call back pointer for MemConfigDefault, but runs our cpu_configure function.
+	//we don't use the config struct, so pass null and set everything by hand.
+
+	if (MSG==1)
+	{
+		printf("GPU timing->MemConfigDefault(timing, NULL);\n");
+		fflush(stdout);
+		getchar();
+	}
+
+	timing->MemConfigDefault(timing, NULL);
+
 	return 1;
 }
 
 
 int cpu_configure(Timing *self, struct config_t *config){
 
-	//star todo configure the CPU/Core/Thread here
+	//star todo (1) configure the CPU/Core/Thread here
+	//			(2) get the number of cores/threads and configure each.
 	//this function does all the stuff that arch/x86/timing/mem-config.h/c has to do.
 
 	if (MSG ==1)
@@ -140,6 +161,8 @@ int cpu_configure(Timing *self, struct config_t *config){
 	int thread_index;
 
 	//star todo pull these automatically.
+	//i think getting the size of the arrays will work.
+
 	core_index = 0;
 	thread_index = 0;
 
@@ -168,8 +191,58 @@ int cpu_configure(Timing *self, struct config_t *config){
 
 int gpu_configure(Timing *self, struct config_t *config){
 
-	//star todo configure the GPU here. LDS and other memory archs
+	//star todo  (1) configure the GPU here.
+	//			 (2) determine the number of compute units and configure them all.
 
+	if (MSG ==1)
+	{
+		printf("gpu_configure start\n");
+		fflush(stdout);
+		getchar();
+	}
+
+
+	struct si_compute_unit_t *compute_unit;
+
+
+	compute_unit->vector_cache = mem_system_get_mod(vector_module_name);
+	compute_unit->scalar_cache = mem_system_get_mod(scalar_module_name);
+
+	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->vector_cache);
+	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);
+
+
+
+	X86Cpu *cpu = asX86Cpu(self);
+	X86Core *core;
+	X86Thread *thread;
+
+	int core_index;
+	int thread_index;
+
+	//star todo pull these automatically.
+	core_index = 0;
+	thread_index = 0;
+
+	core = cpu->cores[core_index];
+	thread = core->threads[thread_index];
+
+	//star todo link memory modules here.
+	//do this somewhere else?
+
+	//assign entry into memory system
+	thread->mem_ctrl_ptr = mem_ctrl;
+
+	//add to memory entry list list?
+	//linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
+
+	if(MSG==1)
+	{
+		printf("gpu_configure end\n");
+		printf("Thread mem entry name is %s", thread->mem_ctrl_ptr->name);
+		fflush(stdout);
+		getchar();
+	}
 
 	return 1;
 }
@@ -470,5 +543,6 @@ void print_config(void){
 	printf("Queue name = %s\n", mem_ctrl->fetch_request_queue->name);
 	printf("Queue name = %s\n", mem_ctrl->issue_request_queue->name);
 	fflush(stdout);
+	getchar();
 	return;
 }

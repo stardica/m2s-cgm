@@ -18,6 +18,8 @@
  */
 
 
+#include <stdio.h>
+#include <m2s.h>
 #include <arch/si/emu/ndrange.h>
 #include <arch/si/emu/work-group.h>
 #include <driver/opencl/opencl.h>
@@ -39,6 +41,7 @@
 
 #include <arch/si/timing/cycle-interval-report.h>
 
+#include <cgm/configure.h>
 
 static char *si_err_stall =
 	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
@@ -1045,14 +1048,28 @@ void SIGpuCreate(SIGpu *self)
 		list_add(self->available_compute_units, compute_unit);
 	}
 
+	//printf("in SIGpuCreate\n");
+	//fflush(stdout);
+
 	/* Virtual functions */
 	asObject(self)->Dump = SIGpuDump;
 	asTiming(self)->DumpSummary = SIGpuDumpSummary;
 	asTiming(self)->Run = SIGpuRun;
+
+#if CGM
+	//star todo add memcheck functions.SIGpuMemConfigCheck
+
+	asTiming(self)->MemConfigDefault = gpu_configure;
+
+	//asTiming(self)->MemConfigParseEntry = SIGpuMemConfigParseEntry;
+	//asTiming(self)->MemConfigCheck = gpu_configure;
+
+#else
 	asTiming(self)->MemConfigCheck = SIGpuMemConfigCheck;
 	//asTiming(self)->MemConfigDefault = SIGpuMemConfigFused;
 	asTiming(self)->MemConfigDefault = SIGpuMemConfigDefault;
 	asTiming(self)->MemConfigParseEntry = SIGpuMemConfigParseEntry;
+#endif
 }
 
 

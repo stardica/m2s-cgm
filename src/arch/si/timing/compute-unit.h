@@ -71,6 +71,7 @@ struct si_compute_unit_t
 	long long branch_inst_count;
 	long long scalar_alu_inst_count;
 	long long scalar_mem_inst_count;
+
 	/* TODO Have one SIMD inst count per SIMD unit */
 	long long simd_inst_count;
 	long long vector_mem_inst_count;

@@ -375,6 +375,8 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 	unified_present = config_var_exists(config, section, "Module");
 	separate_present = config_var_exists(config, section, "DataModule") && config_var_exists(config, section, "ConstantDataModule");
 
+
+	//star note don't confuse unified with fused memory architectures.
 	if (!unified_present && !separate_present)
 	{
 		fatal(
@@ -418,6 +420,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 
 	/* Check that entry has not been assigned before */
 	compute_unit = si_gpu->compute_units[compute_unit_id];
+
 	if (compute_unit->vector_cache)
 	{
 		fatal(
@@ -436,8 +439,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 	}
 	else
 	{
-		vector_module_name = scalar_module_name =
-			config_read_string(config, section, "Module", NULL);
+		vector_module_name = scalar_module_name = config_read_string(config, section, "Module", NULL);
 	}
 	assert(vector_module_name);
 	assert(scalar_module_name);
@@ -452,7 +454,9 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 	"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, vector_module_name);
 	}
+
 	compute_unit->scalar_cache = mem_system_get_mod(scalar_module_name);
+
 	if (!compute_unit->scalar_cache)
 	{
 		fatal(

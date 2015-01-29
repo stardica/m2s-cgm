@@ -53,32 +53,15 @@ void cgm_configure(void){
 
 	//star todo add error checking.
 	cgm_mem_configure();
-	print_config();
+	//print_config();
 
-	//star todo use the call back functions for each arch (x86Cpu and SIGpu)
+	//star todo run the call back functions for each arch (x86Cpu and SIGpu)
 	cgm_cpu_configure();
 	cgm_gpu_configure();
 
 	return;
 }
 
-/*int main(int argc, char **argv){
-
-	//initialize memory structures and tasks
-	printf("---CGM-MEM Init()---\n");
-	cgm_mem_structure_init();
-	cgm_mem_threads_init();
-
-	//run the main loop
-	printf("---CGM-MEM Simulation Loop()---\n");
-	//cgm_mem_sim_loop();
-	simulate(cleanup);
-
-	//Will never get here if running correctly.
-	printf("---Done---\n");
-	return 1;
-
-}*/
 
 void cgm_mem_task_init(void){
 
@@ -95,8 +78,7 @@ void cgm_mem_task_init(void){
 }
 
 
-
-void cgm_mem_structure_init(void){
+/*void cgm_mem_structure_init(void){
 
 	int error = 0;
 
@@ -134,7 +116,7 @@ void cgm_mem_structure_init(void){
 
 
 	return;
-}
+}*/
 
 void cgm_mem_threads_init(void){
 
@@ -175,11 +157,11 @@ void cgm_mem_sim_loop(void){
 
 
 
-void testmem_init(void){
+/*void testmem_init(void){
 
-	/*star todo initialize array to random chars... or not.
+	star todo initialize array to random chars... or not.
 	For testing purposes all NULL maybe OK.
-	Just use the script to load a few initial values.*/
+	Just use the script to load a few initial values.
 
 	//test_mem[254] = 'a';
 	//test_mem[255] = 'b';
@@ -195,9 +177,9 @@ void testmem_init(void){
 	//}
 
 	return;
-}
+}*/
 
-void cgm_mem_dump(void){
+/*void cgm_mem_dump(void){
 
 	int i = sizeof(test_mem);
 	int j = 0;
@@ -219,7 +201,7 @@ void cgm_mem_dump(void){
 	}
 
 	return;
-}
+}*/
 
 /*int system_test(void){
 

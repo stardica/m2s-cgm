@@ -175,10 +175,10 @@ void arch_set_timing(struct arch_t *arch, Timing *timing)
  * Global Variables
  */
 
-struct arch_t *arch_arm;
+/*struct arch_t *arch_arm;
 struct arch_t *arch_evergreen;
 struct arch_t *arch_fermi;
-struct arch_t *arch_mips;
+struct arch_t *arch_mips;*/
 struct arch_t *arch_southern_islands;
 struct arch_t *arch_x86;
 

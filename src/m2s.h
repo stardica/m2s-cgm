@@ -12,6 +12,6 @@ GPU 1 adds back in all of the CPU and runtime code
 CGM takes in and out the new memory system
 MSG turns on and off verbose notes*/
 #define SKIP 1000000
-#define GPU 0
+#define GPU 1
 #define CGM 1
 #define MSG 0
