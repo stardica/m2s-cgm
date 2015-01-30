@@ -398,6 +398,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 				file_name, section);
 	}
 
+
 	/* Read compute unit */
 	compute_unit_id = config_read_int(config, section, "ComputeUnit", -1);
 	if (compute_unit_id < 0)
@@ -455,8 +456,8 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 			file_name, section, vector_module_name);
 	}
 
-	compute_unit->scalar_cache = mem_system_get_mod(scalar_module_name);
 
+	compute_unit->scalar_cache = mem_system_get_mod(scalar_module_name);
 	if (!compute_unit->scalar_cache)
 	{
 		fatal(

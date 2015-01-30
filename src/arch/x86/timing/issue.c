@@ -262,9 +262,10 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 	while (!linked_list_is_end(preq) && quantum)
 	{
 
-		printf("issuing prefetch stuff.\n");
+		printf("issuing prefetch STOP and figure out why.\n");
 		fflush(stdout);
 		getchar();
+
 		/* Get element from prefetch queue. If it is not ready, go to the next one */
 		prefetch = linked_list_get(preq);
 		if (!prefetch->ready && !X86ThreadIsUopReady(self, prefetch))
@@ -273,7 +274,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 			continue;
 		}
 
-
+		//star todo this is broken
 #if CGM
 		if (prefetch_history_is_redundant(core->prefetch_history, self->mem_ctrl_ptr, prefetch->phy_addr))
 		{

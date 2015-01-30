@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lib/util/debug.h>
+
 #include <lib/util/config.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
@@ -17,6 +19,9 @@
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/thread.h>
+
+#include <arch/si/timing/gpu.h>
+#include <arch/si/timing/compute-unit.h>
 
 #include <cgm/configure.h>
 #include <cgm/cgm.h>
@@ -160,12 +165,30 @@ int cpu_configure(Timing *self, struct config_t *config){
 	int core_index;
 	int thread_index;
 
-	//star todo pull these automatically.
+	//star todo pull core_index and thread_index automatically.
 	//i think getting the size of the arrays will work.
+	//other option is to set manually when we have fully defined the processor and memory system configurations.
+
+	if (MSG ==1)
+	{
+		printf("number of CPU->cores %d\n", sizeof(cpu->cores)/sizeof(cpu->cores[0]));
+		printf("number of CPU->threads %d\n", sizeof(core->threads)/sizeof(core->threads[0]));
+		fflush(stdout);
+		getchar();
+	}
+
+	//for now make sure number of cores and threads are 1
+	if((sizeof(cpu->cores)/sizeof(cpu->cores[0])) > 1)
+	{
+		fatal("Number of core > 1 STOP\n");
+	}
+	if((sizeof(core->threads)/sizeof(core->threads[0])) > 1)
+	{
+		fatal("Number of threads > 1 STOP\n");
+	}
 
 	core_index = 0;
 	thread_index = 0;
-
 	core = cpu->cores[core_index];
 	thread = core->threads[thread_index];
 
@@ -175,8 +198,8 @@ int cpu_configure(Timing *self, struct config_t *config){
 	//assign entry into memory system
 	thread->mem_ctrl_ptr = mem_ctrl;
 
-	//add to memory entry list list?
-	linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
+	//add to memory entry list list? Dones't look like we need to do this.
+	//linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
 
 	if(MSG==1)
 	{
@@ -201,45 +224,39 @@ int gpu_configure(Timing *self, struct config_t *config){
 		getchar();
 	}
 
-
+	int compute_unit_id;
 	struct si_compute_unit_t *compute_unit;
 
+	//star todo pull compute_unit_index automatically.
+	//i think getting the size of the arrays will work?
+	//other option is to set manually when we have fully defined the processor and memory system configurations.
+	if (MSG ==1)
+	{
+		printf("number of si_gpu->compute_units %d\n", sizeof(si_gpu->compute_units)/sizeof(si_gpu->compute_units[0]));
+		fflush(stdout);
+		getchar();
+	}
 
-	compute_unit->vector_cache = mem_system_get_mod(vector_module_name);
-	compute_unit->scalar_cache = mem_system_get_mod(scalar_module_name);
+	//for now make sure number of compute units is 1
+	if((sizeof(si_gpu->compute_units)/sizeof(si_gpu->compute_units[0])) > 1)
+	{
+		fatal("number of si_gpu->compute_units > 1 STOP\n");
+	}
 
-	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->vector_cache);
-	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);
+	compute_unit_id = 0;
+	compute_unit = si_gpu->compute_units[compute_unit_id];
+
+	compute_unit->mem_ctrl_ptr = mem_ctrl;
 
 
-
-	X86Cpu *cpu = asX86Cpu(self);
-	X86Core *core;
-	X86Thread *thread;
-
-	int core_index;
-	int thread_index;
-
-	//star todo pull these automatically.
-	core_index = 0;
-	thread_index = 0;
-
-	core = cpu->cores[core_index];
-	thread = core->threads[thread_index];
-
-	//star todo link memory modules here.
-	//do this somewhere else?
-
-	//assign entry into memory system
-	thread->mem_ctrl_ptr = mem_ctrl;
-
-	//add to memory entry list list?
-	//linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
+	//add to memory entry list list? Doesn't look like we need to do this.
+	//linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->vector_cache);
+	//linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);
 
 	if(MSG==1)
 	{
 		printf("gpu_configure end\n");
-		printf("Thread mem entry name is %s", thread->mem_ctrl_ptr->name);
+		printf("GPU mem entry name is %s", compute_unit->mem_ctrl_ptr->name);
 		fflush(stdout);
 		getchar();
 	}

@@ -47,7 +47,10 @@ struct si_compute_unit_t
 	int subdevice_id;
 	long long uop_id_counter;  
 
-	/* Entry points to memory hierarchy */
+	//Entry to cgm memory hierarchy
+	struct mem_ctrl_t *mem_ctrl_ptr;
+
+	/* Entry points to m2s memory hierarchy */
 	struct mod_t *scalar_cache;
 	struct mod_t *vector_cache;
 	struct mod_t *lds_module;
