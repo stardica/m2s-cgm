@@ -264,6 +264,7 @@ char *x86_config_file_name = "";
 char *x86_cpu_report_file_name = "";
 
 int x86_cpu_frequency = 1000;
+
 int x86_cpu_num_cores = 1;
 int x86_cpu_num_threads = 1;
 

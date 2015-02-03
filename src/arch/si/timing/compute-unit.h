@@ -45,9 +45,9 @@ struct si_compute_unit_t
 	/* IDs */
 	int id;
 	int subdevice_id;
-	long long uop_id_counter;  
+	long long uop_id_counter;
 
-	//Entry to cgm memory hierarchy
+	//star >> added entry to cgm memory hierarchy
 	struct mem_ctrl_t *mem_ctrl_ptr;
 
 	/* Entry points to m2s memory hierarchy */

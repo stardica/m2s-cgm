@@ -104,7 +104,7 @@ int cgm_cpu_configure(void){
 	timing = arch->timing;
 
 	//star >> uses the call back pointer for MemConfigDefault, but runs our cpu_configure function.
-	//we don't use the config struct, so pass null and set everything by hand.
+	//we don't use the config struct, so pass null and set everything by hand for now.
 
 	if (MSG==1)
 	{
@@ -171,18 +171,19 @@ int cpu_configure(Timing *self, struct config_t *config){
 
 	if (MSG ==1)
 	{
-		printf("number of CPU->cores %d\n", sizeof(cpu->cores)/sizeof(cpu->cores[0]));
-		printf("number of CPU->threads %d\n", sizeof(core->threads)/sizeof(core->threads[0]));
+		printf("number of cores %d\n", x86_cpu_num_cores);
+		printf("number of threads %d\n", x86_cpu_num_threads);
+
 		fflush(stdout);
 		getchar();
 	}
 
 	//for now make sure number of cores and threads are 1
-	if((sizeof(cpu->cores)/sizeof(cpu->cores[0])) > 1)
+	if(x86_cpu_num_cores > 1)
 	{
 		fatal("Number of core > 1 STOP\n");
 	}
-	if((sizeof(core->threads)/sizeof(core->threads[0])) > 1)
+	if(x86_cpu_num_threads > 1)
 	{
 		fatal("Number of threads > 1 STOP\n");
 	}
@@ -232,13 +233,13 @@ int gpu_configure(Timing *self, struct config_t *config){
 	//other option is to set manually when we have fully defined the processor and memory system configurations.
 	if (MSG ==1)
 	{
-		printf("number of si_gpu->compute_units %d\n", sizeof(si_gpu->compute_units)/sizeof(si_gpu->compute_units[0]));
+		printf("number of si_gpu->compute_units %d\n", list_count(si_gpu->available_compute_units));
 		fflush(stdout);
 		getchar();
 	}
 
 	//for now make sure number of compute units is 1
-	if((sizeof(si_gpu->compute_units)/sizeof(si_gpu->compute_units[0])) > 1)
+	if(list_count(si_gpu->available_compute_units) > 1)
 	{
 		fatal("number of si_gpu->compute_units > 1 STOP\n");
 	}
@@ -263,15 +264,6 @@ int gpu_configure(Timing *self, struct config_t *config){
 
 	return 1;
 }
-
-
-
-
-
-
-
-
-
 
 
 

@@ -79,7 +79,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 //star looks like this is working ok.
 #if CGM
 	block = self->fetch_neip & ~(self->mem_ctrl_ptr->block_size - 1);
-	if (MSG == 1)
+	if (MSG == 2)
 	{
 		printf("blocksize %d\n",self->mem_ctrl_ptr->block_size);
 		printf("~(self->mem_ctrl_ptr->block_size - 1) 0x%08x\n", ~(self->mem_ctrl_ptr->block_size - 1));
@@ -91,7 +91,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 	}
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
-	if (MSG == 1)
+	if (MSG == 2)
 	{
 		printf("blocksize %d\n",self->inst_mod->block_size);
 		printf("~(self->inst_mod->block_size - 1) 0x%08x\n", ~(self->inst_mod->block_size - 1));

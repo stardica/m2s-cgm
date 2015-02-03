@@ -188,7 +188,7 @@ void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_acces
 
 
 
-	//put back on the event queue.
+	//put back on the core event queue to end memory system access.
 	linked_list_add(new_packet->event_queue, new_packet->data);
 	free(new_packet);
 

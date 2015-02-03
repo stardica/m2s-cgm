@@ -330,6 +330,9 @@ enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 
 /* Device parameters */
 int si_gpu_frequency = 925;
+
+//star todo change this.
+//int si_gpu_num_compute_units = 32;
 int si_gpu_num_compute_units = 32;
 
 /* Compute unit parameters */
@@ -1048,8 +1051,6 @@ void SIGpuCreate(SIGpu *self)
 		list_add(self->available_compute_units, compute_unit);
 	}
 
-	//printf("in SIGpuCreate\n");
-	//fflush(stdout);
 
 	/* Virtual functions */
 	asObject(self)->Dump = SIGpuDump;
