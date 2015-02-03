@@ -155,11 +155,16 @@ void si_lds_mem(struct si_lds_t *lds)
 
 	list_entries = list_count(lds->read_buffer);
 	
+
 	/* Sanity check the read buffer */
 	assert(list_entries <= si_gpu_lds_read_buffer_size);
 
 	for (i = 0; i < list_entries; i++)
 	{
+
+		//star >> added this do our benchmarks use the lds memory?
+		fatal("entered si_lds_mem()\n");
+
 		uop = list_get(lds->read_buffer, list_index);
 		assert(uop);
 

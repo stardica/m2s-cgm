@@ -286,7 +286,17 @@ void mod_handler_nmoesi_load(int event, void *data)
 
 		/* Increment witness variable */
 		if (stack->witness_ptr)
+		{
+
+
+			/*printf("in EV_MOD_NMOESI_LOAD_FINISH\n");
+			printf("Before (*stack->witness_ptr) = %d\n", (*stack->witness_ptr));*/
 			(*stack->witness_ptr)++;
+			/*printf("After (*stack->witness_ptr) = %d\n", (*stack->witness_ptr));
+			fflush(stdout);
+			getchar();*/
+
+		}
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)

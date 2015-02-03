@@ -60,6 +60,7 @@ struct si_compute_unit_t
 	struct si_wavefront_pool_t **wavefront_pools;
 	struct list_t **fetch_buffers;
 	struct si_simd_t **simd_units;
+
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
 	struct si_branch_unit_t branch_unit;

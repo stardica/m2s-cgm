@@ -51,10 +51,14 @@ void memctrl_queues_init(void){
 	//star todo create list with size? or just check the size when insterting into list?
 	mem_ctrl->fetch_request_queue = list_create();
 	mem_ctrl->issue_request_queue = list_create();
+	mem_ctrl->scalar_request_queue = list_create();
+	mem_ctrl->vector_request_queue = list_create();
 	mem_ctrl->memctrl_accesses = list_create();
 
 	mem_ctrl->fetch_request_queue->name = "mem_ctrl.Fetch.Request";
 	mem_ctrl->issue_request_queue->name = "mem_ctrl.Issue.Request";
+	mem_ctrl->scalar_request_queue->name = "mem_ctrl.Scalar.Request";
+	mem_ctrl->vector_request_queue->name = "mem_ctrl.Vector.Request";
 	mem_ctrl->memctrl_accesses->name = "mem_ctrl.Accesses";
 
 	return;
@@ -116,7 +120,6 @@ int memctrl_can_issue_access(struct mem_ctrl_t *ctrl, unsigned int addr){
 	return 1;
 }
 
-//this does what it needs to do.
 //need to retire acceses as they finish.
 int memctrl_in_flight_access(struct mem_ctrl_t *ctrl, long long id){
 
@@ -186,8 +189,6 @@ void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_acces
 	new_packet->event_queue = event_queue;
 	new_packet->data = event_queue_item;
 
-
-
 	//put back on the core event queue to end memory system access.
 	linked_list_add(new_packet->event_queue, new_packet->data);
 	free(new_packet);
@@ -195,10 +196,63 @@ void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_acces
 	return;
 }
 
+void memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();*/
+
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+	/*printf("In memctrl witness pointer value %d\n", *new_packet->witness_ptr);
+	getchar();*/
+
+
+	(*new_packet->witness_ptr)++;
+
+	/*printf("In memctrl witness pointer value after inc %d\n", *new_packet->witness_ptr);
+	printf("In memctrl witness pointer value after inc %d\n", *witness_ptr);
+	getchar();*/
+
+	free(new_packet);
+
+	return;
+}
+
+void memctrl_vector_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+		/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
+		getchar();*/
+
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+
+	(*new_packet->witness_ptr)++;
+
+
+	free(new_packet);
+
+	return;
+}
 
 
 //the CPU advances mem-ctrl with a memory request here
 void memctrl_ctrl_request(void){
+
 
 	return;
 }

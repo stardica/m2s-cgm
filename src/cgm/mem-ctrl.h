@@ -27,9 +27,13 @@ extern struct mem_ctrl_t{
 	int queue_size;
 	long long access_id;
 
-	//pointers to queues
+	//pointers to CPU entry queues
 	struct list_t *fetch_request_queue;
 	struct list_t *issue_request_queue;
+
+	//pointer to GPU entry queues
+	struct list_t *scalar_request_queue;
+	struct list_t *vector_request_queue;
 
 	//access record
 	struct list_t *memctrl_accesses;
@@ -64,6 +68,8 @@ int memctrl_can_fetch_access(struct mem_ctrl_t *ctrl, unsigned int addr);
 int memctrl_in_flight_access(struct mem_ctrl_t *ctrl, long long id);
 long long memctrl_fetch_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+void memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+void memctrl_vector_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 void memctrl_ctrl_request(void);
 void memctrl_ctrl_reply(void);

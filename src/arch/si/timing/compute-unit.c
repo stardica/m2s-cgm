@@ -435,9 +435,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		if (si_tracing())
 		{
 
-			printf("GPU is tracing.\n");
+			/*printf("GPU is tracing.\n");
 			fflush(stdout);
-			getchar();
+			getchar();*/
 
 			si_inst_dump(&wavefront->inst, wavefront->inst_size, wavefront->pc, wavefront->work_group->ndrange->inst_buffer + wavefront->pc, inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, sizeof inst_str_trimmed, inst_str);
@@ -445,10 +445,10 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 				"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
 				uop->id_in_compute_unit, compute_unit->id, 
 				uop->wavefront_pool_id, uop->work_group->id, 
-				wavefront->id, uop->id_in_wavefront, 
-				inst_str_trimmed);
+				wavefront->id, uop->id_in_wavefront, inst_str_trimmed);
 		}
 		
+
 		/* Update last memory accesses */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{

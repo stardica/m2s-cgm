@@ -34,6 +34,7 @@ struct si_wavefront_pool_entry_t
 	/* Status (not mutually exclusive) */
 	unsigned int ready : 1;            /* Ready to fetch next instruction */
 	unsigned int ready_next_cycle : 1; /* Will be ready next cycle */
+
 	/* TOOD Break wait_for_mem into waiting for each memory type */
 	unsigned int wait_for_mem : 1;     /* Waiting for memory instructions */
 	unsigned int wait_for_barrier : 1; /* Waiting at barrier */

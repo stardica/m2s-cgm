@@ -18,6 +18,7 @@ extern struct cgm_packet_t{
 	unsigned int address;
 	void *data;
 	struct linked_list_t *event_queue;
+	int *witness_ptr;
 };
 
 

@@ -18,4 +18,4 @@
 //MSG turns on and off verbose notes
 // MSG 1 outputs configuration data.
 // MSG 2 outputs memory system runtime data.
-#define MSG 1
+#define MSG 0

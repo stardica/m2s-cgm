@@ -24,6 +24,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include <cgm/mem-ctrl.h>
+
 #include <arch/si/timing/compute-unit.h>
 #include <arch/si/timing/gpu.h>
 #include <arch/si/timing/cycle-interval-report.h>
@@ -214,12 +216,22 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Set the access type */
+
+#if CGM
+		if (uop->vector_mem_write && !uop->glc)
+			access_kind = mem_ctrl_access_nc_store;
+		else if (uop->vector_mem_write && uop->glc)
+			access_kind = mem_ctrl_access_store;
+		else if (uop->vector_mem_read)
+			access_kind = mem_ctrl_access_load;
+#else
 		if (uop->vector_mem_write && !uop->glc)
 			access_kind = mod_access_nc_store;
 		else if (uop->vector_mem_write && uop->glc)
 			access_kind = mod_access_store;
 		else if (uop->vector_mem_read)
 			access_kind = mod_access_load;
+#endif
 		else 
 			fatal("%s: invalid access kind", __FUNCTION__);
 
@@ -230,8 +242,19 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			work_item = uop->wavefront->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 
-			mod_access(vector_mem->compute_unit->vector_cache, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 			uop->global_mem_witness--;
+
+
+#if CGM
+
+		memctrl_vector_access(vector_mem->compute_unit->mem_ctrl_ptr, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
+
+#else
+		mod_access(vector_mem->compute_unit->vector_cache, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
+#endif
+
+
+
 		}
 
 		if(si_spatial_report_active)
