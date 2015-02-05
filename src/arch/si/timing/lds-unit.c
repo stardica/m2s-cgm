@@ -18,6 +18,7 @@
  */
 
 
+#include <m2s.h>
 #include <arch/si/emu/emu.h>
 #include <arch/si/emu/wavefront.h>
 #include <lib/esim/trace.h>
@@ -162,8 +163,12 @@ void si_lds_mem(struct si_lds_t *lds)
 	for (i = 0; i < list_entries; i++)
 	{
 
+#if CGM
+
 		//star >> added this do our benchmarks use the lds memory?
 		fatal("entered si_lds_mem()\n");
+
+#endif
 
 		uop = list_get(lds->read_buffer, list_index);
 		assert(uop);

@@ -3279,8 +3279,7 @@ void si_isa_V_MAC_F32_impl(struct si_work_item_t *work_item,
 
 /* D.f = S0.f * K + S1.f; K is a 32-bit inline constant */
 #define INST SI_INST_VOP2
-void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -3305,6 +3304,31 @@ void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item,
 			INST.vdst, dst.as_float, s0.as_float, K.as_float, 
 			s1.as_float);
 	}
+}
+#undef INST
+
+//star >> added inst here
+//D.f = S0.f * S1.f + K; K is a 32-bit inline constant.
+
+#define INST SI_INST_VOP2
+void si_isa_V_MADAK_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t K;
+	union si_reg_t dst;
+
+	/* Load operands from registers or as a literal constant. */
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
+	K.as_uint = INST.lit_cnst;
+
+	/* Calculate the result */
+	dst.as_float = s0.as_float * s1.as_float + K.as_float;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, dst.as_uint);
+
 }
 #undef INST
 
@@ -4150,10 +4174,37 @@ void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+//star added inst here
+//D.i = (S0.i[23:0] * S1.i[23:0])>>32.
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_U32_U24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t product;
+
+	/* Load operands from registers or as a literal constant. */
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
+
+	/* Truncate operands to 24-bit unsigned integers */
+	s0.as_uint = SEXT32(s0.as_uint, 24);
+	s1.as_uint = SEXT32(s1.as_uint, 24);
+
+	/* Calculate the product. */
+	product.as_uint = s0.as_uint * s1.as_uint;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, product.as_uint);
+
+}
+
+
+#undef INST
+
 /* D.f = max(S0.f, S1.f). */
 #define INST SI_INST_VOP3a
-void si_isa_V_MAX_F32_VOP3a_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MAX_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -4471,9 +4522,8 @@ void si_isa_V_FMA_F64_impl(struct si_work_item_t *work_item,
 
 /* D.u = ({S0,S1} >> S2.u[4:0]) & 0xFFFFFFFF. */
 #define INST SI_INST_VOP3a
-void si_isa_V_ALIGNBIT_B32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
-{
+void si_isa_V_ALIGNBIT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
 	union si_reg_t src2;
 	union si_reg_t result;
 
@@ -4509,6 +4559,32 @@ void si_isa_V_ALIGNBIT_B32_impl(struct si_work_item_t *work_item,
 			result.as_uint, src.as_reg[1], src.as_reg[0], 
 			src2.as_uint);
 	}
+}
+#undef INST
+
+//star added inst here
+//D.i = max(S0.i, S1.i, S2.i).
+#define INST SI_INST_VOP3a
+void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	union si_reg_t src0;
+	union si_reg_t src1;
+	union si_reg_t src2;
+	union si_reg_t temp;
+	union si_reg_t result;
+
+	/* Load operands from registers. */
+	src0.as_int = si_isa_read_reg(work_item, INST.src0);
+	src1.as_int = si_isa_read_reg(work_item, INST.src1);
+	src2.as_int = si_isa_read_reg(work_item, INST.src2);
+
+	/*find max*/
+	temp.as_int = (src0.as_int > src1.as_int) ? (src0.as_int) : (src1.as_int);
+	result.as_int = (temp.as_int > src2.as_int) ? (temp.as_int) : (src2.as_int);
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result.as_int);
+
 }
 #undef INST
 

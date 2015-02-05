@@ -1059,7 +1059,6 @@ void X86CpuRunStages(X86Cpu *self)
 	X86CpuIssue(self);
 	X86CpuDispatch(self);
 	X86CpuDecode(self);
-
 	X86CpuFetch(self);
 
 
