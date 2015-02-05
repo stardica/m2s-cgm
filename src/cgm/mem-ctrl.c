@@ -249,6 +249,28 @@ void memctrl_vector_access(struct list_t *request_queue, enum mem_ctrl_access_ki
 	return;
 }
 
+//star todo this is wrong, the lds is a local memory module within the GPU.
+//implement this as a memory block in the GPU with read write access.
+void memctrl_lds_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();*/
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+
+	(*new_packet->witness_ptr)++;
+
+	free(new_packet);
+
+	return;
+}
 
 //the CPU advances mem-ctrl with a memory request here
 void memctrl_ctrl_request(void){

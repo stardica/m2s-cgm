@@ -70,6 +70,7 @@ long long memctrl_fetch_access(struct list_t *request_queue, enum mem_ctrl_acces
 void memctrl_issue_lspq_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 void memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 void memctrl_vector_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+void memctrl_lds_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 void memctrl_ctrl_request(void);
 void memctrl_ctrl_reply(void);

@@ -25,6 +25,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include <cgm/mem-ctrl.h>
+
 #include <arch/si/timing/compute-unit.h>
 #include <arch/si/timing/gpu.h>
 #include <arch/si/timing/lds-unit.h>
@@ -163,13 +165,6 @@ void si_lds_mem(struct si_lds_t *lds)
 	for (i = 0; i < list_entries; i++)
 	{
 
-#if CGM
-
-		//star >> added this do our benchmarks use the lds memory?
-		fatal("entered si_lds_mem()\n");
-
-#endif
-
 		uop = list_get(lds->read_buffer, list_index);
 		assert(uop);
 
@@ -218,21 +213,25 @@ void si_lds_mem(struct si_lds_t *lds)
 
 			for (j = 0; j < work_item_uop->lds_access_count; j++)
 			{
-				if (work_item->lds_access_type[j] == 1)
-				{
-					access_type = mod_access_load;
-				}
-				else if (work_item->lds_access_type[j] == 2)
-				{
-					access_type = mod_access_store;
-				}
-				else
-				{
-					fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);
-				}
 
-				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);
+#if CGM
+				if (work_item->lds_access_type[j] == 1){access_type = mem_ctrl_access_load;}
+				else if (work_item->lds_access_type[j] == 2){access_type = mem_ctrl_access_store;}
+				else{fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);}
+
+#else
+				if (work_item->lds_access_type[j] == 1){access_type = mod_access_load;}
+				else if (work_item->lds_access_type[j] == 2){access_type = mod_access_store;}
+				else{fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);}
+#endif
+
 				uop->lds_witness--;
+#if CGM
+				memctrl_lds_access(lds->compute_unit->mem_ctrl_ptr, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
+#else
+				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);
+#endif
+
 			}
 		}
 
