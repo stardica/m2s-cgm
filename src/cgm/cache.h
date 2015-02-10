@@ -9,7 +9,7 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
-//star todo add prefetching
+//star todo add prefetching and coalescing
 
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
@@ -68,8 +68,8 @@ struct cache_t
 	//connections
 	//cache list of queues
 	//a cache maybe multi-ported i.e. a shared L2 cache.
-	struct list_t * in_queues;
-	struct list_t * out_queues;
+	struct list_t *in_queues;
+	struct list_t *out_queues;
 
 	//still the old elements.
 	//enum cache_policy_t policy;
@@ -87,22 +87,26 @@ struct cache_t
 };
 
 
-//Global objects
-//L1 inst and data caches
-extern struct cache_t *l1_inst_cache;
-extern struct cache_t *l1_data_cache;
+//CPU caches
+extern struct cache_t *l1_i_caches;
+extern struct cache_t *l1_d_caches;
+extern struct cache_t *l2_caches;
+extern struct cache_t *l3_s0_cache;
+extern struct cache_t *l3_s1_cache;
+extern struct cache_t *l3_s2_cache;
+extern struct cache_t *l3_s3_cache;
 
-//L2 cache
-extern struct cache_t *l2_cache;
+//GPU caches
+extern struct cache_t *l1_v_caches;
+extern struct cache_t *l1_s_caches;
+extern struct cache_t *l2_caches;
+extern struct cache_t *lds_units;
 
-//L3 cache
-extern struct cache_t *l3_cache;
-
-extern struct list_t *cache_list;
 
 //star todo write functions for cache access, processing and reply.
 //function prototypes
 struct cache_t *cgm_cache_create(void);
+void cgm_cache_configure(void);
 void cache_init(void);
 void connect_queue(struct list_t *queue);
 void cache_poll_queues(void);

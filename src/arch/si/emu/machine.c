@@ -228,8 +228,7 @@ void si_isa_S_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 }
 
 #define INST SI_INST_SMRD
-void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[4];
 	unsigned int m_base;

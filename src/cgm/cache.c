@@ -14,91 +14,113 @@
 #include <cgm/cgm.h>
 
 
-//L1 caches
-struct cache_t *l1_inst_cache;
-struct cache_t *l1_data_cache;
 
-//L2 caches
-struct cache_t *l2_cache;
+#include <arch/si/timing/gpu.h>
+#include <arch/x86/timing/cpu.h>
+#include <lib/util/debug.h>
 
-//L3 caches
-struct cache_t *l3_cache;
+//CPU caches
+struct cache_t *l1_i_caches;
+struct cache_t *l1_d_caches;
+struct cache_t *l2_caches;
+struct cache_t *l3_s0_cache;
+struct cache_t *l3_s1_cache;
+struct cache_t *l3_s2_cache;
+struct cache_t *l3_s3_cache;
 
-struct list_t *cache_list;
-
-	/*
-	//Memory controller
-	q_mc_0_L3Request = list_create();
-	q_mc_0_L3Reply = list_create();*/
-
+//GPU caches
+struct cache_t *l1_v_caches;
+struct cache_t *l1_s_caches;
+struct cache_t *l2_caches;
+struct cache_t *lds_units;
 
 
 void cache_init(void){
 
-	//core 1
-	//Create L1 caches
-	l1_inst_cache = cgm_cache_create();
-	l1_inst_cache->name = "l1_inst_cache";
-	l1_data_cache = cgm_cache_create();
-	l1_data_cache->name = "l1_data_cache";
+	//star todo make this automatic
 
-	//Create L2 caches
-	l2_cache = cgm_cache_create();
-	l2_cache->name = "l2_cache";
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
 
-	//Create L3 caches
-	l3_cache  = cgm_cache_create();
-	l3_cache->name = "l3_cache";
+	//initialize the CPU L1I caches
+	l1_i_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
-	//star >> put the caches in a list for easy access later on. list is global.
-	cache_list = list_create();
-	list_add(cache_list, l1_inst_cache);
-	list_add(cache_list, l1_data_cache);
-	list_add(cache_list, l2_cache);
-	list_add(cache_list, l3_cache);
+	//initialize the CPU L1D caches
+	l1_d_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
-	//star connect queues to caches
-	//star todo automate this, the queue names are going to be a problem...
-	//L1 inst cache
-	list_add(l1_inst_cache->in_queues, q_l1i_0_CoreRequest);
-	list_add(l1_inst_cache->out_queues, q_l1i_0_L1iReply);
+	//initialize the CPU L2 caches
+	l2_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
-	//L1 data cache
-	list_add(l1_data_cache->in_queues, q_l1d_0_CoreRequest);
-	list_add(l1_data_cache->out_queues, q_l1d_0_L1dReply);
+	//initialize the L3 caches (sliced).
+	l3_s0_cache = (void *) calloc(1, sizeof(struct cache_t));
+	l3_s1_cache = (void *) calloc(1, sizeof(struct cache_t));
+	l3_s2_cache = (void *) calloc(1, sizeof(struct cache_t));
+	l3_s3_cache = (void *) calloc(1, sizeof(struct cache_t));
 
-	//L2 cache
-	list_add(l2_cache->in_queues, q_l2_0_L1iRequest);
-	list_add(l2_cache->in_queues, q_l2_0_L1dRequest);
-	list_add(l2_cache->out_queues, q_l2_0_L2L1iReply);
-	list_add(l2_cache->out_queues, q_l2_0_L2L1dReply);
+	//initialize the GPU L1V caches
+	l1_v_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
 
-	//L3 cache
-	list_add(l3_cache->in_queues, q_l3_0_L2Request);
-	list_add(l3_cache->in_queues, q_l3_0_L3Reply);
+	//initialize the GPU L1S caches
+	l1_s_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
 
-
-	/*//create tasks
-	char * taskname = "cache_ctrl";
-	create_task(cache_ctrl, DEFAULT_STACK_SIZE, taskname);*/
+	//initialize the GPU L2 caches and lds.
+	int gpu_group_cache_num = (num_cus/4);
+	l2_caches = (void *) calloc(gpu_group_cache_num, sizeof(struct cache_t));
+	lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
 
 	return;
-
 }
 
 struct cache_t *cgm_cache_create(void){
 
 	struct cache_t *new_cache;
 
-	new_cache = (void *) malloc(sizeof(struct cache_t));
-
-	//star todo finish initializing cache state here.
-	new_cache->in_queues = list_create();
-	new_cache->out_queues = list_create();
+	new_cache = (void *) calloc(1, sizeof(struct cache_t));
 
 	return new_cache;
-
 }
+
+//todo fix the arguments
+/*void cgm_cache_configure(void){
+
+	struct cache_t *cache;
+	struct cache_block_t *block;
+	unsigned int set, way;
+
+	 Initialize
+	cache = xcalloc(1, sizeof(struct cache_t));
+	cache->name = xstrdup(name);
+	cache->num_sets = num_sets;
+	cache->block_size = block_size;
+	cache->assoc = assoc;
+	cache->policy = policy;
+
+	 Derived fields
+	assert(!(num_sets & (num_sets - 1)));
+	assert(!(block_size & (block_size - 1)));
+	assert(!(assoc & (assoc - 1)));
+	cache->log_block_size = log_base2(block_size);
+	cache->block_mask = block_size - 1;
+
+	 Initialize array of sets
+	cache->sets = xcalloc(num_sets, sizeof(struct cache_set_t));
+	for (set = 0; set < num_sets; set++)
+	{
+		 Initialize array of blocks
+		cache->sets[set].blocks = xcalloc(assoc, sizeof(struct cache_block_t));
+		cache->sets[set].way_head = &cache->sets[set].blocks[0];
+		cache->sets[set].way_tail = &cache->sets[set].blocks[assoc - 1];
+		for (way = 0; way < assoc; way++)
+		{
+			block = &cache->sets[set].blocks[way];
+			block->way = way;
+			block->way_prev = way ? &cache->sets[set].blocks[way - 1] : NULL;
+			block->way_next = way < assoc - 1 ? &cache->sets[set].blocks[way + 1] : NULL;
+		}
+	}
+
+	return;
+}*/
 
 //star >> todo automate queue connection here
 void connect_queue(struct list_t *queue){
@@ -109,7 +131,7 @@ void connect_queue(struct list_t *queue){
 
 
 //star >> need to know what cache reads from what queue and reads what data
-void cache_poll_queues(void){
+/*void cache_poll_queues(void){
 
 	struct cache_t *cache;
 	struct list_t *queue;
@@ -142,7 +164,7 @@ void cache_poll_queues(void){
 	}
 
 	return;
-}
+}*/
 
 int cache_ctrl(struct list_t *queue){
 

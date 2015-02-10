@@ -16,8 +16,9 @@
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
 #include <arch/common/arch.h>
-#include <arch/x86/timing/core.h>
+
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
 
 #include <arch/si/timing/gpu.h>
@@ -40,6 +41,14 @@ int cgm_mem_configure(void){
 
 	int error = 0;
 
+	//configure the caches
+	error = ini_parse(cgm_config_file_name_and_path, cache_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for cache configuration.\n");
+		return 1;
+	}
+
 	//configure the memory controller
 	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
 	if (error < 0)
@@ -47,6 +56,8 @@ int cgm_mem_configure(void){
 		printf("Unable to open Config.ini for memctrl configuration.\n");
 		return 1;
 	}
+
+
 
 	//get some host sim configuration stats
 	/*error = ini_parse(HOSTSIMCONFIGPATH, cpu_config, NULL);
@@ -72,13 +83,7 @@ int cgm_mem_configure(void){
 		return 1;
 	}*/
 
-	//get cache configuration
-	/*error = ini_parse(CGMMEMCONFIGPATH, cache_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for cache configuration.\n");
-		return 1;
-	}*/
+
 
 	//get sysagent configuration
 	/*error = ini_parse(CONFIGPATH, sysagent_config, NULL);
@@ -188,6 +193,8 @@ int cpu_configure(Timing *self, struct config_t *config){
 		fatal("Number of threads > 1 STOP\n");
 	}
 
+
+	//star todo change this to connect to each cache.
 	core_index = 0;
 	thread_index = 0;
 	core = cpu->cores[core_index];
@@ -199,8 +206,6 @@ int cpu_configure(Timing *self, struct config_t *config){
 	//assign entry into memory system
 	thread->mem_ctrl_ptr = mem_ctrl;
 
-	//add to memory entry list list? Dones't look like we need to do this.
-	//linked_list_add(arch_x86->mem_entry_mod_list, thread->mem_ctrl_ptr);
 
 	if(MSG==1)
 	{
@@ -244,15 +249,11 @@ int gpu_configure(Timing *self, struct config_t *config){
 		fatal("number of si_gpu->compute_units > 1 STOP\n");
 	}
 
+
 	compute_unit_id = 0;
 	compute_unit = si_gpu->compute_units[compute_unit_id];
 
 	compute_unit->mem_ctrl_ptr = mem_ctrl;
-
-
-	//add to memory entry list list? Doesn't look like we need to do this.
-	//linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->vector_cache);
-	//linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);
 
 	if(MSG==1)
 	{
@@ -264,9 +265,6 @@ int gpu_configure(Timing *self, struct config_t *config){
 
 	return 1;
 }
-
-
-
 
 
 int check_config(void* user, const char* section, const char* name, const char* value){
@@ -303,145 +301,461 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 
 	//L1 caches
 
-	if(MATCH("CacheL1d", "Sets"))
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int i = 0;
+
+	int Sets = 0;
+	int Assoc = 0;
+	int BlockSize = 0;
+	int Latency = 0;
+	const char* Policy = "";
+	int Ports = 0;
+	int MSHR = 0;
+	int DirectoryLatency = 0;
+
+
+
+	/*configure CPU D caches*/
+	if(MATCH("CPU_L1_D_Cache", "Sets"))
 	{
-		l1_data_cache->num_sets = atoi(value);
+		Sets = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].num_sets = Sets;
+		}
 	}
-	if(MATCH("CacheL1d", "Assoc"))
+
+	if(MATCH("CPU_L1_D_Cache", "Assoc"))
 	{
-		l1_data_cache->assoc = atoi(value);
+		Assoc = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].assoc = Assoc;
+		}
 	}
-	if(MATCH("CacheL1d", "BlockSize"))
+
+	if(MATCH("CPU_L1_D_Cache", "BlockSize"))
 	{
-		l1_data_cache->block_size = atoi(value);
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].block_size = BlockSize;
+		}
 	}
-	if(MATCH("CacheL1d", "Latency"))
+
+	if(MATCH("CPU_L1_D_Cache", "Latency"))
 	{
-		l1_data_cache->latency = atoi(value);
+		Latency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].latency = Latency;
+		}
 	}
-	if(MATCH("CacheL1d", "Policy"))
+
+	if(MATCH("CPU_L1_D_Cache", "Policy"))
 	{
-		l1_data_cache->policy = strdup(value);
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].policy = Policy;
+		}
 	}
-	if(MATCH("CacheL1d", "MSHR"))
+
+	if(MATCH("CPU_L1_D_Cache", "MSHR"))
 	{
-		l1_data_cache->mshr_size = atoi(value);
+		MSHR = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].mshr_size = MSHR;
+		}
 	}
-	if(MATCH("CacheL1d", "DirectoryLatency"))
+	if(MATCH("CPU_L1_D_Cache", "DirectoryLatency"))
 	{
-		l1_data_cache->directory_latency = atoi(value);
+		DirectoryLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].directory_latency = DirectoryLatency;
+		}
 	}
-	if(MATCH("CacheL1d", "Ports"))
+
+	if(MATCH("CPU_L1_D_Cache", "Ports"))
 	{
-		l1_data_cache->num_ports = atoi(value);
+		Ports = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].num_ports = Ports;
+		}
+	}
+
+	/*configure CPU I caches*/
+	if(MATCH("CPU_L1_I_Cache", "Sets"))
+	{
+		Sets = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].num_sets = Sets;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "Assoc"))
+	{
+		Assoc = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].assoc = Assoc;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].block_size = BlockSize;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].latency = Latency;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].policy = Policy;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "MSHR"))
+	{
+		MSHR = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].mshr_size = MSHR;
+		}
+	}
+	if(MATCH("CPU_L1_I_Cache", "DirectoryLatency"))
+	{
+		DirectoryLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "Ports"))
+	{
+		Ports = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].num_ports = Ports;
+		}
 	}
 
 
-	if(MATCH("CacheL1i", "Sets"))
+	/*configure CPU L2 caches*/
+	if(MATCH("CPU_L2_Cache", "Sets"))
 	{
-		l1_inst_cache->num_sets = atoi(value);
-	}
-	if(MATCH("CacheL1i", "Assoc"))
-	{
-		l1_inst_cache->assoc = atoi(value);
-	}
-	if(MATCH("CacheL1i", "BlockSize"))
-	{
-		l1_inst_cache->block_size = atoi(value);
-	}
-	if(MATCH("CacheL1i", "Latency"))
-	{
-		l1_inst_cache->latency = atoi(value);
-	}
-	if(MATCH("CacheL1i", "Policy"))
-	{
-		l1_inst_cache->policy = strdup(value);
-	}
-	if(MATCH("CacheL1i", "MSHR"))
-	{
-		l1_inst_cache->mshr_size = atoi(value);
-	}
-	if(MATCH("CacheL1i", "DirectoryLatency"))
-	{
-		l1_inst_cache->directory_latency = atoi(value);
-	}
-	if(MATCH("CacheL1i", "Ports"))
-	{
-		l1_inst_cache->num_ports = atoi(value);
+		Sets = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].num_sets = Sets;
+		}
 	}
 
-	/*L2 caches
-	struct cache_t *l2_cache;*/
-
-	if(MATCH("CacheL2", "Sets"))
+	if(MATCH("CPU_L2_Cache", "Assoc"))
 	{
-		l2_cache->num_sets = atoi(value);
-	}
-	if(MATCH("CacheL2", "Assoc"))
-	{
-		l2_cache->assoc = atoi(value);
-	}
-	if(MATCH("CacheL2", "BlockSize"))
-	{
-		l2_cache->block_size = atoi(value);
-	}
-	if(MATCH("CacheL2", "Latency"))
-	{
-		l2_cache->latency = atoi(value);
-	}
-	if(MATCH("CacheL2", "Policy"))
-	{
-		l2_cache->policy = strdup(value);
-	}
-	if(MATCH("CacheL2", "MSHR"))
-	{
-		l2_cache->mshr_size = atoi(value);
-	}
-	if(MATCH("CacheL2", "DirectoryLatency"))
-	{
-		l2_cache->directory_latency = atoi(value);
-	}
-	if(MATCH("CacheL2", "Ports"))
-	{
-		l2_cache->num_ports = atoi(value);
+		Assoc = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].assoc = Assoc;
+		}
 	}
 
-	/*L3 caches
-	struct cache_t *l3_cache;*/
-
-	if(MATCH("CacheL3", "Sets"))
+	if(MATCH("CPU_L2_Cache", "BlockSize"))
 	{
-		l3_cache->num_sets = atoi(value);
-	}
-	if(MATCH("CacheL3", "Assoc"))
-	{
-		l3_cache->assoc = atoi(value);
-	}
-	if(MATCH("CacheL3", "BlockSize"))
-	{
-		l3_cache->block_size = atoi(value);
-	}
-	if(MATCH("CacheL3", "Latency"))
-	{
-		l3_cache->latency = atoi(value);
-	}
-	if(MATCH("CacheL3", "Policy"))
-	{
-		l3_cache->policy = strdup(value);
-	}
-	if(MATCH("CacheL3", "MSHR"))
-	{
-		l3_cache->mshr_size = atoi(value);
-	}
-	if(MATCH("CacheL3", "DirectoryLatency"))
-	{
-		l3_cache->directory_latency = atoi(value);
-	}
-	if(MATCH("CacheL3", "Ports"))
-	{
-		l3_cache->num_ports = atoi(value);
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].block_size = BlockSize;
+		}
 	}
 
+	if(MATCH("CPU_L2_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].latency = Latency;
+		}
+	}
+
+	if(MATCH("CPU_L2_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].policy = Policy;
+		}
+	}
+
+	if(MATCH("CPU_L2_Cache", "MSHR"))
+	{
+		MSHR = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].mshr_size = MSHR;
+		}
+	}
+	if(MATCH("CPU_L2_Cache", "DirectoryLatency"))
+	{
+		DirectoryLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L2_Cache", "Ports"))
+	{
+		Ports = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].num_ports = Ports;
+		}
+	}
+
+
+	/*configure CPU L3 caches*/
+	if(MATCH("CPU_L3_Cache", "Sets"))
+	{
+		Sets = atoi(value);
+		int slice_size = Sets / 4;
+
+		l3_s0_cache->num_sets = slice_size;
+		l3_s1_cache->num_sets = slice_size;
+		l3_s2_cache->num_sets = slice_size;
+		l3_s3_cache->num_sets = slice_size;
+	}
+
+	if(MATCH("CPU_L3_Cache", "Assoc"))
+	{
+		Assoc = atoi(value);
+
+		l3_s0_cache->assoc = Assoc;
+		l3_s1_cache->assoc = Assoc;
+		l3_s2_cache->assoc = Assoc;
+		l3_s3_cache->assoc = Assoc;
+	}
+
+	if(MATCH("CPU_L3_Cache", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+
+		l3_s0_cache->block_size = BlockSize;
+		l3_s1_cache->block_size = BlockSize;
+		l3_s2_cache->block_size = BlockSize;
+		l3_s3_cache->block_size = BlockSize;
+	}
+
+	if(MATCH("CPU_L3_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		l3_s0_cache->latency = Latency;
+		l3_s1_cache->latency = Latency;
+		l3_s2_cache->latency = Latency;
+		l3_s3_cache->latency = Latency;
+	}
+
+	if(MATCH("CPU_L3_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+
+		l3_s0_cache->policy = Policy;
+		l3_s1_cache->policy = Policy;
+		l3_s2_cache->policy = Policy;
+		l3_s3_cache->policy = Policy;
+
+	}
+
+	if(MATCH("CPU_L3_Cache", "MSHR"))
+	{
+		MSHR = atoi(value);
+
+		l3_s0_cache->mshr_size = MSHR;
+		l3_s1_cache->mshr_size = MSHR;
+		l3_s2_cache->mshr_size = MSHR;
+		l3_s3_cache->mshr_size = MSHR;
+	}
+
+	if(MATCH("CPU_L3_Cache", "DirectoryLatency"))
+	{
+		DirectoryLatency = atoi(value);
+
+		l3_s0_cache->directory_latency = DirectoryLatency;
+		l3_s1_cache->directory_latency = DirectoryLatency;
+		l3_s2_cache->directory_latency = DirectoryLatency;
+		l3_s3_cache->directory_latency = DirectoryLatency;
+	}
+
+	if(MATCH("CPU_L3_Cache", "Ports"))
+	{
+		Ports = atoi(value);
+
+		l3_s0_cache->num_ports = Ports;
+		l3_s1_cache->num_ports = Ports;
+		l3_s2_cache->num_ports = Ports;
+		l3_s3_cache->num_ports = Ports;
+	}
+
+
+	/*configure GPU V caches*/
+	if(MATCH("GPU_V_Cache", "Sets"))
+	{
+		Sets = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_v_caches[i].num_sets = Sets;
+		}
+	}
+
+	if(MATCH("GPU_V_Cache", "Assoc"))
+	{
+		Assoc = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_v_caches[i].assoc = Assoc;
+		}
+	}
+
+	if(MATCH("GPU_V_Cache", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_v_caches[i].block_size = BlockSize;
+		}
+	}
+
+	if(MATCH("GPU_V_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_v_caches[i].latency = Latency;
+		}
+	}
+
+	/*configure GPU S caches*/
+	if(MATCH("GPU_S_Cache", "Sets"))
+	{
+		Sets = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_s_caches[i].num_sets = Sets;
+		}
+	}
+
+	if(MATCH("GPU_S_Cache", "Assoc"))
+	{
+		Assoc = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_s_caches[i].assoc = Assoc;
+		}
+	}
+
+	if(MATCH("GPU_S_Cache", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_s_caches[i].block_size = BlockSize;
+		}
+	}
+
+	if(MATCH("GPU_S_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l1_s_caches[i].latency = Latency;
+		}
+	}
+
+
+	/*configure GPU L2 caches*/
+	if(MATCH("GPU_L2_Cache", "Sets"))
+	{
+		Sets = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l2_caches[i].num_sets = Sets;
+		}
+	}
+
+	if(MATCH("GPU_L2_Cache", "Assoc"))
+	{
+		Assoc = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l2_caches[i].assoc = Assoc;
+		}
+	}
+
+	if(MATCH("GPU_L2_Cache", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l2_caches[i].block_size = BlockSize;
+		}
+	}
+
+	if(MATCH("GPU_L2_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			l2_caches[i].latency = Latency;
+		}
+	}
+
+	/*configure GPU LDS units*/
+	if(MATCH("GPU_LDS", "BlockSize"))
+	{
+		BlockSize = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			lds_units[i].block_size = BlockSize;
+		}
+	}
+
+	if(MATCH("GPU_LDS", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			lds_units[i].latency = Latency;
+		}
+	}
+
+	if(MATCH("GPU_LDS", "Ports"))
+	{
+		Ports = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			lds_units[i].num_ports = Ports;
+		}
+	}
 
 	return 0;
 }

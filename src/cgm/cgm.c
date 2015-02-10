@@ -21,11 +21,6 @@
 #include <cgm/packet.h>
 
 
-
-char test_mem[256] = {NULL};
-int host_sim_cpu_num = 1; //Statically set to 1 for now.
-int host_sim_cpu_core_num;
-int host_sim_cpu_thread_num;
 int host_sim_cpu_fetch_queue_size;
 int host_sim_cpu_lsq_queue_size;
 
@@ -37,25 +32,22 @@ long long int mem_cycle = 0;
 eventcount *start;
 eventcount *stop;
 
-/*star todo:
- (2) integrate with M2S single core CPU, then multicore CPU, then multicore CPU with GPU.
-*/
 
 void cgm_init(void){
 
 	//star todo add error checking.
 	memctrl_init();
+	cache_init();
 
 	return;
 }
 
 void cgm_configure(void){
 
+
 	//star todo add error checking.
 	cgm_mem_configure();
-	//print_config();
 
-	//star todo run the call back functions for each arch (x86Cpu and SIGpu)
 	cgm_cpu_configure();
 	cgm_gpu_configure();
 
