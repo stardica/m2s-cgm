@@ -38,9 +38,10 @@ struct cache_t *lds_units;
 void cache_init(void){
 
 	//star todo make this automatic
-
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
+	int l3_slices = num_cores/4;
+	int gpu_group_cache_num = num_cus/4;
 
 	//initialize the CPU L1I caches
 	l1_i_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
@@ -52,10 +53,10 @@ void cache_init(void){
 	l2_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
 	//initialize the L3 caches (sliced).
-	l3_s0_cache = (void *) calloc(1, sizeof(struct cache_t));
-	l3_s1_cache = (void *) calloc(1, sizeof(struct cache_t));
-	l3_s2_cache = (void *) calloc(1, sizeof(struct cache_t));
-	l3_s3_cache = (void *) calloc(1, sizeof(struct cache_t));
+	l3_s0_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
+	l3_s1_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
+	l3_s2_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
+	l3_s3_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
 
 	//initialize the GPU L1V caches
 	l1_v_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
@@ -63,9 +64,10 @@ void cache_init(void){
 	//initialize the GPU L1S caches
 	l1_s_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
 
-	//initialize the GPU L2 caches and lds.
-	int gpu_group_cache_num = (num_cus/4);
+	//initialize the GPU L2 caches.
 	l2_caches = (void *) calloc(gpu_group_cache_num, sizeof(struct cache_t));
+
+	//initialize the GPU LDS
 	lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
 
 	return;

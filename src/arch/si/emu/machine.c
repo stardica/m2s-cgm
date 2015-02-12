@@ -4174,7 +4174,7 @@ void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item,
 #undef INST
 
 //star added inst here
-//D.i = (S0.i[23:0] * S1.i[23:0])>>32.
+//D.u = D.u = S0.u[23:0] * S1.u[23:0]
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_U32_U24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
 
@@ -4182,13 +4182,13 @@ void si_isa_V_MUL_U32_U24_VOP3a_impl(struct si_work_item_t *work_item, struct si
 	union si_reg_t s1;
 	union si_reg_t product;
 
+
 	/* Load operands from registers or as a literal constant. */
 	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
 	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
 
-	/* Truncate operands to 24-bit unsigned integers */
-	s0.as_uint = SEXT32(s0.as_uint, 24);
-	s1.as_uint = SEXT32(s1.as_uint, 24);
+	s0.as_uint = s0.as_uint & 0x00FFFFFF;
+	s1.as_uint = s1.as_uint & 0x00FFFFFF;
 
 	/* Calculate the product. */
 	product.as_uint = s0.as_uint * s1.as_uint;
@@ -4248,8 +4248,7 @@ void si_isa_V_MAX_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_ins
 
 /* D.f = S0.f * S1.f + S2.f. */
 #define INST SI_INST_VOP3a
-void si_isa_V_MAD_F32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MAD_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -4572,17 +4571,28 @@ void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	union si_reg_t temp;
 	union si_reg_t result;
 
+	printf("running max uop\n");
+	fflush(stdout);
+
 	/* Load operands from registers. */
-	src0.as_int = si_isa_read_reg(work_item, INST.src0);
-	src1.as_int = si_isa_read_reg(work_item, INST.src1);
-	src2.as_int = si_isa_read_reg(work_item, INST.src2);
+	src0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	src1.as_uint = si_isa_read_reg(work_item, INST.src1);
+	src2.as_uint = si_isa_read_reg(work_item, INST.src2);
 
 	/*find max*/
+
 	temp.as_int = (src0.as_int > src1.as_int) ? (src0.as_int) : (src1.as_int);
 	result.as_int = (temp.as_int > src2.as_int) ? (temp.as_int) : (src2.as_int);
 
+	printf("Src0 %d\n", src0.as_int);
+	printf("Src1 %d\n", src1.as_int);
+	printf("Src2 %d\n", src2.as_int);
+	printf("Max is %d\n", result.as_int);
+	fflush(stdout);
+	//getchar();
+
 	/* Write the results. */
-	si_isa_write_vreg(work_item, INST.vdst, result.as_int);
+	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
 
 }
 #undef INST
@@ -4609,8 +4619,7 @@ void si_isa_V_MIN_F64_impl(struct si_work_item_t *work_item,
 
 /* D.d = max(S0.d, S1.d). */
 #define INST SI_INST_VOP3a
-void si_isa_V_MAX_F64_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MAX_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	NOT_IMPL();
 }
