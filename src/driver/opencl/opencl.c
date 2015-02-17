@@ -223,8 +223,9 @@ static int opencl_abi_init_impl(X86Context *ctx)
  *	ABI calls taking device pointers as input arguments.
  */
 
-static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
-{
+static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
+
+
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int size;
@@ -240,8 +241,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 	 * memory space are not considered. */
 	device_ptr = si_emu->video_mem_top;
 	si_emu->video_mem_top += size;
-	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n",
-			size, device_ptr);
+	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
 	/* Return device pointer */
 	return device_ptr;

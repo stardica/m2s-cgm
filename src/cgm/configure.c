@@ -11,10 +11,10 @@
 #include <string.h>
 
 #include <lib/util/debug.h>
-
 #include <lib/util/config.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
+
 #include <arch/common/arch.h>
 
 #include <arch/x86/timing/cpu.h>
@@ -42,12 +42,16 @@ int cgm_mem_configure(void){
 	int error = 0;
 
 	//configure the caches
-	error = ini_parse(cgm_config_file_name_and_path, cache_config, NULL);
+	error = ini_parse(cgm_config_file_name_and_path, cache_read_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for cache configuration.\n");
 		return 1;
 	}
+
+
+	cache_finish_create();
+
 
 	//configure the memory controller
 	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
@@ -152,13 +156,15 @@ int cgm_gpu_configure(void){
 
 int cpu_configure(Timing *self, struct config_t *config){
 
-	//star todo (1) configure the CPU/Core/Thread here
-	//			(2) get the number of cores/threads and configure each.
-	//this function does all the stuff that arch/x86/timing/mem-config.h/c has to do.
+	int i, j = 0;
+	int num_cores = x86_cpu_num_cores;
+	int num_threads = x86_cpu_num_threads;
 
 	if (MSG ==1)
 	{
 		printf("cpu_configure start\n");
+		printf("number of cores %d\n", x86_cpu_num_cores);
+		printf("number of threads %d\n", x86_cpu_num_threads);
 		fflush(stdout);
 		getchar();
 	}
@@ -167,52 +173,24 @@ int cpu_configure(Timing *self, struct config_t *config){
 	X86Core *core;
 	X86Thread *thread;
 
-	int core_index;
-	int thread_index;
-
-	//star todo pull core_index and thread_index automatically.
-	//i think getting the size of the arrays will work.
-	//other option is to set manually when we have fully defined the processor and memory system configurations.
-
-	if (MSG ==1)
+	for(i = 0; i < num_cores; i++)
 	{
-		printf("number of cores %d\n", x86_cpu_num_cores);
-		printf("number of threads %d\n", x86_cpu_num_threads);
+		for(j = 0; j < num_threads; j++)
+		{
+			core = cpu->cores[i];
+			thread = core->threads[j];
 
-		fflush(stdout);
-		getchar();
-	}
+			//assign entry into memory system
+			thread->i_cache_ptr = l1_i_caches;
+			thread->d_cache_ptr = l1_d_caches;
 
-	//for now make sure number of cores and threads are 1
-	if(x86_cpu_num_cores > 1)
-	{
-		fatal("Number of core > 1 STOP\n");
-	}
-	if(x86_cpu_num_threads > 1)
-	{
-		fatal("Number of threads > 1 STOP\n");
-	}
+			if(1)
+			{
+				//printf("thread %d  mem entry name is %s\n", thread->id_in_cpu, thread->mem_ctrl_ptr->name);
+			}
 
+		}
 
-	//star todo change this to connect to each cache.
-	core_index = 0;
-	thread_index = 0;
-	core = cpu->cores[core_index];
-	thread = core->threads[thread_index];
-
-	//star todo link memory modules here.
-	//do this somewhere else?
-
-	//assign entry into memory system
-	thread->mem_ctrl_ptr = mem_ctrl;
-
-
-	if(MSG==1)
-	{
-		printf("cpu_configure end\n");
-		printf("Thread mem entry name is %s", thread->mem_ctrl_ptr->name);
-		fflush(stdout);
-		getchar();
 	}
 
 	return 1;
@@ -266,38 +244,7 @@ int gpu_configure(Timing *self, struct config_t *config){
 	return 1;
 }
 
-
-int check_config(void* user, const char* section, const char* name, const char* value){
-
-	//this is used if you want to store the ini values in our configuration struct.
-	//struct queue_config_t *temp = (struct queue_config_t *)user;
-
-	if(MATCH("Check", "Check"))
-	{
-		//temp->size = atoi(value);
-		cgmmem_check_config = atoi(value);
-
-	}
-
-	return 0;
-}
-
-int queue_config(void* user, const char* section, const char* name, const char* value){
-
-	//this is used if you want to store the ini values in our configuration struct.
-	//struct queue_config_t *temp = (struct queue_config_t *)user;
-
-	if(MATCH("Queue", "Size"))
-	{
-		//temp->size = atoi(value);
-		queue_size = atoi(value);
-
-	}
-
-	return 0;
-}
-
-int cache_config(void* user, const char* section, const char* name, const char* value){
+int cache_read_config(void* user, const char* section, const char* name, const char* value){
 
 	//L1 caches
 
@@ -394,7 +341,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Sets = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].num_sets = Sets;
+			l1_i_caches[i].num_sets = Sets;
 		}
 	}
 
@@ -403,7 +350,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Assoc = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].assoc = Assoc;
+			l1_i_caches[i].assoc = Assoc;
 		}
 	}
 
@@ -412,7 +359,9 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		BlockSize = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].block_size = BlockSize;
+			l1_i_caches[i].block_size = BlockSize;
+			//printf("block size %d\n", BlockSize);
+			//printf("block size %d\n", l1_d_caches[i].block_size);
 		}
 	}
 
@@ -421,7 +370,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Latency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].latency = Latency;
+			l1_i_caches[i].latency = Latency;
 		}
 	}
 
@@ -430,7 +379,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Policy = strdup(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].policy = Policy;
+			l1_i_caches[i].policy = Policy;
 		}
 	}
 
@@ -439,7 +388,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		MSHR = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].mshr_size = MSHR;
+			l1_i_caches[i].mshr_size = MSHR;
 		}
 	}
 	if(MATCH("CPU_L1_I_Cache", "DirectoryLatency"))
@@ -447,7 +396,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].directory_latency = DirectoryLatency;
+			l1_i_caches[i].directory_latency = DirectoryLatency;
 		}
 	}
 
@@ -456,7 +405,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Ports = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].num_ports = Ports;
+			l1_i_caches[i].num_ports = Ports;
 		}
 	}
 
@@ -540,49 +489,60 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Sets = atoi(value);
 		int slice_size = Sets / 4;
 
-		l3_s0_cache->num_sets = slice_size;
-		l3_s1_cache->num_sets = slice_size;
-		l3_s2_cache->num_sets = slice_size;
-		l3_s3_cache->num_sets = slice_size;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].num_sets = slice_size;
+		}
 	}
 
 	if(MATCH("CPU_L3_Cache", "Assoc"))
 	{
 		Assoc = atoi(value);
-
-		l3_s0_cache->assoc = Assoc;
-		l3_s1_cache->assoc = Assoc;
-		l3_s2_cache->assoc = Assoc;
-		l3_s3_cache->assoc = Assoc;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].assoc = Assoc;
+		}
 	}
 
 	if(MATCH("CPU_L3_Cache", "BlockSize"))
 	{
 		BlockSize = atoi(value);
-
-		l3_s0_cache->block_size = BlockSize;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].block_size = BlockSize;
+		}
+		/*l3_s0_cache->block_size = BlockSize;
 		l3_s1_cache->block_size = BlockSize;
 		l3_s2_cache->block_size = BlockSize;
-		l3_s3_cache->block_size = BlockSize;
+		l3_s3_cache->block_size = BlockSize;*/
 	}
 
 	if(MATCH("CPU_L3_Cache", "Latency"))
 	{
 		Latency = atoi(value);
-		l3_s0_cache->latency = Latency;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].latency = Latency;
+		}
+
+		/*l3_s0_cache->latency = Latency;
 		l3_s1_cache->latency = Latency;
 		l3_s2_cache->latency = Latency;
-		l3_s3_cache->latency = Latency;
+		l3_s3_cache->latency = Latency;*/
 	}
 
 	if(MATCH("CPU_L3_Cache", "Policy"))
 	{
 		Policy = strdup(value);
 
-		l3_s0_cache->policy = Policy;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].policy = Policy;
+		}
+		/*l3_s0_cache->policy = Policy;
 		l3_s1_cache->policy = Policy;
 		l3_s2_cache->policy = Policy;
-		l3_s3_cache->policy = Policy;
+		l3_s3_cache->policy = Policy;*/
 
 	}
 
@@ -590,30 +550,43 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 	{
 		MSHR = atoi(value);
 
-		l3_s0_cache->mshr_size = MSHR;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].mshr_size = MSHR;
+		}
+
+		/*l3_s0_cache->mshr_size = MSHR;
 		l3_s1_cache->mshr_size = MSHR;
 		l3_s2_cache->mshr_size = MSHR;
-		l3_s3_cache->mshr_size = MSHR;
+		l3_s3_cache->mshr_size = MSHR;*/
 	}
 
 	if(MATCH("CPU_L3_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 
-		l3_s0_cache->directory_latency = DirectoryLatency;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].directory_latency = DirectoryLatency;
+		}
+		/*l3_s0_cache->directory_latency = DirectoryLatency;
 		l3_s1_cache->directory_latency = DirectoryLatency;
 		l3_s2_cache->directory_latency = DirectoryLatency;
-		l3_s3_cache->directory_latency = DirectoryLatency;
+		l3_s3_cache->directory_latency = DirectoryLatency;*/
 	}
 
 	if(MATCH("CPU_L3_Cache", "Ports"))
 	{
 		Ports = atoi(value);
 
-		l3_s0_cache->num_ports = Ports;
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].num_ports = Ports;
+		}
+		/*l3_s0_cache->num_ports = Ports;
 		l3_s1_cache->num_ports = Ports;
 		l3_s2_cache->num_ports = Ports;
-		l3_s3_cache->num_ports = Ports;
+		l3_s3_cache->num_ports = Ports;*/
 	}
 
 
@@ -698,7 +671,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Sets = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			l2_caches[i].num_sets = Sets;
+			gpu_l2_caches[i].num_sets = Sets;
 		}
 	}
 
@@ -707,7 +680,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Assoc = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			l2_caches[i].assoc = Assoc;
+			gpu_l2_caches[i].assoc = Assoc;
 		}
 	}
 
@@ -716,7 +689,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		BlockSize = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			l2_caches[i].block_size = BlockSize;
+			gpu_l2_caches[i].block_size = BlockSize;
 		}
 	}
 
@@ -725,7 +698,7 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 		Latency = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			l2_caches[i].latency = Latency;
+			gpu_l2_caches[i].latency = Latency;
 		}
 	}
 
@@ -759,6 +732,145 @@ int cache_config(void* user, const char* section, const char* name, const char* 
 
 	return 0;
 }
+
+
+int cache_finish_create(){
+
+	int num_cores = x86_cpu_num_cores;
+	//int num_cus = si_gpu_num_compute_units;
+	struct cache_block_t *block;
+	int i, set, way = 0;
+
+	//CPU caches
+	//l1_i_caches;
+	//l1_d_caches;
+	//l2_caches;
+	//l3_caches;
+
+	//GPU caches
+	//l1_v_caches;
+	//l1_s_caches;
+	//l2_caches;
+	//lds_units;
+
+
+	//set log_block_size and block_mask
+	for(i = 0; i < num_cores ; i++ )
+	{
+
+		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
+		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
+		l1_i_caches[i].Rx_queue = list_create();
+		char buff[100];
+		snprintf(buff,100, "l1_i_caches[%d].Rx", i);
+		l1_i_caches[i].Rx_queue->name = buff;
+
+
+		printf("l1_i_caches[i].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
+
+		/*l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
+		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
+		l1_d_caches[i].Rx_queue = list_create();
+		snprintf(l1_i_caches[i].Rx_queue->name, "l1_d_caches[%d].Rx", i);
+
+		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
+		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
+		l2_caches[i].Rx_queue = list_create();
+		snprintf(l1_i_caches[i].Rx_queue->name, "l2_caches[%d].Rx", i);*/
+
+
+		//printf("l1_i_caches[%d].log_block_size = %d\n", i, l1_i_caches[i].log_block_size);
+
+		//Initialize array of sets
+		/*l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < l1_i_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			l1_i_caches[i].sets[set].blocks = calloc(l1_i_caches[i].assoc, sizeof(struct cache_block_t));
+			l1_i_caches[i].sets[set].way_head = &l1_i_caches[i].sets[set].blocks[0];
+			l1_i_caches[i].sets[set].way_tail = &l1_i_caches[i].sets[set].blocks[l1_i_caches[i].assoc - 1];
+			for (way = 0; way < l1_i_caches[i].assoc; way++)
+			{
+				block = &l1_i_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &l1_i_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < l1_i_caches[i].assoc - 1 ? &l1_i_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}
+
+		l1_d_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < l1_d_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			l1_d_caches[i].sets[set].blocks = calloc(l1_d_caches[i].assoc, sizeof(struct cache_block_t));
+			l1_d_caches[i].sets[set].way_head = &l1_d_caches[i].sets[set].blocks[0];
+			l1_d_caches[i].sets[set].way_tail = &l1_d_caches[i].sets[set].blocks[l1_d_caches[i].assoc - 1];
+			for (way = 0; way < l1_d_caches[i].assoc; way++)
+			{
+				block = &l1_d_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &l1_d_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < l1_d_caches[i].assoc - 1 ? &l1_d_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}
+
+		l2_caches[i].sets = calloc(l2_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < l2_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			l2_caches[i].sets[set].blocks = calloc(l2_caches[i].assoc, sizeof(struct cache_block_t));
+			l2_caches[i].sets[set].way_head = &l2_caches[i].sets[set].blocks[0];
+			l2_caches[i].sets[set].way_tail = &l2_caches[i].sets[set].blocks[l2_caches[i].assoc - 1];
+			for (way = 0; way < l2_caches[i].assoc; way++)
+			{
+				block = &l2_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &l2_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < l2_caches[i].assoc - 1 ? &l2_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}*/
+
+	}
+
+	fatal("end of cache finish init\n");
+	//star todo finish configuring the rest of the caches.
+
+
+	return 0;
+}
+
+int check_config(void* user, const char* section, const char* name, const char* value){
+
+	//this is used if you want to store the ini values in our configuration struct.
+	//struct queue_config_t *temp = (struct queue_config_t *)user;
+
+	if(MATCH("Check", "Check"))
+	{
+		//temp->size = atoi(value);
+		cgmmem_check_config = atoi(value);
+
+	}
+
+	return 0;
+}
+
+
+int queue_config(void* user, const char* section, const char* name, const char* value){
+
+	//this is used if you want to store the ini values in our configuration struct.
+	//struct queue_config_t *temp = (struct queue_config_t *)user;
+
+	if(MATCH("Queue", "Size"))
+	{
+		//temp->size = atoi(value);
+		queue_size = atoi(value);
+
+	}
+
+	return 0;
+}
+
+
 
 int sysagent_config(void* user, const char* section, const char* name, const char* value){
 

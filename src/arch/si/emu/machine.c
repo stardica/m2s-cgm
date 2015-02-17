@@ -99,8 +99,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
 #undef INST
 
 #define INST SI_INST_SMRD
-void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[2];
 
@@ -126,9 +125,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 	/* assert(uav_table_ptr.addr < UINT32_MAX) */
 
 	m_base = mem_ptr.addr;
-	m_offset =
-		(INST.imm) ? (INST.offset * 4) : si_isa_read_sreg(work_item,
-		INST.offset);
+	m_offset = (INST.imm) ? (INST.offset * 4) : si_isa_read_sreg(work_item, INST.offset);
 	addr = m_base + m_offset;
 
 	assert(!(addr & 0x3));
@@ -4138,8 +4135,7 @@ void si_isa_V_MUL_F32_VOP3a_impl(struct si_work_item_t *work_item,
 
 /* D.f = S0. * S1.. */
 #define INST SI_INST_VOP3a
-void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -4174,24 +4170,40 @@ void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item,
 #undef INST
 
 //star added inst here
-//D.u = D.u = S0.u[23:0] * S1.u[23:0]
+//D.u = S0.u[23:0] * S1.u[23:0]
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_U32_U24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	//printf("V_MUL_U32_U24_VOP3a\n");
 
 	union si_reg_t s0;
 	union si_reg_t s1;
 	union si_reg_t product;
 
+	assert(!INST.clamp);
+	assert(!INST.omod);
+	assert(!INST.neg);
+	assert(!INST.abs);
 
-	/* Load operands from registers or as a literal constant. */
-	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	/* Load operands from registers */
 	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
 
-	s0.as_uint = s0.as_uint & 0x00FFFFFF;
+	assert(s1.as_uint != 0xFF);
+	assert(s0.as_uint != 0xFF);
+
 	s1.as_uint = s1.as_uint & 0x00FFFFFF;
+	s0.as_uint = s0.as_uint & 0x00FFFFFF;
 
 	/* Calculate the product. */
 	product.as_uint = s0.as_uint * s1.as_uint;
+	//product.as_uint = s0.as_uint * s1.as_uint;
+
+	/*printf("S1 = %u\n", s1.as_uint);
+	printf("S0 = %u\n", s0.as_uint);
+	printf("result = %u\n", product.as_uint);
+	fflush(stdout);
+	getchar();*/
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, product.as_uint);
@@ -4571,8 +4583,8 @@ void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	union si_reg_t temp;
 	union si_reg_t result;
 
-	printf("running max uop\n");
-	fflush(stdout);
+	//printf("running max uop\n");
+	//fflush(stdout);
 
 	/* Load operands from registers. */
 	src0.as_uint = si_isa_read_reg(work_item, INST.src0);
@@ -4584,11 +4596,11 @@ void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	temp.as_int = (src0.as_int > src1.as_int) ? (src0.as_int) : (src1.as_int);
 	result.as_int = (temp.as_int > src2.as_int) ? (temp.as_int) : (src2.as_int);
 
-	printf("Src0 %d\n", src0.as_int);
+	/*printf("Src0 %d\n", src0.as_int);
 	printf("Src1 %d\n", src1.as_int);
 	printf("Src2 %d\n", src2.as_int);
 	printf("Max is %d\n", result.as_int);
-	fflush(stdout);
+	fflush(stdout);*/
 	//getchar();
 
 	/* Write the results. */
@@ -6070,6 +6082,93 @@ void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item,
 {
 	NOT_IMPL();
 }
+#undef INST
+
+
+#define INST SI_INST_DS
+void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+
+	union si_reg_t addr0;
+	union si_reg_t addr1;
+	union si_reg_t data0;
+	union si_reg_t data1;
+
+	assert(!INST.gds);
+
+	/* Load address and data from registers. */
+	addr0.as_uint = si_isa_read_vreg(work_item, INST.addr);
+	addr0.as_uint += INST.offset0*4*64;
+
+	addr1.as_uint = si_isa_read_vreg(work_item, INST.addr);
+	addr1.as_uint += INST.offset1*4*64;
+
+	data0.as_uint = si_isa_read_vreg(work_item, INST.data0);
+	data1.as_uint = si_isa_read_vreg(work_item, INST.data1);
+
+	if (addr0.as_uint > MIN(work_item->work_group->ndrange->local_mem_top, si_isa_read_sreg(work_item, SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+	if (addr1.as_uint > MIN(work_item->work_group->ndrange->local_mem_top, si_isa_read_sreg(work_item, SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+
+	/* Write Dword. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4, &data0.as_uint);
+		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4, &data1.as_uint);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+
+
+		/* If offset1 != 1, then the following is incorrect */
+		printf(" offset0 = %u\n", INST.offset0);
+		printf(" offset1 = %u\n", INST.offset1);
+		fflush(stdout);
+		//getchar();
+
+		//assert(INST.offset0 == 0);
+		//assert(INST.offset1 == 4);
+
+		work_item->lds_access_count = 2;
+
+		work_item->lds_access_type[0] = 2;
+		work_item->lds_access_addr[0] = addr0.as_uint;
+		work_item->lds_access_size[0] = 4;
+
+
+		work_item->lds_access_type[1] = 2;
+		work_item->lds_access_addr[1] = addr0.as_uint + 64; //star todo this may need to be + 16 not 63
+		work_item->lds_access_size[1] = 4;
+	}
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category) && INST.gds)
+	{
+		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint, data0.as_float);
+	}
+	else
+	{
+		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, data1.as_float);
+	}
+}
+
 #undef INST
 
 /* DS[ADDR+offset0*4] = D0; DS[ADDR+offset1*4] = D1; Write 2 Dwords */

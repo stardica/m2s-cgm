@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lib/util/list.h>
+
 //star todo take any borrowed files and move then to our cgm-mem directory.
 #include <cgm/cgm.h>
 #include <cgm/queue.h>
@@ -21,12 +23,17 @@
 #include <cgm/packet.h>
 
 
-int host_sim_cpu_fetch_queue_size;
-int host_sim_cpu_lsq_queue_size;
+long long access_id = 0;
+struct list_t *cgm_access_record;
+
+
+
+//int host_sim_cpu_fetch_queue_size;
+//int host_sim_cpu_lsq_queue_size;
 
 char *cgm_config_file_name_and_path;
 
-long long int mem_cycle = 0;
+//long long int mem_cycle = 0;
 
 //globals for tasking
 eventcount *start;
@@ -36,8 +43,8 @@ eventcount *stop;
 void cgm_init(void){
 
 	//star todo add error checking.
-	memctrl_init();
 	cache_init();
+	memctrl_init();
 
 	return;
 }
@@ -45,17 +52,203 @@ void cgm_init(void){
 void cgm_configure(void){
 
 
+
 	//star todo add error checking.
 	cgm_mem_configure();
-
 	cgm_cpu_configure();
 	cgm_gpu_configure();
 
 	return;
 }
 
+int cgm_can_fetch_access(struct cache_t *cache_ptr, unsigned int addr){
 
-void cgm_mem_task_init(void){
+	//unsigned int phy_address = addr;
+	//struct cache_t *cache_ptr = i_cache_ptr;
+
+	//check if request queue is full
+	/*if(QueueSize <= list_count(cache_ptr->Rx_queue))
+	{
+		return 0;
+	}*/
+
+	// mem_ctrl queue is accessible.
+	return 1;
+}
+
+int cgm_can_issue_access(struct cache_t *d_cache_ptr, unsigned int addr){
+
+	//unsigned int phy_address = addr;
+	struct cache_t *cache_ptr = d_cache_ptr;
+
+	//check if request queue is full
+	if(QueueSize <= list_count(cache_ptr->Rx_queue))
+	{
+		return 0;
+	}
+
+	// mem_ctrl queue is accessible.
+	return 1;
+}
+
+
+int cgm_in_flight_access(struct cache_t *i_cache_ptr, long long id){
+
+	//struct cache_t *cache_ptr = i_cache_ptr;
+
+	//star todo need to retire acceses as they finish.
+	struct cgm_packet_t *packet;
+	int count = 0;
+	int index = 0;
+
+	count = list_count(cgm_access_record);
+
+	/* Look for access */
+	for (index = 0; index <= count; index++)
+	{
+		//take memctrl access out of queue and check it's status.
+		packet = list_get(cgm_access_record, index);
+
+		//return 0 if list is empty. return 1 is packet is found
+		if (!packet)
+		{
+			return 0;
+		}
+		else if(packet->access_id == id)
+		{
+			return 1;
+		}
+	}
+
+	/* Not found */
+	return 0;
+
+}
+
+
+long long cgm_fetch_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	//star todo take data from fetch
+	//set packet id to access id.
+	access_id++;
+	new_packet->access_id = access_id;
+	new_packet->in_flight = 1;
+
+	//add to master list of accesses.
+	//star todo may need a mutex
+	list_enqueue(cgm_access_record, new_packet);
+
+
+	//insert into memctrl request queue
+	//list_enqueue(mem_ctrl->fetch_request_queue, new_packet);
+
+	//mem_ctrl do work here
+	//remove from queue, process, and put on reply queue.
+
+	//retire access in master list.
+	list_dequeue(cgm_access_record);
+	free(new_packet);
+
+	return access_id;
+}
+
+void cgm_issue_lspq_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	new_packet->in_flight = 1;
+	new_packet->event_queue = event_queue;
+	new_packet->data = event_queue_item;
+
+	//put back on the core event queue to end memory system access.
+	linked_list_add(new_packet->event_queue, new_packet->data);
+	free(new_packet);
+
+	return;
+}
+
+/*void cgm_scalar_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();
+
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+	printf("In memctrl witness pointer value %d\n", *new_packet->witness_ptr);
+	getchar();
+
+
+	(*new_packet->witness_ptr)++;
+
+	printf("In memctrl witness pointer value after inc %d\n", *new_packet->witness_ptr);
+	printf("In memctrl witness pointer value after inc %d\n", *witness_ptr);
+	getchar();
+
+	free(new_packet);
+
+	return;
+}
+
+void cgm_vector_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+		printf("In memctrl witness pointer value %d\n", *witness_ptr);
+		getchar();
+
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+
+	(*new_packet->witness_ptr)++;
+
+
+	free(new_packet);
+
+	return;
+}
+
+//star todo this is wrong, the lds is a local memory module within the GPU.
+//implement this as a memory block in the GPU with read write access.
+void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();
+
+	new_packet->in_flight = 1;
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->event_queue = NULL;
+	new_packet->data = NULL;
+
+
+	(*new_packet->witness_ptr)++;
+
+	free(new_packet);
+
+	return;
+}*/
+
+
+
+
+/*void cgm_mem_task_init(void){
 
 	long long i = 1;
 	//star the threads simulation.
@@ -67,50 +260,11 @@ void cgm_mem_task_init(void){
 	await(stop, i);
 
 	return;
-}
-
-
-/*void cgm_mem_structure_init(void){
-
-	int error = 0;
-
-	//create queue structures
-	queue_init();
-
-	//create cache structures
-	cache_init();
-
-	//create system agent structures
-	sysagent_init();
-
-	//create microcontroller structure
-	//memctrl_init();
-
-	//star todo create memory image, mshr, and directory table.
-	//testmem_init();
-
-	//configure memory structures
-	//error = cgmmem_configure();
-
-	if(error == 1)
-	{
-
-		printf("Error in cgm_mem_init()\n");
-		exit(0);
-	}
-
-	//Check configuration
-	if(cgmmem_check_config == 1)
-	{
-		print_config();
-		//mem_dump();
-	}
-
-
-	return;
 }*/
 
-void cgm_mem_threads_init(void){
+
+
+/*void cgm_mem_threads_init(void){
 
 	char *taskname = NULL;
 	char *eventname = NULL;
@@ -123,238 +277,35 @@ void cgm_mem_threads_init(void){
 
 
 	//create eventcounts
-	eventname = "start";
+	eventname = "st1art";
 	start = new_eventcount(eventname);
 	eventname = "stop";
 	stop = new_eventcount(eventname);
 
 	return;
-}
+}*/
 
 
-void cgm_mem_sim_loop(void){
+/*void cgm_mem_sim_loop(void){
 
 	int error = 0;
 
-	/*error = system_test();
+	error = system_test();
 	if(error == 1)
 	{
 		printf("failed in system_test()\n");
-	}*/
-
-
-	return;
-
-}
-
-
-
-/*void testmem_init(void){
-
-	star todo initialize array to random chars... or not.
-	For testing purposes all NULL maybe OK.
-	Just use the script to load a few initial values.
-
-	//test_mem[254] = 'a';
-	//test_mem[255] = 'b';
-
-	//int i = sizeof(test_mem);
-	//printf("memsize %d\n", i);
-
-	//int j = 0;
-	//char tempchar = (char)(((int)'0') +i);
-	//for(j=0; i < j; i++)
-	//{
-	//	test_mem[i] = tempchar;
-	//}
-
-	return;
-}*/
-
-/*void cgm_mem_dump(void){
-
-	int i = sizeof(test_mem);
-	int j = 0;
-
-	printf("---Memory Dump---\n");
-	for(j = 0; j < i; j++)
-	{
-
-		printf("%d \t", j);
-		if (test_mem[j] == NULL)
-		{
-			printf("NULL\n");
-		}
-		else
-		{
-			printf("%c\n", test_mem[j]);
-		}
-
 	}
 
-	return;
-}*/
-
-/*int system_test(void){
-
-	//star todo read and run scripted memory interaction for testing.
-	int error = 0;
-
-	while (mem_cycle <= 12)
-	{
-		//printf("in while\n");
-
-		//error = ini_parse(TESTSCRIPTPATH, test_run, NULL);
-		if (error < 0)
-		{
-			printf("Unable to open Config.ini for queue configuration.\n");
-			return 1;
-		}
-
-		//star >> todo memory structures need to check their queues (down and up).
-		cache_poll_queues();
-		//sysagent_poll_queues();
-		//memctrl_poll_queues();
-
-
-
-		//caches and memctrl check place data on their out queues (down and up).
-		//star todo each structure needs to read queue on clock cycle
-
-		mem_cycle++;
-	}
-
-	return 0;
-}*/
-
-/*void test_run(void* user, const char* section, const char* name, const char* value){
-
-	char *inst_string = NULL;
-
-	char cycle[256];
-	sprintf(cycle, "%lld", mem_cycle);
-	//printf("%s\n", cycle);
-
-	const char delim[] = " \0";
-	char *token = NULL;
-
-	if(MATCH("TestScript", cycle))
-	{
-
-		inst_string = strdup(value);
-		token = strtok(inst_string, delim);
-
-		if (strcmp(token, "store") == 0)
-		{
-
-			store_issue(strdup(value));
-
-		}else if (strcmp(token, "load") == 0)
-		{
-
-			load_issue(strdup(value));
-
-		}else if (strcmp(token, "fetch") == 0)
-		{
-
-			load_fetch(strdup(value));
-
-		}
-	}
 
 	return;
+
 }*/
 
-/*void store_issue(char * string){
+/*void cleanup(void){
 
-
-	//star todo initialize data_packet
-	struct cgm_packet_t * data_packet;
-	data_packet = data_packet_create();
-
-	char *inst = NULL;
-	char *address = NULL;
-	char *data = NULL;
-	const char delim[] = " \0";
-
-	inst = strtok(string, delim);
-	address = strtok(NULL, delim);
-	data = strtok(NULL, delim);
-
-	//debug
-	//printf("%s\n", inst);
-	//printf("%s\n", address);
-	//printf("%s\n", data);
-
-	data_packet->task = inst;
-	data_packet->address = atoi(address);
-	data_packet->data = data[0];
-
-	//debug
-	//printf("%s\n", data_packet->task);
-	//printf("%d\n", data_packet->address);
-	//printf("%c\n", data_packet->data);
-
-	//star todo add error checking here to queue_insert
-	//returns 1 on fail and 0 on success.
-	queue_insert(q_l1d_0_CoreRequest, data_packet);
-
-	return;
-}*/
-
-/*void load_issue(char * string){
-
-	struct cgm_packet_t * data_packet;
-	data_packet = data_packet_create();
-
-	char *inst = NULL;
-	char *address = NULL;
-	const char delim[] = " \0";
-
-	inst = strtok(string, delim);
-	address = strtok(NULL, delim);
-
-	data_packet->task = inst;
-	data_packet->address = atoi(address);
-	data_packet->data = NULL;
-
-	//star todo add error checking here to queue_insert
-	//returns 1 on fail and 0 on success.
-	queue_insert(q_l1d_0_CoreRequest, data_packet);
-
-	return;
-}*/
-
-
-
-/*void load_fetch(char * string){
-
-	struct cgm_packet_t * data_packet;
-	data_packet = data_packet_create();
-
-	char *inst = NULL;
-	char *address = NULL;
-	const char delim[] = " \0";
-
-	inst = strtok(string, delim);
-	address = strtok(NULL, delim);
-
-	data_packet->task = inst;
-	data_packet->address = atoi(address);
-	data_packet->data = NULL;
-
-	//star todo add error checking here to queue_insert.
-	//returns 1 on fail and 0 on success.
-	queue_insert(q_l1i_0_CoreRequest, data_packet);
-
-	return;
-}*/
-
-void cleanup(void){
-
-	/*star >> todo:
+	star >> todo:
 	(1) print stats or put in a file or something for later.
-	(2) clean up all global memory objects by running finish functions.*/
+	(2) clean up all global memory objects by running finish functions.
 	printf("---CGM-MEM Cleanup()---\n");
 	fflush(stdout);
-}
+}*/

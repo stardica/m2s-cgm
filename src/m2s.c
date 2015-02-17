@@ -1409,7 +1409,7 @@ static void m2s_loop(void)
 		m2s_loop_iter++;
 
 		//star >> added this to get some status output while running long benchmarks.
-		PrintCycle(SKIP);
+		//PrintCycle(SKIP);
 
 
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)
@@ -1550,11 +1550,14 @@ int main(int argc, char **argv)
 	X86CpuInit();
 
 
+
+
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
 	if (x86_sim_kind == arch_sim_kind_detailed)
 	{
 		x86_cpu = new(X86Cpu, x86_emu);
+
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 
@@ -1562,6 +1565,7 @@ int main(int argc, char **argv)
 	//instrumentation_init();
 
 	/* Network and memory system */
+
 
 
 
@@ -1579,7 +1583,6 @@ int main(int argc, char **argv)
 #endif
 
 	mmu_init();
-
 
 
 	/* Load architectural state checkpoint */

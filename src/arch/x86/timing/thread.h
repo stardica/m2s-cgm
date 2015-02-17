@@ -23,7 +23,7 @@
 #include <m2s.h>
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
-#include <cgm/mem-ctrl.h>
+#include <cgm/cache.h>
 
 
 
@@ -91,12 +91,12 @@ CLASS_BEGIN(X86Thread, Object)
 	/* Entries to the memory system */
 	//star entries for cgm
 	//star todo change this when we add in the caches.
-	struct mem_ctrl_t *mem_ctrl_ptr;
+	struct cache_t *i_cache_ptr;
+	struct cache_t *d_cache_ptr;
 
 	//entries for m2s mem-system (old code)
 	struct mod_t *data_mod;  /* Entry for data */
 	struct mod_t *inst_mod;  /* Entry for instructions */
-
 
 	/* Cycle in which last micro-instruction committed */
 	long long last_commit_cycle;

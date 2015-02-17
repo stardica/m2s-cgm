@@ -81,7 +81,7 @@ static void X86ThreadDecode(X86Thread *self)
 		//star todo pass the module here fix this
 		//mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address)
 		//needs the log_block_size and the access hash table.
-		if (!memctrl_in_flight_access(self->mem_ctrl_ptr, uop->fetch_access))
+		if (!cgm_in_flight_access(self->i_cache_ptr, uop->fetch_access))
 		{
 #else
 		if (!mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address))

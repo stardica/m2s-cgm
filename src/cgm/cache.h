@@ -14,6 +14,9 @@
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 
+
+
+
 enum cache_policy_t
 {
 	cache_policy_invalid = 0,
@@ -83,33 +86,41 @@ struct cache_t
 	unsigned int block_mask;
 	int log_block_size;
 
+
+	struct list_t *Rx_queue;
+	//struct list_t *Tx_queue;
+
+	//access record
+	struct list_t *cache_accesses;
 	//struct prefetcher_t *prefetcher;
 };
+
+extern int QueueSize;
 
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
 extern struct cache_t *l2_caches;
-extern struct cache_t *l3_s0_cache;
+
+extern struct cache_t *l3_caches;
+/*extern struct cache_t *l3_s0_cache;
 extern struct cache_t *l3_s1_cache;
 extern struct cache_t *l3_s2_cache;
-extern struct cache_t *l3_s3_cache;
+extern struct cache_t *l3_s3_cache;*/
 
 //GPU caches
 extern struct cache_t *l1_v_caches;
 extern struct cache_t *l1_s_caches;
-extern struct cache_t *l2_caches;
+extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *lds_units;
 
 
 //star todo write functions for cache access, processing and reply.
 //function prototypes
-struct cache_t *cgm_cache_create(void);
-void cgm_cache_configure(void);
+//struct cache_t *cgm_cache_create(void);
 void cache_init(void);
 void connect_queue(struct list_t *queue);
-void cache_poll_queues(void);
 int cache_ctrl(struct list_t *queue);
 
 

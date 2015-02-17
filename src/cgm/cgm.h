@@ -10,9 +10,24 @@
 #define CGM_H_
 
 #include <cgm/tasking.h>
+#include <cgm/cache.h>
+#include <lib/util/list.h>
+#include <lib/util/linked-list.h>
+
+enum cgm_access_kind_t
+{
+	cgm_access_invalid = 0,
+	cgm_access_load,
+	cgm_access_store,
+	cgm_access_nc_store,
+	cgm_access_prefetch
+};
+
+extern long long access_id;
+
+extern struct list_t *cgm_access_record;
 
 
-//extern char test_mem[256];
 extern int host_sim_cpu_num;
 extern int host_sim_cpu_core_num;
 extern int host_sim_cpu_thread_num;
@@ -23,7 +38,6 @@ extern long long int mem_cycle;
 
 extern char *cgm_config_file_name_and_path;
 
-#define TESTSCRIPTPATH "/home/stardica/Desktop/cgm-mem/src/TestScript.ini"
 
 // globals for tasking
 extern eventcount *start;
@@ -35,26 +49,22 @@ extern eventcount *stop;
 void cgm_init(void);
 void cgm_configure(void);
 
+int cgm_can_issue_access(struct cache_t *cache_ptr, unsigned int addr);
+int cgm_can_fetch_access(struct cache_t *cache_ptr, unsigned int addr);
+int cgm_in_flight_access(struct cache_t *cache_ptr, long long id);
+long long cgm_fetch_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+void cgm_issue_lspq_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+//void cgm_scalar_access(struct list_t *s_cache_ptr, request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+//void cgm_vector_access(struct list_t *v_cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+//void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 
-//here down is old code
-//recycle these.
-void cgm_mem_structure_init(void);
+
+//star todo recycle these later
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);
 void cgm_mem_sim_loop(void);
-void testmem_init(void);
 void cleanup(void);
-void cgm_mem_dump(void);
-
-//for testing purposes
-//int system_test(void);
-//void test_run(void* user, const char* section, const char* name, const char* value);
-//void load_fetch(char * string);
-//void load_issue(char * string);
-//void store_issue(char * string);
-
-
 
 
 #endif /* CGM_H_ */

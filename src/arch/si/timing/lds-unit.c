@@ -25,7 +25,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
-#include <cgm/mem-ctrl.h>
+#include <cgm/cgm.h>
 
 #include <arch/si/timing/compute-unit.h>
 #include <arch/si/timing/gpu.h>
@@ -215,8 +215,8 @@ void si_lds_mem(struct si_lds_t *lds)
 			{
 
 #if CGM
-				if (work_item->lds_access_type[j] == 1){access_type = mem_ctrl_access_load;}
-				else if (work_item->lds_access_type[j] == 2){access_type = mem_ctrl_access_store;}
+				if (work_item->lds_access_type[j] == 1){access_type = cgm_access_load;}
+				else if (work_item->lds_access_type[j] == 2){access_type = cgm_access_store;}
 				else{fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);}
 
 #else
@@ -227,7 +227,7 @@ void si_lds_mem(struct si_lds_t *lds)
 
 				uop->lds_witness--;
 #if CGM
-				memctrl_lds_access(lds->compute_unit->mem_ctrl_ptr, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
+				//cgm_lds_access(lds->compute_unit->mem_ctrl_ptr, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
 #else
 				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);
 #endif

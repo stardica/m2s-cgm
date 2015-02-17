@@ -508,8 +508,8 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 	if(MSG ==1)
 	{
 		printf("asTiming(self)->MemConfigDefault = cpu_configure;\n");
-		fflush(stdout);
-		getchar();
+		//fflush(stdout);
+		//getchar();
 	}
 
 #else

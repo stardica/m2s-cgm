@@ -24,7 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
-#include <cgm/mem-ctrl.h>
+#include <cgm/cgm.h>
 
 #include <arch/si/timing/compute-unit.h>
 #include <arch/si/timing/gpu.h>
@@ -219,11 +219,11 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 #if CGM
 		if (uop->vector_mem_write && !uop->glc)
-			access_kind = mem_ctrl_access_nc_store;
+			access_kind = cgm_access_nc_store;
 		else if (uop->vector_mem_write && uop->glc)
-			access_kind = mem_ctrl_access_store;
+			access_kind = cgm_access_store;
 		else if (uop->vector_mem_read)
-			access_kind = mem_ctrl_access_load;
+			access_kind = cgm_access_load;
 #else
 		if (uop->vector_mem_write && !uop->glc)
 			access_kind = mod_access_nc_store;
@@ -245,7 +245,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			uop->global_mem_witness--;
 
 #if CGM
-		memctrl_vector_access(vector_mem->compute_unit->mem_ctrl_ptr, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
+		//cgm_vector_access(vector_mem->compute_unit->mem_ctrl_ptr, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
 		mod_access(vector_mem->compute_unit->vector_cache, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 #endif

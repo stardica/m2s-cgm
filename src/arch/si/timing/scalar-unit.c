@@ -23,7 +23,7 @@
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 
-#include <cgm/mem-ctrl.h>
+#include <cgm/cgm.h>
 
 #include <arch/si/timing/compute-unit.h>
 #include <arch/si/timing/gpu.h>
@@ -355,7 +355,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			//memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 			/*printf("witness pointer value %d\n", uop->global_mem_witness);
 			getchar();*/
-			memctrl_scalar_access(scalar_unit->compute_unit->mem_ctrl_ptr, mem_ctrl_access_load, uop->global_mem_access_addr, &uop->global_mem_witness);
+			//cgm_scalar_access(scalar_unit->compute_unit->mem_ctrl_ptr, cgm_access_load, uop->global_mem_access_addr, &uop->global_mem_witness);
 
 #else
 			mod_access(scalar_unit->compute_unit->scalar_cache, mod_access_load, uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
