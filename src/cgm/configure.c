@@ -766,7 +766,7 @@ int cache_finish_create(){
 		l1_i_caches[i].Rx_queue->name = buff;
 
 
-		printf("l1_i_caches[i].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
+		printf("l1_i_caches[%d].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
 
 		/*l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
