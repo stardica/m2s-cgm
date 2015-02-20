@@ -1384,7 +1384,6 @@ static void m2s_loop(void)
 	fflush(stdout);
 
 
-
 	/* Simulation loop */
 	while (!esim_finish)
 	{
@@ -1409,7 +1408,7 @@ static void m2s_loop(void)
 		m2s_loop_iter++;
 
 		//star >> added this to get some status output while running long benchmarks.
-		//PrintCycle(SKIP);
+		PrintCycle(SKIP);
 
 
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)
@@ -1574,6 +1573,7 @@ int main(int argc, char **argv)
 	//cgm_init(x86_cpu->cores->threads);
 	cgm_init();
 	cgm_configure();
+
 #else
 	//this is old m2s code for the memory system and network.
 
@@ -1583,7 +1583,6 @@ int main(int argc, char **argv)
 #endif
 
 	mmu_init();
-
 
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
 #include <m2s.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
@@ -48,10 +49,12 @@
  */
 
 
-static int X86ThreadCanFetch(X86Thread *self)
-{
+static int X86ThreadCanFetch(X86Thread *self){
+
+	//printf("X86ThreadCanFetch()\n");
 	X86Cpu *cpu = self->cpu;
 	X86Context *ctx = self->ctx;
+
 
 	unsigned int phy_addr;
 	unsigned int block;
@@ -80,18 +83,18 @@ static int X86ThreadCanFetch(X86Thread *self)
 #if CGM
 
 	//int i = (*self->i_cache_ptr + self->id_in_core)->assoc;
-
-	block = self->fetch_neip & ~(self->i_cache_ptr->block_size - 1);
-	if (MSG == 2)
+	block = self->fetch_neip & ~(self->i_cache_ptr[self->core->id].block_size - 1);
+	if (MSG == 1)
 	{
-		printf("blocksize %d\n",self->i_cache_ptr->block_size);
-		printf("~(self->mem_ctrl_ptr->block_size - 1) 0x%08x\n", ~(self->i_cache_ptr->block_size - 1));
+		printf("blocksize %d\n",self->i_cache_ptr[self->core->id].block_size);
+		printf("~(self->mem_ctrl_ptr->block_size - 1) 0x%08x\n", ~(self->i_cache_ptr[self->core->id].block_size - 1));
 		printf("self->fetch_block 0x%08x\n", self->fetch_block);
 		printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
 		printf("block 0x%08x\n", block);
 		fflush(stdout);
-		getchar();
+		//getchar();
 	}
+
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
 	if (MSG == 2)
@@ -102,7 +105,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 		printf("self->fetch_neip 0x%08x\n", self->fetch_neip);
 		printf("block 0x%08x\n", block);
 		fflush(stdout);
-		getchar();
+		//getchar();
 	}
 #endif
 
@@ -115,7 +118,7 @@ static int X86ThreadCanFetch(X86Thread *self)
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
 #if CGM
 		//if (!cgm_can_fetch_access(self->i_cache_ptr, phy_addr))
-		if (!cgm_can_fetch_access(self->i_cache_ptr, phy_addr))
+		if (!cgm_can_fetch_access(self, phy_addr))
 		{
 #else
 		if (!mod_can_access(self->inst_mod, phy_addr))
@@ -135,7 +138,6 @@ static int X86ThreadCanFetch(X86Thread *self)
  * the function. Otherwise, the first decoded uop is returned. */
 static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cache)
 {
-
 
 	X86Cpu *cpu = self->cpu;
 	X86Core *core = self->core;
@@ -309,6 +311,7 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 	/* Access BTB, branch predictor, and trace cache */
 #if CGM
 	//star todo We only need to fill this in if we are going to add in the trace cache stuff.
+	fatal("somehow we got into the trace cache stuff in fetch.c");
 	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->i_cache_ptr->block_size);
 #else
 	eip_branch = X86ThreadGetNextBranch(self, self->fetch_neip, self->inst_mod->block_size);
@@ -378,10 +381,8 @@ static void X86ThreadFetch(X86Thread *self)
 	//virtual addresses.
 
 #if CGM
-	//star todo (1) give the block size (DONE)
-	//			(2) access memory with our function.
 	//block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
-	block = self->fetch_neip & ~(self->i_cache_ptr->block_size - 1);
+	block = self->fetch_neip & ~(self->i_cache_ptr[self->core->id].block_size - 1);
 
 	if (block != self->fetch_block)
 	{
@@ -389,11 +390,13 @@ static void X86ThreadFetch(X86Thread *self)
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;
 
+		//printf("self->fetch_address 0x%08x\n", self->fetch_address);
+
 		//star todo replace the mod access fucntion with our own.
 		//right now it points to the mem_ctrl fetch request queue.
 		//self->fetch_access = mod_access(self->mem_ctrl_ptr->fetch_request_queue, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
 		//long long mod_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
-		self->fetch_access = cgm_fetch_access(self->i_cache_ptr, cgm_access_load, phy_addr, NULL, NULL);
+		self->fetch_access = cgm_fetch_access(self, phy_addr);
 		self->btb_reads++;
 
 		/* MMU statistics */
@@ -402,7 +405,7 @@ static void X86ThreadFetch(X86Thread *self)
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
-	while ((self->fetch_neip & ~(self->i_cache_ptr->block_size - 1)) == block)
+	while ((self->fetch_neip & ~(self->i_cache_ptr[self->core->id].block_size - 1)) == block)
 	{
 #else
 	block = self->fetch_neip & ~(self->inst_mod->block_size - 1);
@@ -520,7 +523,9 @@ static void X86CoreFetch(X86Core *self)
 
 				if (X86ThreadCanFetch(thread))
 				{
+
 					X86ThreadFetch(thread);
+
 					break;
 				}
 

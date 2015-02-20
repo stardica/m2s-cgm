@@ -457,8 +457,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 		}
 
 		/* Update tag/state and unlock */
-		cache_set_block(mod->cache, stack->set, stack->way,
-			stack->tag, cache_block_modified);
+		cache_set_block(mod->cache, stack->set, stack->way, stack->tag, cache_block_modified);
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Impose the access latency before continuing */

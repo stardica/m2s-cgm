@@ -11,6 +11,8 @@
 
 #include <lib/util/list.h>
 
+#include <arch/x86/timing/thread.h>
+
 //star todo take any borrowed files and move then to our cgm-mem directory.
 #include <cgm/cgm.h>
 #include <cgm/queue.h>
@@ -26,14 +28,8 @@
 long long access_id = 0;
 struct list_t *cgm_access_record;
 
-
-
-//int host_sim_cpu_fetch_queue_size;
-//int host_sim_cpu_lsq_queue_size;
-
 char *cgm_config_file_name_and_path;
 
-//long long int mem_cycle = 0;
 
 //globals for tasking
 eventcount *start;
@@ -51,52 +47,63 @@ void cgm_init(void){
 
 void cgm_configure(void){
 
-
+	cgm_access_record = list_create();
 
 	//star todo add error checking.
 	cgm_mem_configure();
 	cgm_cpu_configure();
+
+#if GPU
 	cgm_gpu_configure();
+#endif
 
 	return;
 }
 
-int cgm_can_fetch_access(struct cache_t *cache_ptr, unsigned int addr){
+int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
+	//star todo figure out where to put the mshr check.
 	//unsigned int phy_address = addr;
-	//struct cache_t *cache_ptr = i_cache_ptr;
+
+	X86Thread *thread;
+	thread = self;
 
 	//check if request queue is full
-	/*if(QueueSize <= list_count(cache_ptr->Rx_queue))
-	{
-		return 0;
-	}*/
-
-	// mem_ctrl queue is accessible.
-	return 1;
-}
-
-int cgm_can_issue_access(struct cache_t *d_cache_ptr, unsigned int addr){
-
-	//unsigned int phy_address = addr;
-	struct cache_t *cache_ptr = d_cache_ptr;
-
-	//check if request queue is full
-	if(QueueSize <= list_count(cache_ptr->Rx_queue))
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
 	{
 		return 0;
 	}
 
-	// mem_ctrl queue is accessible.
+	//printf(" rx queue size %d\n", list_count(self->i_cache_ptr[self->core->id].Rx_queue));
+
+	//i_cache queue is accessible.
+	return 1;
+}
+
+int cgm_can_issue_access(X86Thread *self, unsigned int addr){
+
+	//unsigned int phy_address = addr;
+	X86Thread *thread;
+	thread = self;
+
+	//check if request queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
+	{
+		return 0;
+	}
+
+	// d_cache queue is accessible.
 	return 1;
 }
 
 
-int cgm_in_flight_access(struct cache_t *i_cache_ptr, long long id){
+int cgm_in_flight_access(X86Thread *self, long long id){
 
-	//struct cache_t *cache_ptr = i_cache_ptr;
 
-	//star todo need to retire acceses as they finish.
+	X86Thread *thread;
+	thread = self;
+
+	//star todo need to retire access as they finish.
 	struct cgm_packet_t *packet;
 	int count = 0;
 	int index = 0;
@@ -106,10 +113,10 @@ int cgm_in_flight_access(struct cache_t *i_cache_ptr, long long id){
 	/* Look for access */
 	for (index = 0; index <= count; index++)
 	{
-		//take memctrl access out of queue and check it's status.
+		//take memory access out of queue and check it's status.
 		packet = list_get(cgm_access_record, index);
 
-		//return 0 if list is empty. return 1 is packet is found
+		//return 0 if list is empty. return 1 if packet is found
 		if (!packet)
 		{
 			return 0;
@@ -126,35 +133,45 @@ int cgm_in_flight_access(struct cache_t *i_cache_ptr, long long id){
 }
 
 
-long long cgm_fetch_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+long long cgm_fetch_access(X86Thread *self, unsigned int addr){
+
+
+	X86Thread *thread;
+	thread = self;
 
 	struct cgm_packet_t *new_packet = packet_create();
 
-	//star todo take data from fetch
+	//struct cgm_packet_t *new_packet;
+
 	//set packet id to access id.
 	access_id++;
 	new_packet->access_id = access_id;
+	new_packet->address = addr;
 	new_packet->in_flight = 1;
-
-	//add to master list of accesses.
-	//star todo may need a mutex
-	list_enqueue(cgm_access_record, new_packet);
+	new_packet->c_load = 1;
+	new_packet->name = "test_packet";
 
 
-	//insert into memctrl request queue
-	//list_enqueue(mem_ctrl->fetch_request_queue, new_packet);
+	printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
+	printf("new_packet->name = %s\n", new_packet->name);
 
-	//mem_ctrl do work here
-	//remove from queue, process, and put on reply queue.
+	//add to master list of accesses and 1st level i_cache
+	//list_enqueue(cgm_access_record, new_packet);
 
-	//retire access in master list.
-	list_dequeue(cgm_access_record);
-	free(new_packet);
+	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);
+	list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+
+
+	i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id, cgm_access_load);
 
 	return access_id;
 }
 
-void cgm_issue_lspq_access(struct cache_t *cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+
+	//printf("cgm_issue_lspq_access()\n");
+	X86Thread *thread;
+	thread = self;
 
 	struct cgm_packet_t *new_packet = packet_create();
 

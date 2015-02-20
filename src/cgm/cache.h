@@ -9,24 +9,23 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
+#include <cgm/cgm.h>
+
 //star todo add prefetching and coalescing
 
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 
+enum cache_policy_t{
 
-
-
-enum cache_policy_t
-{
 	cache_policy_invalid = 0,
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random
 };
 
-enum cache_block_state_t
-{
+enum cache_block_state_t{
+
 	cache_block_invalid = 0,
 	cache_block_noncoherent,
 	cache_block_modified,
@@ -35,8 +34,8 @@ enum cache_block_state_t
 	cache_block_shared
 };
 
-struct cache_block_t
-{
+struct cache_block_t{
+
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
 
@@ -48,19 +47,21 @@ struct cache_block_t
 	enum cache_block_state_t state;
 };
 
-struct cache_set_t
-{
+struct cache_set_t{
+
+	int id;
+
 	struct cache_block_t *way_head;
 	struct cache_block_t *way_tail;
 	struct cache_block_t *blocks;
 };
 
 
-struct cache_t
-{
+struct cache_t{
 
 	//star >> my added elements.
 	char * name;
+	int id;
 
 	//cache configuration settings
 	unsigned int num_sets;
@@ -68,13 +69,6 @@ struct cache_t
 	unsigned int assoc;
 	unsigned int num_ports;
 
-	//connections
-	//cache list of queues
-	//a cache maybe multi-ported i.e. a shared L2 cache.
-	struct list_t *in_queues;
-	struct list_t *out_queues;
-
-	//still the old elements.
 	//enum cache_policy_t policy;
 	const char *policy;
 	unsigned int latency;
@@ -86,13 +80,13 @@ struct cache_t
 	unsigned int block_mask;
 	int log_block_size;
 
-
 	struct list_t *Rx_queue;
 	//struct list_t *Tx_queue;
 
 	//access record
 	struct list_t *cache_accesses;
 	//struct prefetcher_t *prefetcher;
+
 };
 
 extern int QueueSize;
@@ -116,13 +110,20 @@ extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *lds_units;
 
 
-//star todo write functions for cache access, processing and reply.
 //function prototypes
-//struct cache_t *cgm_cache_create(void);
 void cache_init(void);
-void connect_queue(struct list_t *queue);
-int cache_ctrl(struct list_t *queue);
+int i_cache_ctrl(int id, enum cgm_access_kind_t task);
 
+
+//from m2s
+void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
+int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
+void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
+void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
+
+void cache_access_block(struct cache_t *cache, int set, int way);
+int cache_replace_block(struct cache_t *cache, int set);
+void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 
 
 #endif /*CACHE_H_*/

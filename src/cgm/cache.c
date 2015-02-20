@@ -11,6 +11,7 @@
 #include <lib/util/list.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
+#include <cgm/packet.h>
 #include <cgm/cgm.h>
 
 
@@ -20,7 +21,7 @@
 #include <lib/util/debug.h>
 
 
-int QueueSize = 16;
+int QueueSize;
 
 //CPU caches
 struct cache_t *l1_i_caches;
@@ -79,27 +80,70 @@ void cache_init(void){
 	return;
 }
 
-/*struct cache_t *cgm_cache_create(void){
 
-	struct cache_t *new_cache;
-
-	new_cache = (void *) calloc(1, sizeof(struct cache_t));
-
-	return new_cache;
-}*/
+int i_cache_ctrl(int id, enum cgm_access_kind_t task){
 
 
-//star >> todo automate queue connection here
-void connect_queue(struct list_t *queue){
+	printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
+	printf("task = %u\n", task);
+	//getchar();
+
+	unsigned int addr;
+	struct cgm_packet_t *packet;
+	int status;
+
+	int *set_ptr;
+	int *pway;
+	int *state_ptr;
 
 
-	return;
+	//fetch access
+	if (task == cgm_access_load)
+	{
+
+		packet = list_dequeue(l1_i_caches[id].Rx_queue);
+
+		printf("access id = %llu\n", packet->access_id);
+		printf("in flight = %d\n", packet->in_flight);
+		printf("address 0x%08x\n", packet->address);
+		fflush(stdout);
+		getchar();
+
+		if(!packet)
+		{
+			fatal("l1_i_cache no packet\n");
+		}
+		else
+		{
+
+
+			status = cache_find_block(l1_i_caches[id], addr, set_ptr, pway, state_ptr);
+
+			printf("Status %d\n", status);
+
+		}
+
+
+	}
+	else if (task == cgm_access_nc_load)
+	{
+		fatal("Unsupported i_cache task = cgm_access_nc_load\n");
+	}
+	else
+	{
+		fatal("Unsupported i_cache task = all else\n");
+	}
+
+
+	//retire access in master list.
+	//list_dequeue(cgm_access_record);
+
+	return 0;
 }
 
 
-int cache_ctrl(struct list_t *queue){
 
-	/*long long i = 1;
+/*long long i = 1;
 
 	while(1)
 	{
@@ -110,7 +154,5 @@ int cache_ctrl(struct list_t *queue){
 
 		advance(stop);
 
-	}*/
-
-	return 0;
-}
+	}
+*/

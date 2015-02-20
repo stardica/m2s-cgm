@@ -301,4 +301,3 @@ void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag)
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
 }
-

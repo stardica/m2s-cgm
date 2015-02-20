@@ -66,7 +66,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 		/* Check that memory system entry is ready */
 #if CGM
-		if (!cgm_can_issue_access(self->d_cache_ptr, store->phy_addr))
+		if (!cgm_can_issue_access(self, store->phy_addr))
 			break;
 #else
 		if (!mod_can_access(self->data_mod, store->phy_addr))
@@ -93,7 +93,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//								 unsigned int addr,
 		//								 struct linked_list_t *event_queue,
 		//								 void *event_queue_item);{
-		cgm_issue_lspq_access(self->d_cache_ptr, mod_access_store, store->phy_addr, core->event_queue, store);
+		cgm_issue_lspq_access(self, mod_access_store, store->phy_addr, core->event_queue, store);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -162,7 +162,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 #if CGM
 		//star todo add the memory access check here.
-		if (!cgm_can_issue_access(self->d_cache_ptr, load->phy_addr))
+		if (!cgm_can_issue_access(self, load->phy_addr))
 		{
 #else
 		/* Check that memory system is accessible */
@@ -197,7 +197,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		/* Access memory system */
 		//star added test.
 		//PrintUOPStatus(load);
-		cgm_issue_lspq_access(self->d_cache_ptr, mod_access_store, load->phy_addr, core->event_queue, load);
+		cgm_issue_lspq_access(self, mod_access_store, load->phy_addr, core->event_queue, load);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -298,7 +298,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 #if CGM
 		//star todo
-		if (!cgm_can_issue_access(self->d_cache_ptr, prefetch->phy_addr))
+		if (!cgm_can_issue_access(self, prefetch->phy_addr))
 		{
 #else
 		/* Check that memory system is accessible */
@@ -321,7 +321,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 #if CGM
 		//star todo
 		/* Access memory system */
-		cgm_issue_lspq_access(self->d_cache_ptr, mod_access_prefetch, prefetch->phy_addr, core->event_queue, prefetch);
+		cgm_issue_lspq_access(self, mod_access_prefetch, prefetch->phy_addr, core->event_queue, prefetch);
 #else
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);

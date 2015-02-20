@@ -119,11 +119,54 @@ int cgm_cpu_configure(void){
 	{
 		printf("CPU timing->MemConfigDefault(timing, NULL);\n");
 		fflush(stdout);
-		getchar();
+		//getchar();
 	}
 
 	timing->MemConfigDefault(timing, NULL);
 
+
+	return 1;
+}
+
+int cpu_configure(Timing *self, struct config_t *config){
+
+	int i, j = 0;
+	int num_cores = x86_cpu_num_cores;
+	int num_threads = x86_cpu_num_threads;
+
+	if (MSG ==1)
+	{
+		printf("cpu_configure start\n");
+		printf("number of cores %d\n", x86_cpu_num_cores);
+		printf("number of threads %d\n", x86_cpu_num_threads);
+		fflush(stdout);
+		//getchar();
+	}
+
+	X86Cpu *cpu = asX86Cpu(self);
+	X86Core *core;
+	X86Thread *thread;
+
+	for(i = 0; i < num_cores; i++)
+	{
+		for(j = 0; j < num_threads; j++)
+		{
+			core = cpu->cores[i];
+			thread = core->threads[j];
+
+			//assign entry into memory system
+			thread->i_cache_ptr = l1_i_caches;
+			thread->d_cache_ptr = l1_d_caches;
+
+			if (MSG ==1)
+			{
+				printf("thread %d i_cache mem entry id is %d\n", thread->id_in_cpu, thread->i_cache_ptr[thread->core->id].id);
+				printf("thread %d d_cache mem entry id is %d\n", thread->id_in_cpu, thread->d_cache_ptr[thread->core->id].id);
+			}
+
+		}
+
+	}
 
 	return 1;
 }
@@ -145,7 +188,7 @@ int cgm_gpu_configure(void){
 	{
 		printf("GPU timing->MemConfigDefault(timing, NULL);\n");
 		fflush(stdout);
-		getchar();
+		//getchar();
 	}
 
 	timing->MemConfigDefault(timing, NULL);
@@ -153,48 +196,6 @@ int cgm_gpu_configure(void){
 	return 1;
 }
 
-
-int cpu_configure(Timing *self, struct config_t *config){
-
-	int i, j = 0;
-	int num_cores = x86_cpu_num_cores;
-	int num_threads = x86_cpu_num_threads;
-
-	if (MSG ==1)
-	{
-		printf("cpu_configure start\n");
-		printf("number of cores %d\n", x86_cpu_num_cores);
-		printf("number of threads %d\n", x86_cpu_num_threads);
-		fflush(stdout);
-		getchar();
-	}
-
-	X86Cpu *cpu = asX86Cpu(self);
-	X86Core *core;
-	X86Thread *thread;
-
-	for(i = 0; i < num_cores; i++)
-	{
-		for(j = 0; j < num_threads; j++)
-		{
-			core = cpu->cores[i];
-			thread = core->threads[j];
-
-			//assign entry into memory system
-			thread->i_cache_ptr = l1_i_caches;
-			thread->d_cache_ptr = l1_d_caches;
-
-			if(1)
-			{
-				//printf("thread %d  mem entry name is %s\n", thread->id_in_cpu, thread->mem_ctrl_ptr->name);
-			}
-
-		}
-
-	}
-
-	return 1;
-}
 
 int gpu_configure(Timing *self, struct config_t *config){
 
@@ -261,6 +262,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int MSHR = 0;
 	int DirectoryLatency = 0;
 
+
+	/*get max queue size*/
+	if(MATCH("Queue", "Size"))
+	{
+		QueueSize = atoi(value);
+	}
 
 
 	/*configure CPU D caches*/
@@ -741,51 +748,45 @@ int cache_finish_create(){
 	struct cache_block_t *block;
 	int i, set, way = 0;
 
-	//CPU caches
-	//l1_i_caches;
-	//l1_d_caches;
-	//l2_caches;
-	//l3_caches;
-
-	//GPU caches
-	//l1_v_caches;
-	//l1_s_caches;
-	//l2_caches;
-	//lds_units;
-
 
 	//set log_block_size and block_mask
 	for(i = 0; i < num_cores ; i++ )
 	{
 
+		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
 		l1_i_caches[i].Rx_queue = list_create();
 		char buff[100];
-		snprintf(buff,100, "l1_i_caches[%d].Rx", i);
-		l1_i_caches[i].Rx_queue->name = buff;
+		snprintf(buff, 100, "l1_i_caches[%d].Rx", i);
+		l1_i_caches[i].Rx_queue->name = strdup(buff);
 
-
-		printf("l1_i_caches[%d].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
-
-		/*l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
+		l1_d_caches[i].id = i;
+		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].Rx_queue = list_create();
-		snprintf(l1_i_caches[i].Rx_queue->name, "l1_d_caches[%d].Rx", i);
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Rx", i);
+		l1_d_caches[i].Rx_queue->name = strdup(buff);
 
+		l2_caches[i].id = i;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].Rx_queue = list_create();
-		snprintf(l1_i_caches[i].Rx_queue->name, "l2_caches[%d].Rx", i);*/
+		memset (buff, '\0', sizeof(buff));
+		snprintf(buff,100, "l2_caches[%d].Rx", i);
+		l2_caches[i].Rx_queue->name = strdup(buff);
 
-
-		//printf("l1_i_caches[%d].log_block_size = %d\n", i, l1_i_caches[i].log_block_size);
+		//printf("l1_i_caches[%d].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
+		/*printf("l1_d_caches[%d].Rx_queue->name = %s\n", i, l1_d_caches[i].Rx_queue->name);
+		printf("l2_caches[%d].Rx_queue->name = %s\n", i, l2_caches[i].Rx_queue->name);*/
 
 		//Initialize array of sets
-		/*l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
+		l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < l1_i_caches[i].num_sets; set++)
 		{
 			//Initialize array of blocks
+			l1_i_caches[i].sets[set].id = set;
 			l1_i_caches[i].sets[set].blocks = calloc(l1_i_caches[i].assoc, sizeof(struct cache_block_t));
 			l1_i_caches[i].sets[set].way_head = &l1_i_caches[i].sets[set].blocks[0];
 			l1_i_caches[i].sets[set].way_tail = &l1_i_caches[i].sets[set].blocks[l1_i_caches[i].assoc - 1];
@@ -796,12 +797,15 @@ int cache_finish_create(){
 				block->way_prev = way ? &l1_i_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l1_i_caches[i].assoc - 1 ? &l1_i_caches[i].sets[set].blocks[way + 1] : NULL;
 			}
+
+			//printf("l1_i_caches[%d].sets[%d].id = %d\n", i, set, l1_i_caches[i].sets[set].id);
 		}
 
 		l1_d_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < l1_d_caches[i].num_sets; set++)
 		{
 			//Initialize array of blocks
+			l1_d_caches[i].sets[set].id = set;
 			l1_d_caches[i].sets[set].blocks = calloc(l1_d_caches[i].assoc, sizeof(struct cache_block_t));
 			l1_d_caches[i].sets[set].way_head = &l1_d_caches[i].sets[set].blocks[0];
 			l1_d_caches[i].sets[set].way_tail = &l1_d_caches[i].sets[set].blocks[l1_d_caches[i].assoc - 1];
@@ -812,12 +816,15 @@ int cache_finish_create(){
 				block->way_prev = way ? &l1_d_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l1_d_caches[i].assoc - 1 ? &l1_d_caches[i].sets[set].blocks[way + 1] : NULL;
 			}
+
+			//printf("l1_d_caches[%d].sets[%d].id = %d\n", i, set, l1_d_caches[i].sets[set].id);
 		}
 
 		l2_caches[i].sets = calloc(l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < l2_caches[i].num_sets; set++)
 		{
 			//Initialize array of blocks
+			l2_caches[i].sets[set].id = set;
 			l2_caches[i].sets[set].blocks = calloc(l2_caches[i].assoc, sizeof(struct cache_block_t));
 			l2_caches[i].sets[set].way_head = &l2_caches[i].sets[set].blocks[0];
 			l2_caches[i].sets[set].way_tail = &l2_caches[i].sets[set].blocks[l2_caches[i].assoc - 1];
@@ -828,13 +835,22 @@ int cache_finish_create(){
 				block->way_prev = way ? &l2_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l2_caches[i].assoc - 1 ? &l2_caches[i].sets[set].blocks[way + 1] : NULL;
 			}
-		}*/
+
+			//printf("l2_caches[%d].sets[%d].id = %d\n", i, set, l2_caches[i].sets[set].id);
+		}
 
 	}
 
-	fatal("end of cache finish init\n");
 	//star todo finish configuring the rest of the caches.
 
+	//System caches
+	//l3_caches;
+
+	//GPU caches
+	//l1_v_caches;
+	//l1_s_caches;
+	//l2_caches;
+	//lds_units;
 
 	return 0;
 }

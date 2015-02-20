@@ -356,6 +356,7 @@ void *list_dequeue(struct list_t *list)
 		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
+
 	return list_remove_at(list, 0);
 }
 
