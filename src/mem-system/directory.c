@@ -32,8 +32,7 @@
 
 #define DIR_ENTRY_SHARERS_SIZE ((dir->num_nodes + 7) / 8)
 #define DIR_ENTRY_SIZE (sizeof(struct dir_entry_t) + DIR_ENTRY_SHARERS_SIZE)
-#define DIR_ENTRY(X, Y, Z) ((struct dir_entry_t *) (((void *) &dir->data) + DIR_ENTRY_SIZE * \
-	((X) * dir->ysize * dir->zsize + (Y) * dir->zsize + (Z))))
+#define DIR_ENTRY(X, Y, Z) ((struct dir_entry_t *) (((void *) &dir->data) + DIR_ENTRY_SIZE * ((X) * dir->ysize * dir->zsize + (Y) * dir->zsize + (Z))))
 
 
 struct dir_t *dir_create(char *name, int xsize, int ysize, int zsize, int num_nodes)

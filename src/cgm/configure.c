@@ -747,39 +747,84 @@ int cache_finish_create(){
 	//int num_cus = si_gpu_num_compute_units;
 	struct cache_block_t *block;
 	int i, set, way = 0;
+	char buff[100];
+
+
 
 
 	//set log_block_size and block_mask
 	for(i = 0; i < num_cores ; i++ )
 	{
-
 		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
 		l1_i_caches[i].Rx_queue = list_create();
-		char buff[100];
+		l1_i_caches[i].snoop_queue = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d]", i);
+		l1_i_caches[i].name = strdup(buff);
+
+		//set rx queue name
+		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].Rx", i);
 		l1_i_caches[i].Rx_queue->name = strdup(buff);
+
+		//set rx queue name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Snoop", i);
+		l1_i_caches[i].snoop_queue->name = strdup(buff);
+
 
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].Rx_queue = list_create();
+		l1_d_caches[i].snoop_queue = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d]", i);
+		l1_d_caches[i].name = strdup(buff);
+
+		//set rx queue name
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Rx", i);
 		l1_d_caches[i].Rx_queue->name = strdup(buff);
+
+		//set rx queue name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Snoop", i);
+		l1_d_caches[i].snoop_queue->name = strdup(buff);
 
 		l2_caches[i].id = i;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].Rx_queue = list_create();
+		l2_caches[i].snoop_queue = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d]", i);
+		l2_caches[i].name = strdup(buff);
+
+		//set rx queue name
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].Rx", i);
 		l2_caches[i].Rx_queue->name = strdup(buff);
 
-		//printf("l1_i_caches[%d].Rx_queue->name = %s\n", i, l1_i_caches[i].Rx_queue->name);
-		/*printf("l1_d_caches[%d].Rx_queue->name = %s\n", i, l1_d_caches[i].Rx_queue->name);
-		printf("l2_caches[%d].Rx_queue->name = %s\n", i, l2_caches[i].Rx_queue->name);*/
+		memset (buff, '\0', sizeof(buff));
+		snprintf(buff,100, "l2_caches[%d].Snoop", i);
+		l2_caches[i].snoop_queue->name = strdup(buff);
+
+
+
+		/*printf("%s ----> %s\n", l1_i_caches[i].name, l1_i_caches[i].Rx_queue->name);
+		printf("%s ----> %s\n", l1_d_caches[i].name, l1_d_caches[i].Rx_queue->name);
+		printf("%s ----> %s\n", l2_caches[i].name, l2_caches[i].Rx_queue->name);*/
+
+
 
 		//Initialize array of sets
 		l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
@@ -841,6 +886,7 @@ int cache_finish_create(){
 
 	}
 
+	//fatal("stop here\n");
 	//star todo finish configuring the rest of the caches.
 
 	//System caches

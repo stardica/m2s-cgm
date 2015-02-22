@@ -13,6 +13,8 @@
 
 #include <arch/x86/timing/thread.h>
 
+#include <lib/util/misc.h>
+
 //star todo take any borrowed files and move then to our cgm-mem directory.
 #include <cgm/cgm.h>
 #include <cgm/queue.h>
@@ -135,9 +137,10 @@ int cgm_in_flight_access(X86Thread *self, long long id){
 
 long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
-
 	X86Thread *thread;
 	thread = self;
+
+	char buff[100];
 
 	struct cgm_packet_t *new_packet = packet_create();
 
@@ -149,20 +152,25 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
 	new_packet->c_load = 1;
-	new_packet->name = "test_packet";
+	new_packet->access_type = cgm_access_load;
 
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "fetch_access.%llu", access_id);
+	new_packet->name = buff;
 
-	printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
+	/*printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
 	printf("new_packet->name = %s\n", new_packet->name);
+	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);*/
 
 	//add to master list of accesses and 1st level i_cache
-	//list_enqueue(cgm_access_record, new_packet);
+	list_enqueue(cgm_access_record, new_packet);
 
-	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);
+	//add to first level cache Rx queue
 	list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 
-
-	i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id, cgm_access_load);
+	//access the first level of cache
+	//here threads package advance i_cache_ctrl
+	l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id);
 
 	return access_id;
 }

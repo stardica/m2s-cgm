@@ -12,6 +12,7 @@
 #include <cgm/cache.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
 
 #include <arch/x86/timing/thread.h>
 

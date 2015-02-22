@@ -193,8 +193,9 @@ void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
-int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr)
-{
+int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
+
+
 	int set, tag, way;
 
 	/* Locate block */

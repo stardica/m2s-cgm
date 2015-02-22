@@ -81,47 +81,62 @@ void cache_init(void){
 }
 
 
-int i_cache_ctrl(int id, enum cgm_access_kind_t task){
+int l1_i_cache_ctrl(int id){
 
-
-	printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
-	printf("task = %u\n", task);
+	//printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
+	//printf("task = %u\n", task);
 	//getchar();
 
 	unsigned int addr;
 	struct cgm_packet_t *packet;
-	int status;
+	enum cgm_access_kind_t task;
+	int hit;
 
-	int *set_ptr;
-	int *pway;
-	int *state_ptr;
+	int *set_ptr = NULL;
+	int *pway = NULL;
+	int *state_ptr = NULL;
 
 
-	//fetch access
+	packet = list_dequeue(l1_i_caches[id].Rx_queue);
+	if(!packet)
+	{
+		fatal("l1_i_cache no packet\n");
+	}
+	else
+	{
+		addr = packet->address;
+		task = packet->access_type;
+	}
+
+
 	if (task == cgm_access_load)
 	{
 
-		packet = list_dequeue(l1_i_caches[id].Rx_queue);
+		// 0 = miss 1 = hit
+		hit = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, pway, state_ptr);
 
-		printf("access id = %llu\n", packet->access_id);
-		printf("in flight = %d\n", packet->in_flight);
-		printf("address 0x%08x\n", packet->address);
-		fflush(stdout);
-		getchar();
+		/*printf("address 0x%08x\n", packet->address);
+		printf("hit or miss %d\n", status);*/
 
-		if(!packet)
+		//remove this.
+		hit = 1;
+		if(hit)
 		{
-			fatal("l1_i_cache no packet\n");
+
+			//retire access in master list.
+
+			list_dequeue(cgm_access_record);
+
+
 		}
 		else
 		{
 
 
-			status = cache_find_block(l1_i_caches[id], addr, set_ptr, pway, state_ptr);
 
-			printf("Status %d\n", status);
 
 		}
+
 
 
 	}
@@ -135,13 +150,36 @@ int i_cache_ctrl(int id, enum cgm_access_kind_t task){
 	}
 
 
-	//retire access in master list.
-	//list_dequeue(cgm_access_record);
-
 	return 0;
 }
 
+int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
 
+
+	//printf("cgm_cache_find_block()\n");
+	//printf("working with %s\n", cache->name);
+	//fatal("stop here\n");
+
+	int set, tag, way;
+
+	/* Locate block */
+	tag = addr & ~cache->block_mask;
+	set = (addr >> cache->log_block_size) % cache->num_sets;
+	PTR_ASSIGN(set_ptr, set);
+	PTR_ASSIGN(state_ptr, 0);  /* Invalid */
+	for (way = 0; way < cache->assoc; way++)
+		if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].state)
+			break;
+
+	/* Block not found */
+	if (way == cache->assoc)
+		return 0;
+
+	/* Block found */
+	PTR_ASSIGN(way_ptr, way);
+	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
+	return 1;
+}
 
 /*long long i = 1;
 

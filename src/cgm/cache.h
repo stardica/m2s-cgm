@@ -81,6 +81,7 @@ struct cache_t{
 	int log_block_size;
 
 	struct list_t *Rx_queue;
+	struct list_t *snoop_queue;
 	//struct list_t *Tx_queue;
 
 	//access record
@@ -112,15 +113,15 @@ extern struct cache_t *lds_units;
 
 //function prototypes
 void cache_init(void);
-int i_cache_ctrl(int id, enum cgm_access_kind_t task);
+int l1_i_cache_ctrl(int id);
 
 
-//from m2s
+
+//borrowed from m2s mem-system
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
-int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
+int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
 void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
-
 void cache_access_block(struct cache_t *cache, int set, int way);
 int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);

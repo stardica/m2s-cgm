@@ -104,11 +104,13 @@ extern int EV_MOD_NMOESI_MESSAGE_REPLY;
 extern int EV_MOD_NMOESI_MESSAGE_FINISH;
 
 
-void mod_handler_nmoesi_find_and_lock(int event, void *data);
 void mod_handler_nmoesi_load(int event, void *data);
 void mod_handler_nmoesi_store(int event, void *data);
-void mod_handler_nmoesi_prefetch(int event, void *data);
 void mod_handler_nmoesi_nc_store(int event, void *data);
+
+
+void mod_handler_nmoesi_find_and_lock(int event, void *data);
+void mod_handler_nmoesi_prefetch(int event, void *data);
 void mod_handler_nmoesi_evict(int event, void *data);
 void mod_handler_nmoesi_write_request(int event, void *data);
 void mod_handler_nmoesi_read_request(int event, void *data);

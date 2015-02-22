@@ -29,7 +29,7 @@ struct dir_lock_t
 };
 
 #define DIR_ENTRY_OWNER_NONE  (-1)
-#define DIR_ENTRY_VALID_OWNER(dir_entry)  ((dir_entry)->owner >= 0)
+#define DIR_ENTRY_VALID_OWNER(dir_entry) ((dir_entry)->owner >= 0)
 
 struct dir_entry_t
 {

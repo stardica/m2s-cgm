@@ -289,9 +289,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 static int X86ThreadFetchTraceCache(X86Thread *self)
 {
 
-	printf("thread fetch trace catch\n");
-	fflush(stdout);
-	getchar();
+	fatal("X86ThreadFetchTraceCache()\n");
 	struct x86_uop_t *uop;
 
 	int mpred;
