@@ -1368,7 +1368,6 @@ static void m2s_init(void)
 
 }
 
-
 static void m2s_loop(void)
 {
 	int num_emu_active;
@@ -1597,6 +1596,7 @@ int main(int argc, char **argv)
 
 
 	/* Multi2Sim Central Simulation Loop */
+	//simulate(sim_end);
 	m2s_loop();
 
 	printf("---Simulation End---\n");
@@ -1636,7 +1636,7 @@ int main(int argc, char **argv)
 	/* Finalization of network and memory system */
 #if CGM
 	//star todo add in the cgm-mem done func
-	//simulate(cleanup);
+
 #else
 	mem_system_done();
 	net_done();

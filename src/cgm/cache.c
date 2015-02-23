@@ -77,11 +77,27 @@ void cache_init(void){
 	//initialize the GPU LDS
 	lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
 
+	//create cache eventcounts
+	//l1_i_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
+	//l1_d_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
+	//l2_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
+
+	//star todo create eventcounts for other caches.
+
 	return;
 }
 
+void l2_cache_ctrl(void){
 
-int l1_i_cache_ctrl(int id){
+	return;
+}
+
+void l1_d_cache_ctrl(void){
+
+	return;
+}
+
+void l1_i_cache_ctrl(void){
 
 	//printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
 	//printf("task = %u\n", task);
@@ -97,7 +113,7 @@ int l1_i_cache_ctrl(int id){
 	int *state_ptr = NULL;
 
 
-	packet = list_dequeue(l1_i_caches[id].Rx_queue);
+	//packet = list_dequeue(l1_i_caches[id].Rx_queue);
 	if(!packet)
 	{
 		fatal("l1_i_cache no packet\n");
@@ -113,7 +129,7 @@ int l1_i_cache_ctrl(int id){
 	{
 
 		// 0 = miss 1 = hit
-		hit = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, pway, state_ptr);
+		//hit = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, pway, state_ptr);
 
 		/*printf("address 0x%08x\n", packet->address);
 		printf("hit or miss %d\n", status);*/
@@ -150,7 +166,7 @@ int l1_i_cache_ctrl(int id){
 	}
 
 
-	return 0;
+	return;
 }
 
 int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){

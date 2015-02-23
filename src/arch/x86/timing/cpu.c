@@ -1017,9 +1017,11 @@ int X86CpuRun(Timing *self)
 		return TRUE;
 
 
-
 	/* One more cycle of x86 timing simulation */
 	self->cycle++;
+
+	//epause (1)
+	//self->cycle = etime.count
 
 	//star added for instrumentation
 	Current_Cycle = self->cycle;
@@ -1031,10 +1033,7 @@ int X86CpuRun(Timing *self)
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */
 
-
 	X86CpuRunStages(cpu);
-
-
 
 
 	/* Process host threads generating events */
@@ -1055,19 +1054,11 @@ void X86CpuRunStages(X86Cpu *self)
 
 	/* Stages */
 
-
-
 	X86CpuCommit(self);
-
-
 	X86CpuWriteback(self);
-
 	X86CpuIssue(self);
 	X86CpuDispatch(self);
-
 	X86CpuDecode(self);
-
-
 	X86CpuFetch(self);
 
 

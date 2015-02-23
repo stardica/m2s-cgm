@@ -34,8 +34,9 @@ char *cgm_config_file_name_and_path;
 
 
 //globals for tasking
-eventcount *start;
-eventcount *stop;
+//eventcount *l1_i_cache_ec;
+//eventcount *l1_d_cache_ec;
+//eventcount *l2_cache_ec;
 
 
 void cgm_init(void){
@@ -58,6 +59,18 @@ void cgm_configure(void){
 #if GPU
 	cgm_gpu_configure();
 #endif
+
+
+	//create memory system tasks
+	char *task_name1 = "l1_i_cache_ctrl";
+	create_task(l1_i_cache_ctrl, DEFAULT_STACK_SIZE, task_name1);
+
+	char *task_name2 = "l1_d_cache_ctrl";
+	create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, task_name2);
+
+	char *task_name3 = "l2_cache_ctrl";
+	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);
+
 
 	return;
 }
@@ -158,6 +171,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	snprintf(buff, 100, "fetch_access.%llu", access_id);
 	new_packet->name = buff;
 
+
 	/*printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
 	printf("new_packet->name = %s\n", new_packet->name);
 	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);*/
@@ -170,7 +184,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	//access the first level of cache
 	//here threads package advance i_cache_ctrl
-	l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id);
+
+
+	//l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id);
 
 	return access_id;
 }
@@ -272,11 +288,10 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 
 
 
-
 /*void cgm_mem_task_init(void){
 
-	long long i = 1;
 	//star the threads simulation.
+	long long i = 1;
 
 	advance(start);
 
@@ -286,7 +301,6 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 
 	return;
 }*/
-
 
 
 /*void cgm_mem_threads_init(void){
@@ -326,11 +340,12 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 
 }*/
 
-/*void cleanup(void){
+void cgm_done(void){
 
-	star >> todo:
+	/*star >> todo:
 	(1) print stats or put in a file or something for later.
-	(2) clean up all global memory objects by running finish functions.
+	(2) clean up all global memory objects by running finish functions.*/
+
 	printf("---CGM-MEM Cleanup()---\n");
 	fflush(stdout);
-}*/
+}

@@ -10,12 +10,14 @@
 
 #include <cgm/cgm.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 
 //data
 extern struct cgm_packet_t{
 
 	enum cgm_access_kind_t access_type;
 	char *name;
+	struct list_t source_id;
 	unsigned int address;
 	long long access_id;
 	int in_flight;

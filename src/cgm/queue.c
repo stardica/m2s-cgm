@@ -76,7 +76,7 @@ void queue_init(void){
 	return;
 }
 
-void queue_ctrl(void){
+/*void queue_ctrl(void){
 
 	long long i = 1;
 
@@ -91,7 +91,7 @@ void queue_ctrl(void){
 	}
 
 	return;
-}
+}*/
 
 struct queue_data_packet_t * data_packet_create(void){
 

@@ -10,6 +10,7 @@
 #define CACHE_H_
 
 #include <cgm/cgm.h>
+#include <cgm/tasking.h>
 
 //star todo add prefetching and coalescing
 
@@ -88,6 +89,8 @@ struct cache_t{
 	struct list_t *cache_accesses;
 	//struct prefetcher_t *prefetcher;
 
+	eventcount cache_ec;
+
 };
 
 extern int QueueSize;
@@ -113,7 +116,9 @@ extern struct cache_t *lds_units;
 
 //function prototypes
 void cache_init(void);
-int l1_i_cache_ctrl(int id);
+void l1_i_cache_ctrl(void);
+void l1_d_cache_ctrl(void);
+void l2_cache_ctrl(void);
 
 
 

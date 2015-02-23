@@ -29,6 +29,7 @@
 #include <cgm/ini-parse.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
+#include <cgm/tasking.h>
 #include <cgm/mem-ctrl.h>
 
 
@@ -48,7 +49,6 @@ int cgm_mem_configure(void){
 		printf("Unable to open Config.ini for cache configuration.\n");
 		return 1;
 	}
-
 
 	cache_finish_create();
 
@@ -749,9 +749,6 @@ int cache_finish_create(){
 	int i, set, way = 0;
 	char buff[100];
 
-
-
-
 	//set log_block_size and block_mask
 	for(i = 0; i < num_cores ; i++ )
 	{
@@ -818,13 +815,9 @@ int cache_finish_create(){
 		snprintf(buff,100, "l2_caches[%d].Snoop", i);
 		l2_caches[i].snoop_queue->name = strdup(buff);
 
-
-
 		/*printf("%s ----> %s\n", l1_i_caches[i].name, l1_i_caches[i].Rx_queue->name);
 		printf("%s ----> %s\n", l1_d_caches[i].name, l1_d_caches[i].Rx_queue->name);
 		printf("%s ----> %s\n", l2_caches[i].name, l2_caches[i].Rx_queue->name);*/
-
-
 
 		//Initialize array of sets
 		l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
@@ -884,6 +877,20 @@ int cache_finish_create(){
 			//printf("l2_caches[%d].sets[%d].id = %d\n", i, set, l2_caches[i].sets[set].id);
 		}
 
+		//Initialize eventcounts
+		/*memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].ec", i);
+		l1_i_caches[i].cache_ec = new_eventcount(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].ec", i);
+		l1_d_caches[i].cache_ec = new_eventcount(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].ec", i);
+		l2_caches[i].cache_ec = new_eventcount(buff);*/
+
+
 	}
 
 	//fatal("stop here\n");
@@ -902,9 +909,6 @@ int cache_finish_create(){
 }
 
 int check_config(void* user, const char* section, const char* name, const char* value){
-
-	//this is used if you want to store the ini values in our configuration struct.
-	//struct queue_config_t *temp = (struct queue_config_t *)user;
 
 	if(MATCH("Check", "Check"))
 	{

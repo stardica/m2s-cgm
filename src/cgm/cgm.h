@@ -43,8 +43,9 @@ extern char *cgm_config_file_name_and_path;
 
 
 // globals for tasking
-extern eventcount *start;
-extern eventcount *stop;
+//extern eventcount *l1_i_cache_ec;
+//extern eventcount *l1_d_cache_ec;
+//extern eventcount *l2_cache_ec;
 
 
 
@@ -67,7 +68,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 void cgm_mem_task_init(void);
 void cgm_mem_threads_init(void);
 void cgm_mem_sim_loop(void);
-void cleanup(void);
+void cgm_done(void);
 
 
 #endif /* CGM_H_ */

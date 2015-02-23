@@ -205,8 +205,15 @@ void simulate (void (*f)(void)){
 	context_cleanup ();
 
 	if (cleanup_stuff)
+	{
 		(*cleanup_stuff) ();
-	exit (0);
+
+		//chris changed so that this no longer blocks
+		//exit (0);
+	}
+
+
+	return;
 }
 
 void context_timeout (void){
