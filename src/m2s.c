@@ -1432,6 +1432,56 @@ static void m2s_loop(void)
 	signal(SIGUSR2, SIG_DFL);
 }
 
+void sim_end(void){
+
+	printf("---Simulation End (CGM)---\n");
+	fflush(stdout);
+
+	//star >> don't need this for simple/short runs benchmarks
+	/* Save architectural state checkpoint */
+	//if (x86_save_checkpoint_file_name[0])
+	//X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+
+	/* Flush event-driven simulation, only if the reason for simulation
+	 * completion was not a simulation stall. If it was, draining the
+	 * event-driven simulation could cause another stall! */
+	if (esim_finish != esim_finish_stall)
+		esim_process_all_events();
+
+
+	//star >> execution is pretty much done here. The remainder is summary output and cleanup.
+
+	/* Dump statistics summary */
+	m2s_dump_summary(stderr);
+
+	/* x86 */
+	if (x86_cpu)
+		delete(x86_cpu);
+	X86CpuDone();
+
+	/* Finalization of architectures */
+	arch_done();
+
+	/* Finalization of runtimes */
+#if GPU
+	runtime_done();
+	opencl_done();
+	//cuda_done();
+#endif
+
+	/* Finalization of network and memory system */
+	/* Finalization of drivers */
+	/* Finalization of libraries */
+	mmu_done();
+	esim_done();
+	trace_done();
+	debug_done();
+	mhandle_done();
+
+	return;
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -1596,8 +1646,14 @@ int main(int argc, char **argv)
 
 
 	/* Multi2Sim Central Simulation Loop */
-	//simulate(sim_end);
+#if CGM
+
+	simulate(sim_end);
+
+#else
 	m2s_loop();
+
+
 
 	printf("---Simulation End---\n");
 	fflush(stdout);
@@ -1631,35 +1687,23 @@ int main(int argc, char **argv)
 	/* Finalization of runtimes */
 #if GPU
 	runtime_done();
-#endif
-
-	/* Finalization of network and memory system */
-#if CGM
-	//star todo add in the cgm-mem done func
-
-#else
-	mem_system_done();
-	net_done();
-#endif
-
-	mmu_done();
-
-	/* Finalization of drivers */
-#if GPU
 	opencl_done();
 	//cuda_done();
 #endif
 
+	/* Finalization of network and memory system */
+	mem_system_done();
+	net_done();
+	mmu_done();
+
+	/* Finalization of drivers */
 	/* Finalization of libraries */
 	esim_done();
 	trace_done();
 	debug_done();
 	mhandle_done();
 
-	//star >> added our own stats output here.
-	//PrintStats();
-	//PrintUopList();
-	//instrumentation_done();
+#endif
 
 	/* End */
 	return 0;
