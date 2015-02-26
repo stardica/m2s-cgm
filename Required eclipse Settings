@@ -5,6 +5,7 @@ How to set up eclipse to compile and run m2s-cpu
 (2) Go to project properties add the following compiler settings:
 	(a) Add the path to /m2s-cpu/src in the includes list. Example -l/home/stardica/Desktop/m2s-cpu/src
 	(b) Add -pthread -mmmx -msse to miscellaneous >> other flags
+	(c) Add -D_FORTIFY_SOURCE=0 to optimizations (For the threads package).
 
 (3) Go to project properties add the following linker settings
 	(a) Add pthread, z, dl, m, m2s-opencl to the libraries.

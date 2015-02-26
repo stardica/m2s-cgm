@@ -19,3 +19,6 @@
 // MSG 1 outputs configuration data.
 // MSG 2 outputs memory system runtime data.
 #define MSG 0
+
+//m2s.c prototypes
+void m2s_loop(void);

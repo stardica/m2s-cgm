@@ -34,7 +34,7 @@ void memctrl_init(void){
 	//star currently only one memory controller.
 	mem_ctrl = memctrl_create();
 	memctrl_queues_init();
-	memctrl_tasking_init();
+	//memctrl_tasking_init();
 
 	return;
 }

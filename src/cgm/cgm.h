@@ -38,15 +38,12 @@ extern int host_sim_cpu_fetch_queue_size;
 extern int host_sim_cpu_lsq_queue_size;
 
 extern long long int mem_cycle;
-
 extern char *cgm_config_file_name_and_path;
-
 
 // globals for tasking
 //extern eventcount *l1_i_cache_ec;
 //extern eventcount *l1_d_cache_ec;
 //extern eventcount *l2_cache_ec;
-
 
 
 //function prototypes
@@ -63,12 +60,13 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 //void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 
+//threads related stuff used in the simulator other than in the CGM memory section.
+extern long long cpu_loop_iteration_count;
+extern eventcount volatile *sim_start;
+extern eventcount volatile *sim_finish;
 
-//star todo recycle these later
-void cgm_mem_task_init(void);
-void cgm_mem_threads_init(void);
-void cgm_mem_sim_loop(void);
-void cgm_done(void);
+void cgm_start(void);
+void cpu_gpu_run(void);
 
 
 #endif /* CGM_H_ */

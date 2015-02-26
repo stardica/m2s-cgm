@@ -50,7 +50,9 @@
 #include <arch/x86/timing/uop-queue.h>
 #include <arch/x86/timing/writeback.h>
 
+//CGM releated
 #include <instrumentation/stats.h>
+
 
 //memory related
 #include <mem-image/memory.h>
@@ -991,8 +993,8 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats, char *pref
 }
 
 
-int X86CpuRun(Timing *self)
-{
+int X86CpuRun(Timing *self){
+
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Emu *emu = cpu->emu;
 
@@ -1015,7 +1017,6 @@ int X86CpuRun(Timing *self)
 	/* Stop if any previous reason met */
 	if (esim_finish)
 		return TRUE;
-
 
 	/* One more cycle of x86 timing simulation */
 	self->cycle++;

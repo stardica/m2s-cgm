@@ -207,11 +207,8 @@ void simulate (void (*f)(void)){
 	if (cleanup_stuff)
 	{
 		(*cleanup_stuff) ();
-
-		//chris changed so that this no longer blocks
-		//exit (0);
+		exit (0);
 	}
-
 
 	return;
 }

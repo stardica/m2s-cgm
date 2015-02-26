@@ -45,6 +45,7 @@
 
 #if CGM
 #include <cgm/cgm.h>
+#include <cgm/tasking.h>
 #else
 #include <mem-system/config.h>
 #include <mem-system/mem-system.h>
@@ -69,11 +70,10 @@
 //#include <driver/opengl/opengl.h>
 #endif
 
-
 //star >> added version here because eclipse was complaining.
 //this are pointers to strings its like saying visual_file_name[].
 //The version number is defined by either make or configure.
-static char *m2sversion = "4.2";
+static char *m2sversion = "0";
 static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
@@ -1368,8 +1368,9 @@ static void m2s_init(void)
 
 }
 
-static void m2s_loop(void)
-{
+void m2s_loop(void){
+
+
 	int num_emu_active;
 	int num_timing_active;
 
@@ -1420,6 +1421,13 @@ static void m2s_loop(void)
 			printf("signal received: entered here\n");
 			m2s_signal_process();
 		}
+
+#if CGM
+		if(!esim_finish){
+			advance(sim_finish);
+		}
+#endif
+
 	}
 
 
@@ -1432,7 +1440,9 @@ static void m2s_loop(void)
 	signal(SIGUSR2, SIG_DFL);
 }
 
+
 void sim_end(void){
+
 
 	printf("---Simulation End (CGM)---\n");
 	fflush(stdout);
@@ -1594,18 +1604,12 @@ int main(int argc, char **argv)
 	 * better once the process finish. But now we need to release 4.2...
 	 */
 
-
 	X86CpuInit();
-
-
-
-
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
 	if (x86_sim_kind == arch_sim_kind_detailed)
 	{
 		x86_cpu = new(X86Cpu, x86_emu);
-
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 
@@ -1617,18 +1621,15 @@ int main(int argc, char **argv)
 
 
 
+	//CGM is the replacement memory system.
 #if CGM
-	//this is the replacement memory system.
-	//cgm_init(x86_cpu->cores->threads);
 	cgm_init();
 	cgm_configure();
 
 #else
 	//this is old m2s code for the memory system and network.
-
 	net_init();
 	mem_system_init();
-
 #endif
 
 	mmu_init();
@@ -1645,15 +1646,19 @@ int main(int argc, char **argv)
 
 
 
-	/* Multi2Sim Central Simulation Loop */
+	//run ends here if CGM is running.
+	//sim_send contains all of the "done" functions.
 #if CGM
 
 	simulate(sim_end);
 
+	/* End */
+	//return 0;
+
 #else
+
+	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();
-
-
 
 	printf("---Simulation End---\n");
 	fflush(stdout);
@@ -1703,8 +1708,11 @@ int main(int argc, char **argv)
 	debug_done();
 	mhandle_done();
 
-#endif
-
 	/* End */
 	return 0;
+
+#endif
+
+return 0;
+
 }

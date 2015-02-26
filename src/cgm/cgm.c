@@ -9,10 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <m2s.h>
+
 #include <lib/util/list.h>
-
+#include <lib/util/linked-list.h>
 #include <arch/x86/timing/thread.h>
-
 #include <lib/util/misc.h>
 
 //star todo take any borrowed files and move then to our cgm-mem directory.
@@ -26,17 +27,13 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 
-
 long long access_id = 0;
 struct list_t *cgm_access_record;
-
 char *cgm_config_file_name_and_path;
 
-
 //globals for tasking
-//eventcount *l1_i_cache_ec;
-//eventcount *l1_d_cache_ec;
-//eventcount *l2_cache_ec;
+eventcount volatile *sim_start;
+eventcount volatile *sim_finish;
 
 
 void cgm_init(void){
@@ -61,7 +58,20 @@ void cgm_configure(void){
 #endif
 
 
-	//create memory system tasks
+	//create m2s CPU and GPU tasks
+	char *sim_start_name = "sim_start";
+	char *sim_finish_name = "sim_finish";
+	sim_start = new_eventcount(sim_start_name);
+	sim_finish = new_eventcount(sim_finish_name);
+
+	char *task_name5 = "x86";
+	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, task_name5);
+
+	char *task_name4 = "x86";
+	create_task(cgm_start, DEFAULT_STACK_SIZE, task_name4);
+
+
+/*	//create memory system tasks
 	char *task_name1 = "l1_i_cache_ctrl";
 	create_task(l1_i_cache_ctrl, DEFAULT_STACK_SIZE, task_name1);
 
@@ -69,11 +79,49 @@ void cgm_configure(void){
 	create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, task_name2);
 
 	char *task_name3 = "l2_cache_ctrl";
-	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);
+	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);*/
 
 
 	return;
 }
+
+void cgm_start(void){
+
+	printf("cgm_start() advance sim_start\n");
+	fflush(stdout);
+	advance(sim_start);
+
+	printf("cgm_start() await sim_finish\n");
+	fflush(stdout);
+	await(sim_finish, 1);
+
+	printf("cgm_start() sim ending\n");
+	fflush(stdout);
+
+	return;
+}
+
+void cpu_gpu_run(void){
+
+	long long t_1 = 1;
+
+	while(1)
+	{
+
+
+		if(t_1 == 1)
+		{
+			printf("cpu_gpu_run()\n");
+		}
+
+		await(sim_start, t_1);
+		t_1++;
+		m2s_loop();
+
+	}
+	return;
+}
+
 
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
@@ -84,7 +132,7 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	//check if request queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
+	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue))
 	{
 		return 0;
 	}
@@ -179,14 +227,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//add to master list of accesses and 1st level i_cache
 	list_enqueue(cgm_access_record, new_packet);
 
-	//add to first level cache Rx queue
-	list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 
+	//add to first level cache Rx queue
+	//list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 	//access the first level of cache
 	//here threads package advance i_cache_ctrl
+	//l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id, addr);
 
-
-	//l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id);
+	list_dequeue(cgm_access_record);
 
 	return access_id;
 }
@@ -286,66 +334,3 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 	return;
 }*/
 
-
-
-/*void cgm_mem_task_init(void){
-
-	//star the threads simulation.
-	long long i = 1;
-
-	advance(start);
-
-	printf("in task init\n");
-
-	await(stop, i);
-
-	return;
-}*/
-
-
-/*void cgm_mem_threads_init(void){
-
-	char *taskname = NULL;
-	char *eventname = NULL;
-
-	//create task
-	taskname = "cgm_mem_task_init";
-	create_task(cgm_mem_task_init, DEFAULT_STACK_SIZE, taskname);
-	taskname = "queue_ctrl";
-	create_task(queue_ctrl, DEFAULT_STACK_SIZE, taskname);
-
-
-	//create eventcounts
-	eventname = "st1art";
-	start = new_eventcount(eventname);
-	eventname = "stop";
-	stop = new_eventcount(eventname);
-
-	return;
-}*/
-
-
-/*void cgm_mem_sim_loop(void){
-
-	int error = 0;
-
-	error = system_test();
-	if(error == 1)
-	{
-		printf("failed in system_test()\n");
-	}
-
-
-	return;
-
-}*/
-
-void cgm_done(void){
-
-	/*star >> todo:
-	(1) print stats or put in a file or something for later.
-	(2) clean up all global memory objects by running finish functions.*/
-
-	printf("---CGM-MEM Cleanup()---\n");
-	fflush(stdout);
-}

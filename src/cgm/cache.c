@@ -44,6 +44,7 @@ struct cache_t *lds_units;
 void cache_init(void){
 
 	//star todo make this automatic
+	//star todo make defaults
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 	int l3_slices = num_cores/4;
@@ -97,6 +98,7 @@ void l1_d_cache_ctrl(void){
 	return;
 }
 
+//void l1_i_cache_ctrl(void){
 void l1_i_cache_ctrl(void){
 
 	//printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
@@ -138,22 +140,15 @@ void l1_i_cache_ctrl(void){
 		hit = 1;
 		if(hit)
 		{
-
 			//retire access in master list.
-
-			list_dequeue(cgm_access_record);
-
+			//list_dequeue(cgm_access_record);
 
 		}
 		else
 		{
 
 
-
-
 		}
-
-
 
 	}
 	else if (task == cgm_access_nc_load)

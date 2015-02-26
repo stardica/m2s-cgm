@@ -116,11 +116,6 @@ extern struct cache_t *lds_units;
 
 //function prototypes
 void cache_init(void);
-void l1_i_cache_ctrl(void);
-void l1_d_cache_ctrl(void);
-void l2_cache_ctrl(void);
-
-
 
 //borrowed from m2s mem-system
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -130,6 +125,12 @@ void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int 
 void cache_access_block(struct cache_t *cache, int set, int way);
 int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
+
+//task functions
+void l1_i_cache_ctrl(void);
+void l1_d_cache_ctrl(void);
+void l2_cache_ctrl(void);
+
 
 
 #endif /*CACHE_H_*/

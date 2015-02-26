@@ -2880,6 +2880,49 @@ void si_isa_V_MAX_F32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/*star added here */
+#define INST SI_INST_VOP2
+void si_isa_V_MIN_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t min;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+	{
+		s0.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	}
+
+	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
+
+	/* Calculate the minimum operand. */
+	if (s0.as_int < s1.as_int)
+	{
+		min.as_int = s0.as_int;
+	}
+	else
+	{
+		min.as_int = s1.as_int;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, min.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%d<=(%gf)", work_item->id, INST.vdst, min.as_int);
+	}
+}
+#undef INST
+
+
+
 /* D.i = max(S0.i, S1.i). */
 #define INST SI_INST_VOP2
 void si_isa_V_MAX_I32_impl(struct si_work_item_t *work_item,
@@ -4573,6 +4616,38 @@ void si_isa_V_ALIGNBIT_B32_impl(struct si_work_item_t *work_item, struct si_inst
 #undef INST
 
 //star added inst here
+/* D.i = min(S0.i, S1.i, S2.i). */
+#define INST SI_INST_VOP3a
+void si_isa_V_MIN3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t s2;
+	union si_reg_t min;
+
+	/* Load operands from registers or as a literal constant. */
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
+	s2.as_uint = si_isa_read_reg(work_item, INST.src2);
+
+	/* Calculate the minimum operand. */
+	min.as_int = (s0.as_int < s1.as_int)    ? s0.as_int : s1.as_int;
+	min.as_int =  (s2.as_int < min.as_int)  ? s2.as_int : min.as_int;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, min.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf)", work_item->id, INST.vdst, min.as_uint);
+	}
+
+}
+#undef INST
+
+
+//star added inst here
 //D.i = max(S0.i, S1.i, S2.i).
 #define INST SI_INST_VOP3a
 void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
@@ -4664,8 +4739,7 @@ void si_isa_V_MUL_LO_U32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%u) ", work_item->id, INST.vdst,
-			result.as_uint);
+		si_isa_debug("t%d: V%u<=(%u) ", work_item->id, INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -6085,9 +6159,71 @@ void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item,
 #undef INST
 
 
+//star added this here
+//R = DS[ADDR+offset0*4*64], R+1 = DS[ADDR+offset1*4*64].
+#define INST SI_INST_DS
+void si_isa_DS_READ2ST64_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union si_reg_t addr;
+	union si_reg_t data0;
+	union si_reg_t data1;
+
+	assert(!INST.gds);
+
+	/* Load address from register. */
+	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
+
+	/* Global data store not supported */
+	assert(!INST.gds);
+
+	/* Read Dword. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		mem_read(work_item->work_group->lds_module, addr.as_uint + INST.offset0*4*64, 4, &data0.as_uint);
+		mem_read(work_item->work_group->lds_module, addr.as_uint + INST.offset1*4*64, 4, &data1.as_uint);
+	}
+
+	/* Write results. */
+	si_isa_write_vreg(work_item, INST.vdst, data0.as_uint);
+	si_isa_write_vreg(work_item, INST.vdst+1, data1.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		/* If offset1 != 1, then the following is incorrect */
+		assert(INST.offset0 == 0);
+		assert(INST.offset1 == 1);
+		work_item->lds_access_count = 2;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr.as_uint;
+		work_item->lds_access_size[0] = 4;
+		work_item->lds_access_type[1] = 1;
+		work_item->lds_access_addr[1] = addr.as_uint + 4;
+		work_item->lds_access_size[1] = 4;
+	}
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(0x%x)(0x%x) ", work_item->id, INST.vdst, addr.as_uint+INST.offset0*4*64, data0.as_uint);
+		si_isa_debug("V%u<=(0x%x)(0x%x) ", INST.vdst+1, addr.as_uint+INST.offset1*4*64, data1.as_uint);
+	}
+}
+#undef INST
+
+
+//star added this here
+//DS[ADDR+offset0*4*64] = D0; DS[ADDR+offset1*4*64] = D1
 #define INST SI_INST_DS
 void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
-
 
 	union si_reg_t addr0;
 	union si_reg_t addr1;
@@ -6097,9 +6233,12 @@ void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_i
 	assert(!INST.gds);
 
 	/* Load address and data from registers. */
+
+	//assert(INST.offset0);
 	addr0.as_uint = si_isa_read_vreg(work_item, INST.addr);
 	addr0.as_uint += INST.offset0*4*64;
 
+	//assert(!INST.offset1);
 	addr1.as_uint = si_isa_read_vreg(work_item, INST.addr);
 	addr1.as_uint += INST.offset1*4*64;
 
@@ -6134,13 +6273,6 @@ void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_i
 	else
 	{
 
-
-		/* If offset1 != 1, then the following is incorrect */
-		printf(" offset0 = %u\n", INST.offset0);
-		printf(" offset1 = %u\n", INST.offset1);
-		fflush(stdout);
-		//getchar();
-
 		//assert(INST.offset0 == 0);
 		//assert(INST.offset1 == 4);
 
@@ -6150,9 +6282,8 @@ void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_i
 		work_item->lds_access_addr[0] = addr0.as_uint;
 		work_item->lds_access_size[0] = 4;
 
-
 		work_item->lds_access_type[1] = 2;
-		work_item->lds_access_addr[1] = addr0.as_uint + 64; //star todo this may need to be + 16 not 63
+		work_item->lds_access_addr[1] = addr0.as_uint + 64; //star todo this may need to be 4, 16, or 64 not sure...
 		work_item->lds_access_size[1] = 4;
 	}
 
@@ -6209,10 +6340,8 @@ void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
 	}
 	else
 	{
-		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4,
-			&data0.as_uint);
-		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4,
-			&data1.as_uint);
+		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4, &data0.as_uint);
+		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4, &data1.as_uint);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -6237,17 +6366,13 @@ void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category) && INST.gds)
 	{
-		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, 
-			addr0.as_uint, data0.as_uint, data0.as_float);
-		si_isa_debug("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
-			data0.as_float);
+		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint, data0.as_float);
 	}
 	else
 	{
-		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, 
-			addr0.as_uint, data0.as_uint, data0.as_float);
-		si_isa_debug("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
-			data1.as_float);
+		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, data1.as_float);
 	}
 }
 #undef INST

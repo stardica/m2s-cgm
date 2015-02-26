@@ -345,13 +345,11 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	device_ptr = regs->ecx;
 	host_ptr = regs->edx;
 	size = regs->esi;
-	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
-			device_ptr, host_ptr, size);
+	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n", device_ptr, host_ptr, size);
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
-		fatal("%s: accessing device memory not allocated",
-				__FUNCTION__);
+		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 
 	/* Write memory from host to device */
 	buf = xmalloc(size);
