@@ -34,6 +34,18 @@ char *cgm_config_file_name_and_path;
 //globals for tasking
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
+eventcount volatile *l1_i_cache_0;
+eventcount volatile *l1_i_cache_1;
+eventcount volatile *l1_i_cache_2;
+eventcount volatile *l1_i_cache_3;
+eventcount volatile *l1_d_cache_0;
+eventcount volatile *l1_d_cache_1;
+eventcount volatile *l1_d_cache_2;
+eventcount volatile *l1_d_cache_3;
+eventcount volatile *l2_cache_0;
+eventcount volatile *l2_cache_1;
+eventcount volatile *l2_cache_2;
+eventcount volatile *l2_cache_3;
 
 
 void cgm_init(void){
@@ -57,29 +69,104 @@ void cgm_configure(void){
 	cgm_gpu_configure();
 #endif
 
+	create_events();
+	create_tasks();
 
-	//create m2s CPU and GPU tasks
-	char *sim_start_name = "sim_start";
-	char *sim_finish_name = "sim_finish";
-	sim_start = new_eventcount(sim_start_name);
-	sim_finish = new_eventcount(sim_finish_name);
+	return;
+}
 
-	char *task_name5 = "x86";
-	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, task_name5);
+void create_tasks(void){
 
-	char *task_name4 = "x86";
-	create_task(cgm_start, DEFAULT_STACK_SIZE, task_name4);
+	char *buff[100];
+
+	//init sim run and stop tasks
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "run");
+	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "startup and stop");
+	create_task(cgm_start, DEFAULT_STACK_SIZE, buff);
 
 
-/*	//create memory system tasks
-	char *task_name1 = "l1_i_cache_ctrl";
-	create_task(l1_i_cache_ctrl, DEFAULT_STACK_SIZE, task_name1);
+	//create cache tasks
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_0_ctrl");
+	create_task(l1_i_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
 
 	char *task_name2 = "l1_d_cache_ctrl";
 	create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, task_name2);
 
 	char *task_name3 = "l2_cache_ctrl";
-	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);*/
+	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);
+
+	return;
+}
+
+void create_events(){
+
+	//star todo make this dynamic
+	char *buff[100];
+
+	//create m2s CPU and GPU eventcounts
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_start");
+	sim_start = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_finish");
+	sim_finish = new_eventcount(buff);
+
+	//create the i cache ctrl eventcounts
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_i_cache_0");
+	l1_i_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_i_cache_1");
+	l1_i_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_i_cache_2");
+	l1_i_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_i_cache_3");
+	l1_i_cache_3 = new_eventcount(buff);
+
+	//create the d cache ctrl eventcounts
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_d_cache_0");
+	l1_d_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_d_cache_1");
+	l1_d_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_d_cache_2");
+	l1_d_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_d_cache_3");
+	l1_d_cache_3 = new_eventcount(buff);
+
+	//create the l2 cache ctrl eventcounts
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l2_cache_0");
+	l2_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l2_cache_1");
+	l2_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l2_cache_2");
+	l2_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "sim_l1_d_cache_3");
+	l2_cache_3 = new_eventcount(buff);
 
 
 	return;
@@ -134,10 +221,11 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue))
 	{
+		//printf("rx queue is %d of %d\n", list_count(thread->d_cache_ptr[thread->core->id].Rx_queue), QueueSize);
 		return 0;
 	}
 
-	//printf(" rx queue size %d\n", list_count(self->i_cache_ptr[self->core->id].Rx_queue));
+	//printf("rx queue is %d of %d\n", list_count(thread->d_cache_ptr[thread->core->id].Rx_queue), QueueSize);
 
 	//i_cache queue is accessible.
 	return 1;
@@ -190,7 +278,7 @@ int cgm_in_flight_access(X86Thread *self, long long id){
 		}
 	}
 
-	/* Not found */
+	/* packets are present but this one wasn't found */
 	return 0;
 
 }
@@ -227,14 +315,35 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//add to master list of accesses and 1st level i_cache
 	list_enqueue(cgm_access_record, new_packet);
 
-
-	//add to first level cache Rx queue
-	//list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
-	//access the first level of cache
-	//here threads package advance i_cache_ctrl
-	//l1_i_cache_ctrl(thread->i_cache_ptr[thread->core->id].id, addr);
-
 	list_dequeue(cgm_access_record);
+	/*if(thread->core->id == 0)
+	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		advance(l1_i_cache_0);
+	}
+	else if (thread->core->id == 1)
+	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		advance(l1_i_cache_1);
+	}
+	else if (thread->core->id == 2)
+	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		advance(l1_i_cache_2);
+	}
+	else if (thread->core->id == 3)
+	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		advance(l1_i_cache_3);
+	}
+	else
+	{
+		fatal("cgm_fetch_access() core id has a problem\n");
+	}*/
+
+
+	//leave this for testing.
+	//list_dequeue(cgm_access_record);
 
 	return access_id;
 }

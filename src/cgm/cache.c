@@ -14,8 +14,6 @@
 #include <cgm/packet.h>
 #include <cgm/cgm.h>
 
-
-
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/util/debug.h>
@@ -98,67 +96,78 @@ void l1_d_cache_ctrl(void){
 	return;
 }
 
-//void l1_i_cache_ctrl(void){
-void l1_i_cache_ctrl(void){
-
-	//printf("queue name = %s\n", l1_i_caches[id].Rx_queue->name);
-	//printf("task = %u\n", task);
-	//getchar();
-
-	unsigned int addr;
-	struct cgm_packet_t *packet;
-	enum cgm_access_kind_t task;
-	int hit;
-
-	int *set_ptr = NULL;
-	int *pway = NULL;
-	int *state_ptr = NULL;
+void l1_i_cache_ctrl_0(void){
 
 
-	//packet = list_dequeue(l1_i_caches[id].Rx_queue);
-	if(!packet)
-	{
-		fatal("l1_i_cache no packet\n");
-	}
-	else
-	{
-		addr = packet->address;
-		task = packet->access_type;
-	}
+	long long step = 1;
 
-
-	if (task == cgm_access_load)
+	while(1)
 	{
 
-		// 0 = miss 1 = hit
-		//hit = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, pway, state_ptr);
+		await(l1_i_cache_0, step);
+		step++;
+		printf("l1_i_cache_0 GO!\n");
 
-		/*printf("address 0x%08x\n", packet->address);
-		printf("hit or miss %d\n", status);*/
+		list_dequeue(l1_i_caches[0].Rx_queue);
 
-		//remove this.
-		hit = 1;
-		if(hit)
+
+		//change this to something like if mem access complete then dequeue from the global list.
+		if(1)
 		{
-			//retire access in master list.
 			//list_dequeue(cgm_access_record);
+		}
 
+	}
+		/*unsigned int addr;
+		struct cgm_packet_t *packet;
+		enum cgm_access_kind_t task;
+		int hit;
+
+		int *set_ptr = NULL;
+		int *pway = NULL;
+		int *state_ptr = NULL;
+
+
+		//packet = list_dequeue(l1_i_caches[id].Rx_queue);
+		if(!packet)
+		{
+			//fatal("l1_i_cache no packet\n");
 		}
 		else
 		{
-
-
+			addr = packet->address;
+			task = packet->access_type;
 		}
 
-	}
-	else if (task == cgm_access_nc_load)
-	{
-		fatal("Unsupported i_cache task = cgm_access_nc_load\n");
-	}
-	else
-	{
-		fatal("Unsupported i_cache task = all else\n");
-	}
+
+		if (task == cgm_access_load)
+		{
+
+			// 0 = miss 1 = hit
+			//hit = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, pway, state_ptr);
+
+			printf("address 0x%08x\n", packet->address);
+			printf("hit or miss %d\n", status);
+
+			//remove this.
+			hit = 1;
+			if(hit)
+			{
+				//retire access in master list.
+				list_dequeue(cgm_access_record);
+
+			}
+			else if (task == cgm_access_nc_load)
+			{
+				fatal("Unsupported i_cache task = cgm_access_nc_load\n");
+			}
+			else
+			{
+				fatal("Unsupported i_cache task = all else\n");
+			}
+
+		}*/
+
 
 
 	return;
@@ -191,17 +200,3 @@ int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr,
 	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 	return 1;
 }
-
-/*long long i = 1;
-
-	while(1)
-	{
-
-		await(queue_has_data, i);
-
-		printf("cache_ctrl\n");
-
-		advance(stop);
-
-	}
-*/

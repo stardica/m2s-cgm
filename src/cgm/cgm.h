@@ -64,9 +64,23 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 extern long long cpu_loop_iteration_count;
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
+extern eventcount volatile *l1_i_cache_0;
+extern eventcount volatile *l1_i_cache_1;
+extern eventcount volatile *l1_i_cache_2;
+extern eventcount volatile *l1_i_cache_3;
+extern eventcount volatile *l1_d_cache_0;
+extern eventcount volatile *l1_d_cache_1;
+extern eventcount volatile *l1_d_cache_2;
+extern eventcount volatile *l1_d_cache_3;
+extern eventcount volatile *l2_cache_0;
+extern eventcount volatile *l2_cache_1;
+extern eventcount volatile *l2_cache_2;
+extern eventcount volatile *l2_cache_3;
+
+void create_events(void);
+void create_tasks(void);
 
 void cgm_start(void);
 void cpu_gpu_run(void);
-
 
 #endif /* CGM_H_ */

@@ -500,9 +500,6 @@ task * create_task2(void (*func)(void *), void *arg, unsigned stacksize, char *n
 
 	// for stack overflow check
 	tptr->magic = STK_OVFL_MAGIC;
-
-	//debug
-	//printf("In create_task2, name = %s, func address %#010x\n", tptr->name, &tptr->f);
   
 	return tptr;
 }

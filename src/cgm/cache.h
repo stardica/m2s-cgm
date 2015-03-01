@@ -89,7 +89,7 @@ struct cache_t{
 	struct list_t *cache_accesses;
 	//struct prefetcher_t *prefetcher;
 
-	eventcount cache_ec;
+	//eventcount cache_ec;
 
 };
 
@@ -127,7 +127,10 @@ int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 
 //task functions
-void l1_i_cache_ctrl(void);
+void l1_i_cache_ctrl_0(void);
+void l1_i_cache_ctrl_1(void);
+void l1_i_cache_ctrl_2(void);
+void l1_i_cache_ctrl_3(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
 

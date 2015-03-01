@@ -74,7 +74,7 @@
 //this are pointers to strings its like saying visual_file_name[].
 //The version number is defined by either make or configure.
 static char *m2sversion = "0";
-static char *visual_file_name = "";
+//static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
 static char *trace_file_name = "";
@@ -548,7 +548,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	int arg_discard = 0;
 	int err;
 	char *net_sim_last_option = NULL;
-	char *dram_sim_last_option = NULL;
+	//char *dram_sim_last_option = NULL;
 
 	// star >> argi is used as a temp counter
 	// star >> 590 - 1519 assign various parameters based on command line options input.

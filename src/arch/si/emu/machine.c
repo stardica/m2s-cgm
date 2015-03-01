@@ -6283,7 +6283,8 @@ void si_isa_DS_WRITE2ST64_B32_impl(struct si_work_item_t *work_item, struct si_i
 		work_item->lds_access_size[0] = 4;
 
 		work_item->lds_access_type[1] = 2;
-		work_item->lds_access_addr[1] = addr0.as_uint + 64; //star todo this may need to be 4, 16, or 64 not sure...
+		//work_item->lds_access_addr[1] = addr0.as_uint + 16; //star todo this may need to be 4, 16, or 64 not sure...
+		work_item->lds_access_addr[1] = addr0.as_uint + 4;
 		work_item->lds_access_size[1] = 4;
 	}
 

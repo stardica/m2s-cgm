@@ -20,5 +20,5 @@
 // MSG 2 outputs memory system runtime data.
 #define MSG 0
 
-//m2s.c prototypes
+//m2s prototypes
 void m2s_loop(void);
