@@ -64,7 +64,7 @@ extern volatile long long number_of_store_events;
 extern volatile long long number_of_noncached_store_events;
 
 //global
-extern volatile long long Current_Cycle;
+extern volatile unsigned long Current_Cycle;
 extern struct list_t *Uop_List;
 
 extern struct Uop_Status_t{

@@ -63,7 +63,7 @@ volatile long long number_of_store_events = 0;
 volatile long long number_of_noncached_store_events = 0;
 
 //Global
-volatile long long Current_Cycle = 0;
+volatile unsigned long Current_Cycle = 0;
 struct list_t *Uop_List;
 struct Uop_Status_t *Uop_Status;
 

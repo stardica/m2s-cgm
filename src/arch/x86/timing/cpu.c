@@ -52,6 +52,7 @@
 
 //CGM releated
 #include <instrumentation/stats.h>
+#include <cgm/tasking.h>
 
 
 //memory related
@@ -1019,10 +1020,10 @@ int X86CpuRun(Timing *self){
 		return TRUE;
 
 	/* One more cycle of x86 timing simulation */
-	self->cycle++;
+	//self->cycle++;
 
-	//epause (1)
-	//self->cycle = etime.count
+	epause(1);
+	self->cycle = etime.count;
 
 	//star added for instrumentation
 	Current_Cycle = self->cycle;

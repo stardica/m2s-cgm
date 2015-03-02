@@ -37,6 +37,9 @@ CLASS_BEGIN(Timing, Object)
 	struct arch_t *arch;
 	
 	/* Current cycle */
+
+	//star changed this
+	//long long cycle;
 	long long cycle;
 
 	/* Frequency domain, as returned by 'esim_new_domain()'.

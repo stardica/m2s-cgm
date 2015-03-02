@@ -59,8 +59,6 @@ static void X86ThreadDecode(X86Thread *self)
 		uop = list_get(fetchq, 0);
 		assert(x86_uop_exists(uop));
 
-		//star >> added instrumentation to decode
-
 		/* If instructions come from the trace cache, i.e., are located in
 		 * the trace cache queue, copy all of them
 		 * into the uop queue in one single decode slot. */
@@ -79,12 +77,14 @@ static void X86ThreadDecode(X86Thread *self)
 		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
+
 #if CGM
 		//star todo pass the module here fix this
 		//mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address)
 		//needs the log_block_size and the access hash table.
-		if (!cgm_in_flight_access(self, uop->fetch_access))
+		if (!cgm_in_flight_access(uop->fetch_access))
 		{
+
 #else
 		if (!mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address))
 		{

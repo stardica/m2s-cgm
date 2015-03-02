@@ -40,7 +40,7 @@
 #ifdef TIME_64
 typedef unsigned long long Time_t;
 #else
-typedef unsigned long Time_t;
+typedef long long Time_t;
 #endif
 
 typedef Time_t count_t;

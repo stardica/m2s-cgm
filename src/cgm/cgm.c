@@ -248,11 +248,9 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 }
 
 
-int cgm_in_flight_access(X86Thread *self, long long id){
+int cgm_in_flight_access(long long id){
 
-
-	X86Thread *thread;
-	thread = self;
+	//printf("uop access id is %lld\n", id);
 
 	//star todo need to retire access as they finish.
 	struct cgm_packet_t *packet;
@@ -264,7 +262,7 @@ int cgm_in_flight_access(X86Thread *self, long long id){
 	/* Look for access */
 	for (index = 0; index <= count; index++)
 	{
-		//take memory access out of queue and check it's status.
+		//get pointer to access in queue and check it's status.
 		packet = list_get(cgm_access_record, index);
 
 		//return 0 if list is empty. return 1 if packet is found
@@ -274,6 +272,7 @@ int cgm_in_flight_access(X86Thread *self, long long id){
 		}
 		else if(packet->access_id == id)
 		{
+			printf("access id found %lld\n", packet->access_id);
 			return 1;
 		}
 	}
@@ -305,7 +304,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	memset(buff, '\0', 100);
 	snprintf(buff, 100, "fetch_access.%llu", access_id);
-	new_packet->name = buff;
+	new_packet->name = strdup(buff);
 
 
 	/*printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
@@ -315,12 +314,15 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//add to master list of accesses and 1st level i_cache
 	list_enqueue(cgm_access_record, new_packet);
 
-	list_dequeue(cgm_access_record);
+
 	/*if(thread->core->id == 0)
-	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+	{*/
+
+		//list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		/*printf("enqueued packet %s at %lu\n", new_packet->name, etime.count);
+		printf("size of global queue before l1_i_cache_ctrl_0 %d\n", list_count(cgm_access_record));*/
 		advance(l1_i_cache_0);
-	}
+	/*}
 	else if (thread->core->id == 1)
 	{
 		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
@@ -343,6 +345,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 
 	//leave this for testing.
+	//printf("dequeue\n");
 	//list_dequeue(cgm_access_record);
 
 	return access_id;

@@ -86,35 +86,31 @@ void cache_init(void){
 	return;
 }
 
-void l2_cache_ctrl(void){
-
-	return;
-}
-
-void l1_d_cache_ctrl(void){
-
-	return;
-}
-
 void l1_i_cache_ctrl_0(void){
 
 
 	long long step = 1;
+
+	struct cgm_packet_t *Rx_packet;
+
 
 	while(1)
 	{
 
 		await(l1_i_cache_0, step);
 		step++;
-		printf("l1_i_cache_0 GO!\n");
+		//printf("l1_i_cache_0 GO!\n");
 
-		list_dequeue(l1_i_caches[0].Rx_queue);
+		Rx_packet = list_dequeue(cgm_access_record);
 
+		/*printf("Rx_packet.name = %s at %lu\n", Rx_packet->name, etime.count);
+		printf("size of global queue after l1_i_cache_ctrl_0 %d\n", list_count(cgm_access_record));
+		getchar();*/
 
 		//change this to something like if mem access complete then dequeue from the global list.
 		if(1)
 		{
-			//list_dequeue(cgm_access_record);
+
 		}
 
 	}
@@ -168,7 +164,15 @@ void l1_i_cache_ctrl_0(void){
 
 		}*/
 
+	return;
+}
 
+void l2_cache_ctrl(void){
+
+	return;
+}
+
+void l1_d_cache_ctrl(void){
 
 	return;
 }

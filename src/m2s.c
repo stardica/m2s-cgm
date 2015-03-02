@@ -1383,7 +1383,6 @@ void m2s_loop(void){
 	printf("---Simulation Start---\n");
 	fflush(stdout);
 
-
 	/* Simulation loop */
 	while (!esim_finish)
 	{
@@ -1418,18 +1417,17 @@ void m2s_loop(void){
 		/* Signal received */
 		if (m2s_signal_received)
 		{
-			printf("signal received: entered here\n");
+			printf("---m2s_signal_received---\n");
 			m2s_signal_process();
 		}
 
-#if CGM
-		if(!esim_finish){
-			advance(sim_finish);
-		}
-#endif
-
 	}
 
+
+#if CGM
+	//star todo add assert sim finish
+	advance(sim_finish);
+#endif
 
 	//printf("loop = %lld\n", m2s_loop_iter);
 	//printf("exiting\n");
