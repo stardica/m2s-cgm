@@ -80,7 +80,7 @@ struct cache_t
 };
 
 
-struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy);
+struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);

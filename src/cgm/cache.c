@@ -7,16 +7,19 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <cgm/cache.h>
+#include <string.h>
+
+#include <arch/si/timing/gpu.h>
+#include <arch/x86/timing/cpu.h>
+
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
+
+#include <cgm/cache.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 #include <cgm/cgm.h>
-
-#include <arch/si/timing/gpu.h>
-#include <arch/x86/timing/cpu.h>
-#include <lib/util/debug.h>
 
 
 int QueueSize;
@@ -26,7 +29,6 @@ struct cache_t *l1_i_caches;
 struct cache_t *l1_d_caches;
 struct cache_t *l2_caches;
 struct cache_t *l3_caches;
-
 /*struct cache_t *l3_s0_cache;
 struct cache_t *l3_s1_cache;
 struct cache_t *l3_s2_cache;
@@ -38,8 +40,31 @@ struct cache_t *l1_s_caches;
 struct cache_t *gpu_l2_caches;
 struct cache_t *lds_units;
 
+//event counts
+eventcount volatile *l1_i_cache_0;
+eventcount volatile *l1_i_cache_1;
+eventcount volatile *l1_i_cache_2;
+eventcount volatile *l1_i_cache_3;
+eventcount volatile *l1_d_cache_0;
+eventcount volatile *l1_d_cache_1;
+eventcount volatile *l1_d_cache_2;
+eventcount volatile *l1_d_cache_3;
+eventcount volatile *l2_cache_0;
+eventcount volatile *l2_cache_1;
+eventcount volatile *l2_cache_2;
+eventcount volatile *l2_cache_3;
+
 
 void cache_init(void){
+
+	cache_create();
+
+	cache_create_tasks();
+
+	return;
+}
+
+void cache_create(void){
 
 	//star todo make this automatic
 	//star todo make defaults
@@ -50,15 +75,19 @@ void cache_init(void){
 
 
 	l1_i_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
-
 	//initialize the CPU L1D caches
+
 	l1_d_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
 	//initialize the CPU L2 caches
 	l2_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
 	//initialize the L3 caches (4 slices).
-	l3_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
+
+	//just one cache for now
+	l3_caches = (void *) calloc(1, sizeof(struct cache_t));
+
+	//l3_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 	/*l3_s0_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
 	l3_s1_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
 	l3_s2_cache = (void *) calloc(l3_slices, sizeof(struct cache_t));
@@ -76,36 +105,155 @@ void cache_init(void){
 	//initialize the GPU LDS
 	lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
 
-	//create cache eventcounts
-	//l1_i_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
-	//l1_d_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
-	//l2_cache_ec = (void *) calloc(num_cores, sizeof(eventcount));
+	return ;
+}
 
-	//star todo create eventcounts for other caches.
+void cache_create_tasks(void){
+
+	//star todo make this dynamic
+	char buff[100];
+
+	/////////////
+	//eventcounts
+	/////////////
+
+	//l1 i caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_0");
+	l1_i_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_1");
+	l1_i_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_2");
+	l1_i_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_3");
+	l1_i_cache_3 = new_eventcount(buff);
+
+
+	//l1 d caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_0");
+	l1_d_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_1");
+	l1_d_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_2");
+	l1_d_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_3");
+	l1_d_cache_3 = new_eventcount(buff);
+
+
+	//l2 caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_0");
+	l2_cache_0 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_1");
+	l2_cache_1 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_2");
+	l2_cache_2 = new_eventcount(buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_3");
+	l2_cache_3 = new_eventcount(buff);
+
+
+
+	////////////////////
+	//tasks
+	////////////////////
+
+	//l1 i caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_ctrl_0");
+	create_task(l1_i_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+
+	/*memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_ctrl_1");
+	create_task(l1_i_cache_ctrl_1, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_ctrl_2");
+	create_task(l1_i_cache_ctrl_2, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_cache_ctrl_3");
+	create_task(l1_i_cache_ctrl_3, DEFAULT_STACK_SIZE, buff);
+
+
+	//l1 d caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_ctrl_0");
+	create_task(l1_d_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_ctrl_1");
+	create_task(l1_d_cache_ctrl_1, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_ctrl_2");
+	create_task(l1_d_cache_ctrl_2, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l1_d_cache_ctrl_0");
+	create_task(l1_d_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);*/
+
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_ctrl_0");
+	create_task(l2_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+
+	/*memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_ctrl_1");
+	create_task(l2_cache_ctrl_1, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_ctrl_2");
+	create_task(l2_cache_ctrl_2, DEFAULT_STACK_SIZE, buff);
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l2_cache_ctrl_3");
+	create_task(l2_cache_ctrl_3, DEFAULT_STACK_SIZE, buff);*/
+
+
+
+
 
 	return;
 }
 
 void l1_i_cache_ctrl_0(void){
 
-
 	long long step = 1;
-
 	struct cgm_packet_t *Rx_packet;
-
 
 	while(1)
 	{
 
 		await(l1_i_cache_0, step);
 		step++;
-		//printf("l1_i_cache_0 GO!\n");
 
 		Rx_packet = list_dequeue(cgm_access_record);
 
-		/*printf("Rx_packet.name = %s at %lu\n", Rx_packet->name, etime.count);
-		printf("size of global queue after l1_i_cache_ctrl_0 %d\n", list_count(cgm_access_record));
-		getchar();*/
+		if(TSK == 1)
+		{
+			printf("l1_i_cache_ctrl_0\n");
+		}
+
+		advance(l2_cache_0);
 
 		//change this to something like if mem access complete then dequeue from the global list.
 		if(1)
@@ -167,7 +315,31 @@ void l1_i_cache_ctrl_0(void){
 	return;
 }
 
-void l2_cache_ctrl(void){
+void l2_cache_ctrl_0(void){
+
+	long long step = 1;
+	struct cgm_packet_t *Rx_packet;
+
+	while(1)
+	{
+
+		await(l2_cache_0, step);
+		step++;
+
+		if(TSK == 1)
+		{
+			printf("l2_cache_ctrl_0\n");
+
+		}
+
+
+		//change this to something like if mem access complete then dequeue from the global list.
+		if(1)
+		{
+
+		}
+
+	}
 
 	return;
 }

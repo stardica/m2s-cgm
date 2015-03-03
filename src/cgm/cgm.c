@@ -11,12 +11,13 @@
 
 #include <m2s.h>
 
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
-#include <arch/x86/timing/thread.h>
 #include <lib/util/misc.h>
 
-//star todo take any borrowed files and move then to our cgm-mem directory.
+#include <arch/x86/timing/thread.h>
+
 #include <cgm/cgm.h>
 #include <cgm/queue.h>
 #include <cgm/cache.h>
@@ -34,23 +35,14 @@ char *cgm_config_file_name_and_path;
 //globals for tasking
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
-eventcount volatile *l1_i_cache_0;
-eventcount volatile *l1_i_cache_1;
-eventcount volatile *l1_i_cache_2;
-eventcount volatile *l1_i_cache_3;
-eventcount volatile *l1_d_cache_0;
-eventcount volatile *l1_d_cache_1;
-eventcount volatile *l1_d_cache_2;
-eventcount volatile *l1_d_cache_3;
-eventcount volatile *l2_cache_0;
-eventcount volatile *l2_cache_1;
-eventcount volatile *l2_cache_2;
-eventcount volatile *l2_cache_3;
-
 
 void cgm_init(void){
 
 	//star todo add error checking.
+	cgm_access_record = list_create();
+	cgm_create_tasks();
+
+	//init memory system structures
 	cache_init();
 	memctrl_init();
 
@@ -58,8 +50,6 @@ void cgm_init(void){
 }
 
 void cgm_configure(void){
-
-	cgm_access_record = list_create();
 
 	//star todo add error checking.
 	cgm_mem_configure();
@@ -69,46 +59,14 @@ void cgm_configure(void){
 	cgm_gpu_configure();
 #endif
 
-	create_events();
-	create_tasks();
-
 	return;
 }
 
-void create_tasks(void){
+void cgm_create_tasks(void){
 
-	char *buff[100];
+	char buff[100];
 
-	//init sim run and stop tasks
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "run");
-	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "startup and stop");
-	create_task(cgm_start, DEFAULT_STACK_SIZE, buff);
-
-
-	//create cache tasks
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "l1_i_cache_0_ctrl");
-	create_task(l1_i_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
-
-	char *task_name2 = "l1_d_cache_ctrl";
-	create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, task_name2);
-
-	char *task_name3 = "l2_cache_ctrl";
-	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, task_name3);
-
-	return;
-}
-
-void create_events(){
-
-	//star todo make this dynamic
-	char *buff[100];
-
-	//create m2s CPU and GPU eventcounts
+	//eventcounts
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_start");
 	sim_start = new_eventcount(buff);
@@ -117,73 +75,40 @@ void create_events(){
 	snprintf(buff, 100, "sim_finish");
 	sim_finish = new_eventcount(buff);
 
-	//create the i cache ctrl eventcounts
+
+	//tasks
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_i_cache_0");
-	l1_i_cache_0 = new_eventcount(buff);
+	snprintf(buff, 100, "run");
+	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, buff);
 
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_i_cache_1");
-	l1_i_cache_1 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_i_cache_2");
-	l1_i_cache_2 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_i_cache_3");
-	l1_i_cache_3 = new_eventcount(buff);
-
-	//create the d cache ctrl eventcounts
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_d_cache_0");
-	l1_d_cache_0 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_d_cache_1");
-	l1_d_cache_1 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_d_cache_2");
-	l1_d_cache_2 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_d_cache_3");
-	l1_d_cache_3 = new_eventcount(buff);
-
-	//create the l2 cache ctrl eventcounts
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l2_cache_0");
-	l2_cache_0 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l2_cache_1");
-	l2_cache_1 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l2_cache_2");
-	l2_cache_2 = new_eventcount(buff);
-
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "sim_l1_d_cache_3");
-	l2_cache_3 = new_eventcount(buff);
-
+	snprintf(buff, 100, "startup and stop");
+	create_task(cgm_start, DEFAULT_STACK_SIZE, buff);
 
 	return;
 }
 
+
 void cgm_start(void){
 
-	printf("cgm_start() advance sim_start\n");
-	fflush(stdout);
+	if(TSK == 1)
+	{
+		printf("cgm_start() advance sim_start\n");
+	}
+
 	advance(sim_start);
 
-	printf("cgm_start() await sim_finish\n");
-	fflush(stdout);
+	if(TSK == 1)
+	{
+		printf("cgm_start() await sim_finish\n");
+	}
+
 	await(sim_finish, 1);
 
-	printf("cgm_start() sim ending\n");
-	fflush(stdout);
+	if(TSK == 1)
+	{
+		printf("cgm_start() sim ending\n");
+	}
 
 	return;
 }
@@ -195,14 +120,14 @@ void cpu_gpu_run(void){
 	while(1)
 	{
 
-
-		if(t_1 == 1)
+		if(TSK == 1 && t_1 == 1)
 		{
 			printf("cpu_gpu_run()\n");
 		}
 
 		await(sim_start, t_1);
 		t_1++;
+
 		m2s_loop();
 
 	}
@@ -272,7 +197,8 @@ int cgm_in_flight_access(long long id){
 		}
 		else if(packet->access_id == id)
 		{
-			printf("access id found %lld\n", packet->access_id);
+			fatal("packet in global access queue\n");
+
 			return 1;
 		}
 	}
@@ -291,8 +217,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	char buff[100];
 
 	struct cgm_packet_t *new_packet = packet_create();
-
-	//struct cgm_packet_t *new_packet;
+	struct cgm_packet_t *new_packet_copy = packet_create();
 
 	//set packet id to access id.
 	access_id++;
@@ -307,6 +232,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->name = strdup(buff);
 
 
+
 	/*printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
 	printf("new_packet->name = %s\n", new_packet->name);
 	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);*/
@@ -315,34 +241,26 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	list_enqueue(cgm_access_record, new_packet);
 
 
-	/*if(thread->core->id == 0)
-	{*/
-
-		//list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
-		/*printf("enqueued packet %s at %lu\n", new_packet->name, etime.count);
-		printf("size of global queue before l1_i_cache_ctrl_0 %d\n", list_count(cgm_access_record));*/
+	if(thread->core->id == 0)
+	{
 		advance(l1_i_cache_0);
-	/*}
+	}
 	else if (thread->core->id == 1)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_1);
 	}
 	else if (thread->core->id == 2)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_2);
 	}
 	else if (thread->core->id == 3)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_3);
 	}
 	else
 	{
 		fatal("cgm_fetch_access() core id has a problem\n");
-	}*/
-
+	}
 
 	//leave this for testing.
 	//printf("dequeue\n");

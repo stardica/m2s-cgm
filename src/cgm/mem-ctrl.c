@@ -49,7 +49,7 @@ struct mem_ctrl_t  *memctrl_create(void){
 void memctrl_queues_init(void){
 
 	//star todo create list with size? or just check the size when insterting into list?
-	mem_ctrl->fetch_request_queue = list_create();
+	/*mem_ctrl->fetch_request_queue = list_create();
 	mem_ctrl->issue_request_queue = list_create();
 	mem_ctrl->scalar_request_queue = list_create();
 	mem_ctrl->vector_request_queue = list_create();
@@ -59,16 +59,25 @@ void memctrl_queues_init(void){
 	mem_ctrl->issue_request_queue->name = "mem_ctrl.Issue.Request";
 	mem_ctrl->scalar_request_queue->name = "mem_ctrl.Scalar.Request";
 	mem_ctrl->vector_request_queue->name = "mem_ctrl.Vector.Request";
-	mem_ctrl->memctrl_accesses->name = "mem_ctrl.Accesses";
+	mem_ctrl->memctrl_accesses->name = "mem_ctrl.Accesses";*/
 
 	return;
 
 }
 
-void memctrl_tasking_init(void){
+void memctrl_create_tasks(void){
 
 	char *taskname = NULL;
 	char *eventname = NULL;
+
+	//create event counts
+	eventname = "mem_ctrl_has_request";
+	mem_ctrl_has_request = new_eventcount(eventname);
+	eventname = "mem_ctrl_has_reply";
+	mem_ctrl_has_reply = new_eventcount(eventname);
+	eventname = "mem_ctrl_do_action";
+	mem_ctrl_serviced = new_eventcount(eventname);
+
 
 	//create task
 	taskname = "mem-ctrl.Request";
@@ -78,13 +87,7 @@ void memctrl_tasking_init(void){
 	taskname = "mem-ctrl.Action";
 	create_task(memctrl_ctrl_service, DEFAULT_STACK_SIZE, taskname);
 
-	//create event counts
-	eventname = "mem_ctrl_has_request";
-	mem_ctrl_has_request = new_eventcount(eventname);
-	eventname = "mem_ctrl_has_reply";
-	mem_ctrl_has_reply = new_eventcount(eventname);
-	eventname = "mem_ctrl_do_action";
-	mem_ctrl_serviced = new_eventcount(eventname);
+
 
 	return;
 }

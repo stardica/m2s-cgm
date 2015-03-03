@@ -581,7 +581,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	mod->low_net_node = net_node;
 
 	/* Create cache */
-	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, policy);
+	mod->cache = m2s_cache_create(mod->name, num_sets, block_size, assoc, policy);
 
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
@@ -652,7 +652,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 	mod->high_net_node = net_node;
 
 	/* Create cache and directory */
-	mod->cache = cache_create(mod->name, dir_size / dir_assoc, block_size, dir_assoc, cache_policy_lru);
+	mod->cache = m2s_cache_create(mod->name, dir_size / dir_assoc, block_size, dir_assoc, cache_policy_lru);
 
 	/* Return */
 	return mod;

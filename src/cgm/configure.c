@@ -124,7 +124,6 @@ int cgm_cpu_configure(void){
 
 	timing->MemConfigDefault(timing, NULL);
 
-
 	return 1;
 }
 
@@ -268,7 +267,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	{
 		QueueSize = atoi(value);
 	}
-
 
 	/*configure CPU D caches*/
 	if(MATCH("CPU_L1_D_Cache", "Sets"))
@@ -498,7 +496,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].num_sets = slice_size;
+			l3_caches->num_sets = Sets;
 		}
 	}
 
@@ -507,7 +505,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Assoc = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].assoc = Assoc;
+			l3_caches->assoc = Assoc;
 		}
 	}
 
@@ -516,7 +514,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		BlockSize = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].block_size = BlockSize;
+			l3_caches->block_size = BlockSize;
 		}
 		/*l3_s0_cache->block_size = BlockSize;
 		l3_s1_cache->block_size = BlockSize;
@@ -529,7 +527,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Latency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].latency = Latency;
+			l3_caches->latency = Latency;
 		}
 
 		/*l3_s0_cache->latency = Latency;
@@ -544,7 +542,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].policy = Policy;
+			l3_caches->policy = Policy;
 		}
 		/*l3_s0_cache->policy = Policy;
 		l3_s1_cache->policy = Policy;
@@ -559,7 +557,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].mshr_size = MSHR;
+			l3_caches->mshr_size = MSHR;
 		}
 
 		/*l3_s0_cache->mshr_size = MSHR;
@@ -574,7 +572,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].directory_latency = DirectoryLatency;
+			l3_caches->directory_latency = DirectoryLatency;
 		}
 		/*l3_s0_cache->directory_latency = DirectoryLatency;
 		l3_s1_cache->directory_latency = DirectoryLatency;
@@ -588,7 +586,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].num_ports = Ports;
+			l3_caches->num_ports = Ports;
 		}
 		/*l3_s0_cache->num_ports = Ports;
 		l3_s1_cache->num_ports = Ports;
@@ -877,33 +875,52 @@ int cache_finish_create(){
 			//printf("l2_caches[%d].sets[%d].id = %d\n", i, set, l2_caches[i].sets[set].id);
 		}
 
-		//Initialize eventcounts
-		/*memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].ec", i);
-		l1_i_caches[i].cache_ec = new_eventcount(buff);
-
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_d_caches[%d].ec", i);
-		l1_d_caches[i].cache_ec = new_eventcount(buff);
-
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l2_caches[%d].ec", i);
-		l2_caches[i].cache_ec = new_eventcount(buff);*/
-
-
 	}
 
-	//fatal("stop here\n");
-	//star todo finish configuring the rest of the caches.
+	//for a single l3 cache
+	l3_caches->id = 1;
+	l3_caches->log_block_size = LOG2(l3_caches->block_size);
+	l3_caches->block_mask = l3_caches->block_size - 1;
+	l3_caches->Rx_queue = list_create();
+	l3_caches->snoop_queue = list_create();
 
-	//System caches
-	//l3_caches;
+	//set cache name
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_caches[%d]", i);
+	l3_caches->name = strdup(buff);
 
-	//GPU caches
-	//l1_v_caches;
-	//l1_s_caches;
-	//l2_caches;
-	//lds_units;
+	//set rx queue name
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_caches[%d].Rx", i);
+	l3_caches->Rx_queue->name = strdup(buff);
+
+	//set rx queue name
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "l1_i_caches[%d].Snoop", i);
+	l3_caches->snoop_queue->name = strdup(buff);
+
+
+	//printf("l3_caches->num_sets %u\n", l3_caches->num_sets);
+
+	l3_caches->sets = calloc(l3_caches->num_sets, sizeof(struct cache_set_t));
+
+	for (set = 0; set < l3_caches->num_sets; set++)
+	{
+		//Initialize array of blocks
+		l3_caches->sets[set].id = set;
+		l3_caches->sets[set].blocks = calloc(l3_caches->assoc, sizeof(struct cache_block_t));
+		l3_caches->sets[set].way_head = &l3_caches->sets[set].blocks[0];
+		l3_caches->sets[set].way_tail = &l3_caches->sets[set].blocks[l3_caches->assoc - 1];
+
+		for (way = 0; way < l3_caches->assoc; way++)
+		{
+			block = &l3_caches->sets[set].blocks[way];
+			block->way = way;
+			block->way_prev = way ? &l3_caches->sets[set].blocks[way - 1] : NULL;
+			block->way_next = way < l3_caches->assoc - 1 ? &l3_caches->sets[set].blocks[way + 1] : NULL;
+		}
+	}
+
 
 	return 0;
 }

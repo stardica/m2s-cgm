@@ -81,26 +81,24 @@ struct cache_t{
 	unsigned int block_mask;
 	int log_block_size;
 
+	//cache queues
 	struct list_t *Rx_queue;
 	struct list_t *snoop_queue;
 	//struct list_t *Tx_queue;
 
 	//access record
-	struct list_t *cache_accesses;
+	//struct list_t *cache_accesses;
 	//struct prefetcher_t *prefetcher;
 
 	//eventcount cache_ec;
-
 };
 
 extern int QueueSize;
-
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
 extern struct cache_t *l2_caches;
-
 extern struct cache_t *l3_caches;
 /*extern struct cache_t *l3_s0_cache;
 extern struct cache_t *l3_s1_cache;
@@ -113,9 +111,25 @@ extern struct cache_t *l1_s_caches;
 extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *lds_units;
 
+//event counts
+extern eventcount volatile *l1_i_cache_0;
+extern eventcount volatile *l1_i_cache_1;
+extern eventcount volatile *l1_i_cache_2;
+extern eventcount volatile *l1_i_cache_3;
+extern eventcount volatile *l1_d_cache_0;
+extern eventcount volatile *l1_d_cache_1;
+extern eventcount volatile *l1_d_cache_2;
+extern eventcount volatile *l1_d_cache_3;
+extern eventcount volatile *l2_cache_0;
+extern eventcount volatile *l2_cache_1;
+extern eventcount volatile *l2_cache_2;
+extern eventcount volatile *l2_cache_3;
+
 
 //function prototypes
 void cache_init(void);
+void cache_create(void);
+void cache_create_tasks(void);
 
 //borrowed from m2s mem-system
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -126,14 +140,21 @@ void cache_access_block(struct cache_t *cache, int set, int way);
 int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 
-//task functions
+//tasks
 void l1_i_cache_ctrl_0(void);
 void l1_i_cache_ctrl_1(void);
 void l1_i_cache_ctrl_2(void);
 void l1_i_cache_ctrl_3(void);
-void l1_d_cache_ctrl(void);
-void l2_cache_ctrl(void);
 
+void l1_d_cache_ctrl_0(void);
+void l1_d_cache_ctrl_1(void);
+void l1_d_cache_ctrl_2(void);
+void l1_d_cache_ctrl_3(void);
+
+void l2_cache_ctrl_0(void);
+void l2_cache_ctrl_1(void);
+void l2_cache_ctrl_2(void);
+void l2_cache_ctrl_3(void);
 
 
 #endif /*CACHE_H_*/

@@ -53,7 +53,7 @@ extern eventcount *mem_ctrl_serviced;
 void memctrl_init(void);
 struct mem_ctrl_t *memctrl_create(void);
 void memctrl_queues_init(void);
-void memctrl_tasking_init(void);
+void memctrl_create_tasks(void);
 void memctrl_ctrl_request(void);
 void memctrl_ctrl_reply(void);
 void memctrl_ctrl_service(void);

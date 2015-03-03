@@ -124,7 +124,7 @@ static void cache_update_waylist(struct cache_set_t *set, struct cache_block_t *
  */
 
 
-struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy)
+struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy)
 {
 	struct cache_t *cache;
 	struct cache_block_t *block;
