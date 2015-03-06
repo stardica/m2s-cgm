@@ -753,8 +753,10 @@ int cache_finish_create(){
 		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
+		l1_i_caches[i].hits = 0;
+		l1_i_caches[i].misses = 0;
 		l1_i_caches[i].Rx_queue = list_create();
-		l1_i_caches[i].snoop_queue = list_create();
+		l1_i_caches[i].mshr = list_create();
 
 		//set cache name
 		memset (buff,'\0' , 100);
@@ -768,15 +770,15 @@ int cache_finish_create(){
 
 		//set rx queue name
 		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].Snoop", i);
-		l1_i_caches[i].snoop_queue->name = strdup(buff);
+		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
+		l1_i_caches[i].mshr->name = strdup(buff);
 
 
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].Rx_queue = list_create();
-		l1_d_caches[i].snoop_queue = list_create();
+		//l1_d_caches[i].snoop_queue = list_create();
 
 		//set cache name
 		memset (buff,'\0' , 100);
@@ -791,13 +793,13 @@ int cache_finish_create(){
 		//set rx queue name
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Snoop", i);
-		l1_d_caches[i].snoop_queue->name = strdup(buff);
+		//l1_d_caches[i].snoop_queue->name = strdup(buff);
 
 		l2_caches[i].id = i;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].Rx_queue = list_create();
-		l2_caches[i].snoop_queue = list_create();
+		//l2_caches[i].snoop_queue = list_create();
 
 		//set cache name
 		memset (buff,'\0' , 100);
@@ -811,7 +813,7 @@ int cache_finish_create(){
 
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].Snoop", i);
-		l2_caches[i].snoop_queue->name = strdup(buff);
+		//l2_caches[i].snoop_queue->name = strdup(buff);
 
 		/*printf("%s ----> %s\n", l1_i_caches[i].name, l1_i_caches[i].Rx_queue->name);
 		printf("%s ----> %s\n", l1_d_caches[i].name, l1_d_caches[i].Rx_queue->name);
@@ -882,7 +884,7 @@ int cache_finish_create(){
 	l3_caches->log_block_size = LOG2(l3_caches->block_size);
 	l3_caches->block_mask = l3_caches->block_size - 1;
 	l3_caches->Rx_queue = list_create();
-	l3_caches->snoop_queue = list_create();
+	//l3_caches->snoop_queue = list_create();
 
 	//set cache name
 	memset (buff,'\0' , 100);
@@ -897,7 +899,7 @@ int cache_finish_create(){
 	//set rx queue name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_caches[%d].Snoop", i);
-	l3_caches->snoop_queue->name = strdup(buff);
+	//l3_caches->snoop_queue->name = strdup(buff);
 
 
 	//printf("l3_caches->num_sets %u\n", l3_caches->num_sets);

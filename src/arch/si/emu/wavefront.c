@@ -705,8 +705,7 @@ int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, int id_in_wa
 	}
 }
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
-	int sreg, unsigned int value)
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, unsigned int value)
 {
 	wavefront->sreg[sreg].as_uint = value;
 }

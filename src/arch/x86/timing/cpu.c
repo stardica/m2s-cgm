@@ -1022,8 +1022,8 @@ int X86CpuRun(Timing *self){
 	/* One more cycle of x86 timing simulation */
 	//self->cycle++;
 
-	epause(1);
-	self->cycle = etime.count;
+	P_PAUSE(1);
+	self->cycle = P_TIME;
 
 	//star added for instrumentation
 	Current_Cycle = self->cycle;

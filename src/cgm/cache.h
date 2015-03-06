@@ -11,11 +11,17 @@
 
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
+#include <lib/util/string.h>
 
-//star todo add prefetching and coalescing
-
+//star todo add mshr, prefetching, and coalescing
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
+
+enum cache_waylist_enum
+{
+	cache_waylist_head,
+	cache_waylist_tail
+};
 
 enum cache_policy_t{
 
@@ -83,14 +89,12 @@ struct cache_t{
 
 	//cache queues
 	struct list_t *Rx_queue;
-	struct list_t *snoop_queue;
-	//struct list_t *Tx_queue;
+	struct list_t *mshr;
 
-	//access record
-	//struct list_t *cache_accesses;
-	//struct prefetcher_t *prefetcher;
+	//statistics
+	long long hits;
+	long long misses;
 
-	//eventcount cache_ec;
 };
 
 extern int QueueSize;
@@ -134,11 +138,13 @@ void cache_create_tasks(void);
 //borrowed from m2s mem-system
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
-void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
+void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cache_access_block(struct cache_t *cache, int set, int way);
 int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
+void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
+
 
 //tasks
 void l1_i_cache_ctrl_0(void);
@@ -155,6 +161,10 @@ void l2_cache_ctrl_0(void);
 void l2_cache_ctrl_1(void);
 void l2_cache_ctrl_2(void);
 void l2_cache_ctrl_3(void);
+
+
+//statistics
+//caches
 
 
 #endif /*CACHE_H_*/

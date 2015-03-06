@@ -138,27 +138,32 @@ void cpu_gpu_run(void){
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
 	//star todo figure out where to put the mshr check.
-	//unsigned int phy_address = addr;
 
 	X86Thread *thread;
 	thread = self;
 
-	//check if request queue is full
-	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue))
+
+
+	//check if mshr queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].mshr))
 	{
-		//printf("rx queue is %d of %d\n", list_count(thread->d_cache_ptr[thread->core->id].Rx_queue), QueueSize);
 		return 0;
 	}
 
-	//printf("rx queue is %d of %d\n", list_count(thread->d_cache_ptr[thread->core->id].Rx_queue), QueueSize);
+	//check if request queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
+	{
+		return 0;
+	}
 
-	//i_cache queue is accessible.
+
+	//i_cache is accessible.
 	return 1;
 }
 
 int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
-	//unsigned int phy_address = addr;
+
 	X86Thread *thread;
 	thread = self;
 
@@ -175,32 +180,31 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
 int cgm_in_flight_access(long long id){
 
-	//printf("uop access id is %lld\n", id);
-
 	//star todo need to retire access as they finish.
-	struct cgm_packet_t *packet;
+	struct cgm_packet_status_t *packet;
 	int count = 0;
 	int index = 0;
-
-	count = list_count(cgm_access_record);
+	int i = 0;
+	int b = 0;
 
 	/* Look for access */
-	for (index = 0; index <= count; index++)
+	LIST_FOR_EACH(cgm_access_record, i)
 	{
 		//get pointer to access in queue and check it's status.
-		packet = list_get(cgm_access_record, index);
+		packet = list_get(cgm_access_record, i);
 
 		//return 0 if list is empty. return 1 if packet is found
 		if (!packet)
 		{
 			return 0;
 		}
-		else if(packet->access_id == id)
+		else if(packet->access_id == id && packet->in_flight == 1)
 		{
-			fatal("packet in global access queue\n");
-
+			printf("number of loops %d\n", b);
+			getchar();
 			return 1;
 		}
+
 	}
 
 	/* packets are present but this one wasn't found */
@@ -213,22 +217,31 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	X86Thread *thread;
 	thread = self;
-
 	char buff[100];
-
-	struct cgm_packet_t *new_packet = packet_create();
-	struct cgm_packet_t *new_packet_copy = packet_create();
-
-	//set packet id to access id.
 	access_id++;
+
+
+	//build two packets (1) to track global accesses and (2) to pass through the memory system
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "fetch_access.%llu", access_id);
+
+	//(1)
+	struct cgm_packet_status_t *new_packet_status = packet_create();
+	new_packet_status->access_type = cgm_access_load;
+	new_packet_status->access_id = access_id;
+	new_packet_status->address = addr;
+	new_packet_status->in_flight = 1;
+
+	//enqueue (1) in the global access queue.
+	list_insert(cgm_access_record, 0, new_packet_status);
+
+	//(2)
+	struct cgm_packet_t *new_packet = packet_create();
+	new_packet->access_type = cgm_access_load;
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
-	new_packet->c_load = 1;
-	new_packet->access_type = cgm_access_load;
 
-	memset(buff, '\0', 100);
-	snprintf(buff, 100, "fetch_access.%llu", access_id);
 	new_packet->name = strdup(buff);
 
 
@@ -237,24 +250,25 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	printf("new_packet->name = %s\n", new_packet->name);
 	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);*/
 
-	//add to master list of accesses and 1st level i_cache
-	list_enqueue(cgm_access_record, new_packet);
-
-
+	//add (2) to i cache rx queue
 	if(thread->core->id == 0)
 	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_0);
 	}
 	else if (thread->core->id == 1)
 	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_1);
 	}
 	else if (thread->core->id == 2)
 	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_2);
 	}
 	else if (thread->core->id == 3)
 	{
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
 		advance(l1_i_cache_3);
 	}
 	else
@@ -286,6 +300,35 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	free(new_packet);
 
 	return;
+}
+
+int remove_from_global(long long id){
+
+	//get size of list
+	struct cgm_packet_status_t *packet;
+	int i = 0;
+
+	LIST_FOR_EACH(cgm_access_record, i)
+	{
+		//get pointer to access in queue and check it's status.
+		packet = list_get(cgm_access_record, i);
+
+		//return 0 if list is empty. return 1 if packet is found
+		if (!packet)
+		{
+			return 0;
+		}
+		else if(packet->access_id == id)
+		{
+			list_remove_at(cgm_access_record, i);
+			// this leaves the access in the list, but slows down the simulation a lot.
+			//packet->in_flight = 0;
+			break;
+		}
+
+	}
+
+	return 1;
 }
 
 /*void cgm_scalar_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){

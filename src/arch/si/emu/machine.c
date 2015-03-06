@@ -1962,13 +1962,13 @@ void si_isa_V_MOV_B32_impl(struct si_work_item_t *work_item,
 
 /* Copy one VGPR value to one SGPR. */
 #define INST SI_INST_VOP1
-void si_isa_V_READFIRSTLANE_B32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
-{
+void si_isa_V_READFIRSTLANE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
+
 	union si_reg_t value;
 
 	/* Load operand from register. */
 	assert(INST.src0 >= 256 || INST.src0 == SI_M0);
+
 	value.as_uint = si_isa_read_reg(work_item, INST.src0);
 
 	/* Write the results. */

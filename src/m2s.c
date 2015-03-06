@@ -1462,6 +1462,8 @@ void sim_end(void){
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
 
+	PrintStats();
+
 	/* x86 */
 	if (x86_cpu)
 		delete(x86_cpu);

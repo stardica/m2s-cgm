@@ -8,18 +8,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <instrumentation/stats.h>
-#include <arch/x86/timing/uop.h>
-#include <arch/x86/emu/context.h>
-#include <lib/util/list.h>
+
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/fetch-queue.h>
 #include <arch/x86/timing/load-store-queue.h>
+#include <arch/x86/timing/uop.h>
+#include <arch/x86/timing/cpu.h>
+
+#include <arch/x86/emu/context.h>
+
+#include <lib/util/list.h>
+
 #include <mem-image/memory.h>
-#include <mem-system/mod-stack.h>
-#include <mem-system/nmoesi-protocol.h>
-#include <mem-system/module.h>
-#include <mem-system/cache.h>
-#include <network/network.h>
+
+#include <cgm/cache.h>
+#include <cgm/tasking.h>
+
+
 
 
 //star >> instrumentation variables
@@ -66,6 +71,9 @@ volatile long long number_of_noncached_store_events = 0;
 volatile unsigned long Current_Cycle = 0;
 struct list_t *Uop_List;
 struct Uop_Status_t *Uop_Status;
+
+extern volatile long long l1_i_cache_0_hit = 0;
+extern volatile long long l1_i_cache_0_miss = 0;
 
 
 void instrumentation_init(void){
@@ -494,7 +502,7 @@ void PrintMessage(int code){
 }
 
 
-void PrintModNetList(struct list_t *mem_mod_list, struct list_t *net_list){
+/*void PrintModNetList(struct list_t *mem_mod_list, struct list_t *net_list){
 
 	struct mod_t *mod;
 	struct net_t *net;
@@ -535,7 +543,7 @@ void PrintModNetList(struct list_t *mem_mod_list, struct list_t *net_list){
 
 	return;
 
-}
+}*/
 
 
 void PrintStats(void){
@@ -544,7 +552,34 @@ void PrintStats(void){
 
 
 	printf("\n---stats---\n\n");
-	printf("Fetch:\n");
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
+	printf("Total Cycles %lld\n\n", P_TIME + 1);
+
+	for(i = 0; i < num_cores; i++)
+	{
+		printf("li_i_cache_%d\n", i);
+		printf("Number of set %d\n", l1_i_caches[i].num_sets);
+		printf("Block size = %d\n", l1_i_caches[i].block_size);
+		printf("* hits %lld\n", l1_i_caches[i].hits);
+		printf("* misses %lld\n", l1_i_caches[i].misses);
+		printf("\n");
+	}
+
+	for(i = 0; i < num_cores; i++)
+	{
+		printf("li_2_cache_%d\n", i);
+		printf("Number of set %d\n", l2_caches[i].num_sets);
+		printf("Block size = %d\n", l2_caches[i].block_size);
+		printf("* hits %lld\n", l2_caches[i].hits);
+		printf("* misses %lld\n", l2_caches[i].misses);
+		printf("\n");
+	}
+
+
+	/*printf("Fetch:\n");
 	printf("Fetch queue max occupancy %d\n", fetch_queue_max_occupancy);
 	printf("Number of fetched instructions %lld\n", Fetched_Insts);
 	printf("Number of fetched memory instructions %lld (list Check %d)\n", Fetched_Mem_Insts, list_count(Uop_List));
@@ -570,9 +605,8 @@ void PrintStats(void){
 	printf("Number of load events (combined) %lld\n", number_of_load_events);
 	printf("Number of store events %lld\n", number_of_store_events);
 	printf("Number of noncached store events %lld\n", number_of_noncached_store_events);
-	printf("Number of stacks created %lld\n", number_of_load_events + number_of_store_events + number_of_noncached_store_events);
-
-	printf("\n---end stats---\n\n");
+	printf("Number of stacks created %lld\n", number_of_load_events + number_of_store_events + number_of_noncached_store_events);*/
+	printf("---end stats---\n\n");
 	fflush(stdout);
 
 	return;

@@ -13,7 +13,6 @@
 #include <lib/util/list.h>
 
 
-
 extern struct cgm_packet_t{
 
 	enum cgm_access_kind_t access_type;
@@ -30,6 +29,15 @@ extern struct cgm_packet_t{
 
 	struct linked_list_t *event_queue;
 	int *witness_ptr;
+
+};
+
+extern struct cgm_packet_status_t{
+
+	enum cgm_access_kind_t access_type;
+	unsigned int address;
+	long long access_id;
+	int in_flight;
 
 };
 

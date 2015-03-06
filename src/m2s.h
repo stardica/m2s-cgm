@@ -14,7 +14,6 @@
 //CGM 1 or 0 takes in and out the new memory system
 #define GPU 0
 #define CGM 1
-
 //MSG turns on and off verbose notes
 // MSG 1 outputs configuration data.
 // MSG 2 outputs memory system runtime data.
