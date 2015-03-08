@@ -21,22 +21,6 @@
 #define LOG2(x) ((int) rint((log((double) (x))) / (log(2.0))))
 
 //global variables
-
-/*extern struct queue_config_t{
-
-	int size;
-
-};
-
-extern struct cache_config_t{
-
-	int size;
-
-};
-
-extern struct queue_config_t *q_config;
-extern struct cache_config_t *c_config;*/
-
 extern int cgmmem_check_config;
 
 

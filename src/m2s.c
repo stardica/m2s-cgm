@@ -1456,13 +1456,12 @@ void sim_end(void){
 	if (esim_finish != esim_finish_stall)
 		esim_process_all_events();
 
-
 	//star >> execution is pretty much done here. The remainder is summary output and cleanup.
 
 	/* Dump statistics summary */
-	m2s_dump_summary(stderr);
+	//m2s_dump_summary(stderr);
+	cgm_dump_summary();
 
-	PrintStats();
 
 	/* x86 */
 	if (x86_cpu)

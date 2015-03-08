@@ -151,7 +151,7 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	}
 
 	//check if request queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
 	{
 		return 0;
 	}
@@ -168,7 +168,7 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	//check if request queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue))
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
 	{
 		return 0;
 	}
@@ -200,8 +200,8 @@ int cgm_in_flight_access(long long id){
 		}
 		else if(packet->access_id == id && packet->in_flight == 1)
 		{
-			printf("number of loops %d\n", b);
-			getchar();
+			//printf("number of loops %d\n", b);
+			//getchar();
 			return 1;
 		}
 
@@ -241,39 +241,33 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
-
+	new_packet->tag = addr & ~(thread->i_cache_ptr[thread->core->id].block_mask);
 	new_packet->name = strdup(buff);
-
-
-
-	/*printf("new_packet->address = addr; 0x%08x\n", new_packet->address);
-	printf("new_packet->name = %s\n", new_packet->name);
-	printf("queue name bubba %s\n", thread->i_cache_ptr[thread->core->id].Rx_queue->name);*/
 
 	//add (2) to i cache rx queue
 	if(thread->core->id == 0)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 		advance(l1_i_cache_0);
 	}
 	else if (thread->core->id == 1)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 		advance(l1_i_cache_1);
 	}
 	else if (thread->core->id == 2)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 		advance(l1_i_cache_2);
 	}
 	else if (thread->core->id == 3)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue, new_packet);
+		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 		advance(l1_i_cache_3);
 	}
 	else
 	{
-		fatal("cgm_fetch_access() core id has a problem\n");
+		fatal("cgm_fetch_access() current version only supports up to 4 cores.\n");
 	}
 
 	//leave this for testing.
@@ -407,3 +401,10 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 	return;
 }*/
 
+void cgm_dump_summary(void){
+
+	cache_dump_stats();
+
+
+	return;
+}

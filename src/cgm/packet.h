@@ -20,7 +20,10 @@ extern struct cgm_packet_t{
 	struct list_t source_id;
 	unsigned int address;
 	long long access_id;
+	int tag;
 	int in_flight;
+
+
 	int c_load;
 	int c_store;
 	int nc_load;

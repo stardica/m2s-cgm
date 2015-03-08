@@ -18,11 +18,12 @@
 #include <lib/util/string.h>
 #include <lib/util/misc.h>
 
+#include <cgm/cgm.h>
 #include <cgm/cache.h>
 #include <cgm/queue.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
-#include <cgm/cgm.h>
+
 
 #include <instrumentation/stats.h>
 
@@ -84,7 +85,6 @@ eventcount volatile *l2_cache_3;
 void cache_init(void){
 
 	cache_create();
-
 	cache_create_tasks();
 
 	return;
@@ -262,8 +262,11 @@ void l1_i_cache_ctrl_0(void){
 	long long step = 1;
 	long long access_id = 0;
 	unsigned int addr = 0;
+	int list_index = 0;
 	int cache_status;
-	struct cgm_packet_t *packet;
+	int i = 0;
+	struct cgm_packet_t *new_packet;
+	struct cgm_packet_t *mshr_packet;
 
 	enum cgm_access_kind_t access_type;
 	int tag = 0;
@@ -279,18 +282,26 @@ void l1_i_cache_ctrl_0(void){
 		step++;
 
 		//message received check queue there should be a message there.
-		assert(list_count(l1_i_caches[0].Rx_queue) >= 1);
-
-		//get the packet
-		if(list_count(l1_i_caches[0].Rx_queue) >= 1)
-		{
-			packet = list_dequeue(l1_i_caches[0].Rx_queue);
-		}
+		assert(list_count(l1_i_caches[0].Rx_queue_top) >= 1);
 
 
-		access_type = packet->access_type;
-		access_id = packet->access_id;
-		addr = packet->address;
+		//printf("list size %d\n", list_count(l1_i_caches[0].Rx_queue));
+		new_packet = list_get(l1_i_caches[0].Rx_queue_top, list_index);
+		assert(new_packet);
+
+		/*printf("access_id %lld\n", packet->access_id);
+		printf("addr 0x%08u\n", packet->address);
+		getchar();*/
+
+		access_type = new_packet->access_type;
+		access_id = new_packet->access_id;
+		addr = new_packet->address;
+		tag = new_packet->tag;
+
+	/*	printf("access_id %lld\n", access_id);
+		printf("addr 0x%08u\n", addr);
+		getchar();*/
+
 
 		//some cache work
 		int *set_ptr = &set;
@@ -303,36 +314,80 @@ void l1_i_cache_ctrl_0(void){
 
 		cache_status = cgm_cache_find_block(&(l1_i_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
-		if(cache_status == 0) //miss
+		/*printf("cache_status %d\n", cache_status);
+		printf("set = %d\n", set);
+		printf("way = %d\n", way);
+		printf("state = %d\n", state);
+		getchar();*/
+
+
+
+
+		if(cache_status == 0 && new_packet->access_type == cgm_access_load) //miss
 		{
+			// L1 I Cache Miss!
 			l1_i_caches[0].misses++;
 
-			//add to mshr
-			//list_enqueue(l1_i_caches[0].mshr, packet);
+			//star todo check for coalesce
+			//if(list_count(l1_i_caches[0].mshr) >= 0)
+			//{
 
-			tag = addr & ~(l1_i_caches[0].block_mask);
+				/*LIST_FOR_EACH(l1_i_caches[0].mshr, i)
+				{
+					//get pointer to access in queue and check it's status.
+					mshr_packet = list_get(cgm_access_record, i);
+
+					if(mshr_packet->tag == new_packet->tag)
+					{
+
+
+					}
+
+				}*/
+
+			//	list_enqueue(l1_i_caches[0].mshr, new_packet);
+
+			//}
+			//else
+			//{
+
+				//remove from rx queue and insert into mshr
+				//in the real world these are parallel task. for timing its ok to put them here
+				//because this occurs in the same cycle.
+
+			//}
+
+
+
+			list_remove(l1_i_caches[0].Rx_queue_top, new_packet);
+			list_enqueue(l1_i_caches[0].mshr, new_packet);
+
 			cgm_cache_set_block(&(l1_i_caches[0]), *set_ptr, *way_ptr, tag, 1);
-			remove_from_global(access_id);
+			remove_from_global(new_packet->access_id);
+
+
+			/*printf("list size %d\n", list_count(l1_i_caches[0].Rx_queue));
+			printf("list size %d\n", list_count(l1_i_caches[0].Rx_queue));
+			getchar();*/
 
 		}
-		else if (cache_status == 1)
+		else if (cache_status == 1 && new_packet->access_type == cgm_access_load)
 		{
+			// L1 I Cache Hit!
 			l1_i_caches[0].hits++;
 
-			//printf("cache hit press enter to continue.\n");
-			//getchar();
-
+			//Mr. CPU, go about your business...
+			//remove packet from cache and global queues
+			list_remove(l1_i_caches[0].Rx_queue_top, new_packet);
 			remove_from_global(access_id);
-
 		}
-
-
 	}
 
 	/* should never get here*/
-	fatal("Cache task is broken\n");
+	fatal("l1_i_cache_ctrl_0 task is broken\n");
 	return;
 }
+
 
 void l2_cache_ctrl_0(void){
 
@@ -355,13 +410,13 @@ void l2_cache_ctrl_0(void){
 		}
 
 		//message received check queue there should be a message there.
-		assert(list_count(l2_caches[0].Rx_queue) >= 1);
+		assert(list_count(l2_caches[0].Rx_queue_top) >= 1);
 
 
 		//get the packet
-		if(list_count(l2_caches[0].Rx_queue) >= 1)
+		if(list_count(l2_caches[0].Rx_queue_top) >= 1)
 		{
-			packet = list_dequeue(l2_caches[0].Rx_queue);
+			packet = list_dequeue(l2_caches[0].Rx_queue_top);
 		}
 
 		access_type = packet->access_type;
@@ -374,8 +429,6 @@ void l2_cache_ctrl_0(void){
 		}
 		else
 		{
-
-		//set up packet and go to next cache
 
 
 		}
@@ -399,16 +452,8 @@ int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr,
 	tag = addr & ~cache->block_mask;
 	set = (addr >> cache->log_block_size) % cache->num_sets;
 
-	/*printf("cgm_cache_find_block\n");
-	printf("address 0x%08u\n", addr);
-	printf("tag 0x%08u\n", tag);
-	printf("set 0x%08u\n", set);
-	getchar();*/
-
 	*(set_ptr) = set;
-	//PTR_ASSIGN(set_ptr, set);
 	*(state_ptr) = 0;
-	//PTR_ASSIGN(state_ptr, 0);  /* Invalid */
 
 	for (way = 0; way < cache->assoc; way++)
 	{
@@ -426,9 +471,7 @@ int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr,
 
 	/* Block found */
 	*(way_ptr) = way;
-	//PTR_ASSIGN(way_ptr, way);
 	*(state_ptr) = cache->sets[set].blocks[way].state;
-	//PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 	return 1;
 }
 
@@ -441,15 +484,12 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-	//mem_trace("mem.set_block cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n", cache->name, set, way, tag, str_map_value(&cache_block_state_map, state));
-
 	if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
 }
-
 
 
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where){
@@ -498,4 +538,36 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 		set->way_tail->way_next = blk;
 		set->way_tail = blk;
 	}
+}
+
+void cache_dump_stats(void){
+
+	printf("\n---stats---\n\n");
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
+	printf("Total Cycles %lld\n\n", P_TIME + 1);
+
+	for(i = 0; i < num_cores; i++)
+	{
+		printf("li_i_cache_%d\n", i);
+		printf("Number of set %d\n", l1_i_caches[i].num_sets);
+		printf("Block size = %d\n", l1_i_caches[i].block_size);
+		printf("* hits %lld\n", l1_i_caches[i].hits);
+		printf("* misses %lld\n", l1_i_caches[i].misses);
+		printf("\n");
+	}
+
+	for(i = 0; i < num_cores; i++)
+	{
+		printf("li_2_cache_%d\n", i);
+		printf("Number of set %d\n", l2_caches[i].num_sets);
+		printf("Block size = %d\n", l2_caches[i].block_size);
+		printf("* hits %lld\n", l2_caches[i].hits);
+		printf("* misses %lld\n", l2_caches[i].misses);
+		printf("\n");
+	}
+
+	return;
 }

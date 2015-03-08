@@ -88,7 +88,8 @@ struct cache_t{
 	int log_block_size;
 
 	//cache queues
-	struct list_t *Rx_queue;
+	struct list_t *Rx_queue_top;
+	struct list_t *Rx_queue_bottom;
 	struct list_t *mshr;
 
 	//statistics
@@ -134,6 +135,7 @@ extern eventcount volatile *l2_cache_3;
 void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
+void cache_dump_stats(void);
 
 //borrowed from m2s mem-system
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);

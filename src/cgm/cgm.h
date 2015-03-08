@@ -48,6 +48,7 @@ void cgm_configure(void);
 void cgm_create_tasks(void);
 void cgm_start(void);
 void cpu_gpu_run(void);
+void cgm_dump_summary(void);
 
 
 int cgm_can_issue_access(X86Thread *self, unsigned int addr);
