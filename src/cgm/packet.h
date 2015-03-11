@@ -47,5 +47,6 @@ extern struct cgm_packet_status_t{
 
 //star todo create functions to load/access the packet as needed by the various memory system elements.
 struct cgm_packet_t *packet_create(void);
+struct cgm_packet_status_t *status_packet_create(void);
 
 #endif /* PACKET_H_ */

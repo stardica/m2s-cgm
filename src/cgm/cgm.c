@@ -85,6 +85,12 @@ void cgm_create_tasks(void){
 	snprintf(buff, 100, "startup and stop");
 	create_task(cgm_start, DEFAULT_STACK_SIZE, buff);
 
+	//create the task for future advance.
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "Wakeupcall");
+	wakeup_task = create_task(wakeupcall, DEFAULT_STACK_SIZE, buff);
+	initialize_wakeupcall(wakeup_task);
+
 	return;
 }
 
@@ -142,8 +148,6 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-
-
 	//check if mshr queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].mshr))
 	{
@@ -156,7 +160,6 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		return 0;
 	}
 
-
 	//i_cache is accessible.
 	return 1;
 }
@@ -166,6 +169,13 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
 	X86Thread *thread;
 	thread = self;
+
+	//check if mshr queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].mshr))
+	{
+		return 0;
+	}
+
 
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
@@ -200,8 +210,6 @@ int cgm_in_flight_access(long long id){
 		}
 		else if(packet->access_id == id && packet->in_flight == 1)
 		{
-			//printf("number of loops %d\n", b);
-			//getchar();
 			return 1;
 		}
 
@@ -226,7 +234,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	snprintf(buff, 100, "fetch_access.%llu", access_id);
 
 	//(1)
-	struct cgm_packet_status_t *new_packet_status = packet_create();
+	struct cgm_packet_status_t *new_packet_status = status_packet_create();
 	new_packet_status->access_type = cgm_access_load;
 	new_packet_status->access_id = access_id;
 	new_packet_status->address = addr;
@@ -241,7 +249,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
-	new_packet->tag = addr & ~(thread->i_cache_ptr[thread->core->id].block_mask);
 	new_packet->name = strdup(buff);
 
 	//add (2) to i cache rx queue

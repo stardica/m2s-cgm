@@ -29,7 +29,8 @@ enum cgm_access_kind_t
 	cgm_access_store,
 	cgm_access_nc_store,
 	cgm_access_nc_load,
-	cgm_access_prefetch
+	cgm_access_prefetch,
+	cgm_access_l2_reply
 };
 
 

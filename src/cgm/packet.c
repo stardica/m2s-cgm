@@ -21,3 +21,12 @@ struct cgm_packet_t *packet_create(void){
 
 	return new_packet;
 }
+
+struct cgm_packet_status_t *status_packet_create(void){
+
+	struct cgm_packet_status_t *new_packet;
+
+	new_packet = (void *) calloc(1, sizeof(struct cgm_packet_status_t));
+
+	return new_packet;
+}

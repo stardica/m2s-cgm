@@ -778,7 +778,8 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
 		l1_i_caches[i].mshr->name = strdup(buff);
 
-
+		/*printf("1_i_caches[i].mshr->name %s\n", l1_i_caches[i].mshr->name);
+		getchar();*/
 
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);

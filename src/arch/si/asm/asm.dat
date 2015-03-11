@@ -997,6 +997,15 @@ DEFINST(V_CMP_GE_I32,
 	0
 )
 
+//star added this.
+DEFINST(V_CMP_LT_I64_VOP3a,
+	" v_cmp_lt_i64  vcc, %SRC0, %VSRC1",
+	VOP3a,
+	161,
+	4,
+	0
+)
+
 DEFINST(V_CMP_CLASS_F64,
 	" v_cmp_class_f64  vcc, %64_SRC0, %64_VSRC1",
 	VOPC,

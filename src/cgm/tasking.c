@@ -52,6 +52,8 @@ task *curtask = &inittask;
 
 static task *hint = (task *) NULL;
 
+task *wakeup_task;
+
 //extern FILE *logF;
 
 eventcount etime = {
@@ -251,10 +253,6 @@ void switch_context (eventcount *ec, count_t value){
 /* await(ec, value) -- suspend until ec.c >= value. */
 void await (eventcount *ec, count_t value){
 
-
-	//debug
-	//printf("in await\n");
-	//fflush(stdout);
 
 	//int bogus; /* just for grabbing something close to current sp... */
 

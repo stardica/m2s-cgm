@@ -64,6 +64,8 @@ typedef struct task_s {
 	context_t c;		/* context switch info */
 }task;
 
+extern task *wakeup_task;
+
 typedef volatile struct eventcount_s eventcount;
 
 struct eventcount_s {
@@ -77,6 +79,8 @@ struct eventcount_s {
 
 extern eventcount etime;	/* time counter */
 typedef volatile count_t ticket_t;
+
+
 
 
 void epause(count_t);			/* wait argument time units */

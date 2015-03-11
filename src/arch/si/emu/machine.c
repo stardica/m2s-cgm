@@ -3552,19 +3552,46 @@ void si_isa_V_CMP_GT_F32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+//star added this
 /* vcc = (S0.f >= S1.f). */
 #define INST SI_INST_VOPC
-void si_isa_V_CMP_GE_F32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_CMP_GE_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t result;
+
+	if (INST.src0 == 255)
+	{
+			s0.as_uint = INST.lit_cnst;
+	}
+	else
+	{
+			s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	}
+
+	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
+
+	/* Compare the operands. */
+	result.as_uint = (s0.as_float >= s1.as_float);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, SI_VCC, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, result.as_uint);
+	}
+
+
 }
 #undef INST
 
 /* vcc = !(S0.f > S1.f). */
 #define INST SI_INST_VOPC
-void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -3586,8 +3613,7 @@ void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: vcc<=(%u) ",
-			work_item->id_in_wavefront, result.as_uint);
+		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, result.as_uint);
 	}
 }
 #undef INST
@@ -3622,6 +3648,10 @@ void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item,
 	}
 }
 #undef INST
+
+
+
+
 
 /* vcc = (S0.d < S1.d). */
 #define INST SI_INST_VOPC
@@ -5688,6 +5718,40 @@ void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+
+//star added this...
+/* D.i = (S0 < S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_I64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+
+	union
+	{
+		long long as_i64;
+		unsigned int as_reg[2];
+
+	} s0, s1;
+
+	union si_reg_t result;
+
+	assert(!INST.clamp);
+	assert(!INST.omod);
+	assert(!INST.neg);
+	assert(!INST.abs);
+
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0);
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = si_isa_read_reg(work_item, INST.src1);
+	s1.as_reg[1] = si_isa_read_reg(work_item, INST.src1 + 1);
+
+	result.as_uint = (s0.as_i64 < s1.as_i64);
+
+	si_isa_bitmask_sreg(work_item, INST.vdst, result.as_uint);
+
+}
+#undef INST
+
+
 /* D.u = (S0 < S1) */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_LT_U64_VOP3a_impl(struct si_work_item_t *work_item,
@@ -5956,9 +6020,7 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item,
 		value.as_double = NAN;
 	}
 	/* s0 == +denormal, +0 */
-	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO) &&
-		!signbit(s0.as_double))
+	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL || fpclassify(s1.as_double) == FP_ZERO) && !signbit(s0.as_double))
 	{
 		/* s1 == +-infinity */
 		if (isinf(s1.as_double))
