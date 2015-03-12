@@ -25,6 +25,7 @@
 enum cgm_access_kind_t
 {
 	cgm_access_invalid = 0,
+	cgm_access_fetch,
 	cgm_access_load,
 	cgm_access_store,
 	cgm_access_nc_store,
@@ -33,7 +34,6 @@ enum cgm_access_kind_t
 	cgm_access_l2_reply
 };
 
-
 extern char *cgm_config_file_name_and_path;
 extern long long access_id;
 extern struct list_t *cgm_access_record;
@@ -41,6 +41,8 @@ extern struct list_t *cgm_access_record;
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 
+/*extern FILE *fetch_trace;
+extern FILE *issue_trace;*/
 
 //function prototypes
 void cgm_init(void);

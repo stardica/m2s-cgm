@@ -1423,12 +1423,6 @@ void m2s_loop(void){
 
 	}
 
-
-#if CGM
-	//star todo add assert sim finish
-	advance(sim_finish);
-#endif
-
 	//printf("loop = %lld\n", m2s_loop_iter);
 	//printf("exiting\n");
 	/* Restore default signal handlers */
@@ -1441,8 +1435,9 @@ void m2s_loop(void){
 
 void sim_end(void){
 
+	//printf("etime.count %lld\n", etime.count);
 
-	printf("---Simulation End (CGM)---\n");
+	printf("\n---Simulation End (CGM)---\n");
 	fflush(stdout);
 
 	//star >> don't need this for simple/short runs benchmarks

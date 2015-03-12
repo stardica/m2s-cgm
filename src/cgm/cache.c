@@ -146,55 +146,55 @@ void cache_create_tasks(void){
 	//l1 i caches
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_0");
-	l1_i_cache_0 = new_eventcount(buff);
+	l1_i_cache_0 = new_eventcount(strdup(buff));
 
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_1");
-	l1_i_cache_1 = new_eventcount(buff);
+	l1_i_cache_1 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_2");
-	l1_i_cache_2 = new_eventcount(buff);
+	l1_i_cache_2 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_3");
-	l1_i_cache_3 = new_eventcount(buff);
+	l1_i_cache_3 = new_eventcount(strdup(buff));*/
 
 
 	//l1 d caches
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_0");
-	l1_d_cache_0 = new_eventcount(buff);
+	l1_d_cache_0 = new_eventcount(strdup(buff));
 
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_1");
-	l1_d_cache_1 = new_eventcount(buff);
+	l1_d_cache_1 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_2");
-	l1_d_cache_2 = new_eventcount(buff);
+	l1_d_cache_2 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_3");
-	l1_d_cache_3 = new_eventcount(buff);
+	l1_d_cache_3 = new_eventcount(strdup(buff));*/
 
 
 	//l2 caches
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_0");
-	l2_cache_0 = new_eventcount(buff);
+	l2_cache_0 = new_eventcount(strdup(buff));
 
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_1");
-	l2_cache_1 = new_eventcount(buff);
+	l2_cache_1 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_2");
-	l2_cache_2 = new_eventcount(buff);
+	l2_cache_2 = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_3");
-	l2_cache_3 = new_eventcount(buff);
+	l2_cache_3 = new_eventcount(strdup(buff));*/
 
 
 	////////////////////
@@ -204,7 +204,7 @@ void cache_create_tasks(void){
 	//l1 i caches
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_ctrl_0");
-	create_task(l1_i_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+	create_task(l1_i_cache_ctrl_0, DEFAULT_STACK_SIZE, strdup(buff));
 
 	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_ctrl_1");
@@ -216,15 +216,15 @@ void cache_create_tasks(void){
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_i_cache_ctrl_3");
-	create_task(l1_i_cache_ctrl_3, DEFAULT_STACK_SIZE, buff);
+	create_task(l1_i_cache_ctrl_3, DEFAULT_STACK_SIZE, buff);*/
 
 
 	//l1 d caches
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_ctrl_0");
-	create_task(l1_d_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+	create_task(l1_d_cache_ctrl_0, DEFAULT_STACK_SIZE, strdup(buff));
 
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l1_d_cache_ctrl_1");
 	create_task(l1_d_cache_ctrl_1, DEFAULT_STACK_SIZE, buff);
 
@@ -239,7 +239,7 @@ void cache_create_tasks(void){
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_ctrl_0");
-	create_task(l2_cache_ctrl_0, DEFAULT_STACK_SIZE, buff);
+	create_task(l2_cache_ctrl_0, DEFAULT_STACK_SIZE, strdup(buff));
 
 	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "l2_cache_ctrl_1");
@@ -281,6 +281,7 @@ void l1_i_cache_ctrl_0(void){
 		await(l1_i_cache_0, step);
 		step++;
 
+
 		//message received check queue there should be a message there.
 		assert(list_count(l1_i_caches[0].Rx_queue_top) >= 1);
 
@@ -291,6 +292,7 @@ void l1_i_cache_ctrl_0(void){
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
+		set = (addr >> l1_i_caches[0].log_block_size) % l1_i_caches[0].num_sets;
 		tag = addr & ~(l1_i_caches[0].block_mask);
 
 		//check if the block is in the cache
@@ -298,51 +300,206 @@ void l1_i_cache_ctrl_0(void){
 		int *way_ptr = &way;
 		int *state_ptr = &state;
 
-		cache_status = cgm_cache_find_block(&(l1_i_caches[0]), addr, set_ptr, way_ptr, state_ptr);
-
-		// L1 I Cache Hit!
-		if (cache_status == 1 && message_packet->access_type == cgm_access_load)
+		//request from CPU
+		if (message_packet->access_type == cgm_access_fetch)
 		{
 
-			l1_i_caches[0].hits++;
+			//stats
+			l1_i_caches[0].cpu_accesses++;
 
-			//Mr. CPU, go about your business...
-			//remove packet from cache and global queues
+			cache_status = cgm_cache_find_block(&(l1_i_caches[0]), addr, set_ptr, way_ptr, state_ptr);
+
+			// L1 I Cache Hit!
+			if(cache_status == 1)
+			{
+				l1_i_caches[0].hits++;
+
+				//Mr. CPU, go about your business...
+				//remove packet from cache and global queues
+				list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
+				remove_from_global(access_id);
+
+			}
+			//L1 I Cache Miss!
+			else if(cache_status == 0)
+			{
+				// L1 I Cache Miss!
+				l1_i_caches[0].misses++;
+
+				mshr_packet = status_packet_create();
+
+				//drop a token in the mshr queue
+				//star todo add some detail to this so we can include coalescing
+				mshr_packet->access_type = message_packet->access_type;
+				mshr_packet->access_id = message_packet->access_id;
+				mshr_packet->in_flight = message_packet->in_flight;
+				list_enqueue(l1_i_caches[0].mshr, mshr_packet);
+
+				//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
+				list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l2_caches[0].Rx_queue_top, message_packet);
+
+				//Advance the l2 cache controller
+				//4 clocks for wire delay.
+				//advance(l2_cache_0);
+				future_advance(l2_cache_0, (etime.count + 4));
+
+				//printf("l1_cache_0 time is %lld\n", P_TIME);
+				//getchar();
+
+				//printf("name %s time %lld\n", l1_i_cache_0->name, etime.count );
+
+			}
+		}
+
+		//replies from L2
+
+		if(message_packet->access_type == cgm_access_l2_reply)
+		{
+
+
+			cgm_cache_set_block(&(l1_i_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+			/* Look for access */
+			LIST_FOR_EACH(l1_i_caches[0].mshr, i)
+			{
+
+				mshr_packet = list_get(l1_i_caches[0].mshr, i);
+
+				if (mshr_packet->access_id == access_id)
+				{
+					list_remove_at(l1_i_caches[0].mshr, i);
+				}
+			}
+
 			list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
 			remove_from_global(access_id);
 		}
 
-		//L1 I Cache Miss!
-		else if(cache_status == 0 && message_packet->access_type == cgm_access_load)
+	}
+
+	/* should never get here*/
+	fatal("l1_i_cache_ctrl_0 task is broken\n");
+	return;
+}
+
+void l1_d_cache_ctrl_0(void){
+
+	long long step = 1;
+	long long access_id = 0;
+	unsigned int addr = 0;
+	int list_index = 0;
+	int cache_status;
+	int i = 0;
+	struct cgm_packet_t *message_packet;
+	struct cgm_packet_status_t *mshr_packet;
+
+	enum cgm_access_kind_t access_type;
+	int tag = 0;
+	int set = 0;
+	int way = 0;
+	int state = 0;
+
+
+	while(1)
+	{
+		//wait here until there is a job to do.
+		await(l1_d_cache_0, step);
+		step++;
+
+
+		//message received check queue there should be a message there.
+		assert(list_count(l1_d_caches[0].Rx_queue_top) >= 1);
+
+		//get the message out of the queue
+		message_packet = list_get(l1_d_caches[0].Rx_queue_top, list_index);
+		assert(message_packet);
+
+		access_type = message_packet->access_type;
+		access_id = message_packet->access_id;
+		addr = message_packet->address;
+		set = (addr >> l1_d_caches[0].log_block_size) % l1_i_caches[0].num_sets;
+		tag = addr & ~(l1_d_caches[0].block_mask);
+
+		//check if the block is in the cache
+		int *set_ptr = &set;
+		int *way_ptr = &way;
+		int *state_ptr = &state;
+
+		//request from CPU
+		if (message_packet->access_type == cgm_access_load)
 		{
-			// L1 I Cache Miss!
-			l1_i_caches[0].misses++;
 
-			mshr_packet = status_packet_create();
+			//stats
+			l1_d_caches[0].cpu_accesses++;
 
-			//drop a token in the mshr queue
-			//star todo add some detail to this so we can include coalescing
-			mshr_packet->access_type = message_packet->access_type;
-			mshr_packet->access_id = message_packet->access_id;
-			mshr_packet->in_flight = message_packet->in_flight;
-			list_enqueue(l1_i_caches[0].mshr, mshr_packet);
+			cache_status = cgm_cache_find_block(&(l1_d_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
-			//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
-			list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
-			list_enqueue(l2_caches[0].Rx_queue_top, message_packet);
+			// L1 I Cache Hit!
+			if(cache_status == 1)
+			{
+				l1_d_caches[0].hits++;
 
-			//Advance the l2 cache controller
-			//4 clocks for wire delay.
+				//Mr. CPU, go about your business...
+				//remove packet from cache and global queues
+				list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+				remove_from_global(access_id);
+
+			}
+			//L1 I Cache Miss!
+			else if(cache_status == 0)
+			{
+				// L1 I Cache Miss!
+				l1_d_caches[0].misses++;
+
+				mshr_packet = status_packet_create();
+
+				//drop a token in the mshr queue
+				//star todo add some detail to this so we can include coalescing
+				mshr_packet->access_type = message_packet->access_type;
+				mshr_packet->access_id = message_packet->access_id;
+				mshr_packet->in_flight = message_packet->in_flight;
+				list_enqueue(l1_d_caches[0].mshr, mshr_packet);
+
+				//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
+				list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l2_caches[0].Rx_queue_top, message_packet);
+
+				//Advance the l2 cache controller
+				//4 clocks for wire delay.
+				//advance(l2_cache_0);
+				future_advance(l2_cache_0, (etime.count + 4));
+
+				//printf("l1_cache_0 time is %lld\n", P_TIME);
+				//getchar();
+
+				//printf("name %s time %lld\n", l1_i_cache_0->name, etime.count );
+
+			}
+		}
+
+		//replies from L2
+
+		if(message_packet->access_type == cgm_access_l2_reply)
+		{
 
 
-			//printf("l1_cache_0 time is %lld\n", P_TIME);
-			//getchar();
-			future_advance(l2_cache_0, 2);
+			cgm_cache_set_block(&(l1_d_caches[0]), *set_ptr, *way_ptr, tag, 1);
 
-			// this is what l2 will do on hit
-			/*list_remove(l1_i_caches[0].mshr, mshr_packet);
-			cgm_cache_set_block(&(l1_i_caches[0]), *set_ptr, *way_ptr, tag, 1);
-			remove_from_global(access_id);*/
+			/* Look for access */
+			LIST_FOR_EACH(l1_d_caches[0].mshr, i)
+			{
+
+				mshr_packet = list_get(l1_d_caches[0].mshr, i);
+
+				if (mshr_packet->access_id == access_id)
+				{
+					list_remove_at(l1_d_caches[0].mshr, i);
+				}
+			}
+
+			list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+			remove_from_global(access_id);
 		}
 
 	}
@@ -383,6 +540,7 @@ void l2_cache_ctrl_0(void){
 		//message received check queue there should be a message there.
 		assert(list_count(l2_caches[0].Rx_queue_top) >= 1);
 
+
 		//get the message out of the queue
 		message_packet = list_get(l2_caches[0].Rx_queue_top, list_index);
 		assert(message_packet);
@@ -390,38 +548,65 @@ void l2_cache_ctrl_0(void){
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
+		set = (addr >> l2_caches[0].log_block_size) % l2_caches[0].num_sets;
 		tag = addr & ~(l2_caches[0].block_mask);
 
+		/*list_remove(l2_caches[0].Rx_queue_top, message_packet);
+		remove_from_global(access_id);*/
+
+
+		//list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
 		//check if the block is in the cache
 		int *set_ptr = &set;
 		int *way_ptr = &way;
 		int *state_ptr = &state;
 
-		cache_status = cgm_cache_find_block(&(l2_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
-
-		// L2 I Cache Hit!
-		if (cache_status == 1 && message_packet->access_type == cgm_access_load)
-		{
-			l1_i_caches[0].hits++;
-
-			//This is a hit in the L2 cache need to send up to L1 cache
-			//remove packet from l2 cache in queue
-
-			message_packet->access_type = cgm_access_l2_reply;
-
-			list_remove(l2_caches[0].Rx_queue_top, message_packet);
-			list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
-			advance(l1_i_cache_0);
-
-		}
-
-		// L2 I Cache Miss!
-		else if (cache_status == 0 && message_packet->access_type == cgm_access_load)
+		//Messages from L1
+		if (message_packet->access_type == cgm_access_load)
 		{
 
-			//for now pretend that it is the last level of cache.
-			//delay 250 cycles
+			//stats
+			l2_caches[0].cpu_accesses++;
+
+			cache_status = cgm_cache_find_block(&(l2_caches[0]), addr, set_ptr, way_ptr, state_ptr);
+
+			// L2 I Cache Hit!
+			//if(cache_status == 1)
+			if(cache_status == 1)
+			{
+				l2_caches[0].hits++;
+
+				//This is a hit in the L2 cache need to send up to L1 cache
+				//remove packet from l2 cache in queue
+
+				message_packet->access_type = cgm_access_l2_reply;
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
+				//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+				future_advance(l1_i_cache_0, (etime.count + 4));
+
+			}
+			else if(cache_status == 0)
+			{
+
+				l2_caches[0].misses++;
+
+				//for now pretend that it is the last level of cache.
+				P_PAUSE(200);
+
+				message_packet->access_type = cgm_access_l2_reply;
+
+
+				cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
+
+				future_advance(l1_i_cache_0, (etime.count + 4));
+
+			}
 
 		}
 
@@ -479,7 +664,9 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(way >= 0 && way < cache->assoc);
 
 	if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
+	{
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
+	}
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
@@ -541,27 +728,42 @@ void cache_dump_stats(void){
 	int num_cores = x86_cpu_num_cores;
 	int i = 0;
 
-	printf("Total Cycles %lld\n\n", P_TIME + 1);
+	printf("Total Cycles %lld\n\n", P_TIME); //P_TIME + 1);
+	//printf("current cycle%lld\n\n", Current_Cycle); //P_TIME + 1);
 
-	for(i = 0; i < num_cores; i++)
-	{
+	/*for(i = 0; i < num_cores; i++)
+	{*/
 		printf("li_i_cache_%d\n", i);
 		printf("Number of set %d\n", l1_i_caches[i].num_sets);
 		printf("Block size = %d\n", l1_i_caches[i].block_size);
+		printf("* cpu accesses %lld\n", l1_i_caches[i].cpu_accesses);
 		printf("* hits %lld\n", l1_i_caches[i].hits);
 		printf("* misses %lld\n", l1_i_caches[i].misses);
 		printf("\n");
-	}
+
+	/*}
+
+	 for(i = 0; i < num_cores; i++)
+	{*/
+		printf("li_d_cache_%d\n", i);
+		printf("Number of set %d\n", l1_d_caches[i].num_sets);
+		printf("Block size = %d\n", l1_d_caches[i].block_size);
+		printf("* cpu accesses %lld\n", l1_d_caches[i].cpu_accesses);
+		printf("* hits %lld\n", l1_d_caches[i].hits);
+		printf("* misses %lld\n", l1_d_caches[i].misses);
+		printf("\n");
+	/*}
 
 	for(i = 0; i < num_cores; i++)
-	{
+	{*/
 		printf("li_2_cache_%d\n", i);
 		printf("Number of set %d\n", l2_caches[i].num_sets);
 		printf("Block size = %d\n", l2_caches[i].block_size);
+		printf("* L1 accesses %lld\n", l2_caches[i].cpu_accesses);
 		printf("* hits %lld\n", l2_caches[i].hits);
 		printf("* misses %lld\n", l2_caches[i].misses);
 		printf("\n");
-	}
+	/*}*/
 
 	return;
 }

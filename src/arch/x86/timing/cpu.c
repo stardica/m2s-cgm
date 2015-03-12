@@ -1026,7 +1026,8 @@ int X86CpuRun(Timing *self){
 	self->cycle = P_TIME;
 
 	//star added for instrumentation
-	Current_Cycle = self->cycle;
+	//Current_Cycle = ++self->cycle;
+	Current_Cycle++;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */
@@ -1037,11 +1038,8 @@ int X86CpuRun(Timing *self){
 
 	X86CpuRunStages(cpu);
 
-
 	/* Process host threads generating events */
 	X86EmuProcessEvents(emu);
-
-
 
 
 	/* Still simulating */

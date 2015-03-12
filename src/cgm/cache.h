@@ -93,6 +93,7 @@ struct cache_t{
 	struct list_t *mshr;
 
 	//statistics
+	long long cpu_accesses;
 	long long hits;
 	long long misses;
 

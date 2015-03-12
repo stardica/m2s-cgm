@@ -36,6 +36,10 @@ char *cgm_config_file_name_and_path;
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 
+
+/*FILE *fetch_trace;
+FILE *issue_trace;*/
+
 void cgm_init(void){
 
 	//star todo add error checking.
@@ -45,6 +49,11 @@ void cgm_init(void){
 	//init memory system structures
 	cache_init();
 	memctrl_init();
+
+
+	/*fetch_trace = fopen("/home/stardica/Desktop/log/fetch_trace", "w");
+	issue_trace = fopen("/home/stardica/Desktop/log/issue_trace", "w");*/
+
 
 	return;
 }
@@ -69,26 +78,26 @@ void cgm_create_tasks(void){
 	//eventcounts
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_start");
-	sim_start = new_eventcount(buff);
+	sim_start = new_eventcount(strdup(buff));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_finish");
-	sim_finish = new_eventcount(buff);
+	sim_finish = new_eventcount(strdup(buff));
 
 
 	//tasks
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "run");
-	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, buff);
+	snprintf(buff, 100, "cpu_gpu_run");
+	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, strdup(buff));
 
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "startup and stop");
-	create_task(cgm_start, DEFAULT_STACK_SIZE, buff);
+	snprintf(buff, 100, "cgm_start");
+	create_task(cgm_start, DEFAULT_STACK_SIZE, strdup(buff));
 
 	//create the task for future advance.
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "Wakeupcall");
-	wakeup_task = create_task(wakeupcall, DEFAULT_STACK_SIZE, buff);
+	wakeup_task = create_task(wakeupcall, DEFAULT_STACK_SIZE, strdup(buff));
 	initialize_wakeupcall(wakeup_task);
 
 	return;
@@ -135,6 +144,10 @@ void cpu_gpu_run(void){
 		t_1++;
 
 		m2s_loop();
+
+	//star todo add assert sim finish
+	future_advance(sim_finish, etime.count);
+	//advance(sim_finish);
 
 	}
 	return;

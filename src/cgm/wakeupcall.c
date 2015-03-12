@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <cgm/tasking.h>
 
@@ -127,32 +128,39 @@ void future_advance (eventcount* ec, count_t wakeup){
 
    alarm* 	new_alarm;
 
-    /*Construct the new alarm event*/ 
+   /*Construct the new alarm event*/
    //fprintf(logF, "In future advance, wakeup time %llu\n", wakeup);
 
 #if 0
    advance(ec);
 #endif
+
 #if 1
 
-   if (Alarm_Freelist == NULL) {
+   if (Alarm_Freelist == NULL)
+   {
       new_alarm = (alarm*) malloc(sizeof(alarm));
    } 
-   else {
+   else
+   {
       new_alarm = Alarm_Freelist;
       Alarm_Freelist = Alarm_Freelist->next;
    }
+
    new_alarm->ec = ec;
    new_alarm->time = wakeup;
 
     /*Insert it*/ 
    Alarm_List = sorted_insert_alarm(new_alarm, Alarm_List);
-   if (Alarm_List == new_alarm) {
+
+   if (Alarm_List == new_alarm)
+   {
       etime.tasklist = remove_task(Wake, etime.tasklist);
       Wake->count = wakeup;
       etime.tasklist = sorted_insert_task(Wake, etime.tasklist);
    }
 #endif
+
 }
 
 void initialize_wakeupcall (task* wakeup_task){
@@ -160,37 +168,117 @@ void initialize_wakeupcall (task* wakeup_task){
    Wake = wakeup_task;
 }
 
+
+long long max_time = 0x7FFFFFFFFFFFFFFF;
+long long temp_time = 0;
+
+
 void wakeupcall (void *arg){
 
-   long long next_wake_up_time;
-   alarm *current_alarm;
-   const long long max_time = 0x7FFFFFFFFFFFFFFFLL;
+	long long next_wake_up_time;
+	alarm *current_alarm;
+	//const long long max_time = 0x7FFFFFFFFFFFFFFFLL;
 
-   // Not associated with a procNum.
-   Assert(Wake != NULL, "Forgot to initialize Wake...");
-   next_wake_up_time = max_time;
-   while (1)
-   {
-      await(&etime, next_wake_up_time);
-      //      FLDEBUG(('w', "Wakeupcall is awake at time %llu", P_TIME));
 
-      /* If we do actually wake up, there better be something on the list */
-      Assert(Alarm_List != NULL, "Wakeupcall without an alarm??");
-      current_alarm = Alarm_List;
-      Alarm_List = Alarm_List->next;
+	//Not associated with a procNum.
+	Assert(Wake != NULL, "Forgot to initialize Wake...");
+	next_wake_up_time = max_time;
+	while (1)
+	{
+		await(&etime, next_wake_up_time);
+		// FLDEBUG(('w', "Wakeupcall is awake at time %llu", P_TIME));
 
-      /* And it better be the right time */
-      Assert(etime.count >= current_alarm->time, "Woke up too early?");
-//      FLDEBUG(('w', "Wakeupcall advancing count @0x%x (wakeup time %llu)",
-//	       current_alarm->ec, current_alarm->time >> 1));
-      advance(current_alarm->ec);
+		if(!Alarm_List)
+		{
+			if (etime.count == max_time)
+			{
+				printf("DEADLOCK_DETECTED!\n");
+				fflush(stdout);
+				exit(1);
+			}
+			else
+			{
+				printf("FATAL ERROR: Alarm fired at etime %llu but list empty\n", etime.count);
+				fflush(stdout);
+				exit(1);
+			}
 
-      /* Allow the current_alarm to be reused */
-      current_alarm->next = Alarm_Freelist;
-      Alarm_Freelist = current_alarm;
+			return;
+		}
 
-      /* Sleep until next alarm */
-      next_wake_up_time = (Alarm_List == NULL) ? max_time : Alarm_List->time;
-//      FLDEBUG(('w', "Next wakeupcall is at time %llu",next_wake_up_time >> 1));
+
+		//If we do actually wake up, there better be something on the list
+		Assert(Alarm_List != NULL, "Wakeupcall without an alarm??");
+		current_alarm = Alarm_List;
+		Alarm_List = Alarm_List->next;
+
+		// And it better be the right time
+		Assert(etime.count >= current_alarm->time, "Woke up too early?");
+		// FLDEBUG(('w', "Wakeupcall advancing count @0x%x (wakeup time %llu)",
+		//current_alarm->ec, current_alarm->time >> 1));
+
+		advance(current_alarm->ec);
+
+		//Allow the current_alarm to be reused
+      	current_alarm->next = Alarm_Freelist;
+      	Alarm_Freelist = current_alarm;
+
+      	//Sleep until next alarm
+      	next_wake_up_time = (Alarm_List == NULL) ? max_time : Alarm_List->time;
+      	// FLDEBUG(('w', "Next wakeupcall is at time %llu",next_wake_up_time >> 1));
+      	if (!strcmp(current_alarm->ec->name, "sim_finish")) break;
+
+      	//printf("etime.count %lld\n", etime.count);
+      	//temp_time = etime.count;
    }
+
+	/*while (1)
+	{
+		await(&etime, next_wake_up_time);
+		// FLDEBUG(('w', "Wakeupcall is awake at time %llu", P_TIME));
+
+		if (Alarm_List == NULL)
+		{
+			if (etime.count == max_time)
+			{
+				printf("DEADLOCK_DETECTED!\n");
+	            fflush(stdout);
+	            exit(1);
+			}
+			else
+			{
+	        	 printf("FATAL ERROR: Alarm fired at etime %llu but list empty\n", etime.count);
+	        	 fflush(stdout);
+	        	 exit(1);
+	        }
+		}
+
+		 If we do actually wake up, there better be something on the list
+		current_alarm = Alarm_List;
+		Alarm_List = Alarm_List->next;
+
+		 And it better be the right time
+		// FLDEBUG(('w', "Wakeupcall advancing count @0x%x (wakeup time %llu)",
+		// current_alarm->ec, current_alarm->time >> 1));
+		advance(current_alarm->ec);
+
+		 if (!strcmp(current_alarm->ec->name, "sim_finish"))
+		 {
+			 break;
+		 }
+
+	     Allow the current_alarm to be reused
+	    current_alarm->next = Alarm_Freelist;
+	    Alarm_Freelist = current_alarm;
+
+	     Sleep until next alarm
+	    next_wake_up_time = (Alarm_List == NULL) ? max_time : Alarm_List->time;
+	    // FLDEBUG(('w', "Next wakeupcall is at time %llu",next_wake_up_time >> 1));
+
+	}*/
+
+	return;
 }
+
+
+

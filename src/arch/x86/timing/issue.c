@@ -93,6 +93,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//								 unsigned int addr,
 		//								 struct linked_list_t *event_queue,
 		//								 void *event_queue_item);{
+		//fprintf(issue_trace, "storing on cycle %llu\n", P_TIME);
 		cgm_issue_lspq_access(self, mod_access_store, store->phy_addr, core->event_queue, store);
 
 #else
@@ -197,7 +198,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		/* Access memory system */
 		//star added test.
 		//PrintUOPStatus(load);
-		cgm_issue_lspq_access(self, mod_access_store, load->phy_addr, core->event_queue, load);
+		//fprintf(issue_trace, "loading on cycle %llu\n", P_TIME);
+		cgm_issue_lspq_access(self, mod_access_load, load->phy_addr, core->event_queue, load);
 
 #else
 		/* create and fill the mod_client_info_t object */

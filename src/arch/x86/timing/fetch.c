@@ -351,7 +351,6 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 	return 1;
 }
 
-
 static void X86ThreadFetch(X86Thread *self)
 {
 	X86Context *ctx = self->ctx;
@@ -365,14 +364,14 @@ static void X86ThreadFetch(X86Thread *self)
 
 	/* Try to fetch from trace cache first */
 	//star no trace cache this is ignored.
-	if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
+	/*if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
 	{
 		//star >> never enters here
 		//printf("Pulled from trace cache\n");
 		//fflush(stdout);
 		//getchar();
 		return;
-	}
+	}*/
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
@@ -396,6 +395,11 @@ static void X86ThreadFetch(X86Thread *self)
 		//long long mod_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 		self->fetch_access = cgm_fetch_access(self, phy_addr);
 		self->btb_reads++;
+
+
+		//fprintf(fetch_trace, "fetching on cycle %llu\n", P_TIME);
+
+
 
 		/* MMU statistics */
 		if (*mmu_report_file_name)

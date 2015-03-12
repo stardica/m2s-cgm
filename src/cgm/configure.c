@@ -756,6 +756,7 @@ int cache_finish_create(){
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
 		l1_i_caches[i].hits = 0;
 		l1_i_caches[i].misses = 0;
+		l1_i_caches[i].cpu_accesses = 0;
 		l1_i_caches[i].Rx_queue_top = list_create();
 		l1_i_caches[i].Rx_queue_bottom = list_create();
 		l1_i_caches[i].mshr = list_create();
@@ -786,6 +787,7 @@ int cache_finish_create(){
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].hits = 0;
 		l1_d_caches[i].misses = 0;
+		l1_d_caches[i].cpu_accesses = 0;
 		l1_d_caches[i].Rx_queue_top = list_create();
 		l1_d_caches[i].Rx_queue_bottom = list_create();
 		l1_d_caches[i].mshr = list_create();
@@ -816,6 +818,7 @@ int cache_finish_create(){
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].hits = 0;
 		l2_caches[i].misses = 0;
+		l2_caches[i].cpu_accesses = 0;
 		l2_caches[i].Rx_queue_top = list_create();
 		l2_caches[i].Rx_queue_bottom = list_create();
 		l2_caches[i].mshr = list_create();
@@ -899,13 +902,13 @@ int cache_finish_create(){
 	}
 
 
-
 	//for a single l3 cache
 	l3_caches->id = 1;
 	l3_caches->log_block_size = LOG2(l3_caches->block_size);
 	l3_caches->block_mask = l3_caches->block_size - 1;
 	l3_caches[i].hits = 0;
 	l3_caches[i].misses = 0;
+	l3_caches[i].cpu_accesses = 0;
 	l3_caches->Rx_queue_top = list_create();
 	l3_caches->Rx_queue_bottom = list_create();
 	l3_caches->mshr = list_create();

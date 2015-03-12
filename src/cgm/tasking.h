@@ -50,6 +50,9 @@ typedef Time_t count_t;
  *  so that the wakeupcall package can work.
  */
 
+
+long long temp_time;
+
 typedef struct task_s {
 	struct task_s *tasklist;	/* pointer to next task on the same list */
 	char *name;			/* task name */
@@ -99,6 +102,7 @@ unsigned get_id(void);
 char * get_task_name (void);	/* get current task name */
 void initialize_wakeupcall (task*);
 void wakeupcall (void *arg);
+void end_wakeupcall(long long final_time);
 void tasking_dump(void);
 count_t get_time (void);
 
