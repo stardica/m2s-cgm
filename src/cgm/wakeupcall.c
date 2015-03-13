@@ -88,16 +88,22 @@ cell *remove_cell (cell* target, cell* list){
    Assert(target != NULL, "Invalid arguments");
    scan = list;
    back = NULL;
-   while ((scan != NULL) && (scan != target)) {
+
+   while ((scan != NULL) && (scan != target))
+   {
       back = scan;
       scan = scan->next;
    }
+
    Assert(scan == target, "pointer missing from list???");
-   if (back == NULL) {
+
+   if (back == NULL)
+   {
       /* remove from the front */
       list = scan->next;
    }
-   else {
+   else
+   {
       /* remove from somewhere else in the list */
       back->next = scan->next;
    }
@@ -169,8 +175,8 @@ void initialize_wakeupcall (task* wakeup_task){
 }
 
 
-long long max_time = 0x7FFFFFFFFFFFFFFF;
-long long temp_time = 0;
+
+//long long temp_time = 0;
 
 
 void wakeupcall (void *arg){
@@ -178,6 +184,7 @@ void wakeupcall (void *arg){
 	long long next_wake_up_time;
 	alarm *current_alarm;
 	//const long long max_time = 0x7FFFFFFFFFFFFFFFLL;
+	long long max_time = 0x7FFFFFFFFFFFFFFF;
 
 
 	//Not associated with a procNum.
@@ -228,54 +235,9 @@ void wakeupcall (void *arg){
       	// FLDEBUG(('w', "Next wakeupcall is at time %llu",next_wake_up_time >> 1));
       	if (!strcmp(current_alarm->ec->name, "sim_finish")) break;
 
-      	//printf("etime.count %lld\n", etime.count);
+      	//printf("task name %s @ time %lld\n", current_alarm->ec->name, etime.count);
       	//temp_time = etime.count;
    }
-
-	/*while (1)
-	{
-		await(&etime, next_wake_up_time);
-		// FLDEBUG(('w', "Wakeupcall is awake at time %llu", P_TIME));
-
-		if (Alarm_List == NULL)
-		{
-			if (etime.count == max_time)
-			{
-				printf("DEADLOCK_DETECTED!\n");
-	            fflush(stdout);
-	            exit(1);
-			}
-			else
-			{
-	        	 printf("FATAL ERROR: Alarm fired at etime %llu but list empty\n", etime.count);
-	        	 fflush(stdout);
-	        	 exit(1);
-	        }
-		}
-
-		 If we do actually wake up, there better be something on the list
-		current_alarm = Alarm_List;
-		Alarm_List = Alarm_List->next;
-
-		 And it better be the right time
-		// FLDEBUG(('w', "Wakeupcall advancing count @0x%x (wakeup time %llu)",
-		// current_alarm->ec, current_alarm->time >> 1));
-		advance(current_alarm->ec);
-
-		 if (!strcmp(current_alarm->ec->name, "sim_finish"))
-		 {
-			 break;
-		 }
-
-	     Allow the current_alarm to be reused
-	    current_alarm->next = Alarm_Freelist;
-	    Alarm_Freelist = current_alarm;
-
-	     Sleep until next alarm
-	    next_wake_up_time = (Alarm_List == NULL) ? max_time : Alarm_List->time;
-	    // FLDEBUG(('w', "Next wakeupcall is at time %llu",next_wake_up_time >> 1));
-
-	}*/
 
 	return;
 }

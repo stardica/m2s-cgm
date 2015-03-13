@@ -28,7 +28,8 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 
-long long access_id = 0;
+long long fetch_access_id = 0;
+long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
@@ -145,9 +146,8 @@ void cpu_gpu_run(void){
 
 		m2s_loop();
 
-	//star todo add assert sim finish
-	future_advance(sim_finish, etime.count);
-	//advance(sim_finish);
+		future_advance(sim_finish, (etime.count));
+		//advance(sim_finish);
 
 	}
 	return;
@@ -184,14 +184,14 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	//check if mshr queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].mshr))
+	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].mshr))
 	{
 		return 0;
 	}
 
 
 	//check if request queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
+	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue_top))
 	{
 		return 0;
 	}
@@ -239,17 +239,17 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 	char buff[100];
-	access_id++;
+	fetch_access_id++;
 
 
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
-	snprintf(buff, 100, "fetch_access.%llu", access_id);
+	snprintf(buff, 100, "fetch_access.%llu", fetch_access_id);
 
 	//(1)
 	struct cgm_packet_status_t *new_packet_status = status_packet_create();
-	new_packet_status->access_type = cgm_access_load;
-	new_packet_status->access_id = access_id;
+	new_packet_status->access_type = cgm_access_fetch;
+	new_packet_status->access_id = fetch_access_id;
 	new_packet_status->address = addr;
 	new_packet_status->in_flight = 1;
 
@@ -258,8 +258,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	//(2)
 	struct cgm_packet_t *new_packet = packet_create();
-	new_packet->access_type = cgm_access_load;
-	new_packet->access_id = access_id;
+	new_packet->access_type = cgm_access_fetch;
+	new_packet->access_id = fetch_access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
 	new_packet->name = strdup(buff);
@@ -294,24 +294,76 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//printf("dequeue\n");
 	//list_dequeue(cgm_access_record);
 
-	return access_id;
+	return fetch_access_id;
 }
 
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
-	//printf("cgm_issue_lspq_access()\n");
+
 	X86Thread *thread;
 	thread = self;
+	char buff[100];
+	fetch_access_id++;
+
+	//build one packet to pass through the memory system
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "lspq_access.%llu", fetch_access_id);
 
 	struct cgm_packet_t *new_packet = packet_create();
-
-	new_packet->in_flight = 1;
+	new_packet->access_type = access_kind;
+	new_packet->address = addr;
 	new_packet->event_queue = event_queue;
 	new_packet->data = event_queue_item;
+	new_packet->in_flight = 1;
+	new_packet->access_id = lspq_access_id;
+	new_packet->name = strdup(buff);
+
+
+	//for memory system load store request
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
+	{
+
+		if(thread->core->id == 0)
+		{
+			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
+			advance(l1_d_cache_0);
+		}
+		else if (thread->core->id == 1)
+		{
+			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
+			advance(l1_d_cache_1);
+		}
+		else if (thread->core->id == 2)
+		{
+			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
+			advance(l1_d_cache_2);
+		}
+		else if (thread->core->id == 3)
+		{
+			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
+			advance(l1_d_cache_3);
+		}
+		else
+		{
+			fatal("Current version of CGM only supports up to 4 cores.\n");
+		}
+
+	}
+	/*else if ()
+	{
+		linked_list_add(new_packet->event_queue, new_packet->data);
+	}*/
+	else if(access_kind == cgm_access_prefetch)
+	{
+		fatal("cgm_issue_lspq_access() type cgm_access_prefetch currently not implemented\n");
+	}
+	else
+	{
+		fatal("cgm_issue_lspq_access() unsupported access type\n");
+	}
 
 	//put back on the core event queue to end memory system access.
-	linked_list_add(new_packet->event_queue, new_packet->data);
-	free(new_packet);
+	//linked_list_add(new_packet->event_queue, new_packet->data);
 
 	return;
 }

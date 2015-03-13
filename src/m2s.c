@@ -1454,8 +1454,11 @@ void sim_end(void){
 	//star >> execution is pretty much done here. The remainder is summary output and cleanup.
 
 	/* Dump statistics summary */
-	//m2s_dump_summary(stderr);
 	cgm_dump_summary();
+	fflush(stderr);
+	fflush(stdout);
+	m2s_dump_summary(stderr);
+
 
 
 	/* x86 */

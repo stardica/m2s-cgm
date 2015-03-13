@@ -15,6 +15,7 @@
 
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 #include <lib/util/misc.h>
 
@@ -80,7 +81,10 @@ eventcount volatile *l2_cache_1;
 eventcount volatile *l2_cache_2;
 eventcount volatile *l2_cache_3;
 
-//statistics
+
+int mem_miss = 100;
+
+
 
 void cache_init(void){
 
@@ -259,21 +263,29 @@ void cache_create_tasks(void){
 
 void l1_i_cache_ctrl_0(void){
 
-	long long step = 1;
-	long long access_id = 0;
-	unsigned int addr = 0;
-	int list_index = 0;
-	int cache_status;
-	int i = 0;
 	struct cgm_packet_t *message_packet;
 	struct cgm_packet_status_t *mshr_packet;
+	long long step = 1;
+	int list_index = 0;
+	int i = 0;
+
 
 	enum cgm_access_kind_t access_type;
-	int tag = 0;
+	unsigned int addr = 0;
+	long long access_id = 0;
 	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+
+	int cache_status;
 	int way = 0;
 	int state = 0;
 
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
 
 	while(1)
 	{
@@ -292,20 +304,28 @@ void l1_i_cache_ctrl_0(void){
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
-		set = (addr >> l1_i_caches[0].log_block_size) % l1_i_caches[0].num_sets;
-		tag = addr & ~(l1_i_caches[0].block_mask);
+
+		//decode the address to set, tag, and offset
+		cgm_cache_decode_address(&(l1_i_caches[0]), addr, set_ptr, tag_ptr, offset_ptr);
+
+		/*printf("address = 0x%08u\n", addr);
+		printf("set = %d\n", *set_ptr);
+		printf("tag = %d\n", *tag_ptr);
+		printf("offset = %u\n", *offset_ptr);
+		getchar();*/
+
+		//set = (addr >> l1_i_caches[0].log_block_size) % l1_i_caches[0].num_sets;
+		//tag = addr & ~(l1_i_caches[0].block_mask);
 
 		//check if the block is in the cache
-		int *set_ptr = &set;
-		int *way_ptr = &way;
-		int *state_ptr = &state;
+
 
 		//request from CPU
 		if (message_packet->access_type == cgm_access_fetch)
 		{
 
 			//stats
-			l1_i_caches[0].cpu_accesses++;
+			l1_i_caches[0].fetches++;
 
 			cache_status = cgm_cache_find_block(&(l1_i_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
@@ -339,41 +359,34 @@ void l1_i_cache_ctrl_0(void){
 				list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
 				list_enqueue(l2_caches[0].Rx_queue_top, message_packet);
 
-				//Advance the l2 cache controller
-				//4 clocks for wire delay.
-				//advance(l2_cache_0);
-				future_advance(l2_cache_0, (etime.count + 4));
 
-				//printf("l1_cache_0 time is %lld\n", P_TIME);
-				//getchar();
-
-				//printf("name %s time %lld\n", l1_i_cache_0->name, etime.count );
+				future_advance(l2_cache_0, (etime.count + 10));
 
 			}
+
+			continue;
 		}
 
 		//replies from L2
-
-		if(message_packet->access_type == cgm_access_l2_reply)
+		if(message_packet->access_type == cgm_access_l2_load_reply)
 		{
-
-
+			//set the block in the L1 I cache
 			cgm_cache_set_block(&(l1_i_caches[0]), *set_ptr, *way_ptr, tag, 1);
 
-			/* Look for access */
-			LIST_FOR_EACH(l1_i_caches[0].mshr, i)
-			{
+			//service the mshr request
+			mshr_remove(&(l1_i_caches[0]), access_id);
 
-				mshr_packet = list_get(l1_i_caches[0].mshr, i);
-
-				if (mshr_packet->access_id == access_id)
-				{
-					list_remove_at(l1_i_caches[0].mshr, i);
-				}
-			}
-
+			//remove the message from the in queue
 			list_remove(l1_i_caches[0].Rx_queue_top, message_packet);
+
+			//remove from the access tracker, this is a simulator-ism.
 			remove_from_global(access_id);
+
+			continue;
+		}
+		else
+		{
+			fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
 		}
 
 	}
@@ -396,6 +409,7 @@ void l1_d_cache_ctrl_0(void){
 
 	enum cgm_access_kind_t access_type;
 	int tag = 0;
+	int offset = 0;
 	int set = 0;
 	int way = 0;
 	int state = 0;
@@ -407,7 +421,6 @@ void l1_d_cache_ctrl_0(void){
 		await(l1_d_cache_0, step);
 		step++;
 
-
 		//message received check queue there should be a message there.
 		assert(list_count(l1_d_caches[0].Rx_queue_top) >= 1);
 
@@ -418,8 +431,11 @@ void l1_d_cache_ctrl_0(void){
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
+
+
 		set = (addr >> l1_d_caches[0].log_block_size) % l1_i_caches[0].num_sets;
 		tag = addr & ~(l1_d_caches[0].block_mask);
+
 
 		//check if the block is in the cache
 		int *set_ptr = &set;
@@ -431,22 +447,22 @@ void l1_d_cache_ctrl_0(void){
 		{
 
 			//stats
-			l1_d_caches[0].cpu_accesses++;
+			l1_d_caches[0].loads++;
 
 			cache_status = cgm_cache_find_block(&(l1_d_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
-			// L1 I Cache Hit!
+			// L1 D Cache Hit!
 			if(cache_status == 1)
 			{
 				l1_d_caches[0].hits++;
 
 				//Mr. CPU, go about your business...
-				//remove packet from cache and global queues
+				//remove packet from cache queue and add to to commit stage input
 				list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
-				remove_from_global(access_id);
+				linked_list_add(message_packet->event_queue, message_packet->data);
 
 			}
-			//L1 I Cache Miss!
+			//L1 D Cache Miss!
 			else if(cache_status == 0)
 			{
 				// L1 I Cache Miss!
@@ -468,44 +484,110 @@ void l1_d_cache_ctrl_0(void){
 				//Advance the l2 cache controller
 				//4 clocks for wire delay.
 				//advance(l2_cache_0);
-				future_advance(l2_cache_0, (etime.count + 4));
-
-				//printf("l1_cache_0 time is %lld\n", P_TIME);
-				//getchar();
-
-				//printf("name %s time %lld\n", l1_i_cache_0->name, etime.count );
+				future_advance(l2_cache_0, (etime.count + 10));
 
 			}
+
+			continue;
+		}
+
+		//request from CPU
+		else if (message_packet->access_type == cgm_access_store)
+		{
+
+			//star todo evict old block this is where the LRU, FIFO stuff comes into play
+			//this needs some work to get it right
+
+			//stats
+			l1_d_caches[0].stores++;
+
+			cache_status = cgm_cache_find_block(&(l1_d_caches[0]), addr, set_ptr, way_ptr, state_ptr);
+
+			// L1 D Cache Hit!
+			if(cache_status == 1)
+			{
+				//ok, on a hit this means there is a block of old memory in the cache (i.e. to be over written).
+				l1_d_caches[0].hits++;
+
+				//for now just set it so things will run
+				cgm_cache_set_block(&(l1_i_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+				//Mr. CPU, go about your business...
+				//remove packet from cache queue and add to commit stage input
+				list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+				linked_list_add(message_packet->event_queue, message_packet->data);
+
+			}
+			//L1 D Cache Miss!
+			else if(cache_status == 0)
+			{
+				// L1 I Cache Miss!
+				l1_d_caches[0].misses++;
+
+				mshr_packet = status_packet_create();
+
+				//drop a token in the mshr queue
+				//star todo add some detail to this so we can include coalescing
+				mshr_packet->access_type = message_packet->access_type;
+				mshr_packet->access_id = message_packet->access_id;
+				mshr_packet->in_flight = message_packet->in_flight;
+				list_enqueue(l1_d_caches[0].mshr, mshr_packet);
+
+				//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
+				list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l2_caches[0].Rx_queue_top, message_packet);
+
+				//Advance the l2 cache controller
+				//4 clocks for wire delay.
+				//advance(l2_cache_0);
+				future_advance(l2_cache_0, (etime.count + 10));
+
+			}
+
+
+			continue;
 		}
 
 		//replies from L2
-
-		if(message_packet->access_type == cgm_access_l2_reply)
+		if(message_packet->access_type == cgm_access_l2_load_reply)
 		{
-
-
+			//set the block in the L1 I cache
 			cgm_cache_set_block(&(l1_d_caches[0]), *set_ptr, *way_ptr, tag, 1);
 
-			/* Look for access */
-			LIST_FOR_EACH(l1_d_caches[0].mshr, i)
-			{
+			//service the mshr request
+			mshr_remove(&(l1_d_caches[0]), access_id);
 
-				mshr_packet = list_get(l1_d_caches[0].mshr, i);
-
-				if (mshr_packet->access_id == access_id)
-				{
-					list_remove_at(l1_d_caches[0].mshr, i);
-				}
-			}
-
+			//remove the message from the in queue
 			list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
-			remove_from_global(access_id);
+
+			//dump in the done queue for the writeback stage, this is a simulator-ism.
+			linked_list_add(message_packet->event_queue, message_packet->data);
 		}
+
+		else if(message_packet->access_type == cgm_access_l2_store_reply)
+		{
+			//set the block in the L1 I cache
+			cgm_cache_set_block(&(l1_d_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+			//service the mshr request
+			mshr_remove(&(l1_d_caches[0]), access_id);
+
+			//remove the message from the in queue
+			list_remove(l1_d_caches[0].Rx_queue_top, message_packet);
+
+			//dump in the done queue for the writeback stage, this is a simulator-ism.
+			linked_list_add(message_packet->event_queue, message_packet->data);
+		}
+		else
+		{
+			fatal("l1_d_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
+		}
+
 
 	}
 
-	/* should never get here*/
-	fatal("l1_i_cache_ctrl_0 task is broken\n");
+	//should never get here
+	fatal("l1_d_cache_ctrl_0 task is broken\n");
 	return;
 }
 
@@ -536,10 +618,8 @@ void l2_cache_ctrl_0(void){
 		//printf("l2_cache_0 time is %lld\n", P_TIME);
 		//getchar();
 
-
 		//message received check queue there should be a message there.
 		assert(list_count(l2_caches[0].Rx_queue_top) >= 1);
-
 
 		//get the message out of the queue
 		message_packet = list_get(l2_caches[0].Rx_queue_top, list_index);
@@ -562,17 +642,16 @@ void l2_cache_ctrl_0(void){
 		int *state_ptr = &state;
 
 
-		//Messages from L1
-		if (message_packet->access_type == cgm_access_load)
+		//Messages from L1_I_Cache
+		if (message_packet->access_type == cgm_access_fetch)
 		{
 
 			//stats
-			l2_caches[0].cpu_accesses++;
+			l2_caches[0].fetches++;
 
 			cache_status = cgm_cache_find_block(&(l2_caches[0]), addr, set_ptr, way_ptr, state_ptr);
 
-			// L2 I Cache Hit!
-			//if(cache_status == 1)
+			// L2 Cache Hit!
 			if(cache_status == 1)
 			{
 				l2_caches[0].hits++;
@@ -580,23 +659,22 @@ void l2_cache_ctrl_0(void){
 				//This is a hit in the L2 cache need to send up to L1 cache
 				//remove packet from l2 cache in queue
 
-				message_packet->access_type = cgm_access_l2_reply;
+				message_packet->access_type = cgm_access_l2_load_reply;
 
 				list_remove(l2_caches[0].Rx_queue_top, message_packet);
 				list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
 				//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
-				future_advance(l1_i_cache_0, (etime.count + 4));
+				future_advance(l1_i_cache_0, (etime.count + 10));
 
 			}
 			else if(cache_status == 0)
 			{
 
 				l2_caches[0].misses++;
+				//for now pretend that it is the last level of cache and memory ctrl.
+				P_PAUSE(mem_miss);
 
-				//for now pretend that it is the last level of cache.
-				P_PAUSE(200);
-
-				message_packet->access_type = cgm_access_l2_reply;
+				message_packet->access_type = cgm_access_l2_load_reply;
 
 
 				cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
@@ -604,8 +682,97 @@ void l2_cache_ctrl_0(void){
 				list_remove(l2_caches[0].Rx_queue_top, message_packet);
 				list_enqueue(l1_i_caches[0].Rx_queue_top, message_packet);
 
-				future_advance(l1_i_cache_0, (etime.count + 4));
+				future_advance(l1_i_cache_0, (etime.count + 10));
 
+			}
+
+			continue;
+		}
+
+		//Messages from L1_D_Cache
+		if (message_packet->access_type == cgm_access_load)
+		{
+			//stats
+			l2_caches[0].loads++;
+
+			cache_status = cgm_cache_find_block(&(l2_caches[0]), addr, set_ptr, way_ptr, state_ptr);
+
+			// L2 Cache Hit!
+			if(cache_status == 1)
+			{
+				//stats
+				l2_caches[0].hits++;
+
+				//This is a hit in the L2 cache need to send up to L1 cache
+				//remove packet from l2 cache in queue
+				message_packet->access_type = cgm_access_l2_load_reply;
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_d_caches[0].Rx_queue_top, message_packet);
+				//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+				future_advance(l1_d_cache_0, (etime.count + 10));
+			}
+			// L2 Cache Miss!
+			else if(cache_status == 0)
+			{
+				//stats
+				l2_caches[0].misses++;
+				//for now pretend that it is the last level of cache and memory ctrl.
+				P_PAUSE(mem_miss);
+
+				message_packet->access_type = cgm_access_l2_load_reply;
+
+
+				cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_d_caches[0].Rx_queue_top, message_packet);
+
+				future_advance(l1_d_cache_0, (etime.count + 10));
+
+			}
+
+		}
+		else if (message_packet->access_type == cgm_access_store)
+		{
+			//stats
+			l2_caches[0].stores++;
+			cache_status = cgm_cache_find_block(&(l2_caches[0]), addr, set_ptr, way_ptr, state_ptr);
+
+			// L2 Cache Hit!
+			if(cache_status == 1)
+			{
+				//stats
+				l2_caches[0].hits++;
+
+				cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+				//This is a hit in the L2 cache need to send up to L1 cache
+				//remove packet from l2 cache in queue
+				message_packet->access_type = cgm_access_l2_store_reply;
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_d_caches[0].Rx_queue_top, message_packet);
+				//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+				future_advance(l1_d_cache_0, (etime.count + 10));
+			}
+			// L2 Cache Miss!
+			else if(cache_status == 0)
+			{
+				//stats
+				l2_caches[0].misses++;
+
+				//for now pretend that it is the last level of cache and memory ctrl.
+				P_PAUSE(mem_miss);
+
+				message_packet->access_type = cgm_access_l2_store_reply;
+
+				cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+				list_remove(l2_caches[0].Rx_queue_top, message_packet);
+				list_enqueue(l1_d_caches[0].Rx_queue_top, message_packet);
+
+				future_advance(l1_d_cache_0, (etime.count + 10));
 			}
 
 		}
@@ -617,7 +784,32 @@ void l2_cache_ctrl_0(void){
 	return;
 }
 
+int mshr_remove(struct cache_t *cache, long long access_id){
 
+	int i = 0;
+	struct cgm_packet_status_t *mshr_packet;
+
+	LIST_FOR_EACH(cache[0].mshr, i)
+	{
+		mshr_packet = list_get(cache[0].mshr, i);
+
+		if (mshr_packet->access_id == access_id)
+		{
+			list_remove_at(cache[0].mshr, i);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+/* Return {set, tag, offset} for a given address */
+void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
+{
+	*(set_ptr) = (addr >> cache->log_block_size) % cache->num_sets;
+	*(tag_ptr) = addr & ~(cache->block_mask);
+	*(offset_ptr) = addr & (cache->block_mask);
+}
 
 
 /* Look for a block in the cache. If it is found and its state is other than 0,
@@ -736,7 +928,7 @@ void cache_dump_stats(void){
 		printf("li_i_cache_%d\n", i);
 		printf("Number of set %d\n", l1_i_caches[i].num_sets);
 		printf("Block size = %d\n", l1_i_caches[i].block_size);
-		printf("* cpu accesses %lld\n", l1_i_caches[i].cpu_accesses);
+		printf("* cpu accesses %lld\n", l1_i_caches[i].fetches);
 		printf("* hits %lld\n", l1_i_caches[i].hits);
 		printf("* misses %lld\n", l1_i_caches[i].misses);
 		printf("\n");
@@ -748,7 +940,7 @@ void cache_dump_stats(void){
 		printf("li_d_cache_%d\n", i);
 		printf("Number of set %d\n", l1_d_caches[i].num_sets);
 		printf("Block size = %d\n", l1_d_caches[i].block_size);
-		printf("* cpu accesses %lld\n", l1_d_caches[i].cpu_accesses);
+		printf("* cpu accesses %lld\n", l1_d_caches[i].loads);
 		printf("* hits %lld\n", l1_d_caches[i].hits);
 		printf("* misses %lld\n", l1_d_caches[i].misses);
 		printf("\n");
@@ -759,7 +951,7 @@ void cache_dump_stats(void){
 		printf("li_2_cache_%d\n", i);
 		printf("Number of set %d\n", l2_caches[i].num_sets);
 		printf("Block size = %d\n", l2_caches[i].block_size);
-		printf("* L1 accesses %lld\n", l2_caches[i].cpu_accesses);
+		//printf("* L1 accesses %lld\n", l2_caches[i]);
 		printf("* hits %lld\n", l2_caches[i].hits);
 		printf("* misses %lld\n", l2_caches[i].misses);
 		printf("\n");

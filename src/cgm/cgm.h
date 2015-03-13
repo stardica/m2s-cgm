@@ -31,11 +31,13 @@ enum cgm_access_kind_t
 	cgm_access_nc_store,
 	cgm_access_nc_load,
 	cgm_access_prefetch,
-	cgm_access_l2_reply
+	cgm_access_l2_load_reply,
+	cgm_access_l2_store_reply
 };
 
+extern long long fetch_access_id;
+extern long long lspq_access_id;
 extern char *cgm_config_file_name_and_path;
-extern long long access_id;
 extern struct list_t *cgm_access_record;
 
 extern eventcount volatile *sim_start;

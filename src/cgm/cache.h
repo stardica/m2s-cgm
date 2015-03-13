@@ -93,7 +93,9 @@ struct cache_t{
 	struct list_t *mshr;
 
 	//statistics
-	long long cpu_accesses;
+	long long fetches;
+	long long loads;
+	long long stores;
 	long long hits;
 	long long misses;
 
@@ -137,9 +139,11 @@ void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
+int mshr_remove(struct cache_t *cache, long long access_id);
+
 
 //borrowed from m2s mem-system
-void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
+void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
