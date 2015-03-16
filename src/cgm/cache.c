@@ -323,6 +323,7 @@ void l1_i_cache_ctrl_0(void){
 		//request from CPU
 		if (message_packet->access_type == cgm_access_fetch)
 		{
+			//test
 
 			//stats
 			l1_i_caches[0].fetches++;
