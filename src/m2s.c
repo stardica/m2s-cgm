@@ -1457,7 +1457,7 @@ void sim_end(void){
 	cgm_dump_summary();
 	fflush(stderr);
 	fflush(stdout);
-	m2s_dump_summary(stderr);
+	//m2s_dump_summary(stderr);
 
 
 

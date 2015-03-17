@@ -101,17 +101,22 @@ struct cache_t{
 
 };
 
+long long wire_delay;
+
+
 extern int QueueSize;
+
+extern int *l1_i_caches_data;
+extern int *l1_d_caches_data;
+extern int *l2_caches_data;
+extern int *l3_caches_data;
+
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
 extern struct cache_t *l2_caches;
 extern struct cache_t *l3_caches;
-/*extern struct cache_t *l3_s0_cache;
-extern struct cache_t *l3_s1_cache;
-extern struct cache_t *l3_s2_cache;
-extern struct cache_t *l3_s3_cache;*/
 
 //GPU caches
 extern struct cache_t *l1_v_caches;
@@ -120,18 +125,18 @@ extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *lds_units;
 
 //event counts
-extern eventcount volatile *l1_i_cache_0;
-extern eventcount volatile *l1_i_cache_1;
-extern eventcount volatile *l1_i_cache_2;
-extern eventcount volatile *l1_i_cache_3;
-extern eventcount volatile *l1_d_cache_0;
-extern eventcount volatile *l1_d_cache_1;
-extern eventcount volatile *l1_d_cache_2;
-extern eventcount volatile *l1_d_cache_3;
-extern eventcount volatile *l2_cache_0;
-extern eventcount volatile *l2_cache_1;
-extern eventcount volatile *l2_cache_2;
-extern eventcount volatile *l2_cache_3;
+extern eventcount volatile *l1_i_cache;
+//extern eventcount volatile *l1_i_cache_1;
+//extern eventcount volatile *l1_i_cache_2;
+//extern eventcount volatile *l1_i_cache_3;
+extern eventcount volatile *l1_d_cache;
+//extern eventcount volatile *l1_d_cache_1;
+//extern eventcount volatile *l1_d_cache_2;
+//extern eventcount volatile *l1_d_cache_3;
+extern eventcount volatile *l2_cache;
+//extern eventcount volatile *l2_cache_1;
+//extern eventcount volatile *l2_cache_2;
+//extern eventcount volatile *l2_cache_3;
 
 
 //function prototypes
@@ -154,20 +159,20 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 
 //tasks
-void l1_i_cache_ctrl_0(void);
-void l1_i_cache_ctrl_1(void);
-void l1_i_cache_ctrl_2(void);
-void l1_i_cache_ctrl_3(void);
+void l1_i_cache_ctrl(void);
+//void l1_i_cache_ctrl_1(void);
+//void l1_i_cache_ctrl_2(void);
+//void l1_i_cache_ctrl_3(void);
 
-void l1_d_cache_ctrl_0(void);
-void l1_d_cache_ctrl_1(void);
-void l1_d_cache_ctrl_2(void);
-void l1_d_cache_ctrl_3(void);
+void l1_d_cache_ctrl(void);
+//void l1_d_cache_ctrl_1(void);
+//void l1_d_cache_ctrl_2(void);
+//void l1_d_cache_ctrl_3(void);
 
-void l2_cache_ctrl_0(void);
-void l2_cache_ctrl_1(void);
-void l2_cache_ctrl_2(void);
-void l2_cache_ctrl_3(void);
+void l2_cache_ctrl(void);
+//void l2_cache_ctrl_1(void);
+//void l2_cache_ctrl_2(void);
+//void l2_cache_ctrl_3(void);
 
 
 //statistics

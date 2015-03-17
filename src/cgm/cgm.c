@@ -37,10 +37,6 @@ char *cgm_config_file_name_and_path;
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 
-
-/*FILE *fetch_trace;
-FILE *issue_trace;*/
-
 void cgm_init(void){
 
 	//star todo add error checking.
@@ -50,11 +46,6 @@ void cgm_init(void){
 	//init memory system structures
 	cache_init();
 	memctrl_init();
-
-
-	/*fetch_trace = fopen("/home/stardica/Desktop/log/fetch_trace", "w");
-	issue_trace = fopen("/home/stardica/Desktop/log/issue_trace", "w");*/
-
 
 	return;
 }
@@ -85,7 +76,6 @@ void cgm_create_tasks(void){
 	snprintf(buff, 100, "sim_finish");
 	sim_finish = new_eventcount(strdup(buff));
 
-
 	//tasks
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "cpu_gpu_run");
@@ -96,6 +86,7 @@ void cgm_create_tasks(void){
 	create_task(cgm_start, DEFAULT_STACK_SIZE, strdup(buff));
 
 	//create the task for future advance.
+	//this is specific to future_advance()
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "Wakeupcall");
 	wakeup_task = create_task(wakeupcall, DEFAULT_STACK_SIZE, strdup(buff));
@@ -240,6 +231,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	thread = self;
 	char buff[100];
 	fetch_access_id++;
+	int num_cores = x86_cpu_num_cores;
+	enum cgm_access_kind_t access_kind = cgm_access_fetch;
+	int id = 0;
 
 
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
@@ -248,7 +242,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	//(1)
 	struct cgm_packet_status_t *new_packet_status = status_packet_create();
-	new_packet_status->access_type = cgm_access_fetch;
+	new_packet_status->access_type = access_kind;
 	new_packet_status->access_id = fetch_access_id;
 	new_packet_status->address = addr;
 	new_packet_status->in_flight = 1;
@@ -258,36 +252,31 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	//(2)
 	struct cgm_packet_t *new_packet = packet_create();
-	new_packet->access_type = cgm_access_fetch;
+	new_packet->access_type = access_kind;
 	new_packet->access_id = fetch_access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
 	new_packet->name = strdup(buff);
 
-	//add (2) to i cache rx queue
-	if(thread->core->id == 0)
+	//Add (2) to the target L1 I Cache Rx Queue
+	if(access_kind == cgm_access_fetch)
 	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-		advance(l1_i_cache_0);
-	}
-	else if (thread->core->id == 1)
-	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-		advance(l1_i_cache_1);
-	}
-	else if (thread->core->id == 2)
-	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-		advance(l1_i_cache_2);
-	}
-	else if (thread->core->id == 3)
-	{
-		list_enqueue(thread->i_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-		advance(l1_i_cache_3);
+		//get the core ID number should be <= number of cores
+		id = thread->core->id;
+		assert(id <= num_cores);
+
+		//set flag on target L1 I Cache
+		l1_i_caches_data[id]++;
+
+		//Drop the packet into the L1 I Cache Rx queue
+		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
+
+		//advance the L1 I Cache Ctrl task
+		advance(l1_i_cache);
 	}
 	else
 	{
-		fatal("cgm_fetch_access() current version only supports up to 4 cores.\n");
+		fatal("cgm_fetch_access() unsupported access type\n");
 	}
 
 	//leave this for testing.
@@ -304,6 +293,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	thread = self;
 	char buff[100];
 	fetch_access_id++;
+	int num_cores = x86_cpu_num_cores;
+	int id = 0;
 
 	//build one packet to pass through the memory system
 	memset(buff, '\0', 100);
@@ -319,16 +310,24 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->name = strdup(buff);
 
 
-	//for memory system load store request
+	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 
-		if(thread->core->id == 0)
-		{
-			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-			advance(l1_d_cache_0);
-		}
-		else if (thread->core->id == 1)
+		//get the core ID number should be <= number of cores
+		id = thread->core->id;
+		assert(id <= num_cores);
+
+		//set flag on target L1 D Cache
+		l1_d_caches_data[id]++;
+
+		//Drop the packet into the L1 D Cache Rx queue
+		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
+
+		//advance the L1 C Cache Ctrl task
+		advance(l1_d_cache);
+
+		/*else if (thread->core->id == 1)
 		{
 			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 			advance(l1_d_cache_1);
@@ -342,17 +341,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		{
 			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
 			advance(l1_d_cache_3);
-		}
-		else
-		{
-			fatal("Current version of CGM only supports up to 4 cores.\n");
-		}
-
+		}*/
 	}
-	/*else if ()
-	{
-		linked_list_add(new_packet->event_queue, new_packet->data);
-	}*/
 	else if(access_kind == cgm_access_prefetch)
 	{
 		fatal("cgm_issue_lspq_access() type cgm_access_prefetch currently not implemented\n");

@@ -27,8 +27,6 @@ extern int cgmmem_check_config;
 int cgm_mem_configure(void);
 int cgm_cpu_configure(void);
 int cgm_gpu_configure(void);
-
-
 int cache_read_config(void* user, const char* section, const char* name, const char* value);
 int cache_finish_create(void);
 
@@ -39,6 +37,7 @@ int gpu_configure(Timing *self, struct config_t *config);
 
 int check_config(void* user, const char* section, const char* name, const char* value);
 int queue_config(void* user, const char* section, const char* name, const char* value);
+int switch_config(void* user, const char* section, const char* name, const char* value);
 int sysagent_config(void* user, const char* section, const char* name, const char* value);
 int memctrl_config(void* user, const char* section, const char* name, const char* value);
 void print_config(void);
