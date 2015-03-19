@@ -37,14 +37,16 @@ enum cgm_access_kind_t
 
 extern long long fetch_access_id;
 extern long long lspq_access_id;
+
 extern char *cgm_config_file_name_and_path;
+
 extern struct list_t *cgm_access_record;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 
-/*extern FILE *fetch_trace;
-extern FILE *issue_trace;*/
+//stat files
+extern FILE *cgm_stats;
 
 //function prototypes
 void cgm_init(void);

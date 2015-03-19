@@ -13,7 +13,7 @@
 #include <cgm/tasking.h>
 #include <lib/util/string.h>
 
-//star todo add mshr, prefetching, and coalescing
+//star todo prefetching, and coalescing
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 
@@ -75,12 +75,9 @@ struct cache_t{
 	unsigned int block_size;
 	unsigned int assoc;
 	unsigned int num_ports;
-
 	//enum cache_policy_t policy;
 	const char *policy;
-	unsigned int latency;
 	unsigned int mshr_size;
-	unsigned int directory_latency;
 
 	//cache data
 	struct cache_set_t *sets;
@@ -92,6 +89,11 @@ struct cache_t{
 	struct list_t *Rx_queue_bottom;
 	struct list_t *mshr;
 
+	//physical characteristics
+	unsigned int latency;
+	unsigned int wire_latency;
+	unsigned int directory_latency;
+
 	//statistics
 	long long fetches;
 	long long loads;
@@ -102,14 +104,10 @@ struct cache_t{
 };
 
 long long wire_delay;
+int mem_miss;
 
 
 extern int QueueSize;
-
-extern int *l1_i_caches_data;
-extern int *l1_d_caches_data;
-extern int *l2_caches_data;
-extern int *l3_caches_data;
 
 
 //CPU caches
@@ -117,6 +115,12 @@ extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
 extern struct cache_t *l2_caches;
 extern struct cache_t *l3_caches;
+
+//CPU cache flags
+extern int *l1_i_caches_data;
+extern int *l1_d_caches_data;
+extern int *l2_caches_data;
+extern int *l3_caches_data;
 
 //GPU caches
 extern struct cache_t *l1_v_caches;
@@ -126,17 +130,8 @@ extern struct cache_t *lds_units;
 
 //event counts
 extern eventcount volatile *l1_i_cache;
-//extern eventcount volatile *l1_i_cache_1;
-//extern eventcount volatile *l1_i_cache_2;
-//extern eventcount volatile *l1_i_cache_3;
 extern eventcount volatile *l1_d_cache;
-//extern eventcount volatile *l1_d_cache_1;
-//extern eventcount volatile *l1_d_cache_2;
-//extern eventcount volatile *l1_d_cache_3;
 extern eventcount volatile *l2_cache;
-//extern eventcount volatile *l2_cache_1;
-//extern eventcount volatile *l2_cache_2;
-//extern eventcount volatile *l2_cache_3;
 
 
 //function prototypes
@@ -160,23 +155,8 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 //tasks
 void l1_i_cache_ctrl(void);
-//void l1_i_cache_ctrl_1(void);
-//void l1_i_cache_ctrl_2(void);
-//void l1_i_cache_ctrl_3(void);
-
 void l1_d_cache_ctrl(void);
-//void l1_d_cache_ctrl_1(void);
-//void l1_d_cache_ctrl_2(void);
-//void l1_d_cache_ctrl_3(void);
-
 void l2_cache_ctrl(void);
-//void l2_cache_ctrl_1(void);
-//void l2_cache_ctrl_2(void);
-//void l2_cache_ctrl_3(void);
-
-
-//statistics
-//caches
 
 
 #endif /*CACHE_H_*/

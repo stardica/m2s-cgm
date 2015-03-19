@@ -8,7 +8,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <cgm/mem-ctrl.h>
-#include <cgm/queue.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 

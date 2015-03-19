@@ -1437,9 +1437,6 @@ void sim_end(void){
 
 	//printf("etime.count %lld\n", etime.count);
 
-	printf("\n---Simulation End (CGM)---\n");
-	fflush(stdout);
-
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */
 	//if (x86_save_checkpoint_file_name[0])
@@ -1455,10 +1452,7 @@ void sim_end(void){
 
 	/* Dump statistics summary */
 	cgm_dump_summary();
-	fflush(stderr);
-	fflush(stdout);
 	//m2s_dump_summary(stderr);
-
 
 
 	/* x86 */
@@ -1484,6 +1478,9 @@ void sim_end(void){
 	trace_done();
 	debug_done();
 	mhandle_done();
+
+	printf("\n---Simulation End---\n");
+	fflush(stdout);
 
 	return;
 }

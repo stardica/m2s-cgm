@@ -3348,7 +3348,6 @@ void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 
 //star >> added inst here
 //D.f = S0.f * S1.f + K; K is a 32-bit inline constant.
-
 #define INST SI_INST_VOP2
 void si_isa_V_MADAK_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
 
@@ -3362,8 +3361,10 @@ void si_isa_V_MADAK_F32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
 	K.as_uint = INST.lit_cnst;
 
+
+	//assert(K.as_uint);
 	/* Calculate the result */
-	dst.as_float = s0.as_float * s1.as_float + K.as_float;
+	dst.as_float = s0.as_float * (s1.as_float + K.as_float);
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, dst.as_uint);

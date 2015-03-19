@@ -19,7 +19,6 @@
 #include <arch/x86/timing/thread.h>
 
 #include <cgm/cgm.h>
-#include <cgm/queue.h>
 #include <cgm/cache.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/configure.h>
@@ -32,6 +31,9 @@ long long fetch_access_id = 0;
 long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
+
+//file for stats
+FILE *cgm_stats;
 
 //globals for tasking
 eventcount volatile *sim_start;
@@ -147,7 +149,6 @@ void cpu_gpu_run(void){
 
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
-	//star todo figure out where to put the mshr check.
 
 	X86Thread *thread;
 	thread = self;
@@ -194,12 +195,8 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
 int cgm_in_flight_access(long long id){
 
-	//star todo need to retire access as they finish.
 	struct cgm_packet_status_t *packet;
-	int count = 0;
-	int index = 0;
 	int i = 0;
-	int b = 0;
 
 	/* Look for access */
 	LIST_FOR_EACH(cgm_access_record, i)
@@ -298,7 +295,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	//build one packet to pass through the memory system
 	memset(buff, '\0', 100);
-	snprintf(buff, 100, "lspq_access.%llu", fetch_access_id);
+	snprintf(buff, 100, "lspq_access.%lld", fetch_access_id);
 
 	struct cgm_packet_t *new_packet = packet_create();
 	new_packet->access_type = access_kind;
@@ -313,7 +310,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
-
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
 		assert(id <= num_cores);
@@ -327,21 +323,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		//advance the L1 C Cache Ctrl task
 		advance(l1_d_cache);
 
-		/*else if (thread->core->id == 1)
-		{
-			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-			advance(l1_d_cache_1);
-		}
-		else if (thread->core->id == 2)
-		{
-			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-			advance(l1_d_cache_2);
-		}
-		else if (thread->core->id == 3)
-		{
-			list_enqueue(thread->d_cache_ptr[thread->core->id].Rx_queue_top, new_packet);
-			advance(l1_d_cache_3);
-		}*/
 	}
 	else if(access_kind == cgm_access_prefetch)
 	{
@@ -354,6 +335,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	//put back on the core event queue to end memory system access.
 	//linked_list_add(new_packet->event_queue, new_packet->data);
+	//free(new_packet);
 
 	return;
 }
@@ -465,8 +447,15 @@ void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_
 
 void cgm_dump_summary(void){
 
+
+	char * output_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_stats.ini";
+	cgm_stats = fopen (output_path, "w+");
+
+	printf("\n---Printing Stats---\n");
+
 	cache_dump_stats();
 
+	fclose (cgm_stats);
 
 	return;
 }

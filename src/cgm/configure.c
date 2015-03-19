@@ -27,7 +27,6 @@
 #include <cgm/configure.h>
 #include <cgm/cgm.h>
 #include <cgm/ini-parse.h>
-#include <cgm/queue.h>
 #include <cgm/cache.h>
 #include <cgm/tasking.h>
 #include <cgm/mem-ctrl.h>
@@ -50,7 +49,6 @@ int cgm_mem_configure(void){
 
 	cache_finish_create();
 
-
 	//configure the memory controller
 	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
 	if (error < 0)
@@ -58,34 +56,6 @@ int cgm_mem_configure(void){
 		printf("Unable to open Config.ini for memctrl configuration.\n");
 		return 1;
 	}
-
-
-
-	//get some host sim configuration stats
-	/*error = ini_parse(HOSTSIMCONFIGPATH, cpu_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for cpu configuration.\n");
-		return 1;
-	}*/
-
-	//get check value
-	/*error = ini_parse(CGMMEMCONFIGPATH, check_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for check configuration.\n");
-		return 1;
-	}*/
-
-	//get queue configuration
-	/*error = ini_parse(CGMMEMCONFIGPATH, queue_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for queue configuration.\n");
-		return 1;
-	}*/
-
-
 
 	//get sysagent configuration
 	/*error = ini_parse(CONFIGPATH, sysagent_config, NULL);
@@ -245,6 +215,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int Ports = 0;
 	int MSHR = 0;
 	int DirectoryLatency = 0;
+	int WireLatency = 0;
 
 
 	/*get max queue size*/
@@ -252,6 +223,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	{
 		QueueSize = atoi(value);
 	}
+
+
+
+	////////////
+	//CPU Caches
+	////////////
 
 	/*configure CPU D caches*/
 	if(MATCH("CPU_L1_D_Cache", "Sets"))
@@ -307,12 +284,22 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			l1_d_caches[i].mshr_size = MSHR;
 		}
 	}
+
 	if(MATCH("CPU_L1_D_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_d_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L1_D_Cache", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].wire_latency = WireLatency;
 		}
 	}
 
@@ -350,8 +337,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].block_size = BlockSize;
-			//printf("block size %d\n", BlockSize);
-			//printf("block size %d\n", l1_d_caches[i].block_size);
 		}
 	}
 
@@ -381,12 +366,22 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			l1_i_caches[i].mshr_size = MSHR;
 		}
 	}
+
 	if(MATCH("CPU_L1_I_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].wire_latency = WireLatency;
 		}
 	}
 
@@ -454,12 +449,22 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			l2_caches[i].mshr_size = MSHR;
 		}
 	}
+
 	if(MATCH("CPU_L2_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
 			l2_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L2_Cache", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].wire_latency = WireLatency;
 		}
 	}
 
@@ -481,7 +486,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->num_sets = Sets;
+			l3_caches[i].num_sets = Sets;
 		}
 	}
 
@@ -490,7 +495,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Assoc = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->assoc = Assoc;
+			l3_caches[i].assoc = Assoc;
 		}
 	}
 
@@ -499,7 +504,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		BlockSize = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->block_size = BlockSize;
+			l3_caches[i].block_size = BlockSize;
 		}
 		/*l3_s0_cache->block_size = BlockSize;
 		l3_s1_cache->block_size = BlockSize;
@@ -512,7 +517,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Latency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->latency = Latency;
+			l3_caches[i].latency = Latency;
 		}
 
 		/*l3_s0_cache->latency = Latency;
@@ -527,7 +532,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->policy = Policy;
+			l3_caches[i].policy = Policy;
 		}
 		/*l3_s0_cache->policy = Policy;
 		l3_s1_cache->policy = Policy;
@@ -542,7 +547,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->mshr_size = MSHR;
+			l3_caches[i].mshr_size = MSHR;
 		}
 
 		/*l3_s0_cache->mshr_size = MSHR;
@@ -557,7 +562,21 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->directory_latency = DirectoryLatency;
+			l3_caches[i].directory_latency = DirectoryLatency;
+		}
+		/*l3_s0_cache->directory_latency = DirectoryLatency;
+		l3_s1_cache->directory_latency = DirectoryLatency;
+		l3_s2_cache->directory_latency = DirectoryLatency;
+		l3_s3_cache->directory_latency = DirectoryLatency;*/
+	}
+
+	if(MATCH("CPU_L3_Cache", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].wire_latency = WireLatency;
 		}
 		/*l3_s0_cache->directory_latency = DirectoryLatency;
 		l3_s1_cache->directory_latency = DirectoryLatency;
@@ -571,7 +590,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches->num_ports = Ports;
+			l3_caches[i].num_ports = Ports;
 		}
 		/*l3_s0_cache->num_ports = Ports;
 		l3_s1_cache->num_ports = Ports;
@@ -579,6 +598,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		l3_s3_cache->num_ports = Ports;*/
 	}
 
+
+
+	////////////
+	//GPU Caches
+	////////////
 
 	/*configure GPU V caches*/
 	if(MATCH("GPU_V_Cache", "Sets"))
@@ -733,7 +757,6 @@ int cache_finish_create(){
 	char buff[100];
 
 
-	//set log_block_size and block_mask
 	for(i = 0; i < num_cores ; i++ )
 	{
 		l1_i_caches[i].id = i;
@@ -825,7 +848,6 @@ int cache_finish_create(){
 		l2_caches[i].mshr->name = strdup(buff);
 
 
-		//for a single l3 cache
 		l3_caches[i].id = 1;
 		l3_caches[i].log_block_size = LOG2(l3_caches[i].block_size);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
@@ -932,35 +954,6 @@ int cache_finish_create(){
 
 	return 0;
 }
-
-int check_config(void* user, const char* section, const char* name, const char* value){
-
-	if(MATCH("Check", "Check"))
-	{
-		//temp->size = atoi(value);
-		cgmmem_check_config = atoi(value);
-
-	}
-
-	return 0;
-}
-
-
-int queue_config(void* user, const char* section, const char* name, const char* value){
-
-	//this is used if you want to store the ini values in our configuration struct.
-	//struct queue_config_t *temp = (struct queue_config_t *)user;
-
-	if(MATCH("Queue", "Size"))
-	{
-		//temp->size = atoi(value);
-		queue_size = atoi(value);
-
-	}
-
-	return 0;
-}
-
 
 
 int sysagent_config(void* user, const char* section, const char* name, const char* value){
