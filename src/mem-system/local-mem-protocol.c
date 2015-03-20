@@ -59,11 +59,8 @@ void mod_handler_local_mem_load(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("  %lld %lld 0x%x %s load\n", esim_time, stack->id,
-			stack->addr, mod->name);
-		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" "
-			"state=\"%s:load\" addr=0x%x\n",
-			stack->id, mod->name, stack->addr);
+		mem_debug("  %lld %lld 0x%x %s load\n", esim_time, stack->id, stack->addr, mod->name);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" state=\"%s:load\" addr=0x%x\n", stack->id, mod->name, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_load);

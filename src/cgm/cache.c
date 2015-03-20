@@ -67,16 +67,26 @@ int *l3_caches_data;
 
 
 //GPU caches
-struct cache_t *l1_v_caches;
-struct cache_t *l1_s_caches;
+struct cache_t *gpu_v_caches;
+struct cache_t *gpu_s_caches;
 struct cache_t *gpu_l2_caches;
-struct cache_t *lds_units;
+struct cache_t *gpu_lds_units;
+//GPU cache flags
+int *gpu_l2_caches_data;
+int *gpu_v_caches_data;
+int *gpu_s_caches_data;
+int *gpu_lds_units_data;
+
 
 //event counts
 eventcount volatile *l1_i_cache;
 eventcount volatile *l1_d_cache;
 eventcount volatile *l2_cache;
-
+eventcount volatile *l3_cache;
+eventcount volatile *gpu_l2_cache;
+eventcount volatile *gpu_v_cache;
+eventcount volatile *gpu_s_cache;
+eventcount volatile *gpu_lds_unit;
 
 
 void cache_init(void){
@@ -93,7 +103,7 @@ void cache_create(void){
 	//star todo make defaults so we don't always have to include cgm_config.ini
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = num_cus/4;
+	int gpu_group_cache_num = (num_cus/4);
 
 
 	////////////
@@ -122,17 +132,22 @@ void cache_create(void){
 	//GPU Caches
 	////////////
 
+
 	//initialize the GPU L1V caches
-	l1_v_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_v_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_v_caches_data = (void *) calloc(num_cus, sizeof(int));
 
 	//initialize the GPU L1S caches
-	l1_s_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_s_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_s_caches_data = (void *) calloc(num_cus, sizeof(int));
 
 	//initialize the GPU L2 caches.
 	gpu_l2_caches = (void *) calloc(gpu_group_cache_num, sizeof(struct cache_t));
+	gpu_l2_caches_data = (void *) calloc(gpu_group_cache_num, sizeof(int));
 
 	//initialize the GPU LDS
-	lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_lds_units_data = (void *) calloc(num_cus, sizeof(int));
 
 	return ;
 }
@@ -163,6 +178,30 @@ void cache_create_tasks(void){
 	snprintf(buff, 100, "l2_cache");
 	l2_cache = new_eventcount(strdup(buff));
 
+	//l3 caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l3_cache");
+	l3_cache = new_eventcount(strdup(buff));
+
+	//GPU L2
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_l2_cache");
+	gpu_l2_cache = new_eventcount(strdup(buff));
+
+	//GPU vector
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_v_cache");
+	gpu_v_cache = new_eventcount(strdup(buff));
+
+	//GPU scalar
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_s_cache");
+	gpu_s_cache = new_eventcount(strdup(buff));
+
+	//GPU scalar
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_lds_unit");
+	gpu_lds_unit = new_eventcount(strdup(buff));
 
 	////////////////////
 	//tasks
@@ -176,14 +215,135 @@ void cache_create_tasks(void){
 
 	//l1 d caches
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "l1_d_cache_ctrl_0");
+	snprintf(buff, 100, "l1_d_cache_ctrl");
 	create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
-
+	//l2 caches
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "l2_cache_ctrl_0");
+	snprintf(buff, 100, "l2_cache_ctrl");
 	create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
+	//l3 caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "l3_cache_ctrl");
+	create_task(l3_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	//gpu l2 caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_l2_cache_ctrl");
+	create_task(gpu_l2_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	//gpu v caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_v_cache_ctrl");
+	create_task(gpu_v_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	//gpu s caches
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_s_cache_ctrl");
+	create_task(gpu_s_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	//gpu lds unit
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "gpu_lds_unit_ctrl");
+	create_task(gpu_lds_unit_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	return;
+}
+
+void gpu_lds_unit_ctrl(void){
+
+	long long step = 1;
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_lds_unit, step);
+		step++;
+
+	}
+
+	/* should never get here*/
+	fatal("gpu_lds_unit_ctrl task is broken\n");
+	return;
+}
+
+void gpu_s_cache_ctrl(void){
+
+	long long step = 1;
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_s_cache, step);
+		step++;
+
+	}
+
+	/* should never get here*/
+	fatal("gpu_s_cache_ctrl task is broken\n");
+	return;
+}
+
+
+void gpu_v_cache_ctrl(void){
+
+	long long step = 1;
+
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_v_cache, step);
+		step++;
+	}
+
+	/* should never get here*/
+	fatal("gpu_v_cache_ctrl task is broken\n");
+	return;
+}
+
+
+void gpu_l2_cache_ctrl(void){
+
+	long long step = 1;
+
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_l2_cache, step);
+		step++;
+
+	}
+
+	/* should never get here*/
+	fatal("gpu_l2_cache_ctrl task is broken\n");
+	return;
+
+}
+
+
+void l3_cache_ctrl(void){
+
+	long long step = 1;
+
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(l3_cache, step);
+		step++;
+
+	}
+
+	/* should never get here*/
+	fatal("l3_cache_ctrl task is broken\n");
 	return;
 }
 
@@ -336,7 +496,7 @@ void l1_i_cache_ctrl(void){
 	}
 
 	/* should never get here*/
-	fatal("l1_i_cache_ctrl_0 task is broken\n");
+	fatal("l1_i_cache_ctrl task is broken\n");
 	return;
 }
 
@@ -553,7 +713,7 @@ void l2_cache_ctrl(void){
 
 	}
 	/* should never get here*/
-	fatal("l2_cache_ctrl_0 task is broken\n");
+	fatal("l2_cache_ctrl task is broken\n");
 	return;
 }
 
@@ -763,10 +923,9 @@ void l1_d_cache_ctrl(void){
 	}
 
 	//should never get here
-	fatal("l1_d_cache_ctrl_0 task is broken\n");
+	fatal("l1_d_cache_ctrl task is broken\n");
 	return;
 }
-
 
 
 

@@ -61,6 +61,10 @@ struct cache_set_t{
 	struct cache_block_t *way_head;
 	struct cache_block_t *way_tail;
 	struct cache_block_t *blocks;
+
+	//directory
+	unsigned int *state;
+
 };
 
 
@@ -71,6 +75,7 @@ struct cache_t{
 	int id;
 
 	//cache configuration settings
+	unsigned int num_slices;
 	unsigned int num_sets;
 	unsigned int block_size;
 	unsigned int assoc;
@@ -93,6 +98,9 @@ struct cache_t{
 	unsigned int latency;
 	unsigned int wire_latency;
 	unsigned int directory_latency;
+
+	//directory bit vectors for coherence
+	unsigned int dir_latency;
 
 	//statistics
 	long long fetches;
@@ -123,16 +131,25 @@ extern int *l2_caches_data;
 extern int *l3_caches_data;
 
 //GPU caches
-extern struct cache_t *l1_v_caches;
-extern struct cache_t *l1_s_caches;
+extern struct cache_t *gpu_v_caches;
+extern struct cache_t *gpu_s_caches;
 extern struct cache_t *gpu_l2_caches;
-extern struct cache_t *lds_units;
+extern struct cache_t *gpu_lds_units;
+extern int *gpu_l2_caches_data;
+extern int *gpu_v_caches_data;
+extern int *gpu_s_caches_data;
+extern int *gpu_lds_units_data;
 
 //event counts
 extern eventcount volatile *l1_i_cache;
 extern eventcount volatile *l1_d_cache;
 extern eventcount volatile *l2_cache;
+extern eventcount volatile *l3_cache;
 
+extern eventcount volatile *gpu_l2_cache;
+extern eventcount volatile *gpu_v_cache;
+extern eventcount volatile *gpu_s_cache;
+extern eventcount volatile *gpu_lds_unit;
 
 //function prototypes
 void cache_init(void);
@@ -140,6 +157,7 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 int mshr_remove(struct cache_t *cache, long long access_id);
+void directory_init(void);
 
 
 //borrowed from m2s mem-system
@@ -157,6 +175,12 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
+void l3_cache_ctrl(void);
+void gpu_s_cache_ctrl(void);
+void gpu_v_cache_ctrl(void);
+void gpu_l2_cache_ctrl(void);
+void gpu_lds_cache_ctrl(void);
+void gpu_lds_unit_ctrl(void);
 
 
 #endif /*CACHE_H_*/

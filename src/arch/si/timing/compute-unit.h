@@ -25,6 +25,8 @@
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/vector-mem-unit.h>
 
+#include <cgm/cache.h>
+
 
 struct si_reg_file_t;
 
@@ -48,7 +50,9 @@ struct si_compute_unit_t
 	long long uop_id_counter;
 
 	//star >> added entry to cgm memory hierarchy
-	struct mem_ctrl_t *mem_ctrl_ptr;
+	struct cache_t *gpu_v_cache_ptr;
+	struct cache_t *gpu_s_cache_ptr;
+	struct cache_t *gpu_lds_cache_ptr;
 
 	/* Entry points to m2s memory hierarchy */
 	struct mod_t *scalar_cache;

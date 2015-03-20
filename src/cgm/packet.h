@@ -23,7 +23,6 @@ extern struct cgm_packet_t{
 	int tag;
 	int in_flight;
 
-
 	int c_load;
 	int c_store;
 	int nc_load;
@@ -33,7 +32,11 @@ extern struct cgm_packet_t{
 	struct linked_list_t *event_queue;
 	int *witness_ptr;
 
+	char *src_name;
+	char *dest_name;
+
 };
+
 
 extern struct cgm_packet_status_t{
 

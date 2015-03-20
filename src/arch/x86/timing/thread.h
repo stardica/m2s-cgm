@@ -90,7 +90,6 @@ CLASS_BEGIN(X86Thread, Object)
 
 	/* Entries to the memory system */
 	//star entries for cgm
-	//star todo change this when we add in the caches.
 	struct cache_t *i_cache_ptr;
 	struct cache_t *d_cache_ptr;
 
