@@ -52,7 +52,7 @@ struct si_compute_unit_t
 	//star >> added entry to cgm memory hierarchy
 	struct cache_t *gpu_v_cache_ptr;
 	struct cache_t *gpu_s_cache_ptr;
-	struct cache_t *gpu_lds_cache_ptr;
+	struct cache_t *gpu_lds_unit_ptr;
 
 	/* Entry points to m2s memory hierarchy */
 	struct mod_t *scalar_cache;

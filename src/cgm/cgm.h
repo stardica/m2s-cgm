@@ -13,6 +13,9 @@
 #include <lib/util/misc.h>
 
 #include <arch/x86/timing/thread.h>
+#include <arch/si/timing/vector-mem-unit.h>
+#include <arch/si/timing/scalar-unit.h>
+#include <arch/si/timing/lds-unit.h>
 
 #include <cgm/tasking.h>
 #include <cgm/cache.h>
@@ -64,9 +67,10 @@ int cgm_in_flight_access(long long id);
 long long cgm_fetch_access(X86Thread *self, unsigned int addr);
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 
-//void cgm_scalar_access(struct list_t *s_cache_ptr, request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
-//void cgm_vector_access(struct list_t *v_cache_ptr, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
-//void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+
 int remove_from_global(long long id);
 
 #endif /* CGM_H_ */

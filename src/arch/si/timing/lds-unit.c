@@ -153,7 +153,8 @@ void si_lds_mem(struct si_lds_t *lds)
 	int instructions_processed = 0;
 	int list_entries;
 	int i, j;
-	enum mod_access_kind_t access_type;
+	enum mod_access_kind_t access_type_m2s;
+	enum cgm_access_kind_t access_type;
 	int list_index = 0;
 
 	list_entries = list_count(lds->read_buffer);
@@ -220,14 +221,14 @@ void si_lds_mem(struct si_lds_t *lds)
 				else{fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);}
 
 #else
-				if (work_item->lds_access_type[j] == 1){access_type = mod_access_load;}
-				else if (work_item->lds_access_type[j] == 2){access_type = mod_access_store;}
+				if (work_item->lds_access_type[j] == 1){access_type_m2s = mod_access_load;}
+				else if (work_item->lds_access_type[j] == 2){access_type_m2s = mod_access_store;}
 				else{fatal("%s: invalid lds access type (%d)", __FUNCTION__, work_item->lds_access_type[j]);}
 #endif
 
 				uop->lds_witness--;
 #if CGM
-				//cgm_lds_access(lds->compute_unit->mem_ctrl_ptr, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
+				cgm_lds_access(lds, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
 #else
 				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);
 #endif

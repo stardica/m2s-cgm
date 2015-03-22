@@ -168,7 +168,8 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 	int instructions_processed = 0;
 	int list_entries;
 	int i;
-	enum mod_access_kind_t access_kind;
+	enum mod_access_kind_t access_kind_m2s;
+	enum cgm_access_kind_t access_kind;
 	int list_index = 0;
 
 	list_entries = list_count(vector_mem->read_buffer);
@@ -226,11 +227,11 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			access_kind = cgm_access_load;
 #else
 		if (uop->vector_mem_write && !uop->glc)
-			access_kind = mod_access_nc_store;
+			access_kind_m2s = mod_access_nc_store;
 		else if (uop->vector_mem_write && uop->glc)
-			access_kind = mod_access_store;
+			access_kind_m2s = mod_access_store;
 		else if (uop->vector_mem_read)
-			access_kind = mod_access_load;
+			access_kind_m2s = mod_access_load;
 #endif
 		else 
 			fatal("%s: invalid access kind", __FUNCTION__);
@@ -245,9 +246,9 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			uop->global_mem_witness--;
 
 #if CGM
-		//cgm_vector_access(vector_mem->compute_unit->mem_ctrl_ptr, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
+		cgm_vector_access(vector_mem, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
-		mod_access(vector_mem->compute_unit->vector_cache, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
+		mod_access(vector_mem->compute_unit->vector_cache, access_kind_m2s, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 #endif
 
 

@@ -254,16 +254,81 @@ void cache_create_tasks(void){
 void gpu_lds_unit_ctrl(void){
 
 	long long step = 1;
+	int list_index = 0;
+	int num_cus = si_gpu_num_compute_units;
+	struct cgm_packet_t *message_packet;
+	int id = 0;
+
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	//int way = 0;
+	//int state = 0;
+	//int cache_status;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	//int *way_ptr = &way;
+	//int *state_ptr = &state;
 
 	while(1)
 	{
 		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
+		In any given cycle I might have to service 1 to N number of units*/
 		await(gpu_lds_unit, step);
 		step++;
 
-	}
+		//set id to 0
+		id = 0;
 
+		while (id < num_cus)
+		{
+
+			if(gpu_lds_units_data[id] > 0)
+			{//then there is a task to be done in this unit.
+
+				//decrement the counter
+				gpu_lds_units_data[id]--;
+
+				//get the message out of the unit's queue
+				message_packet = list_get(gpu_lds_units[id].Rx_queue_top, list_index);
+				assert(message_packet);
+
+				access_type = message_packet->access_type;
+				access_id = message_packet->access_id;
+				addr = message_packet->address;
+
+				//probe the address for set, tag, and offset.
+				cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+
+				//for now treat the LDS unit as a register and charge a small amount of cycles for it's access.
+				//star todo figure out what to do with this.
+				if(access_type == cgm_access_load || access_type == cgm_access_store)
+				{//then the packet is from the L2 cache
+
+					//delay two cycles
+					P_PAUSE(etime.count + 2);
+
+					//clear the gpu uop witness_ptr
+					(*message_packet->witness_ptr)++;
+
+				}
+				else
+				{
+					fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
+				}
+
+			}
+
+			//go to the next lds unit
+			id++;
+		}
+
+	}
 	/* should never get here*/
 	fatal("gpu_lds_unit_ctrl task is broken\n");
 	return;
@@ -481,7 +546,6 @@ void l1_i_cache_ctrl(void){
 					//remove from the access tracker, this is a simulator-ism.
 					remove_from_global(access_id);
 
-					continue;
 				}
 				else
 				{

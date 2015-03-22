@@ -193,7 +193,7 @@ int gpu_configure(Timing *self, struct config_t *config){
 		compute_unit = si_gpu->compute_units[i];
 		compute_unit->gpu_v_cache_ptr = gpu_v_caches;
 		compute_unit->gpu_s_cache_ptr = gpu_s_caches;
-		compute_unit->gpu_lds_cache_ptr = gpu_lds_units;
+		compute_unit->gpu_lds_unit_ptr = gpu_lds_units;
 	}
 
 	/*if(MSG==1)
@@ -705,12 +705,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	}
 
 	/*configure GPU LDS units*/
-	/*if(MATCH("GPU_LDS", "BlockSize"))
+	if(MATCH("GPU_LDS", "BlockSize"))
 	{
 		BlockSize = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			lds_units[i].block_size = BlockSize;
+			gpu_lds_units[i].block_size = BlockSize;
 		}
 	}
 
@@ -719,7 +719,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Latency = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			lds_units[i].latency = Latency;
+			gpu_lds_units[i].latency = Latency;
 		}
 	}
 
@@ -728,9 +728,9 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		Ports = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			lds_units[i].num_ports = Ports;
+			gpu_lds_units[i].num_ports = Ports;
 		}
-	}*/
+	}
 
 	return 0;
 }
@@ -746,6 +746,7 @@ int cache_finish_create(){
 	char buff[100];
 
 
+	//finish creating the CPU caches
 	for(i = 0; i < num_cores ; i++ )
 	{
 		l1_i_caches[i].id = i;
@@ -940,7 +941,7 @@ int cache_finish_create(){
 
 
 		//Initialize directory
-		if(l1_i_caches[i].directory_latency)
+		/*if(l1_i_caches[i].directory_latency)
 		{
 			fatal("Setting up dir for l1_i_caches\n");
 		}
@@ -959,12 +960,211 @@ int cache_finish_create(){
 
 			}
 
-		}
-
-
+		}*/
 
 	}
 
+
+	//finish creating the GPU caches
+	for(i = 0 ; i < num_cus; i++)
+	{
+
+		//vector caches
+		gpu_v_caches[i].id = i;
+		gpu_v_caches[i].log_block_size = LOG2(gpu_v_caches[i].block_size);
+		gpu_v_caches[i].block_mask = gpu_v_caches[i].block_size - 1;
+		gpu_v_caches[i].hits = 0;
+		gpu_v_caches[i].misses = 0;
+		//gpu_v_caches[i].fetches = 0;
+		gpu_v_caches[i].Rx_queue_top = list_create();
+		gpu_v_caches[i].Rx_queue_bottom = list_create();
+		gpu_v_caches[i].mshr = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d]", i);
+		gpu_v_caches[i].name = strdup(buff);
+
+		//set rx queue names
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].Rx_queue_top", i);
+		gpu_v_caches[i].Rx_queue_top->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].Rx_queue_bottom", i);
+		gpu_v_caches[i].Rx_queue_bottom->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].mshr", i);
+		gpu_v_caches[i].mshr->name = strdup(buff);
+
+
+		//scalar caches
+		gpu_s_caches[i].id = i;
+		gpu_s_caches[i].log_block_size = LOG2(gpu_s_caches[i].block_size);
+		gpu_s_caches[i].block_mask = gpu_s_caches[i].block_size - 1;
+		gpu_s_caches[i].hits = 0;
+		gpu_s_caches[i].misses = 0;
+		//gpu_v_caches[i].fetches = 0;
+		gpu_s_caches[i].Rx_queue_top = list_create();
+		gpu_s_caches[i].Rx_queue_bottom = list_create();
+		gpu_s_caches[i].mshr = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d]", i);
+		gpu_s_caches[i].name = strdup(buff);
+
+		//set rx queue names
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].Rx_queue_top", i);
+		gpu_s_caches[i].Rx_queue_top->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].Rx_queue_bottom", i);
+		gpu_s_caches[i].Rx_queue_bottom->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].mshr", i);
+		gpu_s_caches[i].mshr->name = strdup(buff);
+
+
+		//LDS caches
+		gpu_lds_units[i].id = i;
+		gpu_lds_units[i].log_block_size = LOG2(gpu_lds_units[i].block_size);
+		gpu_lds_units[i].block_mask = gpu_lds_units[i].block_size - 1;
+		gpu_lds_units[i].hits = 0;
+		gpu_lds_units[i].misses = 0;
+		//gpu_v_caches[i].fetches = 0;
+		gpu_lds_units[i].Rx_queue_top = list_create();
+		gpu_lds_units[i].Rx_queue_bottom = list_create();
+		gpu_lds_units[i].mshr = list_create();
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_lds_units[%d]", i);
+		gpu_lds_units[i].name = strdup(buff);
+
+		//set rx queue names
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_top", i);
+		gpu_lds_units[i].Rx_queue_top->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_bottom", i);
+		gpu_lds_units[i].Rx_queue_bottom->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_lds_units[%d].mshr", i);
+		gpu_lds_units[i].mshr->name = strdup(buff);
+
+
+		//Initialize array of sets
+		gpu_v_caches[i].sets = calloc(gpu_v_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < gpu_v_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			gpu_v_caches[i].sets[set].id = set;
+			gpu_v_caches[i].sets[set].blocks = calloc(gpu_v_caches[i].assoc, sizeof(struct cache_block_t));
+			gpu_v_caches[i].sets[set].way_head = &gpu_v_caches[i].sets[set].blocks[0];
+			gpu_v_caches[i].sets[set].way_tail = &gpu_v_caches[i].sets[set].blocks[gpu_v_caches[i].assoc - 1];
+			for (way = 0; way < gpu_v_caches[i].assoc; way++)
+			{
+				block = &gpu_v_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &gpu_v_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < gpu_v_caches[i].assoc - 1 ? &gpu_v_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}
+
+		gpu_s_caches[i].sets = calloc(gpu_s_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < gpu_s_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			gpu_s_caches[i].sets[set].id = set;
+			gpu_s_caches[i].sets[set].blocks = calloc(gpu_s_caches[i].assoc, sizeof(struct cache_block_t));
+			gpu_s_caches[i].sets[set].way_head = &gpu_s_caches[i].sets[set].blocks[0];
+			gpu_s_caches[i].sets[set].way_tail = &gpu_s_caches[i].sets[set].blocks[gpu_s_caches[i].assoc - 1];
+			for (way = 0; way < gpu_s_caches[i].assoc; way++)
+			{
+				block = &gpu_s_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &gpu_s_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < gpu_s_caches[i].assoc - 1 ? &gpu_s_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}
+
+
+		gpu_s_caches[i].sets = calloc(gpu_s_caches[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < gpu_s_caches[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			gpu_s_caches[i].sets[set].id = set;
+			gpu_s_caches[i].sets[set].blocks = calloc(gpu_s_caches[i].assoc, sizeof(struct cache_block_t));
+			gpu_s_caches[i].sets[set].way_head = &gpu_s_caches[i].sets[set].blocks[0];
+			gpu_s_caches[i].sets[set].way_tail = &gpu_s_caches[i].sets[set].blocks[gpu_s_caches[i].assoc - 1];
+			for (way = 0; way < gpu_s_caches[i].assoc; way++)
+			{
+				block = &gpu_s_caches[i].sets[set].blocks[way];
+				block->way = way;
+				block->way_prev = way ? &gpu_s_caches[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < gpu_s_caches[i].assoc - 1 ? &gpu_s_caches[i].sets[set].blocks[way + 1] : NULL;
+			}
+		}
+
+
+		//set up one cache for every four CUs
+		//mod 3 because i starts at zero.
+		if((i % 3) == 0)
+		{
+
+			gpu_l2_caches[i].id = i;
+			gpu_l2_caches[i].log_block_size = LOG2(gpu_l2_caches[i].block_size);
+			gpu_l2_caches[i].block_mask = gpu_l2_caches[i].block_size - 1;
+			gpu_l2_caches[i].hits = 0;
+			gpu_l2_caches[i].misses = 0;
+			//gpu_v_caches[i].fetches = 0;
+			gpu_l2_caches[i].Rx_queue_top = list_create();
+			gpu_l2_caches[i].Rx_queue_bottom = list_create();
+			gpu_l2_caches[i].mshr = list_create();
+
+			//set cache name
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "gpu_l2_caches[%d]", i);
+			gpu_l2_caches[i].name = strdup(buff);
+
+			//set rx queue names
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "gpu_l2_caches[%d].Rx_queue_top", i);
+			gpu_l2_caches[i].Rx_queue_top->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "gpu_l2_caches[%d].Rx_queue_bottom", i);
+			gpu_l2_caches[i].Rx_queue_bottom->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "gpu_l2_caches[%d].mshr", i);
+			gpu_l2_caches[i].mshr->name = strdup(buff);
+
+
+			gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
+			for (set = 0; set < gpu_l2_caches[i].num_sets; set++)
+			{
+				//Initialize array of blocks
+				gpu_l2_caches[i].sets[set].id = set;
+				gpu_l2_caches[i].sets[set].blocks = calloc(gpu_l2_caches[i].assoc, sizeof(struct cache_block_t));
+				gpu_l2_caches[i].sets[set].way_head = &gpu_l2_caches[i].sets[set].blocks[0];
+				gpu_l2_caches[i].sets[set].way_tail = &gpu_l2_caches[i].sets[set].blocks[gpu_l2_caches[i].assoc - 1];
+				for (way = 0; way < gpu_l2_caches[i].assoc; way++)
+				{
+					block = &gpu_l2_caches[i].sets[set].blocks[way];
+					block->way = way;
+					block->way_prev = way ? &gpu_l2_caches[i].sets[set].blocks[way - 1] : NULL;
+					block->way_next = way < gpu_l2_caches[i].assoc - 1 ? &gpu_l2_caches[i].sets[set].blocks[way + 1] : NULL;
+				}
+			}
+		}
+	}
 	return 0;
 }
 

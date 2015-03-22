@@ -17,6 +17,11 @@
 #include <lib/util/misc.h>
 
 #include <arch/x86/timing/thread.h>
+#include <arch/si/timing/gpu.h>
+#include <arch/si/timing/vector-mem-unit.h>
+#include <arch/si/timing/scalar-unit.h>
+#include <arch/si/timing/lds-unit.h>
+#include <arch/si/timing/compute-unit.h>
 
 #include <cgm/cgm.h>
 #include <cgm/cache.h>
@@ -27,8 +32,8 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 
-long long fetch_access_id = 0;
-long long lspq_access_id = 0;
+long long access_id = 0;
+//long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
@@ -227,7 +232,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 	char buff[100];
-	fetch_access_id++;
+	access_id++;
 	int num_cores = x86_cpu_num_cores;
 	enum cgm_access_kind_t access_kind = cgm_access_fetch;
 	int id = 0;
@@ -235,12 +240,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
-	snprintf(buff, 100, "fetch_access.%llu", fetch_access_id);
+	snprintf(buff, 100, "fetch_access.%llu", access_id);
 
 	//(1)
 	struct cgm_packet_status_t *new_packet_status = status_packet_create();
 	new_packet_status->access_type = access_kind;
-	new_packet_status->access_id = fetch_access_id;
+	new_packet_status->access_id = access_id;
 	new_packet_status->address = addr;
 	new_packet_status->in_flight = 1;
 
@@ -250,7 +255,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//(2)
 	struct cgm_packet_t *new_packet = packet_create();
 	new_packet->access_type = access_kind;
-	new_packet->access_id = fetch_access_id;
+	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->in_flight = 1;
 	new_packet->name = strdup(buff);
@@ -260,7 +265,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
-		assert(id <= num_cores);
+		assert(id < num_cores);
 
 		//set flag on target L1 I Cache
 		l1_i_caches_data[id]++;
@@ -280,7 +285,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//printf("dequeue\n");
 	//list_dequeue(cgm_access_record);
 
-	return fetch_access_id;
+	return access_id;
 }
 
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
@@ -289,13 +294,13 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	X86Thread *thread;
 	thread = self;
 	char buff[100];
-	fetch_access_id++;
+	access_id++;
 	int num_cores = x86_cpu_num_cores;
 	int id = 0;
 
 	//build one packet to pass through the memory system
 	memset(buff, '\0', 100);
-	snprintf(buff, 100, "lspq_access.%lld", fetch_access_id);
+	snprintf(buff, 100, "lspq_access.%lld", access_id);
 
 	struct cgm_packet_t *new_packet = packet_create();
 	new_packet->access_type = access_kind;
@@ -303,7 +308,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->event_queue = event_queue;
 	new_packet->data = event_queue_item;
 	new_packet->in_flight = 1;
-	new_packet->access_id = lspq_access_id;
+	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
 
@@ -312,7 +317,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
-		assert(id <= num_cores);
+		assert(id < num_cores);
 
 		//set flag on target L1 D Cache
 		l1_d_caches_data[id]++;
@@ -369,81 +374,98 @@ int remove_from_global(long long id){
 	return 1;
 }
 
-/*void cgm_scalar_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
 	struct cgm_packet_t *new_packet = packet_create();
 
-	printf("In memctrl witness pointer value %d\n", *witness_ptr);
-	getchar();
-
+	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();*/
 
 	new_packet->in_flight = 1;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
-	new_packet->event_queue = NULL;
-	new_packet->data = NULL;
 
-	printf("In memctrl witness pointer value %d\n", *new_packet->witness_ptr);
-	getchar();
+	(*new_packet->witness_ptr)++;
+
+
+	free(new_packet);
+
+	return;
+}
+
+void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+	struct cgm_packet_t *new_packet = packet_create();
+
+	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
+	getchar();*/
+
+
+	new_packet->address = addr;
+	new_packet->witness_ptr = witness_ptr;
+	new_packet->in_flight = 1;
+
+	/*printf("In memctrl witness pointer value %d\n", *new_packet->witness_ptr);
+	getchar();*/
 
 
 	(*new_packet->witness_ptr)++;
 
-	printf("In memctrl witness pointer value after inc %d\n", *new_packet->witness_ptr);
+	/*printf("In memctrl witness pointer value after inc %d\n", *new_packet->witness_ptr);
 	printf("In memctrl witness pointer value after inc %d\n", *witness_ptr);
-	getchar();
+	getchar();*/
 
 	free(new_packet);
 
 	return;
 }
 
-void cgm_vector_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
 
+	struct si_lds_t *lds_unit = lds;
 	struct cgm_packet_t *new_packet = packet_create();
+	char buff[100];
+	access_id++;
+	int num_cus = si_gpu_num_compute_units;
+	int id = 0;
 
-		printf("In memctrl witness pointer value %d\n", *witness_ptr);
-		getchar();
+	//build one packet to pass through the memory system
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "lds_access.%lld", access_id);
 
-
-	new_packet->in_flight = 1;
+	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
-	new_packet->event_queue = NULL;
-	new_packet->data = NULL;
+	new_packet->in_flight = 1;
+	new_packet->access_id = access_id;
+	new_packet->name = strdup(buff);
 
 
-	(*new_packet->witness_ptr)++;
+	//Add (2) to the target L1 I Cache Rx Queue
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
+	{
+		//get the core ID number should be <= number of cores
 
+		id = lds_unit->compute_unit->id;
+		assert( id < num_cus);
 
-	free(new_packet);
+		//set flag on target GPU LDS unit
+		gpu_lds_units_data[id]++;
+
+		//Drop the packet into the GPU LDS unit Rx queue
+		list_enqueue(lds_unit->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);
+
+		//advance the L1 I Cache Ctrl task
+		advance(gpu_lds_unit);
+	}
+	else
+	{
+		fatal("cgm_lds_access() unsupported access type\n");
+	}
 
 	return;
 }
-
-//star todo this is wrong, the lds is a local memory module within the GPU.
-//implement this as a memory block in the GPU with read write access.
-void cgm_lds_access(struct list_t *request_queue, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
-
-	struct cgm_packet_t *new_packet = packet_create();
-
-	printf("In memctrl witness pointer value %d\n", *witness_ptr);
-	getchar();
-
-	new_packet->in_flight = 1;
-	new_packet->address = addr;
-	new_packet->witness_ptr = witness_ptr;
-	new_packet->event_queue = NULL;
-	new_packet->data = NULL;
-
-
-	(*new_packet->witness_ptr)++;
-
-	free(new_packet);
-
-	return;
-}*/
 
 void cgm_dump_summary(void){
 

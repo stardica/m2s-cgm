@@ -29,9 +29,11 @@ extern struct cgm_packet_t{
 	int nc_store;
 	void * data;
 
+	//for m2s CPU and GPU
 	struct linked_list_t *event_queue;
 	int *witness_ptr;
 
+	//for routing
 	char *src_name;
 	char *dest_name;
 
