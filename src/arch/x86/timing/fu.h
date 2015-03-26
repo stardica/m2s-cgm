@@ -58,34 +58,34 @@ enum x86_fu_class_t
 {
 	x86_fu_none = 0,
 
-	x86_fu_int_add,
-	x86_fu_int_mult,
-	x86_fu_int_div,
+	x86_fu_int_add, 		//1
+	x86_fu_int_mult,		//2
+	x86_fu_int_div, 		//3
 
-	x86_fu_effaddr,
-	x86_fu_logic,
+	x86_fu_effaddr, 		//4
+	x86_fu_logic, 			//5
 
-	x86_fu_float_simple,
-	x86_fu_float_add,
-	x86_fu_float_comp,
-	x86_fu_float_mult,
-	x86_fu_float_div,
-	x86_fu_float_complex,
+	x86_fu_float_simple,	//6
+	x86_fu_float_add,		//7
+	x86_fu_float_comp,		//8
+	x86_fu_float_mult,		//9
+	x86_fu_float_div,		//10
+	x86_fu_float_complex,	//11
 
-	x86_fu_xmm_int_add,
-	x86_fu_xmm_int_mult,
-	x86_fu_xmm_int_div,
+	x86_fu_xmm_int_add,		//12
+	x86_fu_xmm_int_mult,	//13
+	x86_fu_xmm_int_div,		//14
 
-	x86_fu_xmm_logic,
+	x86_fu_xmm_logic,		//15
 
-	x86_fu_xmm_float_add,
-	x86_fu_xmm_float_comp,
-	x86_fu_xmm_float_mult,
-	x86_fu_xmm_float_div,
-	x86_fu_xmm_float_conv,
-	x86_fu_xmm_float_complex,
+	x86_fu_xmm_float_add,	//16
+	x86_fu_xmm_float_comp,	//17
+	x86_fu_xmm_float_mult,	//18
+	x86_fu_xmm_float_div,	//19
+	x86_fu_xmm_float_conv,	//20
+	x86_fu_xmm_float_complex,	//21
 
-	x86_fu_count
+	x86_fu_count			//22
 };
 
 struct x86_fu_t

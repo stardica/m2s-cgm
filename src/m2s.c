@@ -1452,7 +1452,7 @@ void sim_end(void){
 
 	/* Dump statistics summary */
 	cgm_dump_summary();
-	//m2s_dump_summary(stderr);
+	m2s_dump_summary(stderr);
 
 
 	/* x86 */
@@ -1479,8 +1479,10 @@ void sim_end(void){
 	debug_done();
 	mhandle_done();
 
-	printf("\n---Simulation End---\n");
 	fflush(stdout);
+	fflush(stderr);
+
+	printf("---Simulation End---\n");
 
 	return;
 }

@@ -52,7 +52,9 @@
 #include <arch/x86/emu/signal.h>
 #include <arch/x86/emu/syscall.h>
 
+#include <arch/x86/timing/thread.h>
 
+#include <cgm/cgm.h>
 
 /*
  * Public Variables
@@ -253,6 +255,8 @@ void X86ContextSyscall(X86Context *self)
 
 		/* Set return value in 'eax'. */
 		regs->eax = err;
+
+		syscall_flag ++;
 
 		/* Debug and done */
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);

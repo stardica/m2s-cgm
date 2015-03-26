@@ -179,7 +179,6 @@ void l3_cache_ctrl(void);
 void gpu_s_cache_ctrl(void);
 void gpu_v_cache_ctrl(void);
 void gpu_l2_cache_ctrl(void);
-void gpu_lds_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
 
 

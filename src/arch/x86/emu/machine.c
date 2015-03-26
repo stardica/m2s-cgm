@@ -1070,6 +1070,7 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 	if (!spec_mode)
 		X86ContextSyscall(ctx);
 
+
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
 

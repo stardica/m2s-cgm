@@ -132,6 +132,7 @@ static int X86ThreadCanFetch(X86Thread *self){
 	return 1;
 }
 
+	int i = 0;
 
 /* Run the emulation of one x86 macro-instruction and create its uops.
  * If any of the uops is a control uop, this uop will be the return value of
@@ -164,7 +165,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 	 * of the program. It is important for the traces stored in the trace
 	 * cache. */
 	if (!x86_uinst_list->count)
+	{
 		x86_uinst_new(ctx, x86_uinst_nop, 0, 0, 0, 0, 0, 0, 0);
+	}
 
 	/* Micro-instructions created by the x86 instructions can be found now
 	 * in 'x86_uinst_list'. */

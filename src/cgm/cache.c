@@ -298,23 +298,25 @@ void gpu_lds_unit_ctrl(void){
 				message_packet = list_get(gpu_lds_units[id].Rx_queue_top, list_index);
 				assert(message_packet);
 
-				access_type = message_packet->access_type;
+				/*access_type = message_packet->access_type;
 				access_id = message_packet->access_id;
 				addr = message_packet->address;
 
 				//probe the address for set, tag, and offset.
-				cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+				cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);*/
 
 				//for now treat the LDS unit as a register and charge a small amount of cycles for it's access.
 				//star todo figure out what to do with this.
 				if(access_type == cgm_access_load || access_type == cgm_access_store)
 				{//then the packet is from the L2 cache
 
-					//delay two cycles
+					//LDS is close to the CU so delay two cycles for now
 					P_PAUSE(etime.count + 2);
 
 					//clear the gpu uop witness_ptr
 					(*message_packet->witness_ptr)++;
+
+					list_remove(gpu_lds_units[id].Rx_queue_top, message_packet);
 
 				}
 				else

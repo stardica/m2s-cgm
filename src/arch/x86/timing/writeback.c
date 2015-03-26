@@ -113,6 +113,8 @@ void X86CpuWriteback(X86Cpu *self)
 
 	self->stage = "writeback";
 	for (i = 0; i < x86_cpu_num_cores; i++)
+	{
 		X86CoreWriteback(self->cores[i]);
+	}
 }
 

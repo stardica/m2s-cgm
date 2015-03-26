@@ -376,46 +376,90 @@ int remove_from_global(long long id){
 
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
+	struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
 	struct cgm_packet_t *new_packet = packet_create();
+	char buff[100];
+	access_id++;
+	int num_cus = si_gpu_num_compute_units;
+	int id = 0;
 
-	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
-	getchar();*/
+	//build one packet to pass through the memory system
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "vector_mem_access.%lld", access_id);
 
-	new_packet->in_flight = 1;
+	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
+	new_packet->in_flight = 1;
+	new_packet->access_id = access_id;
+	new_packet->name = strdup(buff);
 
-	(*new_packet->witness_ptr)++;
 
+	//Add to the target L1 I Cache Rx Queue
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
+	{
+		//get the core ID number should be <= number of cores
+		id = vector_mem_ptr->compute_unit->id;
+		assert( id < num_cus);
 
-	free(new_packet);
+		//set flag on target GPU LDS unit
+		gpu_v_caches_data[id]++;
+
+		//Drop the packet into the GPU LDS unit Rx queue
+		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
+
+		//advance the L1 I Cache Ctrl task
+		advance(gpu_v_cache);
+	}
+	else
+	{
+		fatal("cgm_vector_access() unsupported access type\n");
+	}
 
 	return;
 }
 
 void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
+	struct si_scalar_unit_t *scalar_unit_ptr = scalar_unit;
 	struct cgm_packet_t *new_packet = packet_create();
+	char buff[100];
+	access_id++;
+	int num_cus = si_gpu_num_compute_units;
+	int id = 0;
 
-	/*printf("In memctrl witness pointer value %d\n", *witness_ptr);
-	getchar();*/
+	//build one packet to pass through the memory system
+	memset(buff, '\0', 100);
+	snprintf(buff, 100, "scalar_unit_access.%lld", access_id);
 
-
+	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
 	new_packet->in_flight = 1;
+	new_packet->access_id = access_id;
+	new_packet->name = strdup(buff);
 
-	/*printf("In memctrl witness pointer value %d\n", *new_packet->witness_ptr);
-	getchar();*/
 
+	//Add to the target L1 I Cache Rx Queue
+	if(access_kind == cgm_access_load)
+	{
+		//get the core ID number should be <= number of cores
+		id = scalar_unit_ptr->compute_unit->id;
+		assert( id < num_cus);
 
-	(*new_packet->witness_ptr)++;
+		//set flag on target GPU LDS unit
+		gpu_s_caches_data[id]++;
 
-	/*printf("In memctrl witness pointer value after inc %d\n", *new_packet->witness_ptr);
-	printf("In memctrl witness pointer value after inc %d\n", *witness_ptr);
-	getchar();*/
+		//Drop the packet into the GPU LDS unit Rx queue
+		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
 
-	free(new_packet);
+		//advance the L1 I Cache Ctrl task
+		advance(gpu_s_cache);
+	}
+	else
+	{
+		fatal("cgm_scalar_access() unsupported access type\n");
+	}
 
 	return;
 }
@@ -423,7 +467,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
 
-	struct si_lds_t *lds_unit = lds;
+	struct si_lds_t *lds_ptr = lds;
 	struct cgm_packet_t *new_packet = packet_create();
 	char buff[100];
 	access_id++;
@@ -442,19 +486,19 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->name = strdup(buff);
 
 
-	//Add (2) to the target L1 I Cache Rx Queue
+	//Add to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 		//get the core ID number should be <= number of cores
 
-		id = lds_unit->compute_unit->id;
+		id = lds_ptr->compute_unit->id;
 		assert( id < num_cus);
 
 		//set flag on target GPU LDS unit
 		gpu_lds_units_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
-		list_enqueue(lds_unit->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);
+		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
 		advance(gpu_lds_unit);

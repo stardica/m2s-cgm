@@ -22,10 +22,10 @@
 #include <lib/util/config.h>
 #include <lib/util/string.h>
 
-#include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/core.h>
+#include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/fu.h>
-
 
 
 
@@ -74,18 +74,35 @@ void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f)
 int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 {
 	X86Cpu *cpu = self->cpu;
+	X86Thread *thread = self->threads;
 
 	enum x86_fu_class_t fu_class;
 	struct x86_fu_t *fu = self->fu;
 
-	int i;
+	int i = 0;
 
 	/* Get the functional unit class required by the uop.
 	 * If the uop does not require a functional unit, return
 	 * 1 cycle latency. */
+
 	fu_class = x86_fu_class_table[uop->uinst->opcode];
 	if (!fu_class)
+	{
+
+		//star added this to create a latency for syscalls
+		if(uop->uinst->opcode == 59)
+		{
+
+			for(i = 0; i < 50 ; i ++)
+			{
+				x86_uinst_new(thread->ctx, x86_uinst_nop, 0, 0, 0, 0, 0, 0, 0);
+
+			}
+		}
+
 		return 1;
+
+	}
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
@@ -206,31 +223,26 @@ char *x86_fu_name[x86_fu_count] =
 enum x86_fu_class_t x86_fu_class_table[x86_uinst_opcode_count] =
 {
 	x86_fu_none,  /* x86_uinst_nop */
-
 	x86_fu_none,  /* x86_uinst_move */
 	x86_fu_int_add,  /* x86_uinst_add */
 	x86_fu_int_add,  /* x86_uinst_sub */
 	x86_fu_int_mult,  /* x86_uinst_mult */
 	x86_fu_int_div,  /* x86_uinst_div */
 	x86_fu_effaddr,  /* x86_uinst_effaddr */
-
 	x86_fu_logic,  /* x86_uinst_and */
 	x86_fu_logic,  /* x86_uinst_or */
 	x86_fu_logic,  /* x86_uinst_xor */
 	x86_fu_logic,  /* x86_uinst_not */
 	x86_fu_logic,  /* x86_uinst_shift */
 	x86_fu_logic,  /* x86_uinst_sign */
-
 	x86_fu_none,  /* x86_uinst_fp_move */
 	x86_fu_float_simple,  /* x86_uinst_fp_sign */
 	x86_fu_float_simple,  /* x86_uinst_fp_round */
-
 	x86_fu_float_add,  /* x86_uinst_fp_add */
 	x86_fu_float_add,  /* x86_uinst_fp_sub */
 	x86_fu_float_comp,  /* x86_uinst_fp_comp */
 	x86_fu_float_mult,  /* x86_uinst_fp_mult */
 	x86_fu_float_div,  /* x86_uinst_fp_div */
-
 	x86_fu_float_complex,  /* x86_uinst_fp_exp */
 	x86_fu_float_complex,  /* x86_uinst_fp_log */
 	x86_fu_float_complex,  /* x86_uinst_fp_sin */
@@ -239,10 +251,8 @@ enum x86_fu_class_t x86_fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_float_complex,  /* x86_uinst_fp_tan */
 	x86_fu_float_complex,  /* x86_uinst_fp_atan */
 	x86_fu_float_complex,  /* x86_uinst_fp_sqrt */
-
 	x86_fu_none,  /* x86_uinst_fp_push */
 	x86_fu_none,  /* x86_uinst_fp_pop */
-
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_and */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_or */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_xor */
@@ -250,35 +260,28 @@ enum x86_fu_class_t x86_fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_nand */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shift */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_sign */
-
 	x86_fu_xmm_int_add,  /* x86_uinst_xmm_add */
 	x86_fu_xmm_int_add,  /* x86_uinst_xmm_sub */
 	x86_fu_xmm_int_add,  /* x86_uinst_xmm_comp */
 	x86_fu_xmm_int_mult,  /* x86_uinst_xmm_mult */
 	x86_fu_xmm_int_div,  /* x86_uinst_xmm_div */
-
 	x86_fu_xmm_float_add,  /* x86_uinst_xmm_fp_add */
 	x86_fu_xmm_float_add,  /* x86_uinst_xmm_fp_sub */
 	x86_fu_xmm_float_comp,  /* x86_uinst_xmm_fp_comp */
 	x86_fu_xmm_float_mult,  /* x86_uinst_xmm_fp_mult */
 	x86_fu_xmm_float_div,  /* x86_uinst_xmm_fp_div */
-
 	x86_fu_xmm_float_complex,  /* x86_uinst_xmm_fp_sqrt */
-
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_move */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shuf */
 	x86_fu_xmm_float_conv,  /* x86_uinst_xmm_conv */
-
 	x86_fu_none,  /* x86_uinst_load */
 	x86_fu_none,  /* x86_uinst_store */
 	x86_fu_none,  /* x86_uinst_prefetch */
-
 	x86_fu_none,  /* x86_uinst_call */
 	x86_fu_none,  /* x86_uinst_ret */
 	x86_fu_none,  /* x86_uinst_jump */
 	x86_fu_none,  /* x86_uinst_branch */
 	x86_fu_none,  /* x86_uinst_ibranch */
-
 	x86_fu_none  /* x86_uinst_syscall */
 };
 

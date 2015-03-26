@@ -171,81 +171,81 @@ enum x86_uinst_opcode_t
 {
 	x86_uinst_nop = 0,
 
-	x86_uinst_move,
-	x86_uinst_add,
-	x86_uinst_sub,
-	x86_uinst_mult,
-	x86_uinst_div,
-	x86_uinst_effaddr,
+	x86_uinst_move,		//1
+	x86_uinst_add,		//2
+	x86_uinst_sub,		//3
+	x86_uinst_mult,		//4
+	x86_uinst_div,		//5
+	x86_uinst_effaddr,	//6
 
-	x86_uinst_and,
-	x86_uinst_or,
-	x86_uinst_xor,
-	x86_uinst_not,
-	x86_uinst_shift,
-	x86_uinst_sign,
+	x86_uinst_and,		//7
+	x86_uinst_or,		//8
+	x86_uinst_xor,		//9
+	x86_uinst_not,		//10
+	x86_uinst_shift,	//11
+	x86_uinst_sign,		//12
 
-	x86_uinst_fp_move,
-	x86_uinst_fp_sign,
-	x86_uinst_fp_round,
+	x86_uinst_fp_move,	//13
+	x86_uinst_fp_sign,	//14
+	x86_uinst_fp_round,	//15
 
-	x86_uinst_fp_add,
-	x86_uinst_fp_sub,
-	x86_uinst_fp_comp,
-	x86_uinst_fp_mult,
-	x86_uinst_fp_div,
+	x86_uinst_fp_add,	//16
+	x86_uinst_fp_sub,	//17
+	x86_uinst_fp_comp,	//18
+	x86_uinst_fp_mult,	//19
+	x86_uinst_fp_div,	//20
 
-	x86_uinst_fp_exp,
-	x86_uinst_fp_log,
-	x86_uinst_fp_sin,
-	x86_uinst_fp_cos,
-	x86_uinst_fp_sincos,
-	x86_uinst_fp_tan,
-	x86_uinst_fp_atan,
-	x86_uinst_fp_sqrt,
+	x86_uinst_fp_exp,	//21
+	x86_uinst_fp_log,	//22
+	x86_uinst_fp_sin,	//23
+	x86_uinst_fp_cos,	//24
+	x86_uinst_fp_sincos,//25
+	x86_uinst_fp_tan,	//26
+	x86_uinst_fp_atan,	//27
+	x86_uinst_fp_sqrt,	//28
 
-	x86_uinst_fp_push,
-	x86_uinst_fp_pop,
+	x86_uinst_fp_push,	//29
+	x86_uinst_fp_pop,	//30
 
-	x86_uinst_xmm_and,
-	x86_uinst_xmm_or,
-	x86_uinst_xmm_xor,
-	x86_uinst_xmm_not,
-	x86_uinst_xmm_nand,
-	x86_uinst_xmm_shift,
-	x86_uinst_xmm_sign,
+	x86_uinst_xmm_and,	//31
+	x86_uinst_xmm_or,	//32
+	x86_uinst_xmm_xor,	//33
+	x86_uinst_xmm_not,	//34
+	x86_uinst_xmm_nand,	//35
+	x86_uinst_xmm_shift,//36
+	x86_uinst_xmm_sign,	//37
 
-	x86_uinst_xmm_add,
-	x86_uinst_xmm_sub,
-	x86_uinst_xmm_comp,
-	x86_uinst_xmm_mult,
-	x86_uinst_xmm_div,
+	x86_uinst_xmm_add,	//38
+	x86_uinst_xmm_sub,	//39
+	x86_uinst_xmm_comp,	//40
+	x86_uinst_xmm_mult,	//41
+	x86_uinst_xmm_div,	//42
 
-	x86_uinst_xmm_fp_add,
-	x86_uinst_xmm_fp_sub,
-	x86_uinst_xmm_fp_comp,
-	x86_uinst_xmm_fp_mult,
-	x86_uinst_xmm_fp_div,
+	x86_uinst_xmm_fp_add,	//43
+	x86_uinst_xmm_fp_sub,	//44
+	x86_uinst_xmm_fp_comp,	//44
+	x86_uinst_xmm_fp_mult,	//45
+	x86_uinst_xmm_fp_div,	//46
 
-	x86_uinst_xmm_fp_sqrt,
+	x86_uinst_xmm_fp_sqrt,	//47
 
-	x86_uinst_xmm_move,
-	x86_uinst_xmm_shuf,
-	x86_uinst_xmm_conv,
+	x86_uinst_xmm_move,		//48
+	x86_uinst_xmm_shuf,		//49
+	x86_uinst_xmm_conv,		//50
 
-	x86_uinst_load,
-	x86_uinst_store,
-	x86_uinst_prefetch,
+	x86_uinst_load,			//51
+	x86_uinst_store,		//52
+	x86_uinst_prefetch,		//53
 
-	x86_uinst_call,
-	x86_uinst_ret,
-	x86_uinst_jump,
-	x86_uinst_branch,
-	x86_uinst_ibranch,
+	x86_uinst_call,			//54
+	x86_uinst_ret,			//55
+	x86_uinst_jump,			//56
+	x86_uinst_branch,		//57
+	x86_uinst_ibranch,		//58
 
-	x86_uinst_syscall,
+	x86_uinst_syscall,		//59
 
-	x86_uinst_opcode_count
+	x86_uinst_opcode_count	//60
 };
 
 

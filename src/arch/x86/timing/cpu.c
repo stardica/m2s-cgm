@@ -994,6 +994,8 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats, char *pref
 }
 
 
+int syscall_flag = 0;
+
 int X86CpuRun(Timing *self){
 
 	X86Cpu *cpu = asX86Cpu(self);
@@ -1019,19 +1021,11 @@ int X86CpuRun(Timing *self){
 	if (esim_finish)
 		return TRUE;
 
-	/* One more cycle of x86 timing simulation */
-	//self->cycle++;
-
-	P_PAUSE(1);
-	self->cycle = P_TIME;
 
 	//star added for instrumentation
-	//Current_Cycle = ++self->cycle;
+	P_PAUSE(1);
+	self->cycle = P_TIME;
 	Current_Cycle++;
-
-	/* Empty uop trace list. This dumps the last trace line for instructions
-	 * that were freed in the previous simulation cycle. */
-
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

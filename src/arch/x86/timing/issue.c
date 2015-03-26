@@ -382,8 +382,11 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 	{
 		/* Get element from IQ */
 		uop = linked_list_get(iq);
+
 		assert(x86_uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
+
+
 		if (!uop->ready && !X86ThreadIsUopReady(self, uop))
 		{
 			linked_list_next(iq);
@@ -406,6 +409,8 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		 * Remove it from IQ */
 		X86ThreadRemoveFromIQ(self);
 		
+
+
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_event_queue);
 		assert(lat > 0);
@@ -414,6 +419,10 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->when = asTiming(cpu)->cycle + lat;
 		X86CoreInsertInEventQueue(core, uop);
 		
+
+
+
+
 		/* Statistics */
 		core->num_issued_uinst_array[uop->uinst->opcode]++;
 		core->iq_reads++;
@@ -424,8 +433,11 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		self->reg_file_int_reads += uop->ph_int_idep_count;
 		self->reg_file_fp_reads += uop->ph_fp_idep_count;
 		cpu->num_issued_uinst_array[uop->uinst->opcode]++;
+
 		if (uop->trace_cache)
+		{
 			self->trace_cache->num_issued_uinst++;
+		}
 
 		/* One more instruction issued, update quantum. */
 		quant--;
