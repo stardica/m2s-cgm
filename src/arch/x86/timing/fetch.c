@@ -214,10 +214,10 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			//if both flags are set its an opencl syscall
 			if(syscall_flag && opencl_syscall_flag)
 			{
-				uop->interrupt = 1;
+				uop->interrupt = opencl_syscall_flag;
 				uop->interrupt_type = opencl_interrupt;
-				opencl_syscall_flag --;
-				syscall_flag --;
+				opencl_syscall_flag = 0;
+				syscall_flag = 0;
 			}
 			else
 			{

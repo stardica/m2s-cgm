@@ -299,10 +299,6 @@ void X86ContextSyscall(X86Context *self)
 }
 
 
-
-
-
-
 /*
  * System call 'exit' (code 1)
  */

@@ -19,9 +19,6 @@
 #include <mem-system/nmoesi-protocol.h>
 
 
-
-
-
 #define MAXUOPID 10
 pthread_mutex_t instrumentation_mutex;
 

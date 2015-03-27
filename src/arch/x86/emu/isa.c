@@ -853,24 +853,24 @@ void X86ContextExecuteInst(X86Context *self)
 	//this runs the correct function from the machine files.
 	regs->eip = regs->eip + self->inst.size;
 
-	//set a flag if we run into an opencl realted syscall
-	if(self->inst.opcode == 255 && regs->eax == 329)
-	{
-		opencl_syscall_flag++;
-	}
 
-	//set a flag if we run into any syscall
+	//set a flag if we run into a syscall
 	if(self->inst.opcode == 255)
 	{
 		syscall_flag++;
 	}
 
+	//set a flag if we run into an opencl related syscall
+	if(self->inst.opcode == 255 && regs->eax == 329)
+	{
+		//the value of the flag is the oepnco abi code.
+		opencl_syscall_flag = regs->ebx;
+	}
 
 	if (self->inst.opcode)
 	{
 		x86_context_inst_func[self->inst.opcode](self);
 	}
-
 
 	/* Statistics */
 	x86_inst_freq[self->inst.opcode]++;

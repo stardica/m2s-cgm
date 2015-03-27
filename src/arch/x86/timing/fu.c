@@ -92,12 +92,12 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 	if (!fu_class)
 	{
 		//star added this to create tune-able latency approximation for syscalls
-		if(uop->interrupt == 1 && uop->interrupt_type == opencl_interrupt)
+		if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt)
 		{
-			//printf("Caught OpenCL interrupt at issue at cycle %llu!\n", P_TIME);
-			return 1000000;
+			printf("Caught OpenCL interrupt code %d at issue at cycle %llu!\n", uop->interrupt, P_TIME);
+			return 10;
 		}
-		else if(uop->interrupt == 1 && uop->interrupt_type == system_interrupt)
+		else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 		{
 			//printf("Caught system interrupt at issue at cycle %llu!\n", P_TIME);
 			return 4000;
