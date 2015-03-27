@@ -220,6 +220,8 @@ void X86ContextSuspend(X86Context *self, X86ContextCanWakeupFunc can_wakeup_call
 
 void X86ContextFinish(X86Context *self, int state);
 void X86ContextFinishGroup(X86Context *self, int state);
+
+//star changed to return int on syscall.
 void X86ContextExecute(X86Context *self);
 
 void X86ContextSetEip(X86Context *self, unsigned int eip);

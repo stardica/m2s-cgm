@@ -33,6 +33,7 @@
 #include <arch/x86/emu/machine.h>
 #include <arch/x86/emu/regs.h>
 #include <arch/x86/emu/uinst.h>
+#include <cgm/cgm.h>
 
 
 
@@ -851,9 +852,26 @@ void X86ContextExecuteInst(X86Context *self)
 	//star >> increments instruction pointer value.
 	//this runs the correct function from the machine files.
 	regs->eip = regs->eip + self->inst.size;
+
+	//set a flag if we run into an opencl realted syscall
+	if(self->inst.opcode == 255 && regs->eax == 329)
+	{
+		opencl_syscall_flag++;
+	}
+
+	//set a flag if we run into any syscall
+	if(self->inst.opcode == 255)
+	{
+		syscall_flag++;
+	}
+
+
 	if (self->inst.opcode)
+	{
 		x86_context_inst_func[self->inst.opcode](self);
-	
+	}
+
+
 	/* Statistics */
 	x86_inst_freq[self->inst.opcode]++;
 

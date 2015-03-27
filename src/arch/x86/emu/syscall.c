@@ -250,13 +250,26 @@ void X86ContextSyscall(X86Context *self)
 		/* Debug */
 		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n", runtime->name, code, asEmu(emu)->instructions, self->pid);
 
+		//star broke this out.
+		//opcode 255 is syscall code 329 is OpenCL driver call
+		/*if(self->inst.opcode == 255 && code == 329)
+		{
+			printf("opencl interupt %d\n", self->inst.opcode);
+			err = runtime_abi_call(runtime, self);
+			//star added
+			opencl_syscall_flag ++;
+		}
+		else
+		{
+			fatal("X86ContextSyscall() non OpenCL interupt occured\n");
+			//err = runtime_abi_call(runtime, self);
+		}*/
+
 		/* Run runtime ABI call */
 		err = runtime_abi_call(runtime, self);
 
 		/* Set return value in 'eax'. */
 		regs->eax = err;
-
-		syscall_flag ++;
 
 		/* Debug and done */
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);

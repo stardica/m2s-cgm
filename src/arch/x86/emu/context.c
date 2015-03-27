@@ -233,8 +233,8 @@ void X86ContextDump(Object *self, FILE *f)
 }
 
 
-void X86ContextExecute(X86Context *self)
-{
+void X86ContextExecute(X86Context *self){
+
 	X86Emu *emu = self->emu;
 
 	struct x86_regs_t *regs = self->regs;
@@ -242,8 +242,6 @@ void X86ContextExecute(X86Context *self)
 
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
-
-
 
 	int spec_mode;
 
@@ -269,6 +267,7 @@ void X86ContextExecute(X86Context *self)
 		//getchar();
 		mem_access(mem, regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
+
 	mem->safe = mem_safe_mode;
 
 	//printf("Fetch access memory\n");
@@ -278,13 +277,19 @@ void X86ContextExecute(X86Context *self)
 
 	/* Disassemble */
 	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
+
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
+	{
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+	}
 
 
 	/* Stop if instruction matches last instruction bytes */
 	if (x86_emu_last_inst_size && x86_emu_last_inst_size == self->inst.size && !memcmp(x86_emu_last_inst_bytes, buffer_ptr, x86_emu_last_inst_size))
+	{
 		esim_finish = esim_finish_x86_last_inst;
+	}
+
 
 	/* Execute instruction */
 	X86ContextExecuteInst(self);

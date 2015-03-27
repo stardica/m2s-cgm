@@ -23,7 +23,13 @@
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
 
-
+enum interrupt_type_t
+{
+	no_interrupt = 0,
+	system_interrupt,
+	opencl_interrupt,
+	interrupt_count
+};
 
 /*
  * Object 'x86_uop_t'
@@ -83,10 +89,14 @@ struct x86_uop_t
 	int in_rob : 1;
 	int in_uop_trace_list : 1;
 
+	//star added interrupt status
 	/* Instruction status */
 	int ready;
 	int issued;
 	int completed;
+	int interrupt;
+	enum interrupt_type_t interrupt_type;
+
 
 	/* For memory uops */
 	unsigned int phy_addr;  /* ... corresponding to 'uop->uinst->address' */

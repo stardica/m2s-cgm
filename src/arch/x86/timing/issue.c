@@ -386,18 +386,19 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		assert(x86_uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
 
-
 		if (!uop->ready && !X86ThreadIsUopReady(self, uop))
 		{
 			linked_list_next(iq);
 			continue;
 		}
+
 		uop->ready = 1;  /* avoid next call to 'X86ThreadIsUopReady' */
 		
 		/* Run the instruction in its corresponding functional unit.
 		 * If the instruction does not require a functional unit, 'X86CoreReserveFunctionalUnit'
 		 * returns 1 cycle latency. If there is no functional unit available,
 		 * 'X86CoreReserveFunctionalUnit' returns 0. */
+
 		lat = X86CoreReserveFunctionalUnit(core, uop);
 		if (!lat)
 		{
@@ -405,12 +406,12 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 			continue;
 		}
 		
+
+
 		/* Instruction was issued to the corresponding fu.
 		 * Remove it from IQ */
 		X86ThreadRemoveFromIQ(self);
 		
-
-
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_event_queue);
 		assert(lat > 0);
@@ -419,9 +420,6 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->when = asTiming(cpu)->cycle + lat;
 		X86CoreInsertInEventQueue(core, uop);
 		
-
-
-
 
 		/* Statistics */
 		core->num_issued_uinst_array[uop->uinst->opcode]++;

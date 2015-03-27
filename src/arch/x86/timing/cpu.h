@@ -29,7 +29,7 @@
 struct x86_uop_t;
 
 
-extern int syscall_flag;
+extern int opencl_syscall_flag;
 
 /*
  * Class 'X86Cpu'

@@ -26,6 +26,7 @@
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/fu.h>
+#include <arch/x86/emu/uinst.h>
 
 
 
@@ -74,12 +75,14 @@ void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f)
 int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 {
 	X86Cpu *cpu = self->cpu;
-	X86Thread *thread = self->threads;
+	X86Thread *thread = self->threads[0];
 
 	enum x86_fu_class_t fu_class;
 	struct x86_fu_t *fu = self->fu;
 
 	int i = 0;
+
+	//int core
 
 	/* Get the functional unit class required by the uop.
 	 * If the uop does not require a functional unit, return
@@ -88,20 +91,21 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 	fu_class = x86_fu_class_table[uop->uinst->opcode];
 	if (!fu_class)
 	{
-
-		//star added this to create a latency for syscalls
-		if(uop->uinst->opcode == 59)
+		//star added this to create tune-able latency approximation for syscalls
+		if(uop->interrupt == 1 && uop->interrupt_type == opencl_interrupt)
 		{
-
-			for(i = 0; i < 50 ; i ++)
-			{
-				x86_uinst_new(thread->ctx, x86_uinst_nop, 0, 0, 0, 0, 0, 0, 0);
-
-			}
+			//printf("Caught OpenCL interrupt at issue at cycle %llu!\n", P_TIME);
+			return 1000000;
 		}
-
-		return 1;
-
+		else if(uop->interrupt == 1 && uop->interrupt_type == system_interrupt)
+		{
+			//printf("Caught system interrupt at issue at cycle %llu!\n", P_TIME);
+			return 4000;
+		}
+		else
+		{
+			return 1;
+		}
 	}
 
 	/* First time uop tries to reserve f.u. */

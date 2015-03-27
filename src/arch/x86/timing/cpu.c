@@ -993,9 +993,6 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats, char *pref
 	fprintf(f, "\n");
 }
 
-
-int syscall_flag = 0;
-
 int X86CpuRun(Timing *self){
 
 	X86Cpu *cpu = asX86Cpu(self);

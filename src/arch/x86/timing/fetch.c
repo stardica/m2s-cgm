@@ -207,6 +207,34 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->pred_neip = self->fetch_neip;
 		uop->target_neip = ctx->target_eip;
 
+
+		//star added this to catch interrupts at issue.
+		if(syscall_flag)
+		{
+			//if both flags are set its an opencl syscall
+			if(syscall_flag && opencl_syscall_flag)
+			{
+				uop->interrupt = 1;
+				uop->interrupt_type = opencl_interrupt;
+				opencl_syscall_flag --;
+				syscall_flag --;
+			}
+			else
+			{
+				uop->interrupt = 1;
+				uop->interrupt_type = system_interrupt;
+				syscall_flag --;
+			}
+
+
+		}
+		else
+		{
+			uop->interrupt = 0;
+			uop->interrupt_type = no_interrupt;
+
+		}
+
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */
 		x86_uop_count_deps(uop);
@@ -454,6 +482,9 @@ static void X86ThreadFetch(X86Thread *self)
 
 		uop = X86ThreadFetchInst(self, 0);
 
+		//star if this flag is high the emulator processed an OpenCL syscall
+		//add some data to the uop so we can catch it in the issue stage
+		//and process the latencies for the interrupt service request.
 
 		if (!ctx->inst.size)  /* x86_isa_inst invalid - no forward progress in loop */
 			break;

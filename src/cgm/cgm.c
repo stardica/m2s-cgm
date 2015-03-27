@@ -32,6 +32,11 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 
+//global flags
+int opencl_syscall_flag = 0;
+int syscall_flag = 0;
+
+
 long long access_id = 0;
 //long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
@@ -507,6 +512,15 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	{
 		fatal("cgm_lds_access() unsupported access type\n");
 	}
+
+	return;
+}
+
+void interupt_service_request(void){
+
+
+
+
 
 	return;
 }
