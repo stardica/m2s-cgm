@@ -15,6 +15,7 @@ extern eventcount volatile *interrupt;
 
 
 //interupts
+void interrupt_init(void);
 void interrupt_service_request(void);
 
 

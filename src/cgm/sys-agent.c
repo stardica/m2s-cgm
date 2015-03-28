@@ -5,7 +5,7 @@
  *      Author: stardica
  */
 
-
+#include <stdio.h>
 #include <cgm/sys-agent.h>
 
 

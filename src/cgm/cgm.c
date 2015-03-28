@@ -16,7 +16,9 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 
+#include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
+#include <arch/x86/timing/uop.h>
 #include <arch/si/timing/gpu.h>
 #include <arch/si/timing/vector-mem-unit.h>
 #include <arch/si/timing/scalar-unit.h>
@@ -30,6 +32,7 @@
 #include <cgm/sys-agent.h>
 #include <cgm/ini-parse.h>
 #include <cgm/tasking.h>
+#include <cgm/interrupt.h>
 #include <cgm/packet.h>
 
 //global flags
@@ -56,8 +59,13 @@ void cgm_init(void){
 	cgm_access_record = list_create();
 	cgm_create_tasks();
 
+	//init interrupt support
+	interrupt_init();
+
 	//init memory system structures
 	cache_init();
+	switch_init();
+	sysagent_init();
 	memctrl_init();
 
 	return;
@@ -158,9 +166,26 @@ void cpu_gpu_run(void){
 	return;
 }
 
-void cgm_interrupt(void){
+void cgm_interrupt(X86Core *self, struct x86_uop_t *uop){
+
+	X86Core *core = self;
+	struct x86_uop_t *interrupt_uop = uop;
+
+	int id = core->id;
 
 
+
+
+
+	//star todo
+	//run ISR on memory system
+	//check if we can access both i and d caches.
+	//both fetch and data caches need to be accessed.
+	//return from isr and set uop->when to the cycle after the return
+
+	//star todo
+	//we need to bring forward some information about he ISR.
+	//for memcpy src and dest pointers and size in bytes
 
 	return;
 }

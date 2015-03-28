@@ -6,3 +6,12 @@
  */
 
 
+#include <stdio.h>
+#include <cgm/switch.h>
+
+
+void switch_init(void){
+
+
+	return;
+}

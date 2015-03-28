@@ -25,15 +25,13 @@ eventcount *mem_ctrl_serviced;
 
 
 //star todo (1) Add memory controller logic.
-//			(2) Add a mutex for master access record queue.
-//			(3)
 
 void memctrl_init(void){
 
 	//star currently only one memory controller.
 	mem_ctrl = memctrl_create();
 	memctrl_queues_init();
-	//memctrl_tasking_init();
+	memctrl_create_tasks();
 
 	return;
 }
@@ -110,18 +108,13 @@ void memctrl_ctrl_reply(void){
 //do some work.
 void memctrl_ctrl_service(void){
 
-	long long i = 1;
+	long long step = 1;
 
 		while(1)
 		{
-
-			printf("in mem_ctrl\n");
-			await(mem_ctrl_has_request, i);
-			//take message off of in bound queue, process it, put reply on out bound queue.
-			advance(mem_ctrl_has_reply);
-			advance(mem_ctrl_serviced);
-
-			i++;
+			//printf("in mem_ctrl\n");
+			await(mem_ctrl_has_request, step);
+			step++;
 		}
 
 	return;

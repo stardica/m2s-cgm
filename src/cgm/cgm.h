@@ -12,7 +12,9 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 
+#include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
+#include <arch/x86/timing/uop.h>
 #include <arch/si/timing/vector-mem-unit.h>
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/lds-unit.h>
@@ -79,7 +81,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 //interrupts
-void cgm_interrupt(void);
+void cgm_interrupt(X86Core *self, struct x86_uop_t *uop);
 
 
 int remove_from_global(long long id);
