@@ -408,14 +408,11 @@ static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 	dest_ptr = regs->ecx;
 	src_ptr = regs->edx;
 	size = regs->esi;
-	opencl_debug("\tdest_ptr = 0x%x, src_ptr = 0x%x, size = %d bytes\n",
-			dest_ptr, src_ptr, size);
+	opencl_debug("\tdest_ptr = 0x%x, src_ptr = 0x%x, size = %d bytes\n", dest_ptr, src_ptr, size);
 
 	/* Check memory range */
-	if (src_ptr + size > si_emu->video_mem_top ||
-			dest_ptr + size > si_emu->video_mem_top)
-		fatal("%s: accessing device memory not allocated",
-				__FUNCTION__);
+	if (src_ptr + size > si_emu->video_mem_top || dest_ptr + size > si_emu->video_mem_top)
+		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 
 	/* Write memory from host to device */
 	buf = xmalloc(size);
@@ -530,14 +527,12 @@ static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
 	program_id = regs->ecx;
 	bin_ptr = regs->edx;
 	bin_size = regs->esi;
-	opencl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",
-			program_id, bin_ptr, bin_size);
+	opencl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n", program_id, bin_ptr, bin_size);
 
 	/* Get program */
 	program = list_get(opencl_si_program_list, program_id);
 	if (!program)
-		fatal("%s: invalid program ID (%d)",
-				__FUNCTION__, program_id);
+		fatal("%s: invalid program ID (%d)", __FUNCTION__, program_id);
 
 	/* Set the binary */
 	buf = xmalloc(bin_size);
@@ -588,8 +583,7 @@ static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 	/* Arguments */
 	program_id = regs->ecx;
 	func_name_ptr = regs->edx;
-	opencl_debug("\tprogram_id=%d, func_name_ptr=0x%x\n",
-			program_id, func_name_ptr);
+	opencl_debug("\tprogram_id=%d, func_name_ptr=0x%x\n", program_id, func_name_ptr);
 
 	/* Read function name */
 	size = mem_read_string(mem, func_name_ptr, sizeof func_name, func_name);
@@ -600,8 +594,7 @@ static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 	/* Get program object */
 	program = list_get(opencl_si_program_list, program_id);
 	if (!program)
-		fatal("%s: invalid program ID (%d)",
-				__FUNCTION__, program_id);
+		fatal("%s: invalid program ID (%d)", __FUNCTION__, program_id);
 
 	/* Create kernel */
 	kernel = opencl_si_kernel_create(program, func_name);
@@ -666,19 +659,16 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
 	if (!kernel)
-		fatal("%s: invalid kernel ID (%d)",
-				__FUNCTION__, kernel_id);
+		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
 	/* Get argument */
 	arg = list_get(kernel->arg_list, index);
 	if (!arg || arg->type != si_arg_value)
-		fatal("%s: invalid argument %d type",
-				__FUNCTION__, index);
+		fatal("%s: invalid argument %d type", __FUNCTION__, index);
 
 	/* Check valid size */
 	if (size != arg->size)
-		fatal("%s: argument %d: size %d expected, %d found",
-				__FUNCTION__, index, arg->size, size);
+		fatal("%s: argument %d: size %d expected, %d found", __FUNCTION__, index, arg->size, size);
 
 	/* Free a possible previous value */
 	if (arg->value.value_ptr)
@@ -1158,16 +1148,14 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
  *	The function always returns 0.
  */
 
-static int opencl_abi_si_ndrange_finish_can_wakeup(X86Context *ctx, 
-	void *user_data)
+static int opencl_abi_si_ndrange_finish_can_wakeup(X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 
 	return driver_state.ndrange_complete;
 }
 
-static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx, 
-	void *user_data)
+static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 

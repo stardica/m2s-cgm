@@ -103,8 +103,7 @@ void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant
  * Program
  */
 
-static void opencl_si_program_initialize_constant_buffers(
-		struct opencl_si_program_t *program)
+static void opencl_si_program_initialize_constant_buffers(struct opencl_si_program_t *program)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t elf_buffer;
