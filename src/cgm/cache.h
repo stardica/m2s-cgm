@@ -173,7 +173,6 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 //interrupt service requests
 
 
-
 //tasks
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);

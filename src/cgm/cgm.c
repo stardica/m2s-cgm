@@ -400,7 +400,9 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->name = strdup(buff);
 
 
-	//Add to the target L1 I Cache Rx Queue
+	//(*witness_ptr)++;
+
+	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
@@ -445,7 +447,11 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->name = strdup(buff);
 
 
-	//Add to the target L1 I Cache Rx Queue
+	//leave for debugging purposes
+	//(*witness_ptr)++;
+
+
+	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load)
 	{
 		//get the core ID number should be <= number of cores

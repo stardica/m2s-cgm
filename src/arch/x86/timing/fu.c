@@ -95,7 +95,20 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 		if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt)
 		{
 			printf("Caught OpenCL interrupt code %d at issue at cycle %llu!\n", uop->interrupt, P_TIME);
-			return 10;
+
+			if(uop->interrupt == 2) //GPU malloc
+			{
+				return 4000;
+			}
+			else if(uop->interrupt == 4) //GPU memcpy
+			{
+				return 1000000;
+				//need to advance the memory system.
+			}
+			else //others we don't care about
+			{
+				return 4000; //default
+			}
 		}
 		else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 		{

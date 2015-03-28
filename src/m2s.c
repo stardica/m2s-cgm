@@ -1454,6 +1454,8 @@ void sim_end(void){
 	cgm_dump_summary();
 	m2s_dump_summary(stderr);
 
+	fflush(stdout);
+	fflush(stderr);
 
 	/* x86 */
 	if (x86_cpu)

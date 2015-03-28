@@ -252,24 +252,23 @@ void X86ContextSyscall(X86Context *self)
 
 		//star broke this out.
 		//opcode 255 is syscall code 329 is OpenCL driver call
-		/*if(self->inst.opcode == 255 && code == 329)
+
+		if (code == 329)
 		{
-			printf("opencl interupt %d\n", self->inst.opcode);
-			err = runtime_abi_call(runtime, self);
-			//star added
-			opencl_syscall_flag ++;
+			printf("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
 		}
-		else
-		{
-			fatal("X86ContextSyscall() non OpenCL interupt occured\n");
-			//err = runtime_abi_call(runtime, self);
-		}*/
 
 		/* Run runtime ABI call */
 		err = runtime_abi_call(runtime, self);
 
 		/* Set return value in 'eax'. */
 		regs->eax = err;
+
+
+		if (code == 329)
+		{
+			printf("CTX X86ContextSyscall() end \n");
+		}
 
 		/* Debug and done */
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);

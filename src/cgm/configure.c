@@ -231,7 +231,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	}
 
 
-
 	////////////
 	//CPU Caches
 	////////////

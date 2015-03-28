@@ -251,7 +251,7 @@ void cache_create_tasks(void){
 	return;
 }
 
-void gpu_lds_unit_ctrl(void){
+void gpu_v_cache_ctrl(void){
 
 	long long step = 1;
 	int list_index = 0;
@@ -265,13 +265,195 @@ void gpu_lds_unit_ctrl(void){
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
-	//int way = 0;
-	//int state = 0;
-	//int cache_status;
+	int way = 0;
+	int state = 0;
+	int cache_status;
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_v_cache, step);
+		step++;
+
+		//set id to 0
+		id = 0;
+
+		while (id < num_cus)
+		{
+
+			if(gpu_v_caches_data[id] > 0)
+			{//then there is a task to be done in this unit.
+
+				//decrement the counter
+				gpu_v_caches_data[id]--;
+
+				//get the message out of the unit's queue
+				message_packet = list_get(gpu_v_caches[id].Rx_queue_top, list_index);
+				assert(message_packet);
+
+				access_type = message_packet->access_type;
+				access_id = message_packet->access_id;
+				addr = message_packet->address;
+
+				//probe the address for set, tag, and offset.
+				cgm_cache_decode_address(&(gpu_v_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+
+
+				//star todo figure out what to do with this.
+				if(access_type == cgm_access_load || access_type == cgm_access_store || access_type == cgm_access_nc_store)
+				{//then the packet is from the L2 cache
+
+					P_PAUSE(mem_miss);
+
+					//clear the gpu uop witness_ptr
+					(*message_packet->witness_ptr)++;
+
+					list_remove(gpu_v_caches[id].Rx_queue_top, message_packet);
+
+				}
+				else
+				{
+					fatal("gpu_v_cache_ctrl(): unknown access type = %d\n", message_packet->access_type);
+				}
+			}
+
+			id++; //go to the next lds unit
+		}
+
+	}
+	/* should never get here*/
+	fatal("gpu_v_cache_ctrl task is broken\n");
+	return;
+}
+
+void gpu_s_cache_ctrl(void){
+
+	long long step = 1;
+	int list_index = 0;
+	int num_cus = si_gpu_num_compute_units;
+	struct cgm_packet_t *message_packet;
+	int id = 0;
+
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+	int state = 0;
+	int cache_status;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_s_cache, step);
+		step++;
+
+		//set id to 0
+		id = 0;
+
+		while (id < num_cus)
+		{
+
+			if(gpu_s_caches_data[id] > 0)
+			{//then there is a task to be done in this unit.
+
+				//decrement the counter
+				gpu_s_caches_data[id]--;
+
+				//get the message out of the unit's queue
+				message_packet = list_get(gpu_s_caches[id].Rx_queue_top, list_index);
+				assert(message_packet);
+
+				access_type = message_packet->access_type;
+				access_id = message_packet->access_id;
+				addr = message_packet->address;
+
+				//probe the address for set, tag, and offset.
+				cgm_cache_decode_address(&(gpu_s_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+
+
+				//star todo figure out what to do with this.
+				if(access_type == cgm_access_load)
+				{//then the packet is from the L2 cache
+
+					P_PAUSE(mem_miss);
+
+					//clear the gpu uop witness_ptr
+					(*message_packet->witness_ptr)++;
+
+					list_remove(gpu_s_caches[id].Rx_queue_top, message_packet);
+
+				}
+				else
+				{
+					fatal("gpu_s_cache_ctrl(): unknown access type = %d\n", message_packet->access_type);
+				}
+			}
+			id++; //go to the next s cache
+		}
+	}
+	/* should never get here*/
+	fatal("gpu_s_cache_ctrl task is broken\n");
+	return;
+}
+
+void gpu_l2_cache_ctrl(void){
+
+	long long step = 1;
+
+
+	while(1)
+	{
+		/*wait here until there is a job to do.
+		In any given cycle I might have to service 1 to N number of caches*/
+		await(gpu_l2_cache, step);
+		step++;
+
+	}
+
+	/* should never get here*/
+	fatal("gpu_l2_cache_ctrl task is broken\n");
+	return;
+
+}
+
+void gpu_lds_unit_ctrl(void){
+
+	long long step = 1;
+	int list_index = 0;
+	int num_cus = si_gpu_num_compute_units;
+	struct cgm_packet_t *message_packet;
+	int id = 0;
+
+	enum cgm_access_kind_t access_type;
+	//unsigned int addr = 0;
+	//long long access_id = 0;
+	//int set = 0;
+	//int tag = 0;
+	//unsigned int offset = 0;
+	//int way = 0;
+	//int state = 0;
+	//int cache_status;
+
+	//int *set_ptr = &set;
+	//int *tag_ptr = &tag;
+	//unsigned int *offset_ptr = &offset;
 	//int *way_ptr = &way;
 	//int *state_ptr = &state;
 
@@ -298,12 +480,12 @@ void gpu_lds_unit_ctrl(void){
 				message_packet = list_get(gpu_lds_units[id].Rx_queue_top, list_index);
 				assert(message_packet);
 
-				/*access_type = message_packet->access_type;
-				access_id = message_packet->access_id;
-				addr = message_packet->address;
+				access_type = message_packet->access_type;
+				//access_id = message_packet->access_id;
+				//addr = message_packet->address;
 
 				//probe the address for set, tag, and offset.
-				cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);*/
+				//cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
 
 				//for now treat the LDS unit as a register and charge a small amount of cycles for it's access.
 				//star todo figure out what to do with this.
@@ -321,78 +503,18 @@ void gpu_lds_unit_ctrl(void){
 				}
 				else
 				{
-					fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
+					fatal("gpu_lds_unit_ctrl(): unknown L2 message type = %d\n", message_packet->access_type);
 				}
-
 			}
 
-			//go to the next lds unit
-			id++;
+			id++; //go to the next lds unit
 		}
-
 	}
 	/* should never get here*/
 	fatal("gpu_lds_unit_ctrl task is broken\n");
 	return;
 }
 
-void gpu_s_cache_ctrl(void){
-
-	long long step = 1;
-
-	while(1)
-	{
-		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
-		await(gpu_s_cache, step);
-		step++;
-
-	}
-
-	/* should never get here*/
-	fatal("gpu_s_cache_ctrl task is broken\n");
-	return;
-}
-
-
-void gpu_v_cache_ctrl(void){
-
-	long long step = 1;
-
-
-	while(1)
-	{
-		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
-		await(gpu_v_cache, step);
-		step++;
-	}
-
-	/* should never get here*/
-	fatal("gpu_v_cache_ctrl task is broken\n");
-	return;
-}
-
-
-void gpu_l2_cache_ctrl(void){
-
-	long long step = 1;
-
-
-	while(1)
-	{
-		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
-		await(gpu_l2_cache, step);
-		step++;
-
-	}
-
-	/* should never get here*/
-	fatal("gpu_l2_cache_ctrl task is broken\n");
-	return;
-
-}
 
 
 void l3_cache_ctrl(void){

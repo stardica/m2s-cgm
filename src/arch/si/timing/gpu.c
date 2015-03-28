@@ -289,7 +289,7 @@ unsigned int si_gpu_single_fp_config = 255;
 /* bit field, all double floating point capabilities supported */ /* FIXME */
 unsigned int si_gpu_double_fp_config = 255;  
 
-unsigned int si_gpu_max_clock_frequency = 925;
+unsigned int si_gpu_max_clock_frequency = 1000;
 unsigned int si_gpu_address_bits = 32;
 
 unsigned int si_gpu_global_mem_cache_type = 2;  /* CL_READ_WRITE_CACHE */
@@ -329,7 +329,7 @@ struct str_map_t si_gpu_register_alloc_granularity_map =
 enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 
 /* Device parameters */
-int si_gpu_frequency = 925;
+int si_gpu_frequency = 1000;
 
 int si_gpu_num_compute_units = 32;
 

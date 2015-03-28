@@ -53,6 +53,7 @@ extern struct list_t *cgm_access_record;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
+extern eventcount volatile *interupt;
 
 //stat files
 extern FILE *cgm_stats;
