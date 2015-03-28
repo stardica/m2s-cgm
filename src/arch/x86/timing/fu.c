@@ -102,8 +102,12 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 			}
 			else if(uop->interrupt == 4) //GPU memcpy
 			{
+
+				//cgm_interrupt(self, uop);
+
+				//this needs to be a number greater than the cycles of the isr.
 				return 1000000;
-				//need to advance the memory system.
+
 			}
 			else //others we don't care about
 			{

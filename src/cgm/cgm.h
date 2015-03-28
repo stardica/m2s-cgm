@@ -53,7 +53,7 @@ extern struct list_t *cgm_access_record;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
-extern eventcount volatile *interupt;
+
 
 //stat files
 extern FILE *cgm_stats;
@@ -78,9 +78,8 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
-//interupts
-void interupt_service_request(void);
-
+//interrupts
+void cgm_interrupt(void);
 
 
 int remove_from_global(long long id);

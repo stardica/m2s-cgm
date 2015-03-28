@@ -49,6 +49,7 @@ FILE *cgm_stats;
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 
+
 void cgm_init(void){
 
 	//star todo add error checking.
@@ -87,6 +88,7 @@ void cgm_create_tasks(void){
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_finish");
 	sim_finish = new_eventcount(strdup(buff));
+
 
 	//tasks
 	memset(buff,'\0' , 100);
@@ -153,6 +155,13 @@ void cpu_gpu_run(void){
 		//advance(sim_finish);
 
 	}
+	return;
+}
+
+void cgm_interrupt(void){
+
+
+
 	return;
 }
 
@@ -522,11 +531,6 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	return;
 }
 
-void interupt_service_request(void){
-
-
-	return;
-}
 
 void cgm_dump_summary(void){
 
