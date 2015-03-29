@@ -115,7 +115,10 @@ int opencl_abi_call(X86Context *ctx)
 	int code;
 	int ret;
 
-	printf("ABI opencl_abi_call()\n");
+	if(INT == 1)
+	{
+		printf("ABI opencl_abi_call()\n");
+	}
 
 	/* Function code */
 	code = regs->ebx;
@@ -241,7 +244,10 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	size = regs->ecx;
 	opencl_debug("\tsize = %u\n", size);
 
-	printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u\n", size);
+	if(INT == 1)
+	{
+		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u\n", size);
+	}
 
 	/* For now, memory allocation in device memory is done by just 
 	 * incrementing a pointer to the top of the global memory space. 
@@ -363,7 +369,10 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n", device_ptr, host_ptr, size);
 
-	printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
+	if(INT == 1)
+	{
+		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
+	}
 
 
 	/* Check memory range */

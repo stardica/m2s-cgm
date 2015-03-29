@@ -20,6 +20,8 @@
 #include <ctype.h>
 #include <unistd.h>
 
+#include <m2s.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -324,7 +326,10 @@ struct runtime_t *runtime_get_from_syscall_code(int syscall_code)
 int runtime_abi_call(struct runtime_t *runtime, void *user_data)
 {
 
-	printf("CTX runtime_abi_call()\n");
+	if(INT == 1)
+	{
+		printf("CTX runtime_abi_call()\n");
+	}
 
 	return runtime->abi_func(user_data);
 }

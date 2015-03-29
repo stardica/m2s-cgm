@@ -8,11 +8,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <cgm/cgm.h>
 #include <cgm/interrupt.h>
 #include <cgm/tasking.h>
 
+
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/uop.h>
 #include <lib/util/list.h>
+#include <lib/util/debug.h>
 
 
 //global flags
@@ -80,6 +84,13 @@ void interrupt_service_request(void){
 	long long step = 1;
 	int num_cores = x86_cpu_num_cores;
 	int id = 0;
+	long long lat = 0;
+
+
+	X86Core *core;
+
+	struct interrupt_t *isr;
+	struct x86_uop_t *uop;
 
 	while(1)
 	{
@@ -101,28 +112,71 @@ void interrupt_service_request(void){
 				interrupt_cores[id]--;
 
 
-				/*//star todo figure out what to do with this.
-				if(access_type == cgm_access_load || access_type == cgm_access_store || access_type == cgm_access_nc_store)
-				{//then the packet is from the L2 cache
+				isr = list_dequeue(interrupt_list);
+				assert(isr);
 
-					P_PAUSE(mem_miss);
+				uop = isr->uop;
+				core = isr->thread->core;
 
-					//clear the gpu uop witness_ptr
-					(*message_packet->witness_ptr)++;
+				//star todo advance the memory system with ISR related accesses.
+				if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt) //an OpenCL related syscall occurred
+				{
+					if(INT == 1)
+					{
+						printf("interrupt_service_request() Caught OpenCL interrupt code %d in issue at cycle %llu!\n", uop->interrupt, P_TIME);
+					}
 
-					list_remove(gpu_v_caches[id].Rx_queue_top, message_packet);
+					if(uop->interrupt == 2) //GPU malloc
+					{
+						lat = 1000;
+
+					}
+					else if(uop->interrupt == 4) //GPU memcpy
+					{
+
+						//if we make it here we should have these fields
+						assert(uop->int_src_ptr);
+						//assert(uop->int_dest_ptr);
+						assert(uop->int_size);
+
+						//printf("interrupt memcpy size %d src 0x%08X dest 0x%08X\n", uop->int_size, uop->int_src_ptr, uop->int_dest_ptr);
+						lat = 1000;
+
+
+					}
+					else //others we don't care about
+					{
+						lat = 1000;
+					}
 
 				}
-				else
+				else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 				{
-					fatal("gpu_v_cache_ctrl(): unknown access type = %d\n", message_packet->access_type);
-				}*/
+					lat = 1000;
+				}
+				else //everything else
+				{
+					//this is what m2s originally had for all system interrupts
+					lat = 1000;
+
+				}
+
+				//set when the interrupt should complete
+				uop = linked_list_find(core->event_queue, uop);
+				uop->when = P_TIME + lat;
+				lat = 0;
+
 			}
 
 			id++; //go to the next lds unit
 		}
 
+		//the interrupt is complete we can free it now.
+		free(isr);
+		lat = 0;
 	}
 
+	/* should never get here*/
+	fatal("interrupt_service_request task is broken\n");
 	return;
 }

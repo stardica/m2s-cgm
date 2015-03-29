@@ -165,66 +165,30 @@ void cpu_gpu_run(void){
 void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 	//star todo
-	//run ISR on memory system
+	//create the memory system accesses
 	//check if we can access both i and d caches.
-	//both fetch and data caches need to be accessed.
-	//return from isr and set uop->when to the cycle after the return
-
-	//star todo
-	//we need to bring forward some information about he ISR.
-	//for memcpy src and dest pointers and size in bytes
+	//fetch and data caches need to be accessed.
 
 	X86Core *core = self->core;
-	struct x86_uop_t *interrupt_uop;
+	//struct x86_uop_t *interrupt_uop;
 	int id = core->id;
+	int num_cores = x86_cpu_num_cores;
 
 	struct interrupt_t *isr = interrupt_service_routine_create();
 
 	isr->uop = uop;
 	isr->core_id = id;
+	isr->thread = self;
 
+	//put the uop on the interrupt list
+	list_enqueue(interrupt_list, isr);
 
+	//set the flag for the right core
+	interrupt_cores[id]++;
+	assert(id < num_cores);
 
-	//printf("uop->id %llu when %llu\n", uop->id, uop->when);
-	interrupt_uop = linked_list_find(core->event_queue, uop);
-	interrupt_uop->when = P_TIME + 10;
-
-
-	//printf("interrupt_uop->id %llu etime. count %llu when %llu\n", interrupt_uop->id, etime.count, interrupt_uop->when);
-	//getchar();
-
-	/*if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt)
-	{
-		printf("CGM Caught OpenCL interrupt code %d in issue at cycle %llu!\n", uop->interrupt, P_TIME);
-
-		if(uop->interrupt == 2) //GPU malloc
-		{
-
-		}
-		else if(uop->interrupt == 4) //GPU memcpy
-		{
-			//run the interrupt
-		}
-		else //others we don't care about
-		{
-			//default
-		}
-
-	}
-	else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
-	{
-		//printf("Caught system interrupt in issue at cycle %llu!\n", P_TIME);
-
-	}
-	else //everything else
-	{
-		//this is what m2s originally had for all system interrupts
-
-	}*/
-
-
-	//advance(interrupt);
-
+	//advance the ISR
+	advance(interrupt);
 
 	return;
 }

@@ -27,14 +27,14 @@ struct interrupt_t{
 
 	//int uop_id;
 	//enum interrupt_type_t interrupt;
-	int syscall_code;
-	int abi_code;
-	unsigned int int_src_ptr;
-	unsigned int int_dest_ptr;
-	unsigned int int_size;
+	//int syscall_code;
+	//int abi_code;
+	//unsigned int int_src_ptr;
+	//unsigned int int_dest_ptr;
+	//unsigned int int_size;
 	int core_id;
 	struct x86_uop_t *uop;
-
+	X86Thread *thread;
 };
 
 //flags
@@ -61,9 +61,6 @@ void interrupt_create_tasks(void);
 struct interrupt_t *interrupt_service_routine_create(void);
 
 void interrupt_service_request(void);
-
-
-
 
 
 #endif /* __INTERRUPT_H__ */

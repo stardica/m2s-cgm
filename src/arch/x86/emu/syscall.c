@@ -253,7 +253,7 @@ void X86ContextSyscall(X86Context *self)
 		//star broke this out.
 		//opcode 255 is syscall code 329 is OpenCL driver call
 
-		if (code == 329)
+		if (code == 329 && INT == 1)
 		{
 			printf("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
 		}
@@ -265,7 +265,7 @@ void X86ContextSyscall(X86Context *self)
 		regs->eax = err;
 
 
-		if (code == 329)
+		if (code == 329 && INT ==1)
 		{
 			printf("CTX X86ContextSyscall() end \n");
 		}
