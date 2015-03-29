@@ -34,6 +34,7 @@
 #include <arch/x86/emu/regs.h>
 #include <arch/x86/emu/uinst.h>
 #include <cgm/cgm.h>
+#include <cgm/interrupt.h>
 
 
 
@@ -858,14 +859,15 @@ void X86ContextExecuteInst(X86Context *self)
 	if(self->inst.opcode == 255)
 	{
 		syscall_flag++;
+
+		//set a flag if we run into an opencl related syscall
+		if(regs->eax == 329)
+		{
+			//the value of the flag is the OpenCL ABI code.
+			opencl_syscall_flag = regs->ebx;
+		}
 	}
 
-	//set a flag if we run into an opencl related syscall
-	if(self->inst.opcode == 255 && regs->eax == 329)
-	{
-		//the value of the flag is the oepnco abi code.
-		opencl_syscall_flag = regs->ebx;
-	}
 
 	if (self->inst.opcode)
 	{

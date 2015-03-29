@@ -91,35 +91,14 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 	fu_class = x86_fu_class_table[uop->uinst->opcode];
 	if (!fu_class)
 	{
-		//star added this to create tune-able latency approximation for syscalls
-		if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt)
+		//catch the interrupt
+		if(uop->interrupt > 0)
 		{
-			printf("Caught OpenCL interrupt code %d in issue at cycle %llu!\n", uop->interrupt, P_TIME);
-
-			if(uop->interrupt == 2) //GPU malloc
-			{
-				return 4000;
-			}
-			else if(uop->interrupt == 4) //GPU memcpy
-			{
-
-				cgm_interrupt(self, uop);
-
-				//this needs to be a number greater than the cycles of the isr.
-				return 1000000;
-
-			}
-			else //others we don't care about
-			{
-				return 4000; //default
-			}
+			//this needs to be a number greater than the cycles of the ISR.
+			//when finished with the interrupt CGM will overwrite with the correct number of cycles
+			return 1000000000;
 		}
-		else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
-		{
-			//printf("Caught system interrupt in issue at cycle %llu!\n", P_TIME);
-			return 4000;
-		}
-		else //everything else
+		else //all the other non-interrupt related stuff
 		{
 			return 1;
 		}

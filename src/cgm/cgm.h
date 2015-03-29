@@ -40,11 +40,6 @@ enum cgm_access_kind_t
 	cgm_access_l2_store_reply
 };
 
-//global flags
-extern int opencl_syscall_flag;
-extern int syscall_flag;
-
-
 
 extern long long fetch_access_id;
 extern long long lspq_access_id;
@@ -81,7 +76,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 
 //interrupts
-void cgm_interrupt(X86Core *self, struct x86_uop_t *uop);
+void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop);
 
 
 int remove_from_global(long long id);

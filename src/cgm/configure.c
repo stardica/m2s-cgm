@@ -627,7 +627,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	}
 
 
-
 	/*configure GPU S caches*/
 	if(MATCH("GPU_S_Cache", "Sets"))
 	{

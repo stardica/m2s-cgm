@@ -35,10 +35,6 @@
 #include <cgm/interrupt.h>
 #include <cgm/packet.h>
 
-//global flags
-int opencl_syscall_flag = 0;
-int syscall_flag = 0;
-
 
 long long access_id = 0;
 //long long lspq_access_id = 0;
@@ -159,23 +155,14 @@ void cpu_gpu_run(void){
 
 		m2s_loop();
 
-		future_advance(sim_finish, (etime.count));
+		future_advance(sim_finish, etime.count + 1);
 		//advance(sim_finish);
 
 	}
 	return;
 }
 
-void cgm_interrupt(X86Core *self, struct x86_uop_t *uop){
-
-	X86Core *core = self;
-	struct x86_uop_t *interrupt_uop = uop;
-
-	int id = core->id;
-
-
-
-
+void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 	//star todo
 	//run ISR on memory system
@@ -186,6 +173,58 @@ void cgm_interrupt(X86Core *self, struct x86_uop_t *uop){
 	//star todo
 	//we need to bring forward some information about he ISR.
 	//for memcpy src and dest pointers and size in bytes
+
+	X86Core *core = self->core;
+	struct x86_uop_t *interrupt_uop;
+	int id = core->id;
+
+	struct interrupt_t *isr = interrupt_service_routine_create();
+
+	isr->uop = uop;
+	isr->core_id = id;
+
+
+
+	//printf("uop->id %llu when %llu\n", uop->id, uop->when);
+	interrupt_uop = linked_list_find(core->event_queue, uop);
+	interrupt_uop->when = P_TIME + 10;
+
+
+	//printf("interrupt_uop->id %llu etime. count %llu when %llu\n", interrupt_uop->id, etime.count, interrupt_uop->when);
+	//getchar();
+
+	/*if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt)
+	{
+		printf("CGM Caught OpenCL interrupt code %d in issue at cycle %llu!\n", uop->interrupt, P_TIME);
+
+		if(uop->interrupt == 2) //GPU malloc
+		{
+
+		}
+		else if(uop->interrupt == 4) //GPU memcpy
+		{
+			//run the interrupt
+		}
+		else //others we don't care about
+		{
+			//default
+		}
+
+	}
+	else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
+	{
+		//printf("Caught system interrupt in issue at cycle %llu!\n", P_TIME);
+
+	}
+	else //everything else
+	{
+		//this is what m2s originally had for all system interrupts
+
+	}*/
+
+
+	//advance(interrupt);
+
 
 	return;
 }

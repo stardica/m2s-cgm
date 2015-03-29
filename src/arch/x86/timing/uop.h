@@ -22,14 +22,7 @@
 
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
-
-enum interrupt_type_t
-{
-	no_interrupt = 0,
-	system_interrupt,
-	opencl_interrupt,
-	interrupt_count
-};
+#include <cgm/interrupt.h>
 
 /*
  * Object 'x86_uop_t'
@@ -96,6 +89,9 @@ struct x86_uop_t
 	int completed;
 	int interrupt;
 	enum interrupt_type_t interrupt_type;
+	unsigned int int_src_ptr;
+	unsigned int int_dest_ptr;
+	unsigned int int_size;
 
 
 	/* For memory uops */

@@ -421,6 +421,13 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		X86CoreInsertInEventQueue(core, uop);
 		
 
+		//star run the interrupt
+		if(uop->interrupt > 0)
+		{
+			cgm_interrupt(self, uop);
+		}
+
+
 		/* Statistics */
 		core->num_issued_uinst_array[uop->uinst->opcode]++;
 		core->iq_reads++;

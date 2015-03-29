@@ -36,6 +36,10 @@
 #include <driver/opencl/si-program.h>
 #include <driver/opencl/si-kernel.h>
 
+#include <cgm/interrupt.h>
+
+
+
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
 
@@ -291,8 +295,9 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	host_ptr = regs->ecx;
 	device_ptr = regs->edx;
 	size = regs->esi;
-	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n",
-			host_ptr, device_ptr, size);
+
+
+	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n", host_ptr, device_ptr, size);
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
@@ -349,6 +354,13 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	device_ptr = regs->ecx;
 	host_ptr = regs->edx;
 	size = regs->esi;
+
+	//star added this to get this data later.
+	int_src_ptr = host_ptr;
+	int_dest_ptr = device_ptr;
+	int_size = size;
+
+
 	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n", device_ptr, host_ptr, size);
 
 	printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
@@ -356,7 +368,9 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
+	{
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
+	}
 
 	/* Write memory from host to device */
 	buf = xmalloc(size);

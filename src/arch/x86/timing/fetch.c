@@ -43,6 +43,7 @@
 #include <arch/x86/timing/uop.h>
 
 #include <cgm/cgm.h>
+#include <cgm/interrupt.h>
 
 /*
  * Class 'X86Thread'
@@ -207,33 +208,50 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->pred_neip = self->fetch_neip;
 		uop->target_neip = ctx->target_eip;
 
-
 		//star added this to catch interrupts at issue.
+		//all of the interrupt related data is known by now.
+		//this is kind of Frankensteiny, but it works
 		if(syscall_flag)
 		{
-			//if both flags are set its an opencl syscall
-			if(syscall_flag && opencl_syscall_flag)
+			//if both flags are set its an OpenCL syscall
+			if(opencl_syscall_flag)
 			{
-				uop->interrupt = opencl_syscall_flag;
-				uop->interrupt_type = opencl_interrupt;
-				opencl_syscall_flag = 0;
-				syscall_flag = 0;
+
+				if(opencl_syscall_flag == 4) //memcpy
+				{
+					uop->interrupt = opencl_syscall_flag;
+					uop->interrupt_type = opencl_interrupt;
+					uop->int_src_ptr = int_src_ptr;
+					uop->int_dest_ptr = int_dest_ptr;
+					uop->int_size = int_size;
+				}
+				else //all others
+				{
+					uop->interrupt = opencl_syscall_flag;
+					uop->interrupt_type = opencl_interrupt;
+				}
+
 			}
 			else
 			{
 				uop->interrupt = 1;
 				uop->interrupt_type = system_interrupt;
-				syscall_flag --;
 			}
 
+			//rest all of the flags for the next round
+			syscall_flag = 0;
+			opencl_syscall_flag = 0;
+			int_src_ptr = 0;
+			int_dest_ptr=0;
+			int_size=0;
 
 		}
 		else
 		{
 			uop->interrupt = 0;
-			uop->interrupt_type = no_interrupt;
-
+			uop->interrupt_type = non_interrupt;
 		}
+
 
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */

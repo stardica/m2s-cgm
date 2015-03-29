@@ -64,6 +64,8 @@ void X86CoreWriteback(X86Core *self)
 		assert(uop->ready);
 		assert(!uop->completed);
 		
+		//printf("WRITE BACK uop->id %llu etime. count %llu when %llu\n", uop->id, etime.count, uop->when);
+
 		/* Extract element from event queue. */
 		linked_list_remove(self->event_queue);
 		uop->in_event_queue = 0;
