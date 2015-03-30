@@ -86,7 +86,6 @@ void interrupt_service_request(void){
 	int id = 0;
 	long long lat = 0;
 
-
 	X86Core *core;
 
 	struct interrupt_t *isr;

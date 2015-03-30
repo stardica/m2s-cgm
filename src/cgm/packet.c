@@ -9,10 +9,7 @@
 #include <cgm/packet.h>
 
 
-
-
 //CPU will call create packet and load into correct queue.
-//I am not sure yet what to put into the packet.
 struct cgm_packet_t *packet_create(void){
 
 	struct cgm_packet_t *new_packet;

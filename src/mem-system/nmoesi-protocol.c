@@ -2690,8 +2690,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 		dst_node = target_mod->high_net_node;
 
 		/* Send message */
-		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
-			EV_MOD_NMOESI_MESSAGE_RECEIVE, stack, event, stack);
+		stack->msg = net_try_send_ev(net, src_node, dst_node, 8, EV_MOD_NMOESI_MESSAGE_RECEIVE, stack, event, stack);
 		return;
 	}
 

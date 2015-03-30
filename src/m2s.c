@@ -1346,11 +1346,6 @@ static void m2s_init(void)
 	unsigned int max_id;
 	unsigned int id;
 
-	/* Classes */
-	CLASS_REGISTER(Asm);
-	CLASS_REGISTER(Emu);
-	CLASS_REGISTER(Timing);
-
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
 	min_id = str_alnum_to_int("10000");
@@ -1495,7 +1490,15 @@ int main(int argc, char **argv)
 {
 
 	/* Global initialization and welcome message */
-	m2s_init();
+	//m2s_init();
+
+	printf("---Simulator Init---\n");
+
+	/* Classes */
+	CLASS_REGISTER(Asm);
+	CLASS_REGISTER(Emu);
+	CLASS_REGISTER(Timing);
+
 
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
