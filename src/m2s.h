@@ -6,6 +6,10 @@
  */
 
 
+#ifndef M2S_H_
+#define M2S_H_
+
+
 //star for our development controls and incremental coding.
 
 #define SKIP 1000000
@@ -25,3 +29,6 @@
 
 //m2s prototypes
 void m2s_loop(void);
+
+
+#endif /*M2S_H_*/

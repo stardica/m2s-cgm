@@ -27,6 +27,7 @@
 
 #include <cgm/cgm.h>
 #include <cgm/cache.h>
+#include <cgm/directory.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/configure.h>
 #include <cgm/sys-agent.h>
@@ -60,6 +61,7 @@ void cgm_init(void){
 
 	//init memory system structures
 	cache_init();
+	dir_init();
 	switch_init();
 	sysagent_init();
 	memctrl_init();
