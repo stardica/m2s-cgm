@@ -8,22 +8,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include <cgm/directory.h>
+#include <lib/util/list.h>
+
 
 //globals
 struct directory_t *directory;
-
-
 
 void dir_init(void){
 
 	//init the directory struct
 	directory = (void *) calloc(1, sizeof(struct directory_t));
 
-	//init the data vectors
-
-	directory->bit_vector = (void *) calloc(MAX_SETS, sizeof(unsigned char));
-
 	return;
+}
+
+unsigned long long dir_map_block_number(unsigned int addr){
+
+	unsigned long long block_number = (addr & ~(directory->block_mask))/(directory->block_size);
+
+	return block_number;
 }

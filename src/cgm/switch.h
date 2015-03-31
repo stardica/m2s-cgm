@@ -11,7 +11,7 @@
 
 
 //function prototypes
-void sysagent_init(void);
+void switch_init(void);
 
 
 #endif /* SWITCH_H_ */

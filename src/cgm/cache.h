@@ -158,7 +158,6 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 int mshr_remove(struct cache_t *cache, long long access_id);
-void directory_init(void);
 
 
 //borrowed from m2s mem-system

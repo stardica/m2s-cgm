@@ -35,6 +35,7 @@
 #include <cgm/tasking.h>
 #include <cgm/interrupt.h>
 #include <cgm/packet.h>
+#include <cgm/switch.h>
 
 
 long long access_id = 0;

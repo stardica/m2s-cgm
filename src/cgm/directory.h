@@ -5,40 +5,47 @@
  *      Author: stardica
  */
 
-
 #ifndef DIRECTORY_H_
 #define DIRECTORY_H_
 
-
+#include <math.h>
 #include <lib/util/list.h>
 
-//number of 64byte memory blocks in 4GB
-#define MAX_SETS 1048576
-
-enum directory_mode_t{
-
-	soc = 0,
-	node
-
-};
 
 struct directory_t{
 
-	//directory queues
-	struct list_t *Rx_queue_0;
-	struct list_t *Rx_queue_1;
-	struct list_t *Rx_queue_2;
-	struct list_t *Rx_queue_3;
+	//directory mode
+	unsigned int mode; //1 = soc mode 0 equals system agent mode
+	unsigned long long mem_image_size;
+	unsigned int block_size;
+	unsigned long long num_blocks;
+	unsigned int block_mask;
+	unsigned int vector_size;
 
-	//directory data
-	unsigned char *bit_vector; // gives <0,0,0,0,0,0,0,0>
+	//directory queue(s) ass needed for cache access.
+	struct list_t **Rx_queue;	//l3_slice_0 or sysagent_0 queue
+
+
+	//directory data. We can vary the size.
+	unsigned char *bit_vector_8; 		// 1 byte
+	unsigned short *bit_vector_16; 		// 2 bytes
+	unsigned long *bit_vector_24;		// 4 bytes
+	unsigned long long *bit_vector_64;	// 8 bytes
 
 };
-
 
 extern struct directory_t *directory;
 
 void dir_init(void);
 
+/* 	- usage -
+	unsigned int addr = 256;
+
+	unsigned long long block_number = dir_map_block_number(addr);
+
+	printf("block_number addr 0x%08X block is %llu\n", addr, block_number);
+	getchar();
+ */
+unsigned long long dir_map_block_number(unsigned int addr);
 
 #endif /*DIRECTORY_H_*/

@@ -30,6 +30,7 @@
 #include <cgm/cache.h>
 #include <cgm/tasking.h>
 #include <cgm/mem-ctrl.h>
+#include <cgm/directory.h>
 
 
 int cgmmem_check_config = 0;
@@ -48,6 +49,15 @@ int cgm_mem_configure(void){
 	}
 
 	cache_finish_create();
+
+	error = ini_parse(cgm_config_file_name_and_path, directory_read_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for memctrl configuration.\n");
+		return 1;
+	}
+
+	directory_finish_create();
 
 	//configure the memory controller
 	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
@@ -733,7 +743,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	return 0;
 }
 
-
 int cache_finish_create(){
 
 	int num_cores = x86_cpu_num_cores;
@@ -1166,6 +1175,110 @@ int cache_finish_create(){
 	return 0;
 }
 
+int directory_read_config(void* user, const char* section, const char* name, const char* value){
+
+
+	if(MATCH("Directory", "MemSize"))
+	{
+		directory->mem_image_size = atoll(value);//4GB;
+	}
+
+	if(MATCH("Directory", "BlockSize"))
+	{
+		directory->block_size = atoi(value);
+	}
+
+	if(MATCH("Directory", "Mode"))
+	{
+		directory->mode = atoi(value);
+	}
+
+	if(MATCH("Directory", "VectorSize"))
+	{
+		directory->vector_size = atoi(value);
+	}
+
+
+	return 0;
+}
+
+int directory_finish_create(void){
+
+	int num_cores = x86_cpu_num_cores;
+	char buff[100];
+	int i = 0;
+
+	// create the number of queues we need.
+	// for our base system one entry per l3 cache slice.
+	// this can also be set up as one entry per system agent.
+
+	//do some checks
+	if(directory->block_size != l3_caches->block_size)
+	{
+		fatal("directory_finish_create() block size needs to match l3 block size. Check the cgm_config.ini file");
+	}
+
+	//init the data vectors
+	//m2s doesn't natively account for dir memory overhead IN the memory image
+	//get the number of blocks in the system
+	directory->num_blocks = (directory->mem_image_size/directory->block_size);
+
+	//this accounts for directory overhead
+	//directory->num_blocks = (directory->mem_image_size/(directory->block_size + directory->vector_size));
+
+	//get the block mask
+	directory->block_mask = directory->block_size - 1; // this is 0 - N
+
+
+	if(directory->vector_size == 1)
+	{
+		directory->bit_vector_8 = (void *) calloc(directory->num_blocks, sizeof(unsigned char));
+	}
+	else if(directory->vector_size == 2)
+	{
+		directory->bit_vector_16 = (void *) calloc(directory->num_blocks, sizeof(unsigned short));
+	}
+	else if(directory->vector_size == 4)
+	{
+		directory->bit_vector_24 = (void *) calloc(directory->num_blocks, sizeof(unsigned long));
+	}
+	else if (directory->vector_size == 8)
+	{
+		directory->bit_vector_64 = (void *) calloc(directory->num_blocks, sizeof(unsigned long long));
+	}
+	else
+	{
+		fatal("directory_finish_create() invalid vector size. Check the cgm_config.ini file");
+	}
+
+
+	//set up input queues
+	if (directory->mode)
+	{
+		directory->Rx_queue = (void *) calloc(num_cores, sizeof(struct list_t));
+
+		for(i = 0; i < num_cores ; i++)
+		{
+			directory->Rx_queue[i] = list_create();
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "Rx_queue.%d", i);
+			directory->Rx_queue[i]->name = strdup(buff);
+			//printf("directory->Rx_queue[%d] name = %s\n", i, directory->Rx_queue[i]->name);
+		}
+	}
+	else
+	{
+		fatal("directory_finish_create() currently only support distributed mode. Check the cgm_config.ini file");
+	}
+
+	/*printf("directory->mem_image_size %llu\n", directory->mem_image_size);
+	printf("directory->block_size %llu\n", directory->block_size);
+	printf("num_blocks %llu\n", num_blocks);
+	getchar();*/
+
+	return 0;
+
+}
 
 int sysagent_config(void* user, const char* section, const char* name, const char* value){
 
@@ -1206,6 +1319,7 @@ int memctrl_config(void* user, const char* section, const char* name, const char
 	{
 		mem_ctrl->queue_size = atoi(value);
 	}
+
 	if(MATCH("MemCtrl", "MSHRSize"))
 	{
 		mem_ctrl->mshr_size = atoi(value);

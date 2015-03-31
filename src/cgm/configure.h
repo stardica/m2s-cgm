@@ -29,7 +29,8 @@ int cgm_cpu_configure(void);
 int cgm_gpu_configure(void);
 int cache_read_config(void* user, const char* section, const char* name, const char* value);
 int cache_finish_create(void);
-
+int directory_read_config(void* user, const char* section, const char* name, const char* value);
+int directory_finish_create(void);
 
 int cpu_configure(Timing *self, struct config_t *config);
 int gpu_configure(Timing *self, struct config_t *config);
