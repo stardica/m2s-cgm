@@ -9,6 +9,9 @@
 #define DIRECTORY_H_
 
 #include <math.h>
+
+#include <cgm/tasking.h>
+
 #include <lib/util/list.h>
 
 
@@ -36,7 +39,14 @@ struct directory_t{
 
 extern struct directory_t *directory;
 
-void dir_init(void);
+extern int *directory_data;
+extern eventcount volatile *dir;
+
+void directory_init(void);
+void directory_create(void);
+void directory_create_tasks(void);
+
+void directory_ctrl(void);
 
 /* 	- usage -
 	unsigned int addr = 256;
@@ -46,6 +56,6 @@ void dir_init(void);
 	printf("block_number addr 0x%08X block is %llu\n", addr, block_number);
 	getchar();
  */
-unsigned long long dir_map_block_number(unsigned int addr);
+unsigned long long directory_map_block_number(unsigned int addr);
 
 #endif /*DIRECTORY_H_*/

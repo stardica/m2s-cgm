@@ -62,7 +62,7 @@ void cgm_init(void){
 
 	//init memory system structures
 	cache_init();
-	dir_init();
+	directory_init();
 	switch_init();
 	sysagent_init();
 	memctrl_init();
