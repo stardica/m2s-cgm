@@ -89,6 +89,8 @@ struct cache_t{
 	struct cache_set_t *sets;
 	unsigned int block_mask;
 	int log_block_size;
+	unsigned int set_mask;
+	int log_set_size;
 
 	//cache queues
 	struct list_t *Rx_queue_top;
@@ -162,7 +164,8 @@ int mshr_remove(struct cache_t *cache, long long access_id);
 
 //borrowed from m2s mem-system
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
-int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
+//int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
+int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cache_access_block(struct cache_t *cache, int set, int way);

@@ -309,13 +309,21 @@ void l1_d_cache_ctrl(void){
 				access_id = message_packet->access_id;
 				addr = message_packet->address;
 
-				/*printf("access type %d\n", access_type);
-				printf("access id %d\n", access_id);
-				printf("addr 0x%08u\n", addr);
-				getchar();*/
+				printf("access type %d\n", access_type);
+				printf("access id %llu\n", access_id);
+				//printf("addr 0x%08u\n", addr);
+
 
 				//probe the address for set, tag, and offset.
+				//star i think this is calculating correctly.
 				cgm_cache_decode_address(&(l1_d_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+
+				printf("Addr 0x%08X\n", addr);
+				printf("tag %d\n", *tag_ptr);
+				printf("set %d\n", *set_ptr);
+				printf("offset %u\n", *offset_ptr);
+				//getchar();
+
 
 				//request from CPU
 				if (access_type == cgm_access_load)
@@ -323,7 +331,9 @@ void l1_d_cache_ctrl(void){
 
 					//stats
 					l1_d_caches[id].loads++;
-					cache_status = cgm_cache_find_block(&(l1_d_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					//int *set_ptr = &set; int *tag_ptr = &tag; unsigned int *offset_ptr = &offset;
+					//cache_status = cgm_cache_find_block(&(l1_d_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l1_d_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					if(cache_status == 1)
 					{//then L1 D Cache Hit!
@@ -365,13 +375,15 @@ void l1_d_cache_ctrl(void){
 				else if (access_type == cgm_access_store)
 				{
 
+					printf("Entered l1 d cache store\n");
+					getchar();
 					//star todo evict old block this is where the LRU, FIFO stuff comes into play
 					//this needs some work to get it right
 
 					//stats
 					l1_d_caches[id].stores++;
 
-					cache_status = cgm_cache_find_block(&(l1_d_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l1_d_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					// L1 D Cache Hit!
 					if(cache_status == 1)
@@ -537,7 +549,7 @@ void l2_cache_ctrl(void){
 					//stats
 					l2_caches[id].fetches++;
 
-					cache_status = cgm_cache_find_block(&(l2_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l2_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					// L2 Cache Hit!
 					if(cache_status == 1)
@@ -581,7 +593,7 @@ void l2_cache_ctrl(void){
 					//stats
 					l2_caches[id].loads++;
 
-					cache_status = cgm_cache_find_block(&(l2_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l2_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					// L2 Cache Hit!
 					if(cache_status == 1)
@@ -625,7 +637,7 @@ void l2_cache_ctrl(void){
 				{
 					//stats
 					l2_caches[id].stores++;
-					cache_status = cgm_cache_find_block(&(l2_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l2_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					// L2 Cache Hit!
 					if(cache_status == 1)
@@ -759,7 +771,7 @@ void l1_i_cache_ctrl(void){
 					//stats
 					l1_i_caches[id].fetches++;
 
-					cache_status = cgm_cache_find_block(&(l1_i_caches[id]), addr, set_ptr, way_ptr, state_ptr);
+					cache_status = cgm_cache_find_block(&(l1_i_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 					// L1 I Cache Hit!
 					if(cache_status == 1)
@@ -1135,19 +1147,22 @@ int mshr_remove(struct cache_t *cache, long long access_id){
 	return 0;
 }
 
-/* Return {set, tag, offset} for a given address */
+/* Return {tag, set, offset} for a given address */
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
 
-	/*printf("After probe addr 0x%08x\n", addr);
+	//printf("After probe addr 0x%08x\n", addr);
 
-	printf("cache->log_block_size = %d\n",cache->log_block_size);
+	/*printf("cache->log_block_size = %d\n",cache->log_block_size);
 	printf("cache->block_mask %d\n", cache->block_mask);
 	printf("\n");*/
 
-	*(set_ptr) = (addr >> cache->log_block_size) % cache->num_sets;
-	*(tag_ptr) = addr & ~(cache->block_mask);
+
+	//star i reworked this a little
+	*(tag_ptr) = (addr >> (cache->log_block_size + cache->log_set_size));//addr & ~(cache->block_mask);
+	*(set_ptr) =  (addr >> (cache->log_block_size) & (cache->set_mask));//(addr >> cache->log_block_size) % cache->num_sets;
 	*(offset_ptr) = addr & (cache->block_mask);
+
 
 	//notes this is useing the tag and indx to calculate set location.
 
@@ -1155,15 +1170,17 @@ void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set
 	printf("Addr 0x%08x\n", addr);
 	printf("(addr >> cache->log_block_size) = 0x%08x\n", addr >> cache->log_block_size);
 	printf("set_ptr %d\n", (addr >> cache->log_block_size) % cache->num_sets);
-	printf("---set_ptr---\n");
+	printf("---set_ptr---\n");*/
 
-	printf("---tag_ptr---\n");
-	printf("Addr 0x%08x\n", addr);
+	/*printf("---tag_ptr---\n");
+	printf("Addr 0x%08X\n", addr);
 	printf("~(cache->block_mask) 0x%08x\n", ~(cache->block_mask));
 	printf("addr & ~(cache->block_mask) 0x%08x\n", addr & ~(cache->block_mask));
+	printf("tag %d\n", *tag_ptr);
 	printf("---tag_ptr---\n");
+	getchar();*/
 
-	printf("---offset_ptr---\n");
+	/*printf("---offset_ptr---\n");
 	printf("Addr 0x%08x\n", addr);
 	printf("(cache->block_mask) 0x%08x\n", (cache->block_mask));
 	printf("addr & (cache->block_mask) 0x%08x\n", addr & addr & (cache->block_mask));
@@ -1177,20 +1194,29 @@ void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
-int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
+//int *set_ptr = &set; int *tag_ptr = &tag; unsigned int *offset_ptr = &offset;
+//cache_status = cgm_cache_find_block(&(l1_d_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+//int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
+int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
 	int set, tag, way;
+	unsigned int * offset;
 
 	/* Locate block */
-	tag = addr & ~cache->block_mask;
-	set = (addr >> cache->log_block_size) % cache->num_sets;
+	tag = *tag_ptr;
+	set = *set_ptr;
+	offset = *offset_ptr;
 
-	*(set_ptr) = set;
+	//*(set_ptr) = set;
 	*(state_ptr) = 0;
+
+	printf("cache is %d assoc %d\n", cache->id, cache->assoc);
+	getchar();
 
 	for (way = 0; way < cache->assoc; way++)
 	{
-		if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].state)
+		//if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].state)
+		if (cache->sets[set].blocks[way].tag == tag)
 		{
 			break;
 		}
@@ -1317,3 +1343,4 @@ void cache_dump_stats(void){
 
 	return;
 }
+

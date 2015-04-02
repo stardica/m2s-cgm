@@ -758,7 +758,9 @@ int cache_finish_create(){
 	{
 		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
+		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
+		l1_i_caches[i].set_mask = l1_i_caches[i].num_sets - 1;
 		l1_i_caches[i].hits = 0;
 		l1_i_caches[i].misses = 0;
 		l1_i_caches[i].fetches = 0;
@@ -787,7 +789,9 @@ int cache_finish_create(){
 
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
+		l1_d_caches[i].log_set_size = LOG2(l1_d_caches[i].num_sets);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
+		l1_d_caches[i].set_mask = l1_d_caches[i].num_sets - 1;
 		l1_d_caches[i].hits = 0;
 		l1_d_caches[i].misses = 0;
 		l1_d_caches[i].loads = 0;
@@ -819,7 +823,9 @@ int cache_finish_create(){
 
 		l2_caches[i].id = i;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
+		l2_caches[i].log_set_size = LOG2(l2_caches[i].num_sets);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
+		l2_caches[i].set_mask = l2_caches[i].num_sets - 1;
 		l2_caches[i].hits = 0;
 		l2_caches[i].misses = 0;
 		l2_caches[i].Rx_queue_top = list_create();
@@ -847,7 +853,9 @@ int cache_finish_create(){
 
 		l3_caches[i].id = 1;
 		l3_caches[i].log_block_size = LOG2(l3_caches[i].block_size);
+		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
+		l3_caches[i].set_mask = l3_caches[i].num_sets - 1;
 		l3_caches[i].hits = 0;
 		l3_caches[i].misses = 0;
 		l3_caches[i].Rx_queue_top = list_create();
@@ -874,6 +882,7 @@ int cache_finish_create(){
 		l3_caches[i].mshr->name = strdup(buff);
 
 		//Initialize array of sets
+		//l1_i_caches[i].num_sets = (l1_i_caches[i].num_sets / l1_i_caches[i].assoc);
 		l1_i_caches[i].sets = calloc(l1_i_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < l1_i_caches[i].num_sets; set++)
 		{
@@ -979,7 +988,9 @@ int cache_finish_create(){
 		//vector caches
 		gpu_v_caches[i].id = i;
 		gpu_v_caches[i].log_block_size = LOG2(gpu_v_caches[i].block_size);
+		gpu_v_caches[i].log_set_size = LOG2(gpu_v_caches[i].num_sets);
 		gpu_v_caches[i].block_mask = gpu_v_caches[i].block_size - 1;
+		gpu_v_caches[i].set_mask = gpu_v_caches[i].num_sets - 1;
 		gpu_v_caches[i].hits = 0;
 		gpu_v_caches[i].misses = 0;
 		//gpu_v_caches[i].fetches = 0;
@@ -1009,7 +1020,9 @@ int cache_finish_create(){
 		//scalar caches
 		gpu_s_caches[i].id = i;
 		gpu_s_caches[i].log_block_size = LOG2(gpu_s_caches[i].block_size);
+		gpu_s_caches[i].log_set_size = LOG2(gpu_s_caches[i].num_sets);
 		gpu_s_caches[i].block_mask = gpu_s_caches[i].block_size - 1;
+		gpu_s_caches[i].set_mask = gpu_s_caches[i].num_sets - 1;
 		gpu_s_caches[i].hits = 0;
 		gpu_s_caches[i].misses = 0;
 		//gpu_v_caches[i].fetches = 0;
@@ -1039,7 +1052,9 @@ int cache_finish_create(){
 		//LDS caches
 		gpu_lds_units[i].id = i;
 		gpu_lds_units[i].log_block_size = LOG2(gpu_lds_units[i].block_size);
+		gpu_lds_units[i].log_set_size = LOG2(gpu_lds_units[i].num_sets);
 		gpu_lds_units[i].block_mask = gpu_lds_units[i].block_size - 1;
+		gpu_lds_units[i].set_mask = gpu_lds_units[i].num_sets - 1;
 		gpu_lds_units[i].hits = 0;
 		gpu_lds_units[i].misses = 0;
 		//gpu_v_caches[i].fetches = 0;
@@ -1102,20 +1117,20 @@ int cache_finish_create(){
 		}
 
 
-		gpu_s_caches[i].sets = calloc(gpu_s_caches[i].num_sets, sizeof(struct cache_set_t));
-		for (set = 0; set < gpu_s_caches[i].num_sets; set++)
+		gpu_lds_units[i].sets = calloc(gpu_lds_units[i].num_sets, sizeof(struct cache_set_t));
+		for (set = 0; set < gpu_lds_units[i].num_sets; set++)
 		{
 			//Initialize array of blocks
-			gpu_s_caches[i].sets[set].id = set;
-			gpu_s_caches[i].sets[set].blocks = calloc(gpu_s_caches[i].assoc, sizeof(struct cache_block_t));
-			gpu_s_caches[i].sets[set].way_head = &gpu_s_caches[i].sets[set].blocks[0];
-			gpu_s_caches[i].sets[set].way_tail = &gpu_s_caches[i].sets[set].blocks[gpu_s_caches[i].assoc - 1];
-			for (way = 0; way < gpu_s_caches[i].assoc; way++)
+			gpu_lds_units[i].sets[set].id = set;
+			gpu_lds_units[i].sets[set].blocks = calloc(gpu_lds_units[i].assoc, sizeof(struct cache_block_t));
+			gpu_lds_units[i].sets[set].way_head = &gpu_lds_units[i].sets[set].blocks[0];
+			gpu_lds_units[i].sets[set].way_tail = &gpu_lds_units[i].sets[set].blocks[gpu_lds_units[i].assoc - 1];
+			for (way = 0; way < gpu_lds_units[i].assoc; way++)
 			{
-				block = &gpu_s_caches[i].sets[set].blocks[way];
+				block = &gpu_lds_units[i].sets[set].blocks[way];
 				block->way = way;
-				block->way_prev = way ? &gpu_s_caches[i].sets[set].blocks[way - 1] : NULL;
-				block->way_next = way < gpu_s_caches[i].assoc - 1 ? &gpu_s_caches[i].sets[set].blocks[way + 1] : NULL;
+				block->way_prev = way ? &gpu_lds_units[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < gpu_lds_units[i].assoc - 1 ? &gpu_lds_units[i].sets[set].blocks[way + 1] : NULL;
 			}
 		}
 
@@ -1127,7 +1142,9 @@ int cache_finish_create(){
 
 			gpu_l2_caches[i].id = i;
 			gpu_l2_caches[i].log_block_size = LOG2(gpu_l2_caches[i].block_size);
+			gpu_l2_caches[i].log_set_size = LOG2(gpu_l2_caches[i].num_sets);
 			gpu_l2_caches[i].block_mask = gpu_l2_caches[i].block_size - 1;
+			gpu_l2_caches[i].set_mask = gpu_l2_caches[i].num_sets - 1;
 			gpu_l2_caches[i].hits = 0;
 			gpu_l2_caches[i].misses = 0;
 			//gpu_v_caches[i].fetches = 0;
