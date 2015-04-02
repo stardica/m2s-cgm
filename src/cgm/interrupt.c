@@ -105,7 +105,7 @@ void interrupt_service_request(void){
 		{
 
 			if(interrupt_cores[id] > 0)
-			{//then there is a task to be done in this unit.
+			{
 
 				//decrement the counter
 				interrupt_cores[id]--;

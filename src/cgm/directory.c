@@ -93,6 +93,7 @@ void directory_ctrl(void){
 	return;
 }
 
+
 unsigned long long directory_map_block_number(unsigned int addr){
 
 	unsigned long long block_number = (addr & ~(directory->block_mask))/(directory->block_size);

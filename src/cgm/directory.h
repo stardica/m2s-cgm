@@ -48,14 +48,6 @@ void directory_create_tasks(void);
 
 void directory_ctrl(void);
 
-/* 	- usage -
-	unsigned int addr = 256;
-
-	unsigned long long block_number = dir_map_block_number(addr);
-
-	printf("block_number addr 0x%08X block is %llu\n", addr, block_number);
-	getchar();
- */
 unsigned long long directory_map_block_number(unsigned int addr);
 
 #endif /*DIRECTORY_H_*/
