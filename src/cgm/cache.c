@@ -309,8 +309,8 @@ void l1_d_cache_ctrl(void){
 				access_id = message_packet->access_id;
 				addr = message_packet->address;
 
-				printf("access type %d\n", access_type);
-				printf("access id %llu\n", access_id);
+				/*printf("access type %d\n", access_type);
+				printf("access id %llu\n", access_id);*/
 				//printf("addr 0x%08u\n", addr);
 
 
@@ -318,10 +318,10 @@ void l1_d_cache_ctrl(void){
 				//star i think this is calculating correctly.
 				cgm_cache_decode_address(&(l1_d_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
 
-				printf("Addr 0x%08X\n", addr);
+				/*printf("Addr 0x%08X\n", addr);
 				printf("tag %d\n", *tag_ptr);
 				printf("set %d\n", *set_ptr);
-				printf("offset %u\n", *offset_ptr);
+				printf("offset %u\n", *offset_ptr);*/
 				//getchar();
 
 
@@ -375,8 +375,8 @@ void l1_d_cache_ctrl(void){
 				else if (access_type == cgm_access_store)
 				{
 
-					printf("Entered l1 d cache store\n");
-					getchar();
+					//printf("Entered l1 d cache store\n");
+					//getchar();
 					//star todo evict old block this is where the LRU, FIFO stuff comes into play
 					//this needs some work to get it right
 
@@ -1210,8 +1210,8 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 	//*(set_ptr) = set;
 	*(state_ptr) = 0;
 
-	printf("cache is %d assoc %d\n", cache->id, cache->assoc);
-	getchar();
+	//printf("cache is %d assoc %d\n", cache->id, cache->assoc);
+	//getchar();
 
 	for (way = 0; way < cache->assoc; way++)
 	{
