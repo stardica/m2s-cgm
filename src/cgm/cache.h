@@ -110,6 +110,7 @@ struct cache_t{
 	long long loads;
 	long long stores;
 	long long hits;
+	long long invalid_hits;
 	long long misses;
 
 };
@@ -162,9 +163,11 @@ void cache_dump_stats(void);
 int mshr_remove(struct cache_t *cache, long long access_id);
 
 
-//borrowed from m2s mem-system
+// enum cgm_access_kind_t access_type,
+int cache_mesi_load(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+
+//borrowed from m2s mem-system and tweaked a bit
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
-//int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, int *state_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
@@ -174,7 +177,8 @@ void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
 
-//interrupt service requests
+
+//int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 
 
 //tasks
