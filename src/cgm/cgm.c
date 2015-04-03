@@ -319,7 +319,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
-		advance(l1_i_cache);
+		advance(&l1_i_cache[id]);
 	}
 	else
 	{
@@ -371,7 +371,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 C Cache Ctrl task
-		advance(l1_d_cache);
+		advance(&l1_d_cache[id]);
 
 	}
 	else if(access_kind == cgm_access_prefetch)
