@@ -82,10 +82,6 @@ void instrumentation_init(void);
 void instrumentation_done(void);
 struct Uop_Status_t *Uop_status_init(void);
 
-//stop the sim after configuration
-//void stop(void);
-
-
 
 //Pipeline
 void FectchStats(struct x86_uop_t *uop, int ctx_pid);
