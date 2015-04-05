@@ -90,12 +90,14 @@ eventcount volatile *gpu_v_cache;
 eventcount volatile *gpu_s_cache;
 eventcount volatile *gpu_lds_unit;
 
-//tasks
-l1_i_cache_ctrl_ptr_t *l1_i_cache_ctrl_ptr;
-l1_i_cache_ctrl_ptr_t *l1_d_cache_ctrl_ptr;
-l1_i_cache_ctrl_ptr_t *l2_cache_ctrl_ptr;
-l1_i_cache_ctrl_ptr_t *l3_cache_ctrl_ptr;
-
+task *l1_i_cache_tasks;
+task *l1_d_cache_tasks;
+task *l2_cache_tasks;
+task *l3_cache_tasks;
+task *gpu_l2_cache_tasks;
+task *gpu_v_cache_tasks;
+task *gpu_s_cache_tasks;
+task *gpu_lds_tasks;
 
 void cache_init(void){
 
@@ -148,8 +150,8 @@ void cache_create(void){
 	gpu_s_caches_data = (void *) calloc(num_cus, sizeof(int));
 
 	//initialize the GPU L2 caches.
-	gpu_l2_caches = (void *) calloc(gpu_group_cache_num, sizeof(struct cache_t));
-	gpu_l2_caches_data = (void *) calloc(gpu_group_cache_num, sizeof(int));
+	gpu_l2_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_l2_caches_data = (void *) calloc(num_cus, sizeof(int));
 
 	//initialize the GPU LDS
 	gpu_lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));
@@ -243,74 +245,85 @@ void cache_create_tasks(void){
 		gpu_lds_unit[i] = *(new_eventcount(strdup(buff)));
 	}
 
+
 	////////////////////
 	//tasks
 	////////////////////
 
+
 	//l1 i caches
-	l1_i_cache_ctrl_ptr = calloc(num_cores, sizeof(l1_i_cache_ctrl_ptr_t));
+	l1_i_cache_tasks = (void *) calloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
 	{
-		l1_i_cache_ctrl_ptr[i] = &l1_i_cache_ctrl;
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_cache_ctrl_%d", i);
-		create_task(l1_i_cache_ctrl_ptr[i], DEFAULT_STACK_SIZE, strdup(buff));
+		l1_i_cache_tasks[i] = *(create_task(l1_i_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+		//printf("l1_i_cache_tasks[i].id = %d name = %s\n", l1_i_cache_tasks[i].id, l1_i_cache_tasks[i].name);
 	}
 
 
 	//l1 d caches
-	l1_d_cache_ctrl_ptr = calloc(num_cores, sizeof(l1_d_cache_ctrl_ptr_t));
+	l1_d_cache_tasks = (void *) calloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
 	{
-		l1_d_cache_ctrl_ptr[i] = &l1_d_cache_ctrl;
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_cache_ctrl_%d", i);
-		create_task(l1_d_cache_ctrl_ptr[i], DEFAULT_STACK_SIZE, strdup(buff));
+		l1_d_cache_tasks[i] = *(create_task(l1_d_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
 	//l2 caches
-	l2_cache_ctrl_ptr = calloc(num_cores, sizeof(l2_cache_ctrl_ptr_t));
+	l2_cache_tasks = (void *) calloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
 	{
-		l2_cache_ctrl_ptr[i] = &l2_cache_ctrl;
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "l2_cache_ctrl_%d", i);
-		create_task(l2_cache_ctrl_ptr[i], DEFAULT_STACK_SIZE, strdup(buff));
+		l2_cache_tasks[i] = *(create_task(l2_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
 	//l3 caches
-	l3_cache_ctrl_ptr = calloc(num_cores, sizeof(l3_cache_ctrl_ptr_t));
+	l3_cache_tasks = (void *) calloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
 	{
-		l3_cache_ctrl_ptr[i] = &l3_cache_ctrl;
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "l3_cache_ctrl_%d", i);
-		create_task(l3_cache_ctrl_ptr[i], DEFAULT_STACK_SIZE, strdup(buff));
+		l3_cache_tasks[i] = *(create_task(l3_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
 	//gpu l2 caches
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "gpu_l2_cache_ctrl");
-	create_task(gpu_l2_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+	gpu_l2_cache_tasks = (void *) calloc(num_cus, sizeof(task));
+	for(i = 0; i < num_cus; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_cache_ctrl");
+		gpu_l2_cache_tasks[i] = *(create_task(gpu_l2_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
 
 	//gpu v caches
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "gpu_v_cache_ctrl");
-	create_task(gpu_v_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+	gpu_v_cache_tasks = (void *) calloc(num_cus, sizeof(task));
+	for(i = 0; i < num_cus; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_cache_ctrl");
+		gpu_v_cache_tasks[i] = *(create_task(gpu_v_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
 
 	//gpu s caches
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "gpu_s_cache_ctrl");
-	create_task(gpu_s_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+	gpu_s_cache_tasks = (void *) calloc(num_cus, sizeof(task));
+	for(i = 0; i < num_cus; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_cache_ctrl");
+		gpu_s_cache_tasks[i] = *(create_task(gpu_s_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
 
 	//gpu lds unit
-	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "gpu_lds_unit_ctrl");
-	create_task(gpu_lds_unit_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+	gpu_lds_tasks = (void *) calloc(num_cus, sizeof(task));
+	for(i = 0; i < num_cus; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_lds_unit_ctrl");
+		gpu_lds_tasks[i] = *(create_task(gpu_lds_unit_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
 
 	return;
 }
@@ -413,7 +426,7 @@ void l1_d_cache_ctrl(void){
 		await(&l1_d_cache[0], step);
 		step++;
 
-		printf("thread run\n");
+		//printf("thread run\n");
 
 		//set core id to 0
 		id = 0;

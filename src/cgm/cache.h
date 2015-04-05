@@ -155,15 +155,16 @@ extern eventcount volatile *gpu_s_cache;
 extern eventcount volatile *gpu_lds_unit;
 
 //tasks
-typedef void (*l1_i_cache_ctrl_ptr_t)(void);
-typedef void (*l1_d_cache_ctrl_ptr_t)(void);
-typedef void (*l2_cache_ctrl_ptr_t)(void);
-typedef void (*l3_cache_ctrl_ptr_t)(void);
+extern task *l1_i_cache_tasks;
+extern task *l1_d_cache_tasks;
+extern task *l2_cache_tasks;
+extern task *l3_cache_tasks;
+extern task *gpu_l2_cache_tasks;
+extern task *gpu_v_cache_tasks;
+extern task *gpu_s_cache_tasks;
+extern task *gpu_lds_tasks;
 
-extern l1_i_cache_ctrl_ptr_t *l1_i_cache_ctrl_ptr;
-extern l1_i_cache_ctrl_ptr_t *l1_d_cache_ctrl_ptr;
-extern l1_i_cache_ctrl_ptr_t *l2_cache_ctrl_ptr;
-extern l1_i_cache_ctrl_ptr_t *l3_cache_ctrl_ptr;
+
 
 //function prototypes
 void cache_init(void);

@@ -1031,7 +1031,7 @@ int cache_finish_create(){
 		gpu_s_caches[i].hits = 0;
 		gpu_s_caches[i].invalid_hits = 0;
 		gpu_s_caches[i].misses = 0;
-		//gpu_v_caches[i].fetches = 0;
+		//gpu_s_caches[i].fetches = 0;
 		gpu_s_caches[i].Rx_queue_top = list_create();
 		gpu_s_caches[i].Rx_queue_bottom = list_create();
 		gpu_s_caches[i].mshr = list_create();
@@ -1144,8 +1144,8 @@ int cache_finish_create(){
 
 		//set up one cache for every four CUs
 		//mod 3 because i starts at zero.
-		if((i % 3) == 0)
-		{
+		//if((i % 3) == 0)
+		//{
 
 			gpu_l2_caches[i].id = i;
 			gpu_l2_caches[i].log_block_size = LOG2(gpu_l2_caches[i].block_size);
@@ -1195,7 +1195,7 @@ int cache_finish_create(){
 					block->way_next = way < gpu_l2_caches[i].assoc - 1 ? &gpu_l2_caches[i].sets[set].blocks[way + 1] : NULL;
 				}
 			}
-		}
+		//}
 	}
 	return 0;
 }
@@ -1356,7 +1356,7 @@ int memctrl_config(void* user, const char* section, const char* name, const char
 void print_config(void){
 
 	//print config before runtime
-	/*printf("CPU:\n");
+	printf("CPU:\n");
 	printf("Number of cpus %d\n", host_sim_cpu_num);
 	printf("Cores per cpu %d\n", host_sim_cpu_core_num);
 	printf("Threads per core %d\n", host_sim_cpu_thread_num);
@@ -1402,7 +1402,7 @@ void print_config(void){
 	printf("Cache L3 mshr size = %d\n", l3_cache->mshr_size);
 	printf("Cache L3 directory latency = %d\n", l3_cache->directory_latency);
 	printf("Cache L3 Ports = %d\n", l3_cache->num_ports);
-	printf("\n");*/
+	printf("\n");
 	printf("---Memory Controller Initialized---\n");
 	printf("block_size = %d\n", mem_ctrl->block_size);
 	printf("log_block_size = %d\n", mem_ctrl->log_block_size);
