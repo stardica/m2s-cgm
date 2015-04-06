@@ -1356,7 +1356,7 @@ int memctrl_config(void* user, const char* section, const char* name, const char
 void print_config(void){
 
 	//print config before runtime
-	printf("CPU:\n");
+	/*printf("CPU:\n");
 	printf("Number of cpus %d\n", host_sim_cpu_num);
 	printf("Cores per cpu %d\n", host_sim_cpu_core_num);
 	printf("Threads per core %d\n", host_sim_cpu_thread_num);
@@ -1412,6 +1412,6 @@ void print_config(void){
 	printf("Queue name = %s\n", mem_ctrl->fetch_request_queue->name);
 	printf("Queue name = %s\n", mem_ctrl->issue_request_queue->name);
 	fflush(stdout);
-	getchar();
+	getchar();*/
 	return;
 }

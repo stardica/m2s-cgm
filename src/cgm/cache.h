@@ -118,9 +118,7 @@ struct cache_t{
 long long wire_delay;
 int mem_miss;
 
-
 extern int QueueSize;
-
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
@@ -163,7 +161,6 @@ extern task *gpu_l2_cache_tasks;
 extern task *gpu_v_cache_tasks;
 extern task *gpu_s_cache_tasks;
 extern task *gpu_lds_tasks;
-
 
 
 //function prototypes

@@ -328,72 +328,6 @@ void cache_create_tasks(void){
 	return;
 }
 
-int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
-
-	/*cache_block_invalid = 0
-	cache_block_noncoherent = 1
-	cache_block_modified = 2
-	cache_block_owned = 3
-	cache_block_exclusive = 4
-	cache_block_shared = 5*/
-
-	int cache_status;
-
-	//stats
-	cache->loads++;
-
-	//find the block in the cache and get it's state
-	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-
-	/*printf("cache_status %d\n", cache_status);
-	getchar();*/
-
-	//hit and state is M, E, or S we are done at this level of cache
-	if((cache_status == 1 && *state_ptr == 2) || (cache_status == 1 && *state_ptr == 4 ) || (cache_status == 1 && *state_ptr == 5))
-	{
-		//stats
-		cache->hits++;
-
-		//done, respond to requester.
-		return 1;
-	}
-	//hit and state is invalid (miss)
-	else if(cache_status == 1 && *state_ptr == 0)
-	{
-		//stats
-		cache->invalid_hits++;
-
-		//treat this like a miss
-		return 2;
-
-	}
-	//the cache block is not present m the cache (miss)
-	else if(cache_status == 0)
-	{
-		//stats
-		cache->misses++;
-
-		return 3;
-	}
-	else if (cache_status == 1 && *state_ptr == 1)
-	{
-		/*printf("CRASHING cache_status %d state_ptr %d\n", cache_status, *state_ptr);
-		getchar();*/
-		fatal("cache_mesi_load() non cached state\n");
-	}
-	else
-	{
-		/*printf("CRASHING cache_status %d state_ptr %d\n", cache_status, *state_ptr);
-		getchar();*/
-		fatal("cache_mesi_load() something went wrong here\n");
-	}
-
-	return 0;
-
-}
-
-
-
 void l1_d_cache_ctrl(void){
 
 	long long step = 1;
@@ -1262,6 +1196,71 @@ void gpu_lds_unit_ctrl(void){
 	/* should never get here*/
 	fatal("gpu_lds_unit_ctrl task is broken\n");
 	return;
+}
+
+
+int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
+
+	/*cache_block_invalid = 0
+	cache_block_noncoherent = 1
+	cache_block_modified = 2
+	cache_block_owned = 3
+	cache_block_exclusive = 4
+	cache_block_shared = 5*/
+
+	int cache_status;
+
+	//stats
+	cache->loads++;
+
+	//find the block in the cache and get it's state
+	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+
+	/*printf("cache_status %d\n", cache_status);
+	getchar();*/
+
+	//hit and state is M, E, or S we are done at this level of cache
+	if((cache_status == 1 && *state_ptr == 2) || (cache_status == 1 && *state_ptr == 4 ) || (cache_status == 1 && *state_ptr == 5))
+	{
+		//stats
+		cache->hits++;
+
+		//done, respond to requester.
+		return 1;
+	}
+	//hit and state is invalid (miss)
+	else if(cache_status == 1 && *state_ptr == 0)
+	{
+		//stats
+		cache->invalid_hits++;
+
+		//treat this like a miss
+		return 2;
+
+	}
+	//the cache block is not present m the cache (miss)
+	else if(cache_status == 0)
+	{
+		//stats
+		cache->misses++;
+
+		return 3;
+	}
+	else if (cache_status == 1 && *state_ptr == 1)
+	{
+		/*printf("CRASHING cache_status %d state_ptr %d\n", cache_status, *state_ptr);
+		getchar();*/
+		fatal("cache_mesi_load() non cached state\n");
+	}
+	else
+	{
+		/*printf("CRASHING cache_status %d state_ptr %d\n", cache_status, *state_ptr);
+		getchar();*/
+		fatal("cache_mesi_load() something went wrong here\n");
+	}
+
+	return 0;
+
 }
 
 
