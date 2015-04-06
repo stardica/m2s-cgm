@@ -115,10 +115,11 @@ struct cache_t{
 
 };
 
-long long wire_delay;
+//global variables.
+extern int QueueSize;
 int mem_miss;
 
-extern int QueueSize;
+
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
@@ -141,6 +142,10 @@ extern int *gpu_l2_caches_data;
 extern int *gpu_v_caches_data;
 extern int *gpu_s_caches_data;
 extern int *gpu_lds_units_data;
+
+
+//tasking related
+extern int pid;
 
 //event counts
 extern eventcount volatile *l1_i_cache;

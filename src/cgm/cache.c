@@ -51,7 +51,6 @@ struct str_map_t cgm_cache_block_state_map =
 
 int QueueSize;
 int mem_miss = 100;
-long long wire_delay = 10;
 
 
 //CPU caches
@@ -79,6 +78,8 @@ int *gpu_v_caches_data;
 int *gpu_s_caches_data;
 int *gpu_lds_units_data;
 
+//global tasking related
+int pid = 0;
 
 //event counts
 eventcount volatile *l1_i_cache;
@@ -113,7 +114,7 @@ void cache_create(void){
 	//star todo make defaults so we don't always have to include cgm_config.ini
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = (num_cus/4);
+	//int gpu_group_cache_num = (num_cus/4);
 
 
 	////////////
@@ -261,6 +262,7 @@ void cache_create_tasks(void){
 		//printf("l1_i_cache_tasks[i].id = %d name = %s\n", l1_i_cache_tasks[i].id, l1_i_cache_tasks[i].name);
 	}
 
+	//getchar();
 
 	//l1 d caches
 	l1_d_cache_tasks = (void *) calloc(num_cores, sizeof(task));
@@ -325,6 +327,181 @@ void cache_create_tasks(void){
 		gpu_lds_tasks[i] = *(create_task(gpu_lds_unit_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
+	return;
+}
+
+void l1_i_cache_ctrl(void){
+
+
+	long long step = 1;
+	int list_index = 0;
+	int num_cores = x86_cpu_num_cores;
+	struct cgm_packet_t *message_packet;
+	struct cgm_packet_status_t *mshr_packet;
+	int my_pid = pid++;
+	int i = 0;
+
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+	int state = 0;
+	int cache_status;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
+
+
+	set_id(my_pid);
+
+	while(1)
+	{
+
+		//get this threads PID number
+		//int id = my_pid;
+
+		//wait here until there is a job to do
+		await(&l1_i_cache[my_pid], step);
+		step++;
+
+		//printf("PID = %d\n", my_pid);
+		//printf("l1_i_cache_ctrl() run %llu PID = %d\n", etime.count, my_pid);
+
+		//message_packet = list_get(l1_i_caches[id].Rx_queue_top, list_index);
+		message_packet = list_dequeue(l1_i_caches[my_pid].Rx_queue_top);
+		assert(message_packet);
+
+
+		access_id = message_packet->access_id;
+
+
+		//remove from the access tracker, this is a simulator-ism.
+		remove_from_global(access_id);
+
+		//getchar();
+
+
+		//set id to 0
+		//id = 0;
+
+		//to get here at least one cache has been advanced
+		//run through each cache looking for work this cycle
+		//note only process one packet per cycle
+		//while (id < num_cores)
+		//{
+
+
+
+		//if(l1_i_caches_data[id] > 0)
+		//{//then there is a task to be done in this cache.
+
+		//decrement the counter
+		//	l1_i_caches_data[id]--;
+
+		//get the message out of the queue
+		//message_packet = list_get(l1_i_caches[id].Rx_queue_top, list_index);
+		//message_packet = list_dequeue(l1_i_caches[id].Rx_queue_top);
+		//assert(message_packet);
+
+		/*access_type = message_packet->access_type;
+		access_id = message_packet->access_id;
+		addr = message_packet->address;*/
+
+
+
+		//remove_from_global(access_id);
+
+		//probe the address for set, tag, and offset.
+
+		//printf("Before probe addr 0x%08x\n", addr);
+
+		//cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
+
+		/*printf("access type %d\n", access_type);
+		printf("access id %d\n", access_id);
+		printf("addr 0x%08u\n", addr);
+		printf("set = %d\n", *set_ptr);
+		printf("tag = %d\n", *tag_ptr);
+		printf("offset = %u\n", *offset_ptr);
+		getchar();*/
+
+		/*if (access_type == cgm_access_fetch)
+		{//then the packet is from the CPU
+
+		//stats
+		l1_i_caches[id].fetches++;
+
+		cache_status = cgm_cache_find_block(&(l1_i_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+
+		// L1 I Cache Hit!
+		if(cache_status == 1)
+		{
+			l1_i_caches[id].hits++;
+
+			//Mr. CPU, go about your business...
+			//remove packet from cache and global queues
+			list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
+			remove_from_global(access_id);
+
+		}
+		//L1 I Cache Miss!
+		else if(cache_status == 0)
+		{
+			// L1 I Cache Miss!
+			l1_i_caches[id].misses++;
+
+			mshr_packet = status_packet_create();
+
+			//drop a token in the mshr queue
+			//star todo add some detail to this so we can include coalescing
+			mshr_packet->access_type = message_packet->access_type;
+			mshr_packet->access_id = message_packet->access_id;
+			mshr_packet->in_flight = message_packet->in_flight;
+			list_enqueue(l1_i_caches[id].mshr, mshr_packet);
+
+			//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
+			list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
+			list_enqueue(l2_caches[id].Rx_queue_top, message_packet);
+
+			//advance the L2 cache adding some wire delay time.
+			l2_caches_data[id]++;
+
+			future_advance(l2_cache, (etime.count + l2_caches[id].wire_latency));
+		}
+
+
+		//replies from L2
+		else if(access_type == cgm_access_l2_load_reply)
+		{//then the packet is from the L2 cache
+
+			//set the block in the L1 I cache
+			cgm_cache_set_block(&(l1_i_caches[id]), *set_ptr, *way_ptr, tag, 4);
+
+			//service the mshr request
+			mshr_remove(&(l1_i_caches[id]), access_id);
+
+			//remove the message from the in queue
+			list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
+
+			//remove from the access tracker, this is a simulator-ism.
+			remove_from_global(access_id);
+
+		}
+		else
+		{
+			fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
+		}*/
+
+	}
+
+	/* should never get here*/
+	fatal("l1_i_cache_ctrl task is broken\n");
 	return;
 }
 
@@ -764,156 +941,7 @@ void l2_cache_ctrl(void){
 }
 
 
-void l1_i_cache_ctrl(void){
 
-	long long step = 1;
-	int list_index = 0;
-	int num_cores = x86_cpu_num_cores;
-	struct cgm_packet_t *message_packet;
-	struct cgm_packet_status_t *mshr_packet;
-	int id = 0;
-	int i = 0;
-
-	enum cgm_access_kind_t access_type;
-	unsigned int addr = 0;
-	long long access_id = 0;
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
-	int state = 0;
-	int cache_status;
-
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
-	int *state_ptr = &state;
-
-	while(1)
-	{
-		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
-		await(l1_i_cache, step);
-		step++;
-
-		//set id to 0
-		id = 0;
-
-		//to get here at least one cache has been advanced
-		//run through each cache looking for work this cycle
-		//note only process one packet per cycle
-		while (id < num_cores)
-		{
-
-			//printf(" number is is %d round %d\n", l1_i_caches_data[id], id);
-
-			if(l1_i_caches_data[id] > 0)
-			{//then there is a task to be done in this cache.
-
-				//decrement the counter
-				l1_i_caches_data[id]--;
-
-				//get the message out of the queue
-				message_packet = list_get(l1_i_caches[id].Rx_queue_top, list_index);
-				assert(message_packet);
-
-				access_type = message_packet->access_type;
-				access_id = message_packet->access_id;
-				addr = message_packet->address;
-
-				//probe the address for set, tag, and offset.
-
-				//printf("Before probe addr 0x%08x\n", addr);
-
-				cgm_cache_decode_address(&(l1_i_caches[id]), addr, set_ptr, tag_ptr, offset_ptr);
-
-				/*printf("access type %d\n", access_type);
-				printf("access id %d\n", access_id);
-				printf("addr 0x%08u\n", addr);
-				printf("set = %d\n", *set_ptr);
-				printf("tag = %d\n", *tag_ptr);
-				printf("offset = %u\n", *offset_ptr);
-				getchar();*/
-
-				if (access_type == cgm_access_fetch)
-				{//then the packet is from the CPU
-
-					//stats
-					l1_i_caches[id].fetches++;
-
-					cache_status = cgm_cache_find_block(&(l1_i_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-
-					// L1 I Cache Hit!
-					if(cache_status == 1)
-					{
-						l1_i_caches[id].hits++;
-
-						//Mr. CPU, go about your business...
-						//remove packet from cache and global queues
-						list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
-						remove_from_global(access_id);
-
-					}
-					//L1 I Cache Miss!
-					else if(cache_status == 0)
-					{
-						// L1 I Cache Miss!
-						l1_i_caches[id].misses++;
-
-						mshr_packet = status_packet_create();
-
-						//drop a token in the mshr queue
-						//star todo add some detail to this so we can include coalescing
-						mshr_packet->access_type = message_packet->access_type;
-						mshr_packet->access_id = message_packet->access_id;
-						mshr_packet->in_flight = message_packet->in_flight;
-						list_enqueue(l1_i_caches[id].mshr, mshr_packet);
-
-						//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
-						list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
-						list_enqueue(l2_caches[id].Rx_queue_top, message_packet);
-
-						//advance the L2 cache adding some wire delay time.
-						l2_caches_data[id]++;
-
-						future_advance(l2_cache, (etime.count + l2_caches[id].wire_latency));
-					}
-
-				}
-				//replies from L2
-				else if(access_type == cgm_access_l2_load_reply)
-				{//then the packet is from the L2 cache
-
-					//set the block in the L1 I cache
-					cgm_cache_set_block(&(l1_i_caches[id]), *set_ptr, *way_ptr, tag, 4);
-
-					//service the mshr request
-					mshr_remove(&(l1_i_caches[id]), access_id);
-
-					//remove the message from the in queue
-					list_remove(l1_i_caches[id].Rx_queue_top, message_packet);
-
-					//remove from the access tracker, this is a simulator-ism.
-					remove_from_global(access_id);
-
-				}
-				else
-				{
-					fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
-				}
-			}
-
-			//go to the next cache
-			id++;
-		}
-
-	}
-
-	/* should never get here*/
-	fatal("l1_i_cache_ctrl task is broken\n");
-	return;
-}
 
 void l3_cache_ctrl(void){
 
@@ -1193,6 +1221,7 @@ void gpu_lds_unit_ctrl(void){
 			id++; //go to the next lds unit
 		}
 	}
+
 	/* should never get here*/
 	fatal("gpu_lds_unit_ctrl task is broken\n");
 	return;

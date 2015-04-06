@@ -129,14 +129,20 @@ int cpu_configure(Timing *self, struct config_t *config){
 			core = cpu->cores[i];
 			thread = core->threads[j];
 
+			printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
+
+			assert(core);
+			assert(thread);
+
 			//assign entry into memory system
-			thread->i_cache_ptr = l1_i_caches;
-			thread->d_cache_ptr = l1_d_caches;
+			thread->i_cache_ptr = &l1_i_caches[core->id];
+			thread->d_cache_ptr = &l1_d_caches[core->id];
 
 		}
 
 	}
 
+	getchar();
 	return 1;
 }
 

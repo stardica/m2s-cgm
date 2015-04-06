@@ -105,6 +105,7 @@ void wakeupcall (void *arg);
 void end_wakeupcall(long long final_time);
 void tasking_dump(void);
 count_t get_time (void);
+void set_id(unsigned id);
 
 /* return 1 if await would block, 0 otherwise */
 #define await_check(ec,cnt) ((ec)->count < (cnt))

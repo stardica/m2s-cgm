@@ -162,6 +162,7 @@ void cpu_gpu_run(void){
 		//advance(sim_finish);
 
 	}
+
 	return;
 }
 
@@ -282,7 +283,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	enum cgm_access_kind_t access_kind = cgm_access_fetch;
 	int id = 0;
 
-
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
 	snprintf(buff, 100, "fetch_access.%llu", access_id);
@@ -305,6 +305,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->in_flight = 1;
 	new_packet->name = strdup(buff);
 
+
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
@@ -313,12 +314,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		assert(id < num_cores);
 
 		//set flag on target L1 I Cache
-		l1_i_caches_data[id]++;
+		//l1_i_caches_data[id]++;
 
 		//Drop the packet into the L1 I Cache Rx queue
-		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
+		list_enqueue(thread->i_cache_ptr->Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
+		//printf("advance(&l1_i_cache[%d])\n", id);
+		//getchar();
 		advance(&l1_i_cache[id]);
 	}
 	else
@@ -329,6 +332,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//leave this for testing.
 	//printf("dequeue\n");
 	//list_dequeue(cgm_access_record);
+	//free(new_packet);
+	//free(new_packet_status);
 
 	return access_id;
 }
@@ -358,7 +363,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 
 	//For memory system load store request
-	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
+	/*if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
@@ -381,11 +386,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	else
 	{
 		fatal("cgm_issue_lspq_access() unsupported access type\n");
-	}
+	}*/
 
 	//put back on the core event queue to end memory system access.
-	//linked_list_add(new_packet->event_queue, new_packet->data);
-	//free(new_packet);
+	linked_list_add(new_packet->event_queue, new_packet->data);
+	free(new_packet);
 
 	return;
 }
