@@ -307,7 +307,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 
 	//Add (2) to the target L1 I Cache Rx Queue
-	if(access_kind == cgm_access_fetch)
+	/*if(access_kind == cgm_access_fetch)
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
@@ -327,13 +327,13 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	else
 	{
 		fatal("cgm_fetch_access() unsupported access type\n");
-	}
+	}*/
 
 	//leave this for testing.
 	//printf("dequeue\n");
-	//list_dequeue(cgm_access_record);
-	//free(new_packet);
-	//free(new_packet_status);
+	list_dequeue(cgm_access_record);
+	free(new_packet);
+	free(new_packet_status);
 
 	return access_id;
 }

@@ -382,7 +382,7 @@ void l1_i_cache_ctrl(void){
 
 
 		//remove from the access tracker, this is a simulator-ism.
-		remove_from_global(access_id);
+		//remove_from_global(access_id);
 
 		//getchar();
 
