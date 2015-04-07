@@ -307,7 +307,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 
 	//Add (2) to the target L1 I Cache Rx Queue
-	/*if(access_kind == cgm_access_fetch)
+	if(access_kind == cgm_access_fetch)
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
@@ -317,7 +317,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		//l1_i_caches_data[id]++;
 
 		//Drop the packet into the L1 I Cache Rx queue
-		list_enqueue(thread->i_cache_ptr->Rx_queue_top, new_packet);
+		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
 		//printf("advance(&l1_i_cache[%d])\n", id);
@@ -327,13 +327,13 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	else
 	{
 		fatal("cgm_fetch_access() unsupported access type\n");
-	}*/
+	}
 
 	//leave this for testing.
 	//printf("dequeue\n");
-	list_dequeue(cgm_access_record);
-	free(new_packet);
-	free(new_packet_status);
+	//list_dequeue(cgm_access_record);
+	//free(new_packet);
+	//free(new_packet_status);
 
 	return access_id;
 }
@@ -363,19 +363,16 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 
 	//For memory system load store request
-	/*if(access_kind == cgm_access_load || access_kind == cgm_access_store)
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
 		assert(id < num_cores);
 
-		//set flag on target L1 D Cache
-		l1_d_caches_data[id]++;
-
 		//Drop the packet into the L1 D Cache Rx queue
 		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
 
-		//advance the L1 C Cache Ctrl task
+		//advance the L1 D Cache Ctrl task
 		advance(&l1_d_cache[id]);
 
 	}
@@ -386,11 +383,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	else
 	{
 		fatal("cgm_issue_lspq_access() unsupported access type\n");
-	}*/
+	}
 
 	//put back on the core event queue to end memory system access.
-	linked_list_add(new_packet->event_queue, new_packet->data);
-	free(new_packet);
+	//linked_list_add(new_packet->event_queue, new_packet->data);
+	//free(new_packet);
 
 	return;
 }
@@ -455,7 +452,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		assert( id < num_cus);
 
 		//set flag on target GPU LDS unit
-		gpu_v_caches_data[id]++;
+		//gpu_v_caches_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
@@ -504,7 +501,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		assert( id < num_cus);
 
 		//set flag on target GPU LDS unit
-		gpu_s_caches_data[id]++;
+		//gpu_s_caches_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
@@ -551,7 +548,7 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 		assert( id < num_cus);
 
 		//set flag on target GPU LDS unit
-		gpu_lds_units_data[id]++;
+		//gpu_lds_units_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);

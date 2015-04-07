@@ -10,6 +10,9 @@
 #define PROTOCOL_H_
 
 
+#define MESI
+
+
 
 
 

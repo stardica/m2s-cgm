@@ -120,32 +120,27 @@ extern int QueueSize;
 int mem_miss;
 
 
-
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
 extern struct cache_t *l2_caches;
 extern struct cache_t *l3_caches;
 
-//CPU cache flags
-extern int *l1_i_caches_data;
-extern int *l1_d_caches_data;
-extern int *l2_caches_data;
-extern int *l3_caches_data;
-
 //GPU caches
 extern struct cache_t *gpu_v_caches;
 extern struct cache_t *gpu_s_caches;
 extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *gpu_lds_units;
-extern int *gpu_l2_caches_data;
-extern int *gpu_v_caches_data;
-extern int *gpu_s_caches_data;
-extern int *gpu_lds_units_data;
-
 
 //tasking related
-extern int pid;
+extern int l1_i_pid;
+extern int l1_d_pid;
+extern int l2_pid;
+extern int l3_pid;
+extern int gpu_v_pid;
+extern int gpu_s_pid;
+extern int gpu_l2_pid;
+extern int gpu_lds_pid;
 
 //event counts
 extern eventcount volatile *l1_i_cache;
