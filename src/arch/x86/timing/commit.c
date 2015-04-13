@@ -118,9 +118,9 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		X86ThreadCommitUop(self, uop);
 
 		//star >> entered instrumentation here
-		pthread_mutex_lock(&instrumentation_mutex);
+		//pthread_mutex_lock(&instrumentation_mutex);
 		//CommitStats(uop, ctx->pid);
-		pthread_mutex_unlock(&instrumentation_mutex);
+		//pthread_mutex_unlock(&instrumentation_mutex);
 
 
 		/* Branches update branch predictor and btb */

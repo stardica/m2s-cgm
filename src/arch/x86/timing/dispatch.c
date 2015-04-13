@@ -162,7 +162,9 @@ static void X86CoreDispatch(X86Core *self)
 			thread = self->threads[self->dispatch_current];
 			skip--;
 		} while (skip && X86ThreadCanDispatch(thread) != x86_dispatch_stall_used);
+
 		X86ThreadDispatch(thread, quantum);
+
 		break;
 	}
 }

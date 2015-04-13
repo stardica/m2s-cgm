@@ -139,7 +139,8 @@ void interrupt_service_request(void){
 						assert(uop->int_size);
 
 						printf("interrupt memcpy size %d src 0x%08X dest 0x%08X\n", uop->int_size, uop->int_src_ptr, uop->int_dest_ptr);
-						lat = 1000;
+						lat = 1000000;
+						//getchar();
 
 
 					}

@@ -42,6 +42,8 @@ void X86CoreWriteback(X86Core *self)
 
 	int recover = 0;
 
+	int i = 0;
+
 	for (;;)
 	{
 		/* Pick element from the head of the event queue */
@@ -50,6 +52,7 @@ void X86CoreWriteback(X86Core *self)
 		if (!uop)
 			break;
 
+		i++;
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equal to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
@@ -64,7 +67,15 @@ void X86CoreWriteback(X86Core *self)
 		assert(uop->ready);
 		assert(!uop->completed);
 		
-		//printf("WRITE BACK uop->id %llu etime. count %llu when %llu\n", uop->id, etime.count, uop->when);
+		//this will find CPU core stalls.
+		/*printf("WRITE BACK i ran %d uop->id %llu etime. count %llu when %llu\n", i, uop->id, P_TIME, uop->when);
+
+		if(uop->interrupt_type == opencl_interrupt)
+		{
+			printf("\n");
+			getchar();
+		}*/
+
 
 		/* Extract element from event queue. */
 		linked_list_remove(self->event_queue);
@@ -101,6 +112,8 @@ void X86CoreWriteback(X86Core *self)
 		if (recover)
 			X86ThreadRecover(thread);
 	}
+
+	//getchar();
 
 }
 

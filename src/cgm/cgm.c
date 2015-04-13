@@ -441,7 +441,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
-
+	//leave for debugging purposes
 	//(*witness_ptr)++;
 
 	//Add to the target L1 Cache Rx Queue
@@ -451,14 +451,11 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		id = vector_mem_ptr->compute_unit->id;
 		assert( id < num_cus);
 
-		//set flag on target GPU LDS unit
-		//gpu_v_caches_data[id]++;
-
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
-		advance(gpu_v_cache);
+		advance(&gpu_v_cache[id]);
 	}
 	else
 	{
@@ -488,10 +485,8 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
-
 	//leave for debugging purposes
 	//(*witness_ptr)++;
-
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load)
@@ -507,7 +502,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
-		advance(gpu_s_cache);
+		advance(&gpu_s_cache[id]);
 	}
 	else
 	{
@@ -554,7 +549,7 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
-		advance(gpu_lds_unit);
+		advance(&gpu_lds_unit[id]);
 	}
 	else
 	{
