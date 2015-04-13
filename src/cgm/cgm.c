@@ -313,9 +313,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		id = thread->core->id;
 		assert(id < num_cores);
 
-		//set flag on target L1 I Cache
-		//l1_i_caches_data[id]++;
-
 		//Drop the packet into the L1 I Cache Rx queue
 		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
@@ -394,7 +391,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 int remove_from_global(long long id){
 
-	//get size of list
 	struct cgm_packet_status_t *packet;
 	int i = 0;
 
@@ -411,6 +407,8 @@ int remove_from_global(long long id){
 		else if(packet->access_id == id)
 		{
 			list_remove_at(cgm_access_record, i);
+			free(packet);
+
 			// this leaves the access in the list, but slows down the simulation a lot.
 			//packet->in_flight = 0;
 			break;

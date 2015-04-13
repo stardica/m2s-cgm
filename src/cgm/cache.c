@@ -385,15 +385,18 @@ void l1_i_cache_ctrl(void){
 			//stats
 			l1_i_caches[my_pid].fetches++;
 
+			//charge the cycle for the look up.
+			P_PAUSE(1);
 			cache_status = cgm_cache_find_block(&(l1_i_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
-			// L1 I Cache Hit!
+			//L1 I Cache Hit!
 			if(cache_status == 1)
 			{
+
 				l1_i_caches[my_pid].hits++;
 
-				//Mr. CPU, go about your business...
 				//remove packet from cache and global queues
+				//note cycle already charged
 				list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
 				remove_from_global(access_id);
 
@@ -404,10 +407,10 @@ void l1_i_cache_ctrl(void){
 				// L1 I Cache Miss!
 				l1_i_caches[my_pid].misses++;
 
-				list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
-				remove_from_global(access_id);
+				/*list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
+				remove_from_global(access_id);*/
 
-				/*mshr_packet = status_packet_create();
+				mshr_packet = status_packet_create();
 
 				//drop a token in the mshr queue
 				//star todo add some detail to this so we can include coalescing
@@ -421,19 +424,19 @@ void l1_i_cache_ctrl(void){
 				list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 
 				//advance the L2 cache adding some wire delay time.
-				l2_caches_data[my_pid]++;
-
-				future_advance(l2_cache, (etime.count + l2_caches[my_pid].wire_latency));*/
+				future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
+				//done
 			}
 		}
-		/*else if(access_type == cgm_access_l2_load_reply)
+		else if(access_type == cgm_access_l2_load_reply)
 		{//then the packet is from the L2 cache
 
 			//set the block in the L1 I cache
-			cgm_cache_set_block(&(l1_i_caches[my_pid]), *set_ptr, *way_ptr, tag, 4);
+			//star todo what should I put for the state?
+			cgm_cache_set_block(&l1_i_caches[my_pid], *set_ptr, *way_ptr, tag, cache_block_shared);
 
 			//service the mshr request
-			mshr_remove(&(l1_i_caches[my_pid]), access_id);
+			mshr_remove(&l1_i_caches[my_pid], access_id);
 
 			//remove the message from the in queue
 			list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
@@ -441,11 +444,12 @@ void l1_i_cache_ctrl(void){
 			//remove from the access tracker, this is a simulator-ism.
 			remove_from_global(access_id);
 
+			//done.
 		}
 		else
 		{
 			fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
-		}*/
+		}
 
 	}
 
@@ -725,7 +729,7 @@ void l2_cache_ctrl(void){
 			//stats
 			l2_caches[my_pid].fetches++;
 
-			cache_status = cgm_cache_find_block(&(l2_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+			cache_status = cgm_cache_find_block(&l2_caches[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
 			// L2 Cache Hit!
 			if(cache_status == 1)
@@ -741,7 +745,7 @@ void l2_cache_ctrl(void){
 				list_enqueue(l1_i_caches[my_pid].Rx_queue_top, message_packet);
 				//cgm_cache_set_block(&(l2_cach
 
-				future_advance(l1_i_cache, (etime.count + l1_i_caches[my_pid].wire_latency));
+				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
 			}
 			else if(cache_status == 0)
 			{
@@ -758,7 +762,7 @@ void l2_cache_ctrl(void){
 				list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
 				list_enqueue(l1_i_caches[my_pid].Rx_queue_top, message_packet);
 
-				future_advance(l1_i_cache, (etime.count + l1_i_caches[my_pid].wire_latency));
+				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
 			}
 		}
 		//Messages from L1_D_Cache
@@ -1219,9 +1223,6 @@ void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
-//int *set_ptr = &set; int *tag_ptr = &tag; unsigned int *offset_ptr = &offset;
-//cache_status = cgm_cache_find_block(&(l1_d_caches[id]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-//int cgm_cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
 	int set, tag, way;
@@ -1230,7 +1231,7 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 	/* Locate block */
 	tag = *(tag_ptr);
 	set = *(set_ptr);
-	offset = *(offset_ptr);
+	//offset = *(offset_ptr);
 
 	*(state_ptr) = 10;
 
