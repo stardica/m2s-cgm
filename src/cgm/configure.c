@@ -31,6 +31,7 @@
 #include <cgm/tasking.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/directory.h>
+#include <cgm/switch.h>
 
 
 int cgmmem_check_config = 0;
@@ -53,11 +54,22 @@ int cgm_mem_configure(void){
 	error = ini_parse(cgm_config_file_name_and_path, directory_read_config, NULL);
 	if (error < 0)
 	{
-		printf("Unable to open Config.ini for memctrl configuration.\n");
+		printf("Unable to open Config.ini for dir configuration.\n");
 		return 1;
 	}
 
 	directory_finish_create();
+
+	error = ini_parse(cgm_config_file_name_and_path, switch_read_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for switch configuration.\n");
+		return 1;
+	}
+
+	switch_finish_create();
+
+
 
 	//configure the memory controller
 	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
@@ -762,7 +774,7 @@ int cache_finish_create(){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	int num_l2_groups = (si_gpu_num_compute_units/4);
+	//int num_l2_groups = (si_gpu_num_compute_units/4);
 	struct cache_block_t *block;
 	int i, set, way = 0;
 	char buff[100];
@@ -1319,6 +1331,65 @@ int directory_finish_create(void){
 	return 0;
 
 }
+
+int switch_read_config(void* user, const char* section, const char* name, const char* value){
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int Ports = 0;
+	int i = 0;
+
+	if(MATCH("Switch", "Ports"))
+	{
+
+		Ports = atoi(value);
+		for (i = 0; i < (num_cores + num_cus); i++)
+		{
+			switches[i].port_num = Ports;
+		}
+	}
+
+	return 0;
+}
+
+int switch_finish_create(void){
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int i = 0;
+	char buff[100];
+
+	//create the queues
+	for (i = 0; i < (num_cores + num_cus); i++)
+	{
+		switches[i].north_queue = list_create();
+		switches[i].east_queue = list_create();
+		switches[i].south_queue = list_create();
+		switches[i].west_queue = list_create();
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "switch[%d].north_queue", i);
+		switches[i].north_queue->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "switch[%d].east_queue", i);
+		switches[i].east_queue->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "switch[%d].south_queue", i);
+		switches[i].south_queue->name = strdup(buff);
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "switch[%d].west_queue", i);
+		switches[i].west_queue->name = strdup(buff);
+
+	}
+
+
+
+	return 0;
+}
+
 
 int sysagent_config(void* user, const char* section, const char* name, const char* value){
 
