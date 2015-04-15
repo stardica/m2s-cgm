@@ -92,8 +92,7 @@ void switch_ctrl(void){
 
 void get_path(void){
 
-	//todo need priority queue
-
+	/*//todo need priority queue
 	int cost[10][10], path[10][10], i, j, n, p, min, v, distance[10], row, column;
 	int index = 1;
 
@@ -123,7 +122,72 @@ void get_path(void){
 			min=distance[i];
 			index = i;
 		}
+	}*/
+
+
+
+	/***********************************************************
+	* You can use all the programs on  www.c-program-example.com
+	* for personal and learning purposes. For permissions to use the
+	* programs for commercial purposes,
+	* contact info@c-program-example.com
+	* To find more C programs, do visit www.c-program-example.com
+	* and browse!
+	*
+	*                      Happy Coding
+	***********************************************************/
+
+	#include <stdio.h>
+	//
+	#define infinity 999
+
+	void dij(int n,int v,int cost[10][10],int dist[]){
+
+		int i,u,count,w,flag[10],min;
+		for(i=1;i<=n;i++)
+			flag[i]=0,dist[i]=cost[v][i];
+
+		count=2;
+
+		while(count<=n)
+		{
+			min=99;
+			for(w=1;w<=n;w++)
+				if(dist[w]<min && !flag[w])
+					min=dist[w],u=w;
+			flag[u]=1;
+			count++;
+			for(w=1;w<=n;w++)
+				if((dist[u]+cost[u][w]<dist[w]) && !flag[w])
+					dist[w]=dist[u]+cost[u][w];
+		}
 	}
+
+	void main()
+	{
+	 int n,v,i,j,cost[10][10],dist[10];
+
+	 printf("\n Enter the number of nodes:");
+	 scanf("%d",&n);
+
+	 printf("\n Enter the cost matrix:\n");
+	 for(i=1;i<=n;i++)
+	  for(j=1;j<=n;j++)
+	  {
+	   scanf("%d",&cost[i][j]);
+	   if(cost[i][j]==0)
+	    cost[i][j]=infinity;
+	  }
+	 printf("\n Enter the source node:");
+	 scanf("%d",&v);
+	 dij(n,v,cost,dist);
+	 printf("\n Shortest path:\n");
+	 for(i=1;i<=n;i++)
+	  if(i!=v)
+	   printf("%d->%d,cost=%d\n",v,i,dist[i]);
+	 getchar();
+	}
+
 
 	return;
 }
