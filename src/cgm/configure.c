@@ -1360,32 +1360,46 @@ int switch_finish_create(void){
 	char buff[100];
 
 	//create the queues
-	for (i = 0; i < (num_cores + num_cus); i++)
+	if(switches[0].port_num == 4)
 	{
-		switches[i].north_queue = list_create();
-		switches[i].east_queue = list_create();
-		switches[i].south_queue = list_create();
-		switches[i].west_queue = list_create();
+		for (i = 0; i < (num_cores + num_cus); i++)
+		{
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "switch[%d].north_queue", i);
-		switches[i].north_queue->name = strdup(buff);
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d]", i);
+			switches[i].name = strdup(buff);
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "switch[%d].east_queue", i);
-		switches[i].east_queue->name = strdup(buff);
+			switches[i].north_queue = list_create();
+			switches[i].east_queue = list_create();
+			switches[i].south_queue = list_create();
+			switches[i].west_queue = list_create();
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "switch[%d].south_queue", i);
-		switches[i].south_queue->name = strdup(buff);
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_queue", i);
+			switches[i].north_queue->name = strdup(buff);
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "switch[%d].west_queue", i);
-		switches[i].west_queue->name = strdup(buff);
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_queue", i);
+			switches[i].east_queue->name = strdup(buff);
 
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_queue", i);
+			switches[i].south_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_queue", i);
+			switches[i].west_queue->name = strdup(buff);
+
+		}
 	}
-
-
+	else if(switches[0].port_num == 6)
+	{
+		fatal("switch_finish_create() 6 ports currently unsupported\n");
+	}
+	else
+	{
+		fatal("switch_finish_create() port_num error\n");
+	}
 
 	return 0;
 }

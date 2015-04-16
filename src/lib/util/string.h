@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 
-
 /*
  * String Maps
  */
@@ -30,7 +29,8 @@
 struct str_map_t
 {
 	int count;
-	struct {
+	struct
+	{
 		char *string;
 		int value;
 	} map[];
@@ -48,8 +48,6 @@ char *str_map_value(struct str_map_t *map, int value);
 void str_map_value_buf(struct str_map_t *map, int value, char *buf, int size);
 
 void str_map_flags(struct str_map_t *map, int flags, char *out, int length);
-
-
 
 
 /*

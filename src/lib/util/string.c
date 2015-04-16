@@ -180,8 +180,6 @@ void str_map_flags(struct str_map_t *map, int flags, char *out, int size)
 }
 
 
-
-
 /*
  * Token List
  */

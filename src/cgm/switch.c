@@ -9,14 +9,16 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <cgm/switch.h>
+
 
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
 #include <cgm/tasking.h>
+#include <cgm/switch.h>
 
 
 struct switch_t *switches;
@@ -24,10 +26,34 @@ eventcount volatile *switches_ec;
 task *switches_tasks;
 int switch_pid = 0;
 
+int *route_table;
+
+//supports quad core with ring bus
+struct str_map_t node_map =
+{ 	node_number, {
+		{ "l2_caches[0]", l2_cache_0},
+		{ "l2_caches[1]", l2_cache_1},
+		{ "l2_caches[2]", l2_cache_2},
+		{ "l2_caches[3]", l2_cache_3},
+		{ "l2_caches[4]", l2_cache_4},
+		{ "switch[0]", switch_0},
+		{ "switch[1]", switch_1},
+		{ "switch[2]", switch_2},
+		{ "switch[3]", switch_3},
+		{ "switch[4]", switch_4},
+		{ "l3_caches[0]", l3_cache_0},
+		{ "l3_caches[1]", l3_cache_1},
+		{ "l3_caches[2]", l3_cache_2},
+		{ "l3_caches[3]", l3_cache_3},
+		{ "sys_agent", sys_agent},
+		}
+};
+
 
 void switch_init(void){
 
 	switch_create();
+	route_create();
 	switch_create_tasks();
 
 
@@ -42,8 +68,27 @@ void switch_create(void){
 
 	//for now model a ring bus on each CPU
 	switches = (void *) calloc((num_cores + num_cus), sizeof(struct switch_t));
+
 	return;
 }
+
+void route_create(void){
+
+	int i = 0;
+
+	//star todo get routes for each switch.
+
+	//get possible routes
+	for(i = 0; i < node_number; i ++)
+	{
+		//route_table[i]
+
+	}
+
+
+	return;
+}
+
 
 void switch_create_tasks(void){
 
@@ -73,6 +118,7 @@ void switch_create_tasks(void){
 	return;
 }
 
+
 void switch_ctrl(void){
 
 	int my_pid = switch_pid++;
@@ -82,8 +128,6 @@ void switch_ctrl(void){
 	{
 		await(&switches_ec[my_pid], step);
 		step++;
-
-
 
 	}
 
@@ -137,15 +181,16 @@ void get_path(void){
 	*                      Happy Coding
 	***********************************************************/
 
-	#include <stdio.h>
-	//
 	#define infinity 999
 
 	void dij(int n,int v,int cost[10][10],int dist[]){
 
 		int i,u,count,w,flag[10],min;
+
 		for(i=1;i<=n;i++)
+		{
 			flag[i]=0,dist[i]=cost[v][i];
+		}
 
 		count=2;
 
@@ -153,13 +198,22 @@ void get_path(void){
 		{
 			min=99;
 			for(w=1;w<=n;w++)
+			{
 				if(dist[w]<min && !flag[w])
+				{
 					min=dist[w],u=w;
-			flag[u]=1;
-			count++;
+				}
+
+				flag[u]=1;
+				count++;
+			}
 			for(w=1;w<=n;w++)
+			{
 				if((dist[u]+cost[u][w]<dist[w]) && !flag[w])
+				{
 					dist[w]=dist[u]+cost[u][w];
+				}
+			}
 		}
 	}
 
@@ -180,14 +234,16 @@ void get_path(void){
 	  }
 	 printf("\n Enter the source node:");
 	 scanf("%d",&v);
+
 	 dij(n,v,cost,dist);
+
 	 printf("\n Shortest path:\n");
 	 for(i=1;i<=n;i++)
 	  if(i!=v)
 	   printf("%d->%d,cost=%d\n",v,i,dist[i]);
+
 	 getchar();
 	}
-
 
 	return;
 }
