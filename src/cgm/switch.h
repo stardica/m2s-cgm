@@ -21,22 +21,24 @@
 #include <cgm/tasking.h>
 
 
+//star todo add some sophistication with the scheduler and routing algorithms.
+
 enum node_map{
 
 	l2_cache_0 = 0,
-	l2_cache_1,
-	l2_cache_2,
-	l2_cache_3,
-	l2_cache_4,
 	switch_0,
-	switch_1,
-	switch_2,
-	switch_3,
-	switch_4,
 	l3_cache_0,
+	l2_cache_1,
+	switch_1,
 	l3_cache_1,
+	l2_cache_2,
+	switch_2,
 	l3_cache_2,
+	l2_cache_3,
+	switch_3,
 	l3_cache_3,
+	l2_cache_4,
+	switch_4,
 	sys_agent,
 	node_number
 
@@ -48,47 +50,31 @@ enum port_name
 	east_queue,
 	south_queue,
 	west_queue,
-	forward_queue,
-	back_queue
-};
-
-struct route_t{
-
-	int dest;
-	int *routes;
+	port_num
 
 };
 
-/*int ring_adj_mat[][] = {
+enum arbitrate{
 
-	//L2_0	L2_1	L2_2	L2_3	L2_4	R0	R1	R2	R3	R4	L3_0	L3_1	L3_2	L3_3	SA
-	{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, //L2_0
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L2_1
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L2_2
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L2_3
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L2_4 (GPU)
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //R0
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //R1
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //R2
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //R3
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //R4
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L3_0
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L3_1
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L3_2
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //L3_3
-	{0, 	0, 		0, 		0, 		0, 		0, 	0, 	0, 	0, 	0, 	0,		0,		0,		0,		0}, //SA
-};*/
+	round_robin = 0,
+	prioity
 
+};
 
 struct switch_t{
 
 	//parts
 	//cache queues
 	char *name;
+	int switch_node_number;
+	float switch_median_node_num;
 	int port_num;
 
 	int num_routes;
 	struct route_t *my_routes;
+
+	enum port_name queue;
+	enum arbitrate arb_style;
 
 	//for switches with 4 ports
 	struct list_t *north_queue;
@@ -102,6 +88,9 @@ struct switch_t{
 
 };
 
+extern struct str_map_t node_strn_map;
+
+
 extern struct switch_t *switches;
 extern eventcount volatile *switches_ec;
 extern task *switches_tasks;
@@ -110,9 +99,11 @@ extern int switch_pid;
 //function prototypes
 void switch_init(void);
 void switch_create(void);
-void route_create(void);
+//void route_create(void);
 void switch_create_tasks(void);
 void switch_ctrl(void);
+
+enum port_name get_next_queue_rb(enum port_name queue);
 
 void get_path(void);
 

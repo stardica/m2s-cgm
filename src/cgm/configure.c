@@ -14,6 +14,7 @@
 #include <lib/util/config.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/string.h>
 
 #include <arch/common/arch.h>
 
@@ -1356,13 +1357,19 @@ int switch_finish_create(void){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
+
+	//star todo fix this
+	int extras = 1;
+
 	int i = 0;
 	char buff[100];
+
+	float median = 0;
 
 	//create the queues
 	if(switches[0].port_num == 4)
 	{
-		for (i = 0; i < (num_cores + num_cus); i++)
+		for (i = 0; i < (num_cores + extras); i++)
 		{
 
 			memset (buff,'\0' , 100);
@@ -1390,6 +1397,13 @@ int switch_finish_create(void){
 			snprintf(buff, 100, "switch[%d].west_queue", i);
 			switches[i].west_queue->name = strdup(buff);
 
+			//init the queue pointer
+			switches[i].queue = west_queue;
+
+			//init the switche's network node number
+			switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
+			median += switches[i].switch_node_number;
+
 		}
 	}
 	else if(switches[0].port_num == 6)
@@ -1400,6 +1414,15 @@ int switch_finish_create(void){
 	{
 		fatal("switch_finish_create() port_num error\n");
 	}
+
+
+	//init the median node number on all switches
+	for (i = 0; i < (num_cores + extras); i++)
+	{
+		//get the acerage
+		switches[i].switch_median_node_num = (median/(num_cores + extras));
+	}
+
 
 	return 0;
 }

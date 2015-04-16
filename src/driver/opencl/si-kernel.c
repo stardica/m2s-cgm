@@ -184,8 +184,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
-			arg->value.data_type = str_map_string_err(&si_arg_data_type_map,
-					token, &err);
+			arg->value.data_type = str_map_string_err(&si_arg_data_type_map, token, &err);
 			if (err)
 				fatal("%s: invalid data type '%s'.\n%s",
 					__FUNCTION__, token, 
