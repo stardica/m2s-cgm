@@ -18,9 +18,12 @@
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
+#include <cgm/cgm.h>
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
 #include <cgm/packet.h>
+#include <cgm/cache.h>
+#include <cgm/sys-agent.h>
 
 
 struct switch_t *switches;
@@ -120,19 +123,22 @@ void switch_create_tasks(void){
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 
+	//star todo fix this
+	int extras = 1;
+
 	char buff[100];
 	int i = 0;
 
-	switches_ec = (void *) calloc(num_cores + num_cus, sizeof(eventcount));
-	for(i = 0; i < (num_cores + num_cus); i++)
+	switches_ec = (void *) calloc((num_cores + extras), sizeof(eventcount));
+	for(i = 0; i < (num_cores + extras); i++)
 	{
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "switch_%d", i);
 		switches_ec[i] = *(new_eventcount(strdup(buff)));
 	}
 
-	switches_tasks = (void *) calloc((num_cores + num_cus), sizeof(task));
-	for(i = 0; i < (num_cores + num_cus); i++)
+	switches_tasks = (void *) calloc((num_cores + extras), sizeof(task));
+	for(i = 0; i < (num_cores + extras); i++)
 	{
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "switch_ctrl_%d", i);
@@ -152,90 +158,85 @@ void switch_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;
 
 	struct cgm_packet_t *message_packet;
-	unsigned int addr = 0;
-	long long access_id = 0;
 	char *dest;
 	int i = 0;
 	int dest_node_number;
+	float distance;
+	int queue_status;
 
 	assert(my_pid <= (num_cores + num_cus));
 
 	set_id((unsigned int)my_pid);
 
-
 	while(1)
 	{
-
 		//we have received a packet
 		await(&switches_ec[my_pid], step);
 		step++;
 
-
-		//choose a port this cycle to work from
-		if(switches[my_pid].arb_style == round_robin)
-		{
-			for(i = 0; i < switches[my_pid].port_num; i++)
-			{
-				//switches[my_pid].queue is now the next queue.
-				switches[my_pid].queue = get_next_queue_rb(switches[my_pid].queue);
-
-				//if we don't have a message go to the next queue.
-				if(switches[my_pid].queue == north_queue)
-				{
-					message_packet = list_get(switches[my_pid].north_queue, 0);
-				}
-				else if(switches[my_pid].queue == east_queue)
-				{
-					message_packet = list_get(switches[my_pid].east_queue, 0);
-				}
-				else if(switches[my_pid].queue == south_queue)
-				{
-					message_packet = list_get(switches[my_pid].south_queue, 0);
-				}
-				else if(switches[my_pid].queue == west_queue)
-				{
-					message_packet = list_get(switches[my_pid].west_queue, 0);
-				}
-
-				//if we have a packet break out.
-				//next advance start with the next queue
-				if(message_packet)
-				{
-					i = 0;
-					break;
-				}
-
-			}
-
-
-		}
-		else
-		{
-			fatal("switch_ctrl() invalid arbitration set switch %d\n", my_pid);
-		}
-
 		//if we made it here we should have a packet.
+		message_packet = get_from_queue(switches[my_pid]);
 		assert(message_packet);
 
-		//send the packet to it's destination OR on to the next hop
 
+		//send the packet to it's destination OR on to the next hop
 		//look up the node number of the destination
 		dest = message_packet->dest_name;
 		dest_node_number = str_map_string(&node_strn_map, dest);
 
-
-		//if dest is the L2 or L3 cache connected to this switch.
+		//if dest is the L2/L3/SA connected to this switch.
 		if(dest_node_number == (switches[my_pid].switch_node_number - 1) || dest_node_number == (switches[my_pid].switch_node_number +1))
 		{
 
+			//see if the node number is lower, which means it is an L2 cache
 			if(dest_node_number < switches[my_pid].switch_node_number)
 			{
-				//drop in L2_x in queue and advance
+				//for CPU L2s
+				if(my_pid < num_cores)
+				{
+					//make sure we can access the cache
+					while(!cache_can_access(&l2_caches[my_pid]))
+					{
+						//the L2 cache queue is full try again next cycle
+						P_PAUSE(1);
+					}
+
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					//star todo this isn't for here, but remember to change the access type when needed getx putx etc.
+					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+					future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
+					//done with this access
+				}
+				else if(my_pid >= num_cores)
+				{
+					//GPU L2 caches
+					while(!cache_can_access(&gpu_l2_caches[my_pid]))
+					{
+						//the L2 cache queue is full try again next cycle
+						P_PAUSE(1);
+					}
+
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_top, message_packet);
+					future_advance(&gpu_l2_cache[my_pid], (etime.count + gpu_l2_caches[my_pid].wire_latency));
+					//done with this access
+				}
 
 			}
 			else if(dest_node_number > switches[my_pid].switch_node_number)
 			{
 				//drop in L3_x in queue and advnace
+				//system agent
+
+				/*if(error)
+				{
+					queue_status = sys_agent_can_access();
+
+				}*/
 			}
 			else
 			{
@@ -245,55 +246,149 @@ void switch_ctrl(void){
 		}
 		else
 		{
-			//packet came from connected L2 or L3 cache
-			//there is no bias on direction established.
+			//send packet to adjacent switch
+			//there is no transfer direction established.
 			if(switches[my_pid].queue == north_queue || switches[my_pid].queue == south_queue)
 			{
-				//send the packet to an adjacent switch
 
-
-
-
-				if(dest_node_number > switches[my_pid].switch_node_number && dest_node_number > (switches[my_pid].switch_median_node_num + switches[my_pid].switch_node_number))
+				//new packets from connected L2 or L3 cache.
+				if(dest_node_number > switches[my_pid].switch_node_number)
 				{
+					//get the distance from this switch to the destination (left and right)
+					distance = dest_node_number - switches[my_pid].switch_node_number;
 
-					//check the status of neighbor switche's queue
+					//go in the direction with the shortest number of hops.
+					if(distance <= switches[my_pid].switch_median_node_num)
+					{//go right
+
+						//special cases are the two end switches.
+						//if(switches[my_pid].switch_node_number == 2)
+						//if(switches[my_pid].switch_node_number == (node_number - 2))
+
+					}
+					else
+					{//go left
+
+
+					}
+				}
+				else if(dest_node_number < switches[my_pid].switch_node_number)
+				{
+					distance = switches[my_pid].switch_node_number - dest_node_number;
+
+					//go in the direction with the shortest number of hops.
+					if(distance <= switches[my_pid].switch_median_node_num)
+					{//go left
+
+					}
+					else
+					{//go right
+
+					}
 
 				}
-				else if(dest_node_number > switches[my_pid].switch_median_node_num)
-				{
-					//check the status of neighbor switche's queue
+			}
+			else if(switches[my_pid].queue == east_queue || switches[my_pid].queue == west_queue)
+			{
+				//packet came from another switch, but needs to continue on.
+
+				if(switches[my_pid].queue == east_queue)
+				{//go left (even if it is less efficient)
+
+
+
+				}
+				else
+				{//go right
+
 
 				}
 
-
-
 			}
-			//packet came from east queue
-			else if(switches[my_pid].queue == east_queue)
-			{
-
-			}
-			else if(switches[my_pid].queue == west_queue)
-			{
-
-
-			}
-
 		}
-
-
-		//special case R0 and R4
-		//if switch number = 2 or  switch number = (node_number - 2)
-
-		//for the special case of GPU L2 and system Agent.
-
-
-
 
 		//end, clear the message_packet ptr
 		//this should be getting set up above in list_get(), but just for safe measure.
 		message_packet = NULL;
+	}
+
+	return;
+}
+
+struct cgm_packet_t *get_from_queue(struct switch_t *switches){
+
+	struct cgm_packet_t *new_packet;
+	int i = 0;
+
+	//choose a port this cycle to work from
+	if(switches->arb_style == round_robin)
+	{
+		for(i = 0; i < switches->port_num; i++)
+		{
+			//set switches->queue to the next queue.
+			switches->queue = get_next_queue_rb(switches->queue);
+
+			//if we don't have a message go on to the next.
+			if(switches->queue == north_queue)
+			{
+				new_packet = list_get(switches->north_queue, 0);
+			}
+			else if(switches->queue == east_queue)
+			{
+				new_packet = list_get(switches->east_queue, 0);
+			}
+			else if(switches->queue == south_queue)
+			{
+				new_packet = list_get(switches->south_queue, 0);
+			}
+			else if(switches->queue == west_queue)
+			{
+				new_packet = list_get(switches->west_queue, 0);
+			}
+
+			//when we have a packet break out.
+			//next advance start with the next queue
+			if(new_packet)
+			{
+				i = 0;
+				break;
+			}
+
+		}
+
+	}
+	else
+	{
+		fatal("get_from_queue() invalid arbitration set switch %s\n", switches->name);
+	}
+
+	return new_packet;
+}
+
+
+
+void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet){
+
+
+	if(switches->queue == north_queue)
+	{
+		list_remove(switches->north_queue, message_packet);
+	}
+	else if(switches->queue == east_queue)
+	{
+		list_remove(switches->east_queue, message_packet);
+	}
+	else if(switches->queue == south_queue)
+	{
+		list_remove(switches->south_queue, message_packet);
+	}
+	else if(switches->queue == west_queue)
+	{
+		list_remove(switches->west_queue, message_packet);
+	}
+	else
+	{
+		fatal("remove_from_queue() invalid port name\n");
 	}
 
 	return;

@@ -1326,6 +1326,20 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 	}
 }
 
+
+int cache_can_access(struct cache_t *cache){
+
+	//check if inqueue is full
+	if(QueueSize <= list_count(cache->Rx_queue_top))
+	{
+		return 0;
+	}
+
+	//cache queue is accessible.
+	return 1;
+}
+
+
 void cache_dump_stats(void){
 
 	int num_cores = x86_cpu_num_cores;

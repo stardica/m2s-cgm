@@ -19,6 +19,7 @@
 #include <arch/x86/timing/cpu.h>
 
 #include <cgm/tasking.h>
+#include <cgm/packet.h>
 
 
 //star todo add some sophistication with the scheduler and routing algorithms.
@@ -104,6 +105,8 @@ void switch_create_tasks(void);
 void switch_ctrl(void);
 
 enum port_name get_next_queue_rb(enum port_name queue);
+struct cgm_packet_t *get_from_queue(struct switch_t *switches);
+void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
 
 void get_path(void);
 

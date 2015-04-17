@@ -170,6 +170,7 @@ void cache_create_tasks(void);
 void cache_dump_stats(void);
 int mshr_remove(struct cache_t *cache, long long access_id);
 
+int cache_can_access(struct cache_t *cache);
 
 int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 

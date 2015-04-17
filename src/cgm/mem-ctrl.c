@@ -29,38 +29,19 @@ eventcount *mem_ctrl_serviced;
 void memctrl_init(void){
 
 	//star currently only one memory controller.
-	mem_ctrl = memctrl_create();
-	memctrl_queues_init();
+	memctrl_create();
 	memctrl_create_tasks();
 
 	return;
 }
 
-struct mem_ctrl_t  *memctrl_create(void){
+void memctrl_create(void){
 
-	struct mem_ctrl_t *new_mem_ctrl = (void *) malloc(sizeof(struct mem_ctrl_t));
-
-	return new_mem_ctrl;
-}
-
-void memctrl_queues_init(void){
-
-	//star todo create list with size? or just check the size when insterting into list?
-	/*mem_ctrl->fetch_request_queue = list_create();
-	mem_ctrl->issue_request_queue = list_create();
-	mem_ctrl->scalar_request_queue = list_create();
-	mem_ctrl->vector_request_queue = list_create();
-	mem_ctrl->memctrl_accesses = list_create();
-
-	mem_ctrl->fetch_request_queue->name = "mem_ctrl.Fetch.Request";
-	mem_ctrl->issue_request_queue->name = "mem_ctrl.Issue.Request";
-	mem_ctrl->scalar_request_queue->name = "mem_ctrl.Scalar.Request";
-	mem_ctrl->vector_request_queue->name = "mem_ctrl.Vector.Request";
-	mem_ctrl->memctrl_accesses->name = "mem_ctrl.Accesses";*/
+	mem_ctrl = (void *) malloc(sizeof(struct mem_ctrl_t));
 
 	return;
-
 }
+
 
 void memctrl_create_tasks(void){
 

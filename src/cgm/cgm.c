@@ -64,7 +64,7 @@ void cgm_init(void){
 	cache_init();
 	switch_init();
 	directory_init();
-	sysagent_init();
+	sys_agent_init();
 	memctrl_init();
 
 	return;
