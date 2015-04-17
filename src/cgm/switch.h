@@ -105,6 +105,8 @@ void switch_create(void);
 void switch_create_tasks(void);
 void switch_ctrl(void);
 
+int switch_can_access(struct list_t *queue);
+
 enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);

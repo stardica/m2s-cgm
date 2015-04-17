@@ -16,8 +16,8 @@
 #include <cgm/cache.h>
 
 
-struct system_agent_t *system_agent;
 eventcount volatile *system_agent_ec;
+struct system_agent_t *system_agent;
 task *system_agent_task;
 int system_agent_pid = 0;
 

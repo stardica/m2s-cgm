@@ -573,18 +573,11 @@ static void X86CoreFetch(X86Core *self)
 			{
 				self->fetch_current = (self->fetch_current + 1) % x86_cpu_num_threads;
 				thread = self->threads[self->fetch_current];
-
-
 				if (X86ThreadCanFetch(thread))
 				{
-
 					X86ThreadFetch(thread);
-
 					break;
 				}
-
-
-
 			}
 			break;
 		}

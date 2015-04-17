@@ -232,7 +232,6 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		return 0;
 	}
 
-
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue_top))
 	{
@@ -413,9 +412,7 @@ int remove_from_global(long long id){
 			//packet->in_flight = 0;
 			break;
 		}
-
 	}
-
 	return 1;
 }
 

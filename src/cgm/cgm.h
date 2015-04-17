@@ -27,8 +27,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 
-enum cgm_access_kind_t
-{
+enum cgm_access_kind_t{
 	cgm_access_invalid = 0,
 	cgm_access_fetch,
 	cgm_access_load,
@@ -36,8 +35,16 @@ enum cgm_access_kind_t
 	cgm_access_nc_store,
 	cgm_access_nc_load,
 	cgm_access_prefetch,
-	cgm_access_l2_load_reply,
-	cgm_access_l2_store_reply
+	cgm_access_gets, //get shared
+	cgm_access_gets_i, //get shared specific to i caches
+	cgm_access_getx, //get exclusive (or get with intent to write)
+	cgm_access_inv,  //invalidation request
+	cgm_access_putx, //request for writeback of cache block exclusive data.
+	cgm_access_puts, //request for writeback of cache block in shared state.
+	cgm_access_puto, //request for writeback of cache block in owned state.
+	cgm_access_puto_shared, //equest for writeback of cache block in owned state but other sharers of the block exist.
+	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
+	cgm_access_mshr
 };
 
 

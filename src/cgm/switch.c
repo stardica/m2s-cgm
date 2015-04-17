@@ -129,6 +129,17 @@ void switch_create_tasks(void){
 	return;
 }
 
+int switch_can_access(struct list_t *queue){
+
+	//check if in queue is full
+	if(QueueSize <= list_count(queue))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 
 void switch_ctrl(void){
 

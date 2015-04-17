@@ -33,6 +33,7 @@
 #include <cgm/mem-ctrl.h>
 #include <cgm/directory.h>
 #include <cgm/switch.h>
+#include <cgm/sys-agent.h>
 
 
 int cgmmem_check_config = 0;
@@ -93,31 +94,6 @@ int cgm_mem_configure(void){
 	return 0;
 
 }
-
-int sys_agent_config(void* user, const char* section, const char* name, const char* value){
-
-
-
-	return 0;
-}
-
-int sys_agent_finish_create(void){
-
-
-	return 0;
-}
-
-int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
-
-
-	return 0;
-}
-
-int mem_ctrl_finish_create(void){
-
-	return 0;
-}
-
 
 int cgm_cpu_configure(void){
 
@@ -1434,7 +1410,6 @@ int switch_finish_create(void){
 		fatal("switch_finish_create() port_num error\n");
 	}
 
-
 	//init the median node number on all switches
 	for (i = 0; i < (num_cores + extras); i++)
 	{
@@ -1446,51 +1421,65 @@ int switch_finish_create(void){
 	return 0;
 }
 
+int sys_agent_config(void* user, const char* section, const char* name, const char* value){
 
-int sysagent_config(void* user, const char* section, const char* name, const char* value){
+	int Ports, WireLatency = 0;
 
+
+	if(MATCH("SysAgent", "Ports"))
+	{
+		Ports = atoi(value);
+		system_agent->num_ports = Ports;
+
+	}
+
+	if(MATCH("SysAgent", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+		system_agent->wire_latency = WireLatency;
+	}
 
 	return 0;
 }
 
+int sys_agent_finish_create(void){
 
-int memctrl_config(void* user, const char* section, const char* name, const char* value){
+	char buff[100];
 
-	if(MATCH("MemCtrl", "Name"))
-	{
-		mem_ctrl->name = strdup(value);
-	}
+	//set cache name
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent");
+	system_agent->name = strdup(buff);
 
-	if(MATCH("MemCtrl", "BlockSize"))
-	{
-		mem_ctrl->block_size = atoi(value);
-		mem_ctrl->log_block_size = LOG2(mem_ctrl->block_size);
-	}
+	return 0;
+}
+
+int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
+
+	int Ports = 0;
 
 	if(MATCH("MemCtrl", "Latency"))
 	{
 		mem_ctrl->latency = atoi(value);
 	}
 
-	if(MATCH("MemCtrl", "DirLatency"))
-	{
-		mem_ctrl->dir_latency = atoi(value);
-	}
-
 	if(MATCH("MemCtrl", "Ports"))
 	{
-		mem_ctrl->ports = atoi(value);
+		Ports = atoi(value);
+		mem_ctrl->num_ports = Ports;
 	}
 
-	if(MATCH("MemCtrl", "QueueSize"))
-	{
-		mem_ctrl->queue_size = atoi(value);
-	}
+	return 0;
+}
 
-	if(MATCH("MemCtrl", "MSHRSize"))
-	{
-		mem_ctrl->mshr_size = atoi(value);
-	}
+int mem_ctrl_finish_create(void){
+
+	char buff[100];
+
+	//set cache name
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl");
+	mem_ctrl->name = strdup(buff);
 
 	return 0;
 }
