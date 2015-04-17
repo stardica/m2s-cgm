@@ -99,25 +99,6 @@ void switch_create(void){
 	return;
 }
 
-/*void route_create(void){
-
-	int i = 0;
-
-	//star todo get routes for each switch.
-	route_table = (void *) malloc(node_number * node_number * sizeof(int));
-
-
-	//get possible routes
-	for(i = 0; i < node_number; i ++)
-	{
-		//route_table[i]
-	}
-
-
-	return;
-}*/
-
-
 void switch_create_tasks(void){
 
 	int num_cores = x86_cpu_num_cores;
@@ -175,7 +156,7 @@ void switch_ctrl(void){
 		step++;
 
 		//if we made it here we should have a packet.
-		message_packet = get_from_queue(switches[my_pid]);
+		message_packet = get_from_queue(&switches[my_pid]);
 		assert(message_packet);
 
 
@@ -188,13 +169,14 @@ void switch_ctrl(void){
 		if(dest_node_number == (switches[my_pid].switch_node_number - 1) || dest_node_number == (switches[my_pid].switch_node_number +1))
 		{
 
-			//see if the node number is lower, which means it is an L2 cache
+			//if the node number is lower this means it is an L2 cache
 			if(dest_node_number < switches[my_pid].switch_node_number)
 			{
 				//for CPU L2s
 				if(my_pid < num_cores)
 				{
 					//make sure we can access the cache
+					//star todo add the ability to do something else if we can access the target cache
 					while(!cache_can_access(&l2_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
@@ -204,14 +186,14 @@ void switch_ctrl(void){
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
-					//star todo this isn't for here, but remember to change the access type when needed getx putx etc.
+					//drop the packet into the cache's queue
 					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 					future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
 					//done with this access
 				}
+				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
 				{
-					//GPU L2 caches
 					while(!cache_can_access(&gpu_l2_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
@@ -221,22 +203,54 @@ void switch_ctrl(void){
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
+					//drop the packet into the cache's queue
 					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_top, message_packet);
 					future_advance(&gpu_l2_cache[my_pid], (etime.count + gpu_l2_caches[my_pid].wire_latency));
 					//done with this access
 				}
 
 			}
+			//if the node number is high this means it is an L3 cache or the sys agent
 			else if(dest_node_number > switches[my_pid].switch_node_number)
 			{
-				//drop in L3_x in queue and advnace
-				//system agent
 
-				/*if(error)
+				//for CPU L3 caches
+				if(my_pid < num_cores)
 				{
-					queue_status = sys_agent_can_access();
+					//make sure we can access the cache
+					//star todo add the ability to do something else if we can access the target cache
+					while(!cache_can_access(&l3_caches[my_pid]))
+					{
+						//the L2 cache queue is full try again next cycle
+						P_PAUSE(1);
+					}
 
-				}*/
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					//drop the packet into the cache's queue
+					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					future_advance(&l3_cache[my_pid], (etime.count + l3_caches[my_pid].wire_latency));
+					//done with this access
+				}
+				//for the system agent
+				else if(my_pid >= num_cores)
+				{
+					while(!sys_agent_can_access())
+					{
+						//the sys agent queue is full try again next cycle
+						P_PAUSE(1);
+					}
+
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					//drop the packet into the sys agent queue
+					list_enqueue(system_agent->Rx_queue_top, message_packet);
+					future_advance(system_agent_ec, (etime.count + system_agent->wire_latency));
+					//done with this access
+
+				}
 			}
 			else
 			{

@@ -29,20 +29,20 @@ int cgm_cpu_configure(void);
 int cgm_gpu_configure(void);
 int cache_read_config(void* user, const char* section, const char* name, const char* value);
 int cache_finish_create(void);
-int switch_read_config(void* user, const char* section, const char* name, const char* value);
-int switch_finish_create(void);
 int directory_read_config(void* user, const char* section, const char* name, const char* value);
 int directory_finish_create(void);
+int switch_read_config(void* user, const char* section, const char* name, const char* value);
+int switch_finish_create(void);
+int sys_agent_config(void* user, const char* section, const char* name, const char* value);
+int sys_agent_finish_create(void);
+int mem_ctrl_config(void* user, const char* section, const char* name, const char* value);
+int mem_ctrl_finish_create(void);
+
 
 int cpu_configure(Timing *self, struct config_t *config);
 int gpu_configure(Timing *self, struct config_t *config);
 
-
 int check_config(void* user, const char* section, const char* name, const char* value);
-int queue_config(void* user, const char* section, const char* name, const char* value);
-int switch_config(void* user, const char* section, const char* name, const char* value);
-int sysagent_config(void* user, const char* section, const char* name, const char* value);
-int memctrl_config(void* user, const char* section, const char* name, const char* value);
 void print_config(void);
 
 

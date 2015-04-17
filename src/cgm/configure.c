@@ -70,28 +70,54 @@ int cgm_mem_configure(void){
 
 	switch_finish_create();
 
+	//get sysagent configuration
+	error = ini_parse(cgm_config_file_name_and_path, sys_agent_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for sysagent configuration.\n");
+		return 1;
+	}
 
+	sys_agent_finish_create();
 
 	//configure the memory controller
-	error = ini_parse(cgm_config_file_name_and_path, memctrl_config, NULL);
+	error = ini_parse(cgm_config_file_name_and_path, mem_ctrl_config, NULL);
 	if (error < 0)
 	{
 		printf("Unable to open Config.ini for memctrl configuration.\n");
 		return 1;
 	}
 
-	//get sysagent configuration
-	/*error = ini_parse(CONFIGPATH, sysagent_config, NULL);
-	if (error < 0)
-	{
-		printf("Unable to open Config.ini for sysagent configuration.\n");
-		return 1;
-	}*/
-
+	mem_ctrl_finish_create();
 
 	return 0;
 
 }
+
+int sys_agent_config(void* user, const char* section, const char* name, const char* value){
+
+
+
+	return 0;
+}
+
+int sys_agent_finish_create(void){
+
+
+	return 0;
+}
+
+int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
+
+
+	return 0;
+}
+
+int mem_ctrl_finish_create(void){
+
+	return 0;
+}
+
 
 int cgm_cpu_configure(void){
 
@@ -988,27 +1014,7 @@ int cache_finish_create(){
 		}
 
 
-		//Initialize directory
-		/*if(l1_i_caches[i].directory_latency)
-		{
-			fatal("Setting up dir for l1_i_caches\n");
-		}
-		else if(l1_d_caches[i].directory_latency)
-		{
-			fatal("Setting up dir for l1_d_caches\n");
-		}
-		else if(l2_caches[i].directory_latency)
-		{
-			fatal("Setting up dir for l2_caches\n");
-		}
-		else if(l3_caches[i].directory_latency)
-		{
-			for (set = 0; set < l3_caches[i].num_sets; set++)
-			{
-
-			}
-
-		}*/
+		//star todo init directory here?
 
 	}
 
@@ -1339,16 +1345,30 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int num_cus = si_gpu_num_compute_units;
 	int Ports = 0;
 	int i = 0;
+	int WireLatency = 0;
+
+	//star todo fix this
+	int extras = 1;
 
 	if(MATCH("Switch", "Ports"))
 	{
-
 		Ports = atoi(value);
-		for (i = 0; i < (num_cores + num_cus); i++)
+		for (i = 0; i < (num_cores + extras); i++)
 		{
 			switches[i].port_num = Ports;
 		}
 	}
+
+	if(MATCH("Switch", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			switches[i].wire_latency = WireLatency;
+		}
+	}
+
 
 	return 0;
 }
@@ -1361,9 +1381,8 @@ int switch_finish_create(void){
 	//star todo fix this
 	int extras = 1;
 
-	int i = 0;
 	char buff[100];
-
+	int i = 0;
 	float median = 0;
 
 	//create the queues
@@ -1419,7 +1438,7 @@ int switch_finish_create(void){
 	//init the median node number on all switches
 	for (i = 0; i < (num_cores + extras); i++)
 	{
-		//get the acerage
+		//get the average
 		switches[i].switch_median_node_num = (median/(num_cores + extras));
 	}
 

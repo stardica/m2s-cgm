@@ -878,6 +878,7 @@ void l3_cache_ctrl(void){
 	return;
 }
 
+
 void gpu_v_cache_ctrl(void){
 
 	int my_pid = gpu_v_pid++;
@@ -1326,7 +1327,7 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 	}
 }
 
-
+//star todo this isn't for here, but remember to change the access type when needed getx putx etc.
 int cache_can_access(struct cache_t *cache){
 
 	//check if inqueue is full

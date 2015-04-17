@@ -76,6 +76,7 @@ struct switch_t{
 
 	enum port_name queue;
 	enum arbitrate arb_style;
+	unsigned int wire_latency;
 
 	//for switches with 4 ports
 	struct list_t *north_queue;

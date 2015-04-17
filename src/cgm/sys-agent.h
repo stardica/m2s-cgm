@@ -16,6 +16,9 @@
 
 struct system_agent_t{
 
+
+	unsigned int wire_latency;
+
 	//queues
 	struct list_t *Rx_queue_top;
 
@@ -31,6 +34,7 @@ extern int system_agent_pid;
 void sys_agent_init(void);
 void sys_agent_create(void);
 void sys_agent_create_tasks(void);
+
 int sys_agent_can_access(void);
 
 void sys_agent_ctrl(void);
