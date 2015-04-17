@@ -368,20 +368,29 @@ void l1_i_cache_ctrl(void){
 		//probe the address for set, tag, and offset.
 		cgm_cache_decode_address(&(l1_i_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
-		/*printf("L1\n");
+		if(access_id == 791)
+		{
+		printf("L1\n");
 		printf("access id %llu\n", access_id);
 		printf("access type %d\n", access_type);
 		printf("addr 0x%08u\n", addr);
 		printf("set = %d\n", *set_ptr);
 		printf("tag = %d\n", *tag_ptr);
 		printf("offset = %u\n", *offset_ptr);
-		getchar();*/
+		getchar();
+		}
 
-		if (access_type == cgm_access_fetch)
+
+		if (access_type == cgm_access_fetch || access_type == cgm_access_retry)
 		{//then the access is from the CPU
 
 			//stats
-			l1_i_caches[my_pid].fetches++;
+			if(access_type == cgm_access_fetch)
+				l1_i_caches[my_pid].fetches++;
+
+			if(access_type == cgm_access_retry)
+				l1_i_caches[my_pid].retries++;
+
 
 			//get the block and the state of the block
 			cache_status = cgm_cache_find_block(&(l1_i_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
@@ -391,11 +400,14 @@ void l1_i_cache_ctrl(void){
 			//L1 I Cache Hit!
 			if(cache_status == 1 && *state_ptr != 0)
 			{
+				if(access_id == 791)
+				{
+					printf("access id %llu l1 hit\n", access_id);
+					getchar();
+				}
 
-				/*printf("access id %llu l1 hit\n", access_id);
-				getchar();*/
-
-				l1_i_caches[my_pid].hits++;
+				if(access_type == cgm_access_fetch)
+					l1_i_caches[my_pid].hits++;
 
 				//remove packet from cache queue, global queue, and simulator memory
 				//note cycle already charged
@@ -407,10 +419,19 @@ void l1_i_cache_ctrl(void){
 			//L1 I Cache Miss!
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
-				l1_i_caches[my_pid].misses++;
+				//retry should always be a hit.
+				if(access_type == cgm_access_retry)
+				{
+					printf("access_type == cgm_access_retry\n");
 
-				/*printf("access id %llu l1 miss\n", access_id);
-				getchar();*/
+					printf("access id %llu l1 miss\n", access_id);
+					printf("cache_status %d state_ptr %d\n", cache_status, *state_ptr);
+					getchar();
+				}
+
+				if(access_type == cgm_access_fetch)
+					l1_i_caches[my_pid].misses++;
+
 
 				//star todo check on size of MSHR
 				mshr_packet = status_packet_create();
@@ -461,10 +482,8 @@ void l1_i_cache_ctrl(void){
 			//advance the l1_i_cache, on the next cycle the request should be a hit
 
 			//set to fetch for retry
-			message_packet->access_type = cgm_access_fetch;
-
-			P_PAUSE(1);
-			future_advance(&l1_i_cache[my_pid], (etime.count + 2));
+			message_packet->access_type = cgm_access_retry;
+			advance(&l1_i_cache[my_pid]);
 			//done.
 
 			//remove the message from the in queue
@@ -473,6 +492,7 @@ void l1_i_cache_ctrl(void){
 			//remove_from_global(access_id);
 
 		}
+
 		else
 		{
 			fatal("l1_i_cache_ctrl_0(): unknown L2 message type = %d\n", message_packet->access_type);
@@ -543,7 +563,7 @@ void l2_cache_ctrl(void){
 		getchar();*/
 
 		//Messages from L1_I_Cache
-		//star todo join this with l1 d cache gets
+		//star todo join this with l1 d cache gets somehow
 		if (access_type == cgm_access_gets_i)
 		{
 

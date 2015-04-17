@@ -112,6 +112,7 @@ struct cache_t{
 	long long hits;
 	long long invalid_hits;
 	long long misses;
+	long long retries;
 
 };
 

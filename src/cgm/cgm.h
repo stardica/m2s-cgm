@@ -44,7 +44,7 @@ enum cgm_access_kind_t{
 	cgm_access_puto, //request for writeback of cache block in owned state.
 	cgm_access_puto_shared, //equest for writeback of cache block in owned state but other sharers of the block exist.
 	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
-	cgm_access_mshr
+	cgm_access_retry
 };
 
 

@@ -1,0 +1,33 @@
+else if(cache_status == 0 || *state_ptr == 0)
+{
+
+				// L2 Cache Miss!
+				l2_caches[my_pid].misses++;
+
+				/*printf("access id %llu l1 miss\n", access_id);
+				getchar();*/
+
+
+				//star todo check on size of MSHR
+				mshr_packet = status_packet_create();
+
+				//drop a token in the mshr queue
+				//star todo add some detail to this so we can include coalescing
+				//star todo have an MSHR hit advance the cache and clear out the request.
+				mshr_packet->access_type = message_packet->access_type;
+				mshr_packet->access_id = message_packet->access_id;
+				mshr_packet->in_flight = message_packet->in_flight;
+				list_enqueue(l2_caches[my_pid].mshr, mshr_packet);
+
+
+				message_packet->access_type = cgm_access_puts;
+
+				//set the block now for testing///////////
+				cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, cache_block_shared);
+				///////////////////////////////////////////
+
+				list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
+				list_enqueue(l1_i_caches[my_pid].Rx_queue_top, message_packet);
+
+				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
+			}
