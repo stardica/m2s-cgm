@@ -8,16 +8,21 @@
 #ifndef PACKET_H_
 #define PACKET_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <cgm/cgm.h>
+#include <cgm/protocol.h>
+
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 
-
 extern struct cgm_packet_t{
+
 
 	enum cgm_access_kind_t access_type;
 	char *name;
-	struct list_t source_id;
+
 	unsigned int address;
 	long long access_id;
 	int tag;
@@ -35,7 +40,10 @@ extern struct cgm_packet_t{
 
 	//for routing
 	char *src_name;
+	int source_id;
+
 	char *dest_name;
+	int dest_id;
 
 };
 
@@ -47,6 +55,9 @@ extern struct cgm_packet_status_t{
 	long long access_id;
 	int in_flight;
 
+	//for routing
+	char *src_name;
+	int source_id;
 };
 
 

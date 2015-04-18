@@ -56,7 +56,7 @@ extern eventcount volatile *interrupt;
 
 //interupts
 void interrupt_init(void);
-void _interrupt_create(void);
+void interrupt_create(void);
 void interrupt_create_tasks(void);
 struct interrupt_t *interrupt_service_routine_create(void);
 

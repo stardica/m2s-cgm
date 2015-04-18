@@ -324,15 +324,15 @@ void LoadQueueOccupancy(int occ){
 	if (occ == 0)
 	{
 
-		printf("Load queue empty in cycle %lld.\n", Current_Cycle);
-		volatile int fetch_queue_max_occupancy = 0;
-		volatile long long Fetched_Insts = 0;
+		printf("Load queue empty in cycle %lu.\n", Current_Cycle);
+		//volatile int fetch_queue_max_occupancy = 0;
+		//volatile long long Fetched_Insts = 0;
 
 	}
 	else if (occ > x86_lsq_size)
 	{
 
-		printf("Load queue exceeded max size in cycle %lld.\n", Current_Cycle);
+		printf("Load queue exceeded max size in cycle %lu.\n", Current_Cycle);
 
 	}
 

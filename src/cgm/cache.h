@@ -11,6 +11,8 @@
 
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
+//#include <cgm/packet.h>
+
 #include <lib/util/string.h>
 
 
@@ -72,7 +74,7 @@ struct cache_set_t{
 struct cache_t{
 
 	//star >> my added elements.
-	char * name;
+	char *name;
 	int id;
 
 	//cache configuration settings
@@ -120,7 +122,6 @@ struct cache_t{
 extern int QueueSize;
 int mem_miss;
 
-
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
@@ -163,17 +164,17 @@ extern task *gpu_v_cache_tasks;
 extern task *gpu_s_cache_tasks;
 extern task *gpu_lds_tasks;
 
-
 //function prototypes
 void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
-int mshr_remove(struct cache_t *cache, long long access_id);
+struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_id);
 
 int cache_can_access(struct cache_t *cache);
 
-int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+//int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+
 
 
 //borrowed from m2s mem-system and tweaked a bit

@@ -150,9 +150,10 @@ void switch_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;
 
 	struct cgm_packet_t *message_packet;
-	char *dest;
+	char *dest_name;
 	int i = 0;
-	int dest_node_number;
+	int switch_node = switches[my_pid].switch_node_number;
+	int dest_node;
 	float distance;
 	int queue_status;
 
@@ -162,6 +163,7 @@ void switch_ctrl(void){
 
 	while(1)
 	{
+
 		//we have received a packet
 		await(&switches_ec[my_pid], step);
 		step++;
@@ -170,18 +172,24 @@ void switch_ctrl(void){
 		message_packet = get_from_queue(&switches[my_pid]);
 		assert(message_packet);
 
-
 		//send the packet to it's destination OR on to the next hop
 		//look up the node number of the destination
-		dest = message_packet->dest_name;
-		dest_node_number = str_map_string(&node_strn_map, dest);
+		dest_name = message_packet->dest_name;
+		dest_node = message_packet->dest_id;
+
+		/*printf("in switch pid %d src %s dest %s\n", my_pid, message_packet->src_name,
+		 * message_packet->dest_name);
+		printf("in switch id %d src id %d switch id %d dest id %d dest node num %d\n",
+		my_pid, message_packet->source_id, switches[my_pid].switch_node_number,
+		message_packet->dest_id, dest_node_number);
+		getchar();*/
 
 		//if dest is the L2/L3/SA connected to this switch.
-		if(dest_node_number == (switches[my_pid].switch_node_number - 1) || dest_node_number == (switches[my_pid].switch_node_number +1))
+		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
 		{
 
 			//if the node number is lower this means it is an L2 cache
-			if(dest_node_number < switches[my_pid].switch_node_number)
+			if(dest_node < switch_node)
 			{
 				//for CPU L2s
 				if(my_pid < num_cores)
@@ -222,7 +230,7 @@ void switch_ctrl(void){
 
 			}
 			//if the node number is high this means it is an L3 cache or the sys agent
-			else if(dest_node_number > switches[my_pid].switch_node_number)
+			else if(dest_node > switch_node)
 			{
 
 				//for CPU L3 caches
@@ -277,10 +285,10 @@ void switch_ctrl(void){
 			{
 
 				//new packets from connected L2 or L3 cache.
-				if(dest_node_number > switches[my_pid].switch_node_number)
+				if(dest_node > switch_node)
 				{
 					//get the distance from this switch to the destination (left and right)
-					distance = dest_node_number - switches[my_pid].switch_node_number;
+					distance = dest_node - switch_node;
 
 					//go in the direction with the shortest number of hops.
 					if(distance <= switches[my_pid].switch_median_node_num)
@@ -297,9 +305,9 @@ void switch_ctrl(void){
 
 					}
 				}
-				else if(dest_node_number < switches[my_pid].switch_node_number)
+				else if(dest_node < switch_node)
 				{
-					distance = switches[my_pid].switch_node_number - dest_node_number;
+					distance = switch_node - dest_node;
 
 					//go in the direction with the shortest number of hops.
 					if(distance <= switches[my_pid].switch_median_node_num)
