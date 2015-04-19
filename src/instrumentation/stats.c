@@ -72,8 +72,8 @@ volatile unsigned long Current_Cycle = 0;
 struct list_t *Uop_List;
 struct Uop_Status_t *Uop_Status;
 
-extern volatile long long l1_i_cache_0_hit = 0;
-extern volatile long long l1_i_cache_0_miss = 0;
+volatile long long l1_i_cache_0_hit = 0;
+volatile long long l1_i_cache_0_miss = 0;
 
 
 void instrumentation_init(void){
@@ -235,7 +235,7 @@ void FetchQueueOccupancy(int occ){
 	if (occ == 0)
 	{
 
-		printf("Fetch queue empty in cycle %lld.\n", Current_Cycle);
+		printf("Fetch queue empty in cycle %lu.\n", Current_Cycle);
 
 	}
 
@@ -350,13 +350,13 @@ void StoreQueueOccupancy(int occ){
 	if (occ == 0)
 	{
 
-		printf("Store queue empty in cycle %lld.\n", Current_Cycle);
+		printf("Store queue empty in cycle %lu.\n", Current_Cycle);
 
 	}
 	else if (occ > x86_lsq_size)
 	{
 
-		printf("Store queue exceeded max size in cycle %lld.\n", Current_Cycle);
+		printf("Store queue exceeded max size in cycle %lu.\n", Current_Cycle);
 
 	}
 
@@ -438,7 +438,7 @@ void RobQueueOccupancy(int occ){
 	if (occ == 0)
 	{
 
-		printf("Fetch queue empty in cycle %lld.\n", Current_Cycle);
+		printf("Fetch queue empty in cycle %lu.\n", Current_Cycle);
 
 	}
 	else if (occ > x86_rob_size)
@@ -490,7 +490,7 @@ void PrintMessage(int code){
 
 	if(code == 1)
 	{
-		printf("Executing esim event at cycle %lld\n", Current_Cycle);
+		printf("Executing esim event at cycle %lu\n", Current_Cycle);
 	}
 
 	if(code == 2)
@@ -647,7 +647,7 @@ void PrintCycle(int skip){
 
 	if((Current_Cycle % skip) == 0)
 	{
-		printf("---Cycles %lld---\n", Current_Cycle);
+		printf("---Cycles %lu---\n", Current_Cycle);
 		fflush(stdout);
 	}
 
@@ -657,7 +657,7 @@ void PrintCycle(int skip){
 
 void PrintMem(struct mem_t *mem){
 
-	int i = 0;
+	//int i = 0;
 
 	if(mem)
 	{

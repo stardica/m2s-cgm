@@ -19,7 +19,6 @@
 
 extern struct cgm_packet_t{
 
-
 	enum cgm_access_kind_t access_type;
 	char *name;
 

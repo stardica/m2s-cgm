@@ -1486,7 +1486,7 @@ void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
 	int set, tag, way;
-	unsigned int offset;
+	//unsigned int offset;
 
 	/* Locate block */
 	tag = *(tag_ptr);
@@ -1516,6 +1516,7 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 	{
 		fatal("cgm_cache_find_block() incorrect behavior\n");
 	}
+
 
 }
 

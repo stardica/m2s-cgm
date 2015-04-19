@@ -11,7 +11,7 @@
 
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
-//#include <cgm/packet.h>
+#include <cgm/packet.h>
 
 #include <lib/util/string.h>
 

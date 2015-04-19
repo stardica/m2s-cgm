@@ -7,7 +7,3 @@
 
 
 #include <cgm/protocol.h>
-
-
-
-
