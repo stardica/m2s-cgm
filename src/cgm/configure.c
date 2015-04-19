@@ -1397,9 +1397,45 @@ int switch_finish_create(void){
 
 			//init the switche's network node number
 			switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
-			median += switches[i].switch_node_number;
-
+			median ++;//= switches[i].switch_node_number;
 		}
+
+		//init the median node number on all switches
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			//get the average
+			switches[i].switch_median_node = median/2;
+		}
+
+		//configure the bi-directional ring.
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			if(i == 0)
+			{
+				switches[i].next_west = switches[num_cores + extras - 1].east_queue;
+				switches[i].next_west_id = num_cores + extras - 1;
+				switches[i].next_east = switches[i+1].west_queue;
+				switches[i].next_east_id = i+1;
+
+			}
+			else if( i > 0 && i < (num_cores + extras - 1))
+			{
+				switches[i].next_west = switches[i-1].east_queue;
+				switches[i].next_west_id = i-1;
+				switches[i].next_east = switches[i+1].west_queue;
+				switches[i].next_east_id = i+1;
+			}
+			else if(i == (num_cores + extras - 1))
+			{
+				switches[i].next_west = switches[i-1].east_queue;
+				switches[i].next_west_id = i-1;
+				switches[i].next_east = switches[0].west_queue;
+				switches[i].next_east_id = 0;
+			}
+
+			//printf("switch %d next east queue name %s, next west queue name %s\n", i, switches[i].next_east->name, switches[i].next_west->name);
+		}
+		//getchar();
 	}
 	else if(switches[0].port_num == 6)
 	{
@@ -1410,12 +1446,6 @@ int switch_finish_create(void){
 		fatal("switch_finish_create() port_num error\n");
 	}
 
-	//init the median node number on all switches
-	for (i = 0; i < (num_cores + extras); i++)
-	{
-		//get the average
-		switches[i].switch_median_node_num = (median/(num_cores + extras));
-	}
 
 
 	return 0;

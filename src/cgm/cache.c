@@ -369,14 +369,17 @@ void l1_i_cache_ctrl(void){
 		//probe the address for set, tag, and offset.
 		cgm_cache_decode_address(&(l1_i_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
-		/*printf("L1\n");
-		printf("access id %llu\n", access_id);
-		printf("access type %d\n", access_type);
-		printf("addr 0x%08u\n", addr);
-		printf("set = %d\n", *set_ptr);
-		printf("tag = %d\n", *tag_ptr);
-		printf("offset = %u\n", *offset_ptr);
-		getchar();*/
+		if (access_id == 1)
+		{
+			printf("L1\n");
+			printf("access id %llu\n", access_id);
+			printf("access type %d\n", access_type);
+			printf("addr 0x%08u\n", addr);
+			printf("set = %d\n", *set_ptr);
+			printf("tag = %d\n", *tag_ptr);
+			printf("offset = %u\n", *offset_ptr);
+			getchar();
+		}
 
 
 		if (access_type == cgm_access_fetch || access_type == cgm_access_retry)
@@ -390,14 +393,19 @@ void l1_i_cache_ctrl(void){
 				l1_i_caches[my_pid].retries++;
 
 
-			//get the block and the state of the block
+			//get the block and the state of the block and charge a cycle
 			cache_status = cgm_cache_find_block(&(l1_i_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-			//charge the cycle for the look up.
 			P_PAUSE(1);
 
 			//L1 I Cache Hit!
 			if(cache_status == 1 && *state_ptr != 0)
 			{
+
+				if (access_id == 1)
+				{
+					printf("access id %llu l1 hit\n", access_id);
+					getchar();
+				}
 
 				if(access_type == cgm_access_fetch)
 					l1_i_caches[my_pid].hits++;
@@ -413,7 +421,14 @@ void l1_i_cache_ctrl(void){
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
 
-				//there is a bug here 1 access fails retry.
+				if (access_id == 1)
+				{
+					printf("access id %llu l1 miss\n", access_id);
+					getchar();
+				}
+
+
+				//star todo there is a bug here 1 access fails retry in our MM.
 				//assert(access_type != cgm_access_retry);
 				if(access_type == cgm_access_fetch)
 					l1_i_caches[my_pid].misses++;
@@ -540,14 +555,17 @@ void l2_cache_ctrl(void){
 		//probe the address for set, tag, and offset.
 		cgm_cache_decode_address(&(l2_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
-		/*printf("L2\n");
-		printf("access id %llu\n", access_id);
-		printf("access type %d\n", access_type);
-		printf("addr 0x%08u\n", addr);
-		printf("set = %d\n", *set_ptr);
-		printf("tag = %d\n", *tag_ptr);
-		printf("offset = %u\n", *offset_ptr);
-		getchar();*/
+		if(access_id == 1)
+		{
+			printf("L2\n");
+			printf("access id %llu\n", access_id);
+			printf("access type %d\n", access_type);
+			printf("addr 0x%08u\n", addr);
+			printf("set = %d\n", *set_ptr);
+			printf("tag = %d\n", *tag_ptr);
+			printf("offset = %u\n", *offset_ptr);
+			getchar();
+		}
 
 		//Messages from L1_I_Cache
 		//star todo join this with l1 d cache gets somehow
@@ -555,20 +573,31 @@ void l2_cache_ctrl(void){
 		{
 
 			//stats
-			l2_caches[my_pid].loads++;
+			if(access_type == cgm_access_gets_i)
+				l2_caches[my_pid].loads++;
 
-			//charge the cycle for the look up.
-			P_PAUSE(1);
+			if(access_type == cgm_access_retry_i)
+				l2_caches[my_pid].retries;
+
+
+			//look up, and charge a cycle.
 			cache_status = cgm_cache_find_block(&l2_caches[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+			P_PAUSE(1);
 
 			// L2 Cache Hit!
 			if(cache_status == 1 && *state_ptr != 0)
 			{
 
-				l2_caches[my_pid].hits++;
+				if(access_id == 1)
+				{
+					printf("access id %llu l2 hit\n", access_id);
+					getchar();
+				}
 
-				/*printf("access id %llu l2 hit\n", access_id);
-				getchar();*/
+
+				if(access_type == cgm_access_gets_i)
+					l2_caches[my_pid].hits++;
+
 
 				//This is a hit in the L2 cache need to send up to L1 cache
 
@@ -583,21 +612,23 @@ void l2_cache_ctrl(void){
 				//remove packet from l2 cache in queue
 				list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
 
-				//change access type, i cache only ever reads so puts is fine.
+				//change access type, i cache only ever reads so puts is ok.
 				message_packet->access_type = cgm_access_puts;
 				list_enqueue(l1_i_caches[my_pid].Rx_queue_top, message_packet);
 				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
 
 			}
+			// L2 Cache Miss!
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
+				if(access_id == 1)
+				{
+					printf("access id %llu l2 miss\n", access_id);
+					getchar();
+				}
 
-				// L2 Cache Miss!
-				l2_caches[my_pid].misses++;
-
-				/*printf("access id %llu l1 miss\n", access_id);
-				getchar();*/
-
+				if(access_type == cgm_access_gets_i)
+					l2_caches[my_pid].misses++;
 
 				//star todo check on size of MSHR
 				mshr_packet = status_packet_create();
@@ -612,14 +643,12 @@ void l2_cache_ctrl(void){
 				list_enqueue(l2_caches[my_pid].mshr, mshr_packet);
 
 
-				//send to L3 cache over switching network
-				//add source and dest
-				//star todo make a function to get the string for the l3 slices.
-				message_packet->access_type = cgm_access_gets;
+				//send to L3 cache over switching network add source and dest here
+				message_packet->access_type = cgm_access_gets_i;
 				message_packet->src_name = l2_caches[my_pid].name;
 				message_packet->source_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
-				message_packet->dest_name = str_map_value(&node_strn_map, 2);
-				message_packet->dest_id = 2;
+				message_packet->dest_name = l3_caches[my_pid].name;
+				message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
 
 				while(!switch_can_access(switches[my_pid].north_queue))
 				{
@@ -630,8 +659,6 @@ void l2_cache_ctrl(void){
 				list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
 				list_enqueue(switches[my_pid].north_queue, message_packet);
 
-				/*printf("advance switch pid %d\n", my_pid);
-				getchar();*/
 				future_advance(&switches_ec[my_pid], (etime.count + switches[my_pid].wire_latency));
 				//done
 			}
@@ -649,9 +676,6 @@ void l2_cache_ctrl(void){
 			//current just removes 1 element at a time,
 			mshr_packet = mshr_remove(&l2_caches[my_pid], access_id);
 			assert(mshr_packet); //we better find a token
-
-
-
 
 			//charge the delay for servicing the older request in the MSHR
 			//advance the l1_i_cache, on the next cycle the request should be a hit
@@ -1020,36 +1044,49 @@ void l3_cache_ctrl(void){
 		//probe the address for set, tag, and offset.
 		cgm_cache_decode_address(&(l2_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
-		/*printf("L2\n");
-		printf("access id %llu\n", access_id);
-		printf("access type %d\n", access_type);
-		printf("addr 0x%08u\n", addr);
-		printf("set = %d\n", *set_ptr);
-		printf("tag = %d\n", *tag_ptr);
-		printf("offset = %u\n", *offset_ptr);
-		getchar();*/
+		if(access_id == 1)
+		{
+			printf("L3\n");
+			printf("access id %llu\n", access_id);
+			printf("access type %d\n", access_type);
+			printf("addr 0x%08u\n", addr);
+			printf("set = %d\n", *set_ptr);
+			printf("tag = %d\n", *tag_ptr);
+			printf("offset = %u\n", *offset_ptr);
+			getchar();
+		}
 
 
-		if (access_type == cgm_access_gets)
+		if (access_type == cgm_access_gets_i  || access_type == cgm_access_retry_i)
 		{
 
 			//stats
-			l3_caches[my_pid].loads++;
+			if (access_type == cgm_access_gets_i)
+				l3_caches[my_pid].loads++;
+
+			if (access_type == cgm_access_retry_i)
+				l3_caches[my_pid].retries++;
+
 
 			//charge the cycle for the look up.
-			P_PAUSE(1);
 			cache_status = cgm_cache_find_block(&l3_caches[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+			P_PAUSE(1);
 
-			// L2 Cache Hit!
+
+			//L3 Cache Hit!
 			if(cache_status == 1 && *state_ptr != 0)
 			{
 
-				l2_caches[my_pid].hits++;
+				if(access_id == 1)
+				{
+					printf("access id %llu l3 hit\n", access_id);
+					getchar();
+				}
 
-				/*printf("access id %llu l2 hit\n", access_id);
-				getchar();*/
+				if (access_type == cgm_access_gets_i)
+					l3_caches[my_pid].hits++;
 
-				//This is a hit in the L2 cache need to send up to L1 cache
+				//This is a hit in the L3 cache, send up to L2 cache
 
 				//while the next level of cache's in queue is full stall
 				//star todo possible deadlock situation if both the l2 and core are trying to fill a full queue
@@ -1061,13 +1098,11 @@ void l3_cache_ctrl(void){
 				//success
 				//remove packet from l3 cache in queue
 				//change access type, i cache only ever reads so puts is fine.
-
 				message_packet->access_type = cgm_access_puts;
+				message_packet->dest_name = message_packet->src_name;
+				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 				message_packet->src_name = l3_caches[my_pid].name;
 				message_packet->source_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
-				message_packet->dest_name = str_map_value(&node_strn_map, 0);
-				message_packet->dest_id = 0;
-
 
 				list_remove(l3_caches[my_pid].Rx_queue_top, message_packet);
 				list_enqueue(switches[my_pid].south_queue, message_packet);
@@ -1075,14 +1110,18 @@ void l3_cache_ctrl(void){
 				//done
 
 			}
+			//L3 Cache Miss!
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
 
-				// L2 Cache Miss!
-				l2_caches[my_pid].misses++;
+				if(access_id == 1)
+				{
+					printf("access id %llu l3 miss\n", access_id);
+					getchar();
+				}
 
-				/*printf("access id %llu l1 miss\n", access_id);
-				getchar();*/
+				if (access_type == cgm_access_gets_i)
+					l3_caches[my_pid].misses++;
 
 
 				//star todo check on size of MSHR
@@ -1102,22 +1141,22 @@ void l3_cache_ctrl(void){
 				//add source and dest
 				//star todo make a function to get the string for the l3 slices.
 				message_packet->access_type = cgm_access_gets;
-				message_packet->src_name = l2_caches[my_pid].name;
-				message_packet->source_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
-				message_packet->dest_name = str_map_value(&node_strn_map, 2);
-				message_packet->dest_id = 2;
+				message_packet->src_name = l3_caches[my_pid].name;
+				message_packet->source_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
 
-				while(!switch_can_access(switches[my_pid].north_queue))
+				message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
+				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
+
+
+				while(!switch_can_access(switches[my_pid].south_queue))
 				{
 					P_PAUSE(1);
 				}
 
 				//success
-				list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
-				list_enqueue(switches[my_pid].north_queue, message_packet);
+				list_remove(l3_caches[my_pid].Rx_queue_top, message_packet);
+				list_enqueue(switches[my_pid].south_queue, message_packet);
 
-				/*printf("advance switch pid %d\n", my_pid);
-				getchar();*/
 				future_advance(&switches_ec[my_pid], (etime.count + switches[my_pid].wire_latency));
 				//done
 			}

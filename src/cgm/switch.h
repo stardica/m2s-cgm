@@ -68,7 +68,7 @@ struct switch_t{
 	//cache queues
 	char *name;
 	int switch_node_number;
-	float switch_median_node_num;
+	float switch_median_node;
 	int port_num;
 
 	int num_routes;
@@ -87,6 +87,18 @@ struct switch_t{
 	//for switches with 6 ports
 	struct list_t *forward_queue;
 	struct list_t *back_queue;
+
+	//pointers to neighbors
+	//for ring busses you just need an east/west queue ptr
+	//struct list_t *next_north;
+	struct list_t *next_east;
+	//struct list_t *next_south;
+	struct list_t *next_west;
+	//struct list_t *next_forward;
+	//struct list_t *next_back;
+
+	int next_east_id;
+	int next_west_id;
 
 };
 

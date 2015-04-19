@@ -144,18 +144,21 @@ int switch_can_access(struct list_t *queue){
 void switch_ctrl(void){
 
 	int my_pid = switch_pid++;
-	long long step = 1;
-
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-
 	struct cgm_packet_t *message_packet;
-	char *dest_name;
-	int i = 0;
-	int switch_node = switches[my_pid].switch_node_number;
-	int dest_node;
-	float distance;
+	long long step = 1;
+	int next_switch = 0;
 	int queue_status;
+
+
+	char *dest_name;
+	int dest_node;
+	char *src_name;
+	int src_node;
+	int switch_node = switches[my_pid].switch_node_number;
+	float distance;
+
 
 	assert(my_pid <= (num_cores + num_cus));
 
@@ -177,17 +180,22 @@ void switch_ctrl(void){
 		dest_name = message_packet->dest_name;
 		dest_node = message_packet->dest_id;
 
-		/*printf("in switch pid %d src %s dest %s\n", my_pid, message_packet->src_name,
-		 * message_packet->dest_name);
-		printf("in switch id %d src id %d switch id %d dest id %d dest node num %d\n",
-		my_pid, message_packet->source_id, switches[my_pid].switch_node_number,
-		message_packet->dest_id, dest_node_number);
-		getchar();*/
+		src_name = message_packet->src_name;
+		src_node = message_packet->source_id;
+
+
+		if(message_packet->access_id == 1)
+		{
+			printf("switch id %d\n", my_pid);
+			printf("access id %llu l2 miss\n", message_packet->access_id);
+			printf("src %s -> dest %s\n", message_packet->src_name, message_packet->dest_name);
+			getchar();
+		}
+
 
 		//if dest is the L2/L3/SA connected to this switch.
 		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
 		{
-
 			//if the node number is lower this means it is an L2 cache
 			if(dest_node < switch_node)
 			{
@@ -232,7 +240,6 @@ void switch_ctrl(void){
 			//if the node number is high this means it is an L3 cache or the sys agent
 			else if(dest_node > switch_node)
 			{
-
 				//for CPU L3 caches
 				if(my_pid < num_cores)
 				{
@@ -268,7 +275,6 @@ void switch_ctrl(void){
 					list_enqueue(system_agent->Rx_queue_top, message_packet);
 					future_advance(system_agent_ec, (etime.count + system_agent->wire_latency));
 					//done with this access
-
 				}
 			}
 			else
@@ -283,42 +289,120 @@ void switch_ctrl(void){
 			//there is no transfer direction established.
 			if(switches[my_pid].queue == north_queue || switches[my_pid].queue == south_queue)
 			{
-
 				//new packets from connected L2 or L3 cache.
-				if(dest_node > switch_node)
+
+
+				if(dest_node > src_node)
 				{
-					//get the distance from this switch to the destination (left and right)
-					distance = dest_node - switch_node;
+
+					//get the distance from this switch to the destination (left to right)
+					if(dest_node % 3 == 0 && src_node % 3 == 0)
+					{
+						//L2 to L2
+						distance = (dest_node - src_node)/3;
+					}
+					else if(dest_node % 3 != 0 && src_node % 3 == 0)
+					{
+						//L2 to L3/SA || L3 to L2 (works for both ways)
+						distance = (dest_node - (src_node + 2))/3;
+					}
+					else
+					{
+						//L3 to L3/SA
+						distance = (dest_node - src_node)/3;
+					}
+
 
 					//go in the direction with the shortest number of hops.
-					if(distance <= switches[my_pid].switch_median_node_num)
-					{//go right
+					if(distance <= switches[my_pid].switch_median_node)
+					{//go east
 
-						//special cases are the two end switches.
-						//if(switches[my_pid].switch_node_number == 2)
-						//if(switches[my_pid].switch_node_number == (node_number - 2))
+						while(!switch_can_access(switches[my_pid].next_east))
+						{
+							//the switch queue is full try again next cycle
+							P_PAUSE(1);
+						}
+
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
+
+						//drop the packet into the next switche's queue
+						list_enqueue(switches[my_pid].next_east, message_packet);
+						future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
 
 					}
 					else
-					{//go left
+					{//go west
 
+						while(!switch_can_access(switches[my_pid].next_west))
+						{
+							//the switch queue is full try again next cycle
+							P_PAUSE(1);
+						}
 
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
+
+						//drop the packet into the next switche's queue
+						list_enqueue(switches[my_pid].next_west, message_packet);
+						future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
 					}
 				}
-				else if(dest_node < switch_node)
+				else if(src_node > dest_node)
 				{
-					distance = switch_node - dest_node;
+
+					//get the distance from this switch to the destination (right to left)
+					if(src_node % 3 == 0 && dest_node % 3 == 0)
+					{
+						//L2 to L2
+						distance = (src_node - dest_node)/3;
+					}
+					else if(src_node % 3 == 0 && dest_node % 3 != 0)
+					{
+						//L2 to L3/SA || L3 to L2 (works for both ways)
+						distance = ((src_node + 2) - dest_node)/3;
+					}
+					else
+					{
+						//L3 to L3/SA
+						distance = (src_node - dest_node)/3;
+					}
+
 
 					//go in the direction with the shortest number of hops.
-					if(distance <= switches[my_pid].switch_median_node_num)
-					{//go left
+					if(distance <= switches[my_pid].switch_median_node)
+					{//go west
+
+						while(!switch_can_access(switches[my_pid].next_west))
+						{
+							//the switch queue is full try again next cycle
+							P_PAUSE(1);
+						}
+
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
+
+						//drop the packet into the next switche's queue
+						list_enqueue(switches[my_pid].next_west, message_packet);
+						future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
 
 					}
 					else
-					{//go right
+					{//go east
 
+						while(!switch_can_access(switches[my_pid].next_east))
+						{
+							//the switch queue is full try again next cycle
+							P_PAUSE(1);
+						}
+
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
+
+						//drop the packet into the next switche's queue
+						list_enqueue(switches[my_pid].next_east, message_packet);
+						future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
 					}
-
 				}
 			}
 			else if(switches[my_pid].queue == east_queue || switches[my_pid].queue == west_queue)
@@ -326,25 +410,53 @@ void switch_ctrl(void){
 				//packet came from another switch, but needs to continue on.
 
 				if(switches[my_pid].queue == east_queue)
-				{//go left (even if it is less efficient)
+				{//go west
 
+					while(!switch_can_access(switches[my_pid].next_west))
+					{
+						//the switch queue is full try again next cycle
+						P_PAUSE(1);
+					}
 
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					//drop the packet into the next switche's queue
+					list_enqueue(switches[my_pid].next_west, message_packet);
+					future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
+
+				}
+				else if(switches[my_pid].queue == west_queue)
+				{//go east
+					while(!switch_can_access(switches[my_pid].next_east))
+					{
+						//the switch queue is full try again next cycle
+						P_PAUSE(1);
+					}
+
+					//success, remove packet from the switche's queue
+					remove_from_queue(&switches[my_pid], message_packet);
+
+					//drop the packet into the next switche's queue
+					list_enqueue(switches[my_pid].next_east, message_packet);
+					future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
 
 				}
 				else
-				{//go right
-
+				{
+					fatal("switch_ctrl() directional queue error.\n");
 
 				}
 
 			}
-		}
 
+		}
 		//end, clear the message_packet ptr
 		//this should be getting set up above in list_get(), but just for safe measure.
 		message_packet = NULL;
 	}
 
+	fatal("switch_ctrl() quit\n");
 	return;
 }
 
