@@ -30,6 +30,10 @@ struct system_agent_t{
 	//queues
 	struct list_t *Rx_queue_top;
 
+	//link to switch
+	struct list_t *switch_queue;
+
+	int switch_id;
 };
 
 extern struct system_agent_t *system_agent;

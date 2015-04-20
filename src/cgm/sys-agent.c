@@ -10,12 +10,15 @@
 #include <string.h>
 
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
+#include <cgm/cgm.h>
 #include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
 #include <cgm/cache.h>
 #include <cgm/packet.h>
 #include <cgm/switch.h>
+#include <cgm/protocol.h>
 
 
 struct system_agent_t *system_agent;
@@ -80,6 +83,7 @@ void sys_agent_ctrl(void){
 	int my_pid = system_agent_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
+	int i = 0;
 
 	long long access_id = 0;
 	enum cgm_access_kind_t access_type;
@@ -87,14 +91,39 @@ void sys_agent_ctrl(void){
 
 	set_id((unsigned int)my_pid);
 
+
+
 	while(1)
 	{
+
+		printf("sys agent waiting\n");
+
 		await(system_agent_ec, step);
 		step++;
+
+		printf("made it here 1\n");
 
 		//if we are here there should be a message in the queue
 		message_packet = list_get(system_agent->Rx_queue_top, 0);
 		assert(message_packet);
+
+		printf("made it here 2\n");
+
+		access_id = message_packet->access_id;
+		addr = message_packet->address;
+		access_type = message_packet->access_type;
+
+		printf("made it here 3\n");
+
+		if (access_id == 1)
+		{
+			printf("system_agent\n");
+			printf("access id %llu\n", access_id);
+			printf("access type %d\n", access_type);
+			getchar();
+		}
+
+
 
 		//system agent passes the message to the correct IO system.
 		//for now we just go from SA to memctrl
@@ -102,48 +131,66 @@ void sys_agent_ctrl(void){
 		//check the mapping of the memory address..
 
 		//star todo fix this. This isn't done right.
-		addr = message_packet->address;
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
+
+
 
 
 		//for now pretend we are both the sys agent and the memctrl
 		if(access_type == cgm_access_gets)
 		{
 
-			/*while(!memctrl_can_access())
+			if (access_id == 1)
 			{
-				P_PAUSE(1);
+				printf("entered at %llu\n", (etime.count/2));
 			}
-			 */
+
 
 			//charge the memctrl delay
 			P_PAUSE(250);
 
+			if (access_id == 1)
+			{
+				printf("after paused %llu\n", (etime.count/2));
+				getchar();
+			}
+
 			//send back to L3 cache over switching network
 			//add source and dest
 
-			message_packet->access_type = cgm_access_gets;
 
+			message_packet->access_type = cgm_access_puts;
 			message_packet->dest_id = message_packet->source_id;
 			message_packet->dest_name = message_packet->src_name;
 
 			message_packet->src_name = system_agent->name;
 			message_packet->source_id = str_map_string(&node_strn_map, system_agent->name);
 
-			//message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
-			//message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
-			while(!switch_can_access(switches[my_pid].south_queue))
+			if (access_id == 1)
+			{
+				printf("Building message packet switch %d\n", my_pid);
+				printf("Source %s id %d\n", message_packet->src_name, message_packet->source_id);
+				printf("Dest %s id %d\n", message_packet->dest_name, message_packet->dest_id);
+				getchar();
+			}
+
+
+			//get the local switch number
+
+
+
+			/*while(!switch_can_access(switches[].south_queue))
 			{
 				P_PAUSE(1);
 			}
 
+			printf("made it here 4\n");
+
 			//success
 			list_remove(system_agent->Rx_queue_top, message_packet);
-			list_enqueue(switches[str_map_string(&node_strn_map, system_agent->name) - 1 ].south_queue, message_packet);
+			list_enqueue(switches[].south_queue, message_packet);
 
-			future_advance(&switches_ec[str_map_string(&node_strn_map, system_agent->name) - 1 ], (etime.count + switches[str_map_string(&node_strn_map, system_agent->name) - 1].wire_latency));
+			future_advance(&switches_ec[], (etime.count + switches[].wire_latency));*/
 			//done
 		}
 	}

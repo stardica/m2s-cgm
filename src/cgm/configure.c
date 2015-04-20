@@ -1474,19 +1474,28 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 
 int sys_agent_finish_create(void){
 
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+
+	//star todo fix this
+	int extras = 1;
+
 	char buff[100];
 
 	system_agent->Rx_queue_top = list_create();
 
 	//set cache name
 	memset (buff,'\0' , 100);
-	snprintf(buff, 100, "system_agent");
+	snprintf(buff, 100, "sys_agent");
 	system_agent->name = strdup(buff);
 
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "system_agent.Rx_queue_top");
 	system_agent->Rx_queue_top->name = strdup(buff);
 
+
+	system_agent->switch_id = (num_cores + extras);
+	system_agent->switch_queue = switches[system_agent->switch_id].south_queue;
 
 	return 0;
 }

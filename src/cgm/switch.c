@@ -187,7 +187,7 @@ void switch_ctrl(void){
 		if(message_packet->access_id == 1)
 		{
 			printf("switch id %d\n", my_pid);
-			printf("access id %llu l2 miss\n", message_packet->access_id);
+			printf("access id %llu\n", message_packet->access_id);
 			printf("src %s -> dest %s\n", message_packet->src_name, message_packet->dest_name);
 			getchar();
 		}
@@ -262,6 +262,13 @@ void switch_ctrl(void){
 				//for the system agent
 				else if(my_pid >= num_cores)
 				{
+
+					if(message_packet->access_id == 1)
+					{
+						printf("switch id %d accessing sys_agent queue\n", my_pid);
+						getchar();
+					}
+
 					while(!sys_agent_can_access())
 					{
 						//the sys agent queue is full try again next cycle
@@ -275,6 +282,13 @@ void switch_ctrl(void){
 					list_enqueue(system_agent->Rx_queue_top, message_packet);
 					future_advance(system_agent_ec, (etime.count + system_agent->wire_latency));
 					//done with this access
+
+					if(message_packet->access_id == 1)
+					{
+						printf("switch id %d  sys_agent queue\n", my_pid);
+						getchar();
+					}
+
 				}
 			}
 			else
