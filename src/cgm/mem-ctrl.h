@@ -11,14 +11,11 @@
 
 #include <cgm/tasking.h>
 
-//Behavioral switches
-#define ARBITRATE 1
-
 extern struct mem_ctrl_t{
 
 	//Physical Characteristics
 	char *name;
-	int latency;
+	int wire_latency;
 	int num_ports;
 
 	struct list_t *Rx_queue_top;

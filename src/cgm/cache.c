@@ -1163,11 +1163,31 @@ void l3_cache_ctrl(void){
 		}
 		else if(access_type == cgm_access_puts)
 		{
+			//reply from L3
+			//charge the delay for writing cache block
+			//P_PAUSE(1);
+			cgm_cache_set_block(&(l3_caches[my_pid]), *set_ptr, *way_ptr, tag, cache_block_shared);
 
-			//set the block now for testing///////////
-			//cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, cache_block_shared);
-			///////////////////////////////////////////
+			//star todo what should I put for the state?
+			//star todo service the mshr requests (this is for coalescing)
 
+			//current just removes 1 element at a time,
+			mshr_packet = mshr_remove(&l3_caches[my_pid], access_id);
+			assert(mshr_packet); //we better find a token
+			//charge the delay for servicing the older request in the MSHR
+			//advance the l1_i_cache, on the next cycle the request should be a hit
+			//set to fetch for retry
+
+			//star todo check with Dr. H on this
+			message_packet->access_type = cgm_access_retry_i;
+			message_packet->src_name = mshr_packet->src_name;
+			advance(&l3_cache[my_pid]);
+			//done.
+
+						//remove the message from the in queue
+						//list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
+						//remove from the access tracker, this is a simulator-ism.
+						//remove_from_global(access_id);
 		}
 
 	}

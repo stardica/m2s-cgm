@@ -71,11 +71,11 @@ int cgm_mem_configure(void){
 
 	switch_finish_create();
 
-	//get sysagent configuration
+	//get sys agent configuration
 	error = ini_parse(cgm_config_file_name_and_path, sys_agent_config, NULL);
 	if (error < 0)
 	{
-		printf("Unable to open Config.ini for sysagent configuration.\n");
+		printf("Unable to open Config.ini for sys agent configuration.\n");
 		return 1;
 	}
 
@@ -85,7 +85,7 @@ int cgm_mem_configure(void){
 	error = ini_parse(cgm_config_file_name_and_path, mem_ctrl_config, NULL);
 	if (error < 0)
 	{
-		printf("Unable to open Config.ini for memctrl configuration.\n");
+		printf("Unable to open Config.ini for mem ctrl configuration.\n");
 		return 1;
 	}
 
@@ -1476,21 +1476,29 @@ int sys_agent_finish_create(void){
 
 	char buff[100];
 
+	system_agent->Rx_queue_top = list_create();
+
 	//set cache name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "system_agent");
 	system_agent->name = strdup(buff);
+
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent.Rx_queue_top");
+	system_agent->Rx_queue_top->name = strdup(buff);
+
 
 	return 0;
 }
 
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports = 0;
+	int Ports, WireLatency = 0;
 
-	if(MATCH("MemCtrl", "Latency"))
+	if(MATCH("MemCtrl", "WireLatency"))
 	{
-		mem_ctrl->latency = atoi(value);
+		WireLatency = atoi(value);
+		mem_ctrl->wire_latency = WireLatency;
 	}
 
 	if(MATCH("MemCtrl", "Ports"))
@@ -1506,10 +1514,16 @@ int mem_ctrl_finish_create(void){
 
 	char buff[100];
 
+	mem_ctrl->Rx_queue_top = list_create();
+
 	//set cache name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl");
 	mem_ctrl->name = strdup(buff);
+
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl.Rx_queue_top");
+	mem_ctrl->Rx_queue_top->name = strdup(buff);
 
 	return 0;
 }

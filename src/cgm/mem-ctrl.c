@@ -15,12 +15,13 @@
 #include <cgm/mem-ctrl.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
+#include <cgm/cache.h>
 
 //structure declarations
 struct mem_ctrl_t *mem_ctrl;
 eventcount volatile *mem_ctrl_ec;
 task *mem_ctrl_task;
-int mem_ctrl_pid;
+int mem_ctrl_pid = 0;
 
 
 void memctrl_init(void){
@@ -74,14 +75,22 @@ int memctrl_can_access(void){
 //do some work.
 void memctrl_ctrl(void){
 
+	int my_pid = mem_ctrl_pid;
+	struct cgm_packet_t *message_packet;
 	long long step = 1;
 
-		while(1)
-		{
-			//printf("in mem_ctrl\n");
-			await(mem_ctrl_ec, step);
-			step++;
-		}
+	long long access_id = 0;
+	enum cgm_access_kind_t access_type;
+	unsigned int addr;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		//printf("in mem_ctrl\n");
+		await(mem_ctrl_ec, step);
+		step++;
+	}
 
 	return;
 }

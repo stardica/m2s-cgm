@@ -13,11 +13,17 @@
 
 #include <cgm/tasking.h>
 
+enum cgm_io_kind_t {
+	cgm_io_memctrl = 0,
+	cgm_io_net,
+	cgm_io_dma,
+	cgm_io_pcie,
+	cgm_io_retry
+};
 
 struct system_agent_t{
 
-
-	char * name;
+	char *name;
 	unsigned int wire_latency;
 	unsigned int num_ports;
 
