@@ -25,6 +25,7 @@
 #include <cgm/packet.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
+#include <cgm/mshr.h>
 
 
 #include <instrumentation/stats.h>
@@ -417,6 +418,7 @@ void l1_i_cache_ctrl(void){
 				free(message_packet);
 
 			}
+
 			//L1 I Cache Miss!
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
@@ -434,35 +436,35 @@ void l1_i_cache_ctrl(void){
 					l1_i_caches[my_pid].misses++;
 
 
+				//try to coalesce misses if possible
+
+
 				//star todo check on size of MSHR
-				mshr_packet = status_packet_create();
+				mshr_packet = mshr_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset);
 
-				//drop a token in the mshr queue
-				//star todo add some detail to this so we can include coalescing
-				//star todo have an MSHR hit advance the cache and clear out the request.
-				mshr_packet->access_type = message_packet->access_type;
-				mshr_packet->access_id = message_packet->access_id;
-				mshr_packet->in_flight = message_packet->in_flight;
-				list_enqueue(l1_i_caches[my_pid].mshr, mshr_packet);
-
-				//while the next level of cache's in queue is full stall
-				while(!cache_can_access(&l2_caches[my_pid]))
+				if(!mshr_set(&(l1_i_caches[my_pid]), mshr_packet))
 				{
-					/*printf("access id %llu l1 miss in while\n", access_id);
-					getchar();*/
-					P_PAUSE(1);
+
+					//while the next level of cache's in queue is full stall
+					while(!cache_can_access(&l2_caches[my_pid]))
+					{
+						/*printf("access id %llu l1 miss in while\n", access_id);
+						getchar();*/
+						P_PAUSE(1);
+					}
+
+					//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
+					list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
+
+					//change the access type for the coherence protocol and drop into the L2's queue
+					message_packet->access_type = cgm_access_gets_i;
+					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+
+					//advance the L2 cache adding some wire delay time.
+					future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
 				}
-
-				//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
-				list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
-
-				//change the access type for the coherence protocol and drop into the L2's queue
-				message_packet->access_type = cgm_access_gets_i;
-				list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-
-				//advance the L2 cache adding some wire delay time.
-				future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
 				//done
+
 			}
 		}
 		else if(access_type == cgm_access_puts)

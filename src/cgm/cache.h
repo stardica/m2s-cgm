@@ -12,6 +12,7 @@
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
+#include <cgm/mshr.h>
 
 #include <lib/util/string.h>
 
@@ -85,7 +86,6 @@ struct cache_t{
 	unsigned int num_ports;
 	//enum cache_policy_t policy;
 	const char *policy;
-	unsigned int mshr_size;
 
 	//cache data
 	struct cache_set_t *sets;
@@ -94,10 +94,17 @@ struct cache_t{
 	unsigned int set_mask;
 	int log_set_size;
 
+	//mshr control links
+	unsigned int mshr_size;
+	//struct mshr_t *mshr;
+	struct list_t *mshr;
+	struct list_t **mshr_2;
+	int num_retry;
+
+
 	//cache queues
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
-	struct list_t *mshr;
 
 	//physical characteristics
 	unsigned int latency;
@@ -119,6 +126,7 @@ struct cache_t{
 };
 
 //global variables.
+//star todo bring this into the cache struct
 extern int QueueSize;
 int mem_miss;
 
@@ -174,8 +182,6 @@ struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_
 int cache_can_access(struct cache_t *cache);
 
 //int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
-
-
 
 //borrowed from m2s mem-system and tweaked a bit
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);

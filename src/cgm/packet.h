@@ -52,9 +52,11 @@ extern struct cgm_packet_status_t{
 	enum cgm_access_kind_t access_type;
 	unsigned int address;
 	long long access_id;
+	int set;
+	int tag;
+	unsigned int offset;
 	int in_flight;
-
-	//for routing
+	//for reverse look up routing.
 	char *src_name;
 	int source_id;
 };

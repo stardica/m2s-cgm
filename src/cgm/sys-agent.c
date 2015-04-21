@@ -178,7 +178,6 @@ void sys_agent_ctrl(void){
 			//get the local switch number
 
 
-
 			/*while(!switch_can_access(switches[].south_queue))
 			{
 				P_PAUSE(1);
