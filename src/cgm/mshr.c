@@ -40,14 +40,14 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet){
 
 
 	//check for duplicates
-	for(i = 0; i < mshr_size; i ++)
+	/*for(i = 0; i < mshr_size; i ++)
 	{
 		//check if coalescable
 		//compare the tag and set at the head of each element for a hit
 		cache->mshr_2[i]->
 
 
-	}
+	}*/
 
 
 	//if coalesced return 1;

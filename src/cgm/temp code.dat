@@ -31,3 +31,34 @@ else if(cache_status == 0 || *state_ptr == 0)
 
 				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
 			}
+			
+			
+			
+//printf("After probe addr 0x%08x\n", addr);
+
+	/*printf("cache->log_block_size = %d\n",cache->log_block_size);
+	printf("cache->block_mask %d\n", cache->block_mask);
+	printf("\n");*/
+	
+	//notes this is useing the tag and indx to calculate set location.
+
+	/*printf("---set_ptr---\n");
+	printf("Addr 0x%08x\n", addr);
+	printf("(addr >> cache->log_block_size) = 0x%08x\n", addr >> cache->log_block_size);
+	printf("set_ptr %d\n", (addr >> cache->log_block_size) % cache->num_sets);
+	printf("---set_ptr---\n");*/
+
+	/*printf("---tag_ptr---\n");
+	printf("Addr 0x%08X\n", addr);
+	printf("~(cache->block_mask) 0x%08x\n", ~(cache->block_mask));
+	printf("addr & ~(cache->block_mask) 0x%08x\n", addr & ~(cache->block_mask));
+	printf("tag %d\n", *tag_ptr);
+	printf("---tag_ptr---\n");
+	getchar();*/
+
+	/*printf("---offset_ptr---\n");
+	printf("Addr 0x%08x\n", addr);
+	printf("(cache->block_mask) 0x%08x\n", (cache->block_mask));
+	printf("addr & (cache->block_mask) 0x%08x\n", addr & addr & (cache->block_mask));
+	printf("---offset_ptr---\n");
+	getchar();*/

@@ -105,6 +105,7 @@ struct cache_t{
 	//cache queues
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
+	struct list_t *next_queue;
 
 	//physical characteristics
 	unsigned int latency;
@@ -193,6 +194,8 @@ int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
+
+struct cgm_packet_t *get_message(struct cache_t *cache);
 
 //tasks
 void l1_i_cache_ctrl(void);

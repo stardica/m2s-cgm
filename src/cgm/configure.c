@@ -796,6 +796,7 @@ int cache_finish_create(){
 		l1_i_caches[i].fetches = 0;
 		l1_i_caches[i].Rx_queue_top = list_create();
 		l1_i_caches[i].Rx_queue_bottom = list_create();
+		l1_i_caches[i].next_queue = l1_i_caches[i].Rx_queue_top;
 		l1_i_caches[i].mshr = list_create();
 		l1_i_caches[i].mshr_2 = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct list_t));
 

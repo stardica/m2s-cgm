@@ -96,32 +96,32 @@ void sys_agent_ctrl(void){
 	while(1)
 	{
 
-		printf("sys agent waiting\n");
+		//printf("sys agent waiting\n");
 
 		await(system_agent_ec, step);
 		step++;
 
-		printf("made it here 1\n");
+		//printf("made it here 1\n");
 
 		//if we are here there should be a message in the queue
 		message_packet = list_get(system_agent->Rx_queue_top, 0);
 		assert(message_packet);
 
-		printf("made it here 2\n");
+		//printf("made it here 2\n");
 
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
 		access_type = message_packet->access_type;
 
-		printf("made it here 3\n");
+		//printf("made it here 3\n");
 
-		if (access_id == 1)
+		/*if (access_id == 1)
 		{
 			printf("system_agent\n");
 			printf("access id %llu\n", access_id);
 			printf("access type %d\n", access_type);
 			getchar();
-		}
+		}*/
 
 
 
