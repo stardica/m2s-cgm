@@ -14,19 +14,29 @@
 #include <cgm/cache.h>
 #include <cgm/packet.h>
 
+struct mshr_t{
+
+	char *name;
+
+	int set;
+	int tag;
+	unsigned int offset;
+
+	int num_entries;
+
+	struct list_t *entires;
+
+};
+
 
 //star todo convert the cache based mshr stuff to its own struct.
 
 //int mshr_can_access()
 
 
-struct cgm_packet_status_t *mshr_packet_create(unsigned int access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset);
-
-
+struct cgm_packet_status_t *mshr_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset);
 int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet);
-
-
 int mshr_get(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet);
-
+struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_id);
 
 #endif /* MSHR_H_ */

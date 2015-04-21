@@ -327,7 +327,7 @@ void l1_i_cache_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	struct cgm_packet_status_t *mshr_packet;
+	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
 	long long access_id = 0;
@@ -344,29 +344,19 @@ void l1_i_cache_ctrl(void){
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-
-
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 
-
 		//wait here until there is a job to do
 		await(&l1_i_cache[my_pid], step);
 		step++;
 
-		printf("made it here 1\n");
-
 		//check the top or bottom rx queues for messages.
 		message_packet = get_message(&(l1_i_caches[my_pid]));
 		assert(message_packet);
-
-		printf("made it here 5\n");
-
-		getchar();
-
 
 		//got a message
 		access_id = message_packet->access_id;
@@ -445,9 +435,9 @@ void l1_i_cache_ctrl(void){
 
 
 				//star todo check on size of MSHR
-				mshr_packet = mshr_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset);
+				miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset);
 
-				if(!mshr_set(&(l1_i_caches[my_pid]), mshr_packet))
+				if(!mshr_set(&(l1_i_caches[my_pid]), miss_status_packet))
 				{
 
 					//while the next level of cache's in queue is full stall
@@ -860,23 +850,6 @@ int cache_can_access(struct cache_t *cache){
 	return 1;
 }
 
-struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_id){
-
-	int i = 0;
-	struct cgm_packet_status_t *mshr_packet;
-
-	LIST_FOR_EACH(cache->mshr, i)
-	{
-		mshr_packet = list_get(cache->mshr, i);
-
-		if (mshr_packet->access_id == access_id)
-		{
-			return list_remove_at(cache->mshr, i);
-		}
-	}
-
-	return NULL;
-}
 
 /* Return {tag, set, offset} for a given address */
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)

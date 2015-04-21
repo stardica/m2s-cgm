@@ -262,6 +262,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int MSHR = 0;
 	int DirectoryLatency = 0;
 	int WireLatency = 0;
+	int maxcoal = 0;
 
 
 	/*get max queue size*/
@@ -409,6 +410,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].mshr_size = MSHR;
+		}
+	}
+
+	if(MATCH("CPU_L1_I_Cache", "MaxCoalesce"))
+	{
+		maxcoal = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_i_caches[i].max_coal = maxcoal;
 		}
 	}
 
@@ -785,6 +795,12 @@ int cache_finish_create(){
 	//finish creating the CPU caches
 	for(i = 0; i < num_cores ; i++ )
 	{
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d]", i);
+		l1_i_caches[i].name = strdup(buff);
+
 		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
@@ -794,42 +810,41 @@ int cache_finish_create(){
 		l1_i_caches[i].invalid_hits = 0;
 		l1_i_caches[i].misses = 0;
 		l1_i_caches[i].fetches = 0;
+
 		l1_i_caches[i].Rx_queue_top = list_create();
-		l1_i_caches[i].Rx_queue_bottom = list_create();
-		l1_i_caches[i].next_queue = l1_i_caches[i].Rx_queue_top;
-		l1_i_caches[i].mshr = list_create();
-		l1_i_caches[i].mshr_2 = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct list_t));
-
-		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
-		{
-			l1_i_caches[i].mshr_2[j] = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d]", i, j);
-			l1_i_caches[i].mshr_2[j]->name = strdup(buff);
-
-			/*printf("l1_i_caches[i].mshr_2[j]->name is %s\n", l1_i_caches[i].mshr_2[j]->name);
-			getchar();*/
-		}
-
-		//set cache name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d]", i);
-		l1_i_caches[i].name = strdup(buff);
-
-		//set rx queue names
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].Rx_queue_top", i);
 		l1_i_caches[i].Rx_queue_top->name = strdup(buff);
 
+		l1_i_caches[i].Rx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].Rx_queue_bottom", i);
 		l1_i_caches[i].Rx_queue_bottom->name = strdup(buff);
 
+		l1_i_caches[i].next_queue = l1_i_caches[i].Rx_queue_top;
+
+		l1_i_caches[i].mshr = list_create();
+		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
+
+		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
+		{
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d]", i, j);
+			l1_i_caches[i].mshrs[j].name = strdup(buff);
+
+			l1_i_caches[i].mshrs[j].entires = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
+			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			/*printf("l1_i_caches[i].mshrs[j]->name is %s\n", l1_i_caches[i].mshrs[j].entires->name);
+			getchar();*/
+		}
+
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
 		l1_i_caches[i].mshr->name = strdup(buff);
-
 
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
@@ -1034,11 +1049,8 @@ int cache_finish_create(){
 			}
 		}
 
-
 		//star todo init directory here?
-
 	}
-
 
 	//finish creating the GPU caches
 	for(i = 0 ; i < num_cus; i++)

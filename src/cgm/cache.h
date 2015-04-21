@@ -99,6 +99,8 @@ struct cache_t{
 	//struct mshr_t *mshr;
 	struct list_t *mshr;
 	struct list_t **mshr_2;
+	struct mshr_t *mshrs;
+	int max_coal;
 	int num_retry;
 
 
@@ -123,6 +125,8 @@ struct cache_t{
 	long long invalid_hits;
 	long long misses;
 	long long retries;
+	long long coalesces;
+	long long mshr_entires;
 
 };
 
@@ -178,7 +182,6 @@ void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
-struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_id);
 
 int cache_can_access(struct cache_t *cache);
 
