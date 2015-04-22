@@ -206,7 +206,21 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	//check if mshr queue is full
-	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].mshr))
+
+	int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
+	int i = 0;
+	int j = 0;
+
+	for(i = 0; i < mshr_size; i++)
+	{
+		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
+		{
+			j ++;
+		}
+	}
+
+	//mshr is full
+	if(j == mshr_size)
 	{
 		return 0;
 	}

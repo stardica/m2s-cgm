@@ -56,9 +56,14 @@ extern struct cgm_packet_status_t{
 	int tag;
 	unsigned int offset;
 	int in_flight;
-	//for reverse look up routing.
+
+	//for reverse routing
 	char *src_name;
 	int source_id;
+
+	int coalesced;
+	struct cgm_packet_t *coalesced_packet;
+
 };
 
 

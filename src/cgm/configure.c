@@ -823,6 +823,11 @@ int cache_finish_create(){
 
 		l1_i_caches[i].next_queue = l1_i_caches[i].Rx_queue_top;
 
+		l1_i_caches[i].retry_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].retry_queue", i);
+		l1_i_caches[i].retry_queue->name = strdup(buff);
+
 		l1_i_caches[i].mshr = list_create();
 		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
 
