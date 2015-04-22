@@ -21,9 +21,9 @@ struct mshr_t{
 	int set;
 	int tag;
 	unsigned int offset;
-
+	int valid;
+	int ready;
 	int num_entries;
-
 	struct list_t *entires;
 
 };
@@ -36,7 +36,7 @@ struct mshr_t{
 
 struct cgm_packet_status_t *mshr_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset);
 int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet);
-int mshr_get(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet);
+int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr);
 struct cgm_packet_status_t *mshr_remove(struct cache_t *cache, long long access_id);
 
 #endif /* MSHR_H_ */

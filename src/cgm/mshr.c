@@ -11,6 +11,8 @@
 #include <cgm/protocol.h>
 #include <cgm/cache.h>
 
+#include <lib/util/debug.h>
+
 struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset){
 
 	struct cgm_packet_status_t *new_packet = status_packet_create();
@@ -27,15 +29,18 @@ struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum 
 //returns 1 if accesses is stored or 0 if failed/full.
 int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_packet){
 
-	unsigned int size = cache->num_sets;
 	unsigned int mshr_size = cache->mshr_size;
 
 	int tag = miss_status_packet->tag;
 	int set = miss_status_packet->set;
 	unsigned int offset = miss_status_packet->offset;
-	int i, row, size_mshr = 0;
+	int i = 0;
+	int row = 0;
+	int size = 0;
 
 	//store the miss in the mshr
+
+
 
 	//check for existing memory accesses to same set and tag
 	for(i = 0; i < mshr_size; i ++)
@@ -78,7 +83,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 			if(cache->mshrs[i].num_entries == 0)
 			{
 				row = i;
-				size_mshr = cache->mshrs[i].num_entries;
+				size = cache->mshrs[i].num_entries;
 				break;
 			}
 		}
@@ -87,6 +92,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 		{
 			//found empty row
 			//add to mshr and increment number of entries.
+
 			list_enqueue(cache->mshrs->entires, miss_status_packet);
 			cache->mshrs[row].num_entries++;
 
@@ -106,10 +112,40 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 }
 
 
-int mshr_get(struct cache_t *cache, struct cgm_packet_status_t *mshr_packet){
+int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr){
 
+	unsigned int mshr_size = cache->mshr_size;
 
-	return 1;
+	int tag = *tag_ptr;
+	int set = *set_ptr;
+	int i = 0;
+	int row = 0;
+
+	//seek the miss in the mshr
+
+	//check for existing memory accesses to same set and tag
+	for(i = 0; i < mshr_size; i ++)
+	{
+		//compare if the mshr has entries compare the tag and set
+		if(cache->mshrs[i].num_entries > 0 && cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
+		{
+			row = i;
+			break;
+		}
+
+	}
+
+	if(row)
+	{
+		//we have waiting misses in the MSHR and possibly some coalesced misses as well
+		return row;
+	}
+	else
+	{
+		return 0;
+	}
+
+	fatal("mshr_set() reached bottom\n");
 }
 
 

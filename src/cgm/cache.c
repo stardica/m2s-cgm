@@ -336,13 +336,17 @@ void l1_i_cache_ctrl(void){
 	unsigned int offset = 0;
 	int way = 0;
 	int state = 0;
-	int cache_status;
+	int cache_status = 0;
+	int mshr_status = 0;
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
 	int *way_ptr = &way;
 	int *state_ptr = &state;
+
+	int retry = 0;
+	int *retry_ptr = &retry;
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -355,28 +359,9 @@ void l1_i_cache_ctrl(void){
 		step++;
 
 		//check the top or bottom rx queues for messages.
-		message_packet = get_message(&(l1_i_caches[my_pid]));
-		assert(message_packet);
+		message_packet = get_message(&(l1_i_caches[my_pid]), retry_ptr, mshr_status);
 
-		//got a message
-		access_id = message_packet->access_id;
 		access_type = message_packet->access_type;
-		addr = message_packet->address;
-
-		//probe the address for set, tag, and offset.
-		cgm_cache_decode_address(&(l1_i_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
-
-		if (access_id == 1)
-		{
-			printf("L1\n");
-			printf("access id %llu\n", access_id);
-			printf("access type %d\n", access_type);
-			printf("addr 0x%08u\n", addr);
-			printf("set = %d\n", *set_ptr);
-			printf("tag = %d\n", *tag_ptr);
-			printf("offset = %u\n", *offset_ptr);
-			getchar();
-		}
 
 		if (access_type == cgm_access_fetch || access_type == cgm_access_retry)
 		{//then the access is from the CPU
@@ -388,6 +373,24 @@ void l1_i_cache_ctrl(void){
 			if(access_type == cgm_access_retry)
 				l1_i_caches[my_pid].retries++;
 
+			//memory acess from CPU
+			addr = message_packet->address;
+			access_id = message_packet->access_id;
+
+			//probe the address for set, tag, and offset.
+			cgm_cache_decode_address(&(l1_i_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
+
+			if (access_id == 1)
+			{
+				printf("L1\n");
+				printf("access id %llu\n", access_id);
+				printf("access type %d\n", access_type);
+				printf("addr 0x%08u\n", addr);
+				printf("set = %d\n", *set_ptr);
+				printf("tag = %d\n", *tag_ptr);
+				printf("offset = %u\n", *offset_ptr);
+				getchar();
+			}
 
 			//get the block and the state of the block and charge a cycle
 			cache_status = cgm_cache_find_block(&(l1_i_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
@@ -418,26 +421,20 @@ void l1_i_cache_ctrl(void){
 			else if(cache_status == 0 || *state_ptr == 0)
 			{
 
+				//star todo there is a bug here 1 access fails retry in our MM.
+				//assert(access_type != cgm_access_retry);
+				if(access_type == cgm_access_fetch)
+					l1_i_caches[my_pid].misses++;
+
 				if (access_id == 1)
 				{
 					printf("access id %llu l1 miss\n", access_id);
 					getchar();
 				}
 
-
-				//star todo there is a bug here 1 access fails retry in our MM.
-				//assert(access_type != cgm_access_retry);
-				if(access_type == cgm_access_fetch)
-					l1_i_caches[my_pid].misses++;
-
-
-				//try to coalesce misses if possible
-
-
-				//star todo check on size of MSHR
 				miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset);
 
-				if(!mshr_set(&(l1_i_caches[my_pid]), miss_status_packet))
+				if(mshr_set(&(l1_i_caches[my_pid]), miss_status_packet))
 				{
 
 					//while the next level of cache's in queue is full stall
@@ -448,48 +445,66 @@ void l1_i_cache_ctrl(void){
 						P_PAUSE(1);
 					}
 
-					//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
-					list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
-
 					//change the access type for the coherence protocol and drop into the L2's queue
+					//remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 					message_packet->access_type = cgm_access_gets_i;
+					list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
 					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 
 					//advance the L2 cache adding some wire delay time.
 					future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
+
+					/*if (access_id == 1)
+					{
+						printf("access id %llu l1 miss 2\n", access_id);
+						getchar();
+					}*/
+
 				}
+				else
+				{
+					//mshr is full so we can't progress, retry.
+					message_packet->access_type = cgm_access_retry;
+					future_advance(&l1_i_cache[my_pid], (etime.count + 2));
+				}
+
 				//done
 
 			}
 		}
+
 		else if(access_type == cgm_access_puts)
 		{//then the packet is from the L2 cache
 
-			//set the block in the L1 I cache
-			//star todo what should I put for the state?
+			//probe the address for set, tag, and offset.
+			addr = message_packet->address;
+			access_id = message_packet->access_id;
+			cgm_cache_decode_address(&(l1_i_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
 			//charge the delay for writing cache block
-			P_PAUSE(1);
 			cgm_cache_set_block(&l1_i_caches[my_pid], *set_ptr, *way_ptr, tag, cache_block_shared);
+			P_PAUSE(1);
 
-			//star todo service the mshr requests (this is for coalescing)
-			//current just removes 1 element at a time,
-			mshr_remove(&l1_i_caches[my_pid], access_id);
+			//get the mshr status
+			mshr_status = mshr_get(&l1_i_caches[my_pid], set_ptr, tag_ptr);
+
+			if(mshr_status)
+			{
+				//we have outstanding mshr requests
+				message_packet->
+
+			}
+			//mshr_remove(&l1_i_caches[my_pid], access_id);
 
 			//charge the delay for servicing the older request in the MSHR
 			//advance the l1_i_cache, on the next cycle the request should be a hit
 
-			//set to fetch for retry
 
-			//star todo check with Dr. H on this
+
+
 			message_packet->access_type = cgm_access_retry;
 			advance(&l1_i_cache[my_pid]);
 			//done.
-
-			//remove the message from the in queue
-			//list_remove(l1_i_caches[my_pid].Rx_queue_top, message_packet);
-			//remove from the access tracker, this is a simulator-ism.
-			//remove_from_global(access_id);
 
 		}
 
@@ -782,36 +797,30 @@ void l2_cache_ctrl(void){
 	return;
 }
 
-struct cgm_packet_t *get_message(struct cache_t *cache){
+struct cgm_packet_t *get_message(struct cache_t *cache, int *retry_ptr, int mshr_status){
 
 	//star this is round robin
 	struct cgm_packet_t *new_message;
+	int i = 0;
 
-	//check for a message
-	new_message = list_get(cache->next_queue, 0);
-
-	//rotate the queues
-	if(cache->next_queue == cache->Rx_queue_top)
+	if(*retry_ptr > 0)
 	{
-		cache->next_queue = cache->Rx_queue_bottom;
+		//retry the outstanding misses in the mshr
+		new_message = mshr_remove(
+
+				list_dequeue(cache->mshrs[mshr_status].entires, 0);
+
+
+
+		*retry_ptr--;
+
 	}
-	else if(cache->next_queue == cache->Rx_queue_bottom)
+	else if(*retry_ptr == 0)
 	{
-		cache->next_queue = cache->Rx_queue_top;
-	}
-	else
-	{
-		fatal("get_message() pointers arn't working");
-	}
-
-
-	//if we didn't get a message try again (now that the queues are rotated)
-	if(!new_message)
-	{
-		//no message from last queue, try again
+		//check for a message
 		new_message = list_get(cache->next_queue, 0);
 
-		//rotate the queues.
+		//rotate the queues
 		if(cache->next_queue == cache->Rx_queue_top)
 		{
 			cache->next_queue = cache->Rx_queue_bottom;
@@ -823,6 +832,28 @@ struct cgm_packet_t *get_message(struct cache_t *cache){
 		else
 		{
 			fatal("get_message() pointers arn't working");
+		}
+
+		//if we didn't get a message try again (now that the queues are rotated)
+		if(!new_message)
+		{
+			//no message from last queue, try again
+			new_message = list_get(cache->next_queue, 0);
+
+			//rotate the queues.
+			if(cache->next_queue == cache->Rx_queue_top)
+			{
+				cache->next_queue = cache->Rx_queue_bottom;
+			}
+			else if(cache->next_queue == cache->Rx_queue_bottom)
+			{
+				cache->next_queue = cache->Rx_queue_top;
+			}
+			else
+			{
+				fatal("get_message() pointers arn't working");
+			}
+
 		}
 
 	}
