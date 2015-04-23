@@ -45,6 +45,7 @@ struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
 //file for stats
+FILE *cgm_debug;
 FILE *cgm_stats;
 
 //globals for tasking
@@ -54,7 +55,10 @@ eventcount volatile *sim_finish;
 
 void cgm_init(void){
 
-	//star todo add error checking.
+	char * debug_output_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_debug_out";
+	cgm_debug = fopen (debug_output_path, "w+");
+
+
 	cgm_access_record = list_create();
 	cgm_create_tasks();
 
@@ -569,17 +573,15 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	return;
 }
 
-
 void cgm_dump_summary(void){
 
-
+	printf("\n---Printing Stats---\n");
 	char * output_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_stats.ini";
 	cgm_stats = fopen (output_path, "w+");
 
-	printf("\n---Printing Stats---\n");
-
 	cache_dump_stats();
 
+	fclose (cgm_debug);
 	fclose (cgm_stats);
 
 	return;

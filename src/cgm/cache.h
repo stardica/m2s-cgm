@@ -20,6 +20,9 @@
 //star todo prefetching, and coalescing
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
+extern struct str_map_t cgm_mem_access_strn_map;
+
+
 
 enum cache_waylist_enum
 {
@@ -181,7 +184,8 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 
-int cache_can_access(struct cache_t *cache);
+int cache_can_access_top(struct cache_t *cache);
+int cache_can_access_bottom(struct cache_t *cache);
 
 //int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 

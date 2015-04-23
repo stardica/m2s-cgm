@@ -23,12 +23,8 @@ struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum 
 	new_packet->set = set;
 	new_packet->offset = offset;
 
-	if (access_id == 1)
-	{
-		printf("miss_status_packet created() acess_id %llu\n", access_id);
-		getchar();
-	}
-
+	fprintf(cgm_debug, "access_id %llu at %llu\n", access_id, P_TIME);
+	fprintf(cgm_debug, "miss_status_packet_create()\n\n");
 
 	return new_packet;
 }
@@ -50,7 +46,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 	for(i = 0; i < mshr_size; i ++)
 	{
 		//compare if the mshr has entries compare the tag and set
-		if(cache->mshrs[i].num_entries > 0 && cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
+		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
 		{
 			row = i;
 			break;
@@ -64,6 +60,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 		if(cache->mshrs[row].num_entries > cache->max_coal)
 		{
 			//row is present but full
+			fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
+			fprintf(cgm_debug, "failed entry mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
 			return 0;
 		}
 		else
@@ -72,14 +70,13 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 			message_packet->access_type = cgm_access_retry;
 			miss_status_packet->coalesced = 1;
 			miss_status_packet->coalesced_packet = message_packet;
+			cache->mshrs[row].num_entries++;
 
-			printf("miss_status_packet->coalesced_packet name %s\n", miss_status_packet->coalesced_packet->name);
-			printf("getchar() here\n");
-			getchar();
+			fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
+			fprintf(cgm_debug, "coalesced in mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
 
 			list_remove(cache->Rx_queue_top, message_packet);
 			list_enqueue(cache->mshrs[row].entires, miss_status_packet);
-			cache->mshrs[row].num_entries++;
 
 			//stats
 			cache->coalesces++;
@@ -105,12 +102,13 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 		{
 			//found empty row add to mshr and increment number of entries.
 			list_enqueue(cache->mshrs[row].entires, miss_status_packet);
+
+			cache->mshrs[row].tag = tag;
+			cache->mshrs[row].set = set;
 			cache->mshrs[row].num_entries++;
 
-			if (miss_status_packet->access_id == 1)
-			{
-				printf("added to mshrs row %d total entries %d\n", row, cache->mshrs[row].num_entries);
-			}
+			fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
+			fprintf(cgm_debug, "entered in mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
 
 			//stats
 			cache->mshr_entires++;
@@ -119,6 +117,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 		else
 		{
 			//no open rows mshr is full
+			fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
+			fprintf(cgm_debug, "failed entry mshr full\n\n");
 			return 0;
 		}
 

@@ -796,11 +796,13 @@ int cache_finish_create(){
 	for(i = 0; i < num_cores ; i++ )
 	{
 
-		//set cache name
+		/////////////
+		//L1 I Cache
+		/////////////
+
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d]", i);
 		l1_i_caches[i].name = strdup(buff);
-
 		l1_i_caches[i].id = i;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
@@ -829,8 +831,11 @@ int cache_finish_create(){
 		l1_i_caches[i].retry_queue->name = strdup(buff);
 
 		l1_i_caches[i].mshr = list_create();
-		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
+		l1_i_caches[i].mshr->name = strdup(buff);
 
+		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
 		{
 			memset (buff,'\0' , 100);
@@ -842,15 +847,18 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
 			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			/*printf("l1_i_caches[i].mshrs[j]->name is %s\n", l1_i_caches[i].mshrs[j].entires->name);
-			getchar();*/
 		}
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
-		l1_i_caches[i].mshr->name = strdup(buff);
 
+
+		/////////////
+		//L1 D Cache
+		/////////////
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d]", i);
+		l1_d_caches[i].name = strdup(buff);
 		l1_d_caches[i].id = i;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].log_set_size = LOG2(l1_d_caches[i].num_sets);
@@ -861,43 +869,52 @@ int cache_finish_create(){
 		l1_d_caches[i].misses = 0;
 		l1_d_caches[i].loads = 0;
 		l1_d_caches[i].stores = 0;
+
 		l1_d_caches[i].Rx_queue_top = list_create();
-		l1_d_caches[i].Rx_queue_bottom = list_create();
-		l1_d_caches[i].mshr = list_create();
-		l1_d_caches[i].mshr_2 = (void *) calloc(l1_d_caches[i].mshr_size, sizeof(struct list_t));
-
-		for(j = 0; j < l1_d_caches[i].mshr_size; j++)
-		{
-			l1_d_caches[i].mshr_2[j] = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d]", i, j);
-			l1_d_caches[i].mshr_2[j]->name = strdup(buff);
-
-		}
-
-
-		//set cache name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_d_caches[%d]", i);
-		l1_d_caches[i].name = strdup(buff);
-
-		//set rx queue name
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Rx_queue_top", i);
 		l1_d_caches[i].Rx_queue_top->name = strdup(buff);
 
-
+		l1_d_caches[i].Rx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Rx_queue_bottom", i);
 		l1_d_caches[i].Rx_queue_bottom->name = strdup(buff);
 
+		l1_d_caches[i].next_queue = l1_d_caches[i].Rx_queue_top;
 
+		l1_d_caches[i].retry_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].retry_queue", i);
+		l1_d_caches[i].retry_queue->name = strdup(buff);
+
+		l1_d_caches[i].mshr = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].mshr", i);
 		l1_d_caches[i].mshr->name = strdup(buff);
 
+		l1_d_caches[i].mshrs = (void *) calloc(l1_d_caches[i].mshr_size, sizeof(struct mshr_t));
+		for(j = 0; j < l1_d_caches[i].mshr_size; j++)
+		{
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d]", i, j);
+			l1_d_caches[i].mshrs[j].name = strdup(buff);
 
+			l1_d_caches[i].mshrs[j].entires = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d].entires", i, j);
+			l1_d_caches[i].mshrs[j].entires->name = strdup(buff);
+		}
+
+
+		/////////////
+		//L2 Cache
+		/////////////
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d]", i);
+		l2_caches[i].name = strdup(buff);
 		l2_caches[i].id = i;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
 		l2_caches[i].log_set_size = LOG2(l2_caches[i].num_sets);
@@ -906,39 +923,49 @@ int cache_finish_create(){
 		l2_caches[i].hits = 0;
 		l2_caches[i].invalid_hits = 0;
 		l2_caches[i].misses = 0;
+		l2_caches[i].loads = 0;
+		l2_caches[i].retries = 0;
+
 		l2_caches[i].Rx_queue_top = list_create();
-		l2_caches[i].Rx_queue_bottom = list_create();
-		l2_caches[i].mshr = list_create();
-		l2_caches[i].mshr_2 = (void *) calloc(l2_caches[i].mshr_size, sizeof(struct list_t));
-
-		for(j = 0; j < l2_caches[i].mshr_size; j++)
-		{
-			l2_caches[i].mshr_2[j] = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l2_caches[%d].mshr[%d]", i, j);
-			l2_caches[i].mshr_2[j]->name = strdup(buff);
-		}
-
-		//set cache name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l2_caches[%d]", i);
-		l2_caches[i].name = strdup(buff);
-
-		//set rx queue name
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].Rx_queue_top", i);
 		l2_caches[i].Rx_queue_top->name = strdup(buff);
 
+		l2_caches[i].Rx_queue_bottom = list_create();
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].Rx_queue_bottom", i);
 		l2_caches[i].Rx_queue_bottom->name = strdup(buff);
 
+		l2_caches[i].next_queue = l2_caches[i].Rx_queue_top;
+
+		l2_caches[i].mshr = list_create();
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].mshr", i);
 		l2_caches[i].mshr->name = strdup(buff);
 
+		l2_caches[i].mshrs = (void *) calloc(l2_caches[i].mshr_size, sizeof(struct mshr_t));
+		for(j = 0; j < l2_caches[i].mshr_size; j++)
+		{
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l2_caches[%d].mshr[%d]", i, j);
+			l2_caches[i].mshrs[j].name = strdup(buff);
 
+			l2_caches[i].mshrs[j].entires = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l2_caches[%d].mshr[%d].entires", i, j);
+			l2_caches[i].mshrs[j].entires->name = strdup(buff);
+		}
+
+
+		/////////////
+		//L3 Cache
+		/////////////
+
+		//set cache name
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d]", i);
+		l3_caches[i].name = strdup(buff);
 		l3_caches[i].id = 1;
 		l3_caches[i].log_block_size = LOG2(l3_caches[i].block_size);
 		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
@@ -947,11 +974,25 @@ int cache_finish_create(){
 		l3_caches[i].hits = 0;
 		l3_caches[i].invalid_hits = 0;
 		l3_caches[i].misses = 0;
-		l3_caches[i].Rx_queue_top = list_create();
-		l3_caches[i].Rx_queue_bottom = list_create();
-		l3_caches[i].mshr = list_create();
-		l3_caches[i].mshr_2 = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct list_t));
 
+		l3_caches[i].Rx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Rx_queue_top", i);
+		l3_caches[i].Rx_queue_top->name = strdup(buff);
+
+		l3_caches[i].Rx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Rx_queue_bottom", i);
+		l3_caches[i].Rx_queue_bottom->name = strdup(buff);
+
+		l3_caches[i].next_queue = l3_caches[i].Rx_queue_top;
+
+		l3_caches[i].mshr = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].mshr", i);
+		l3_caches[i].mshr->name = strdup(buff);
+
+		l3_caches[i].mshr_2 = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct list_t));
 		for(j = 0; j < l3_caches[i].mshr_size; j++)
 		{
 			l3_caches[i].mshr_2[j] = list_create();
@@ -961,24 +1002,6 @@ int cache_finish_create(){
 			l3_caches[i].mshr_2[j]->name = strdup(buff);
 		}
 
-		//set cache name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d]", i);
-		l3_caches[i].name = strdup(buff);
-
-		//set rx queue name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].Rx_queue_top", i);
-		l3_caches[i].Rx_queue_top->name = strdup(buff);
-
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].Rx_queue_bottom", i);
-		l3_caches[i].Rx_queue_bottom->name = strdup(buff);
-
-		//set rx queue name
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].mshr", i);
-		l3_caches[i].mshr->name = strdup(buff);
 
 		//Initialize array of sets
 		//l1_i_caches[i].num_sets = (l1_i_caches[i].num_sets / l1_i_caches[i].assoc);

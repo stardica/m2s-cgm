@@ -8,6 +8,8 @@
 #ifndef CGM_H_
 #define CGM_H_
 
+#include <stdio.h>
+
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
@@ -28,6 +30,12 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 
+#define CLOSE (fclose(cgm_debug))
+
+//files
+extern FILE *cgm_debug;
+extern FILE *cgm_stats;
+
 extern long long fetch_access_id;
 extern long long lspq_access_id;
 
@@ -37,10 +45,6 @@ extern struct list_t *cgm_access_record;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
-
-
-//stat files
-extern FILE *cgm_stats;
 
 //function prototypes
 void cgm_init(void);

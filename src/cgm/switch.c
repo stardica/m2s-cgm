@@ -204,7 +204,7 @@ void switch_ctrl(void){
 				{
 					//make sure we can access the cache
 					//star todo add the ability to do something else if we can access the target cache
-					while(!cache_can_access(&l2_caches[my_pid]))
+					while(!cache_can_access_bottom(&l2_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
@@ -221,7 +221,7 @@ void switch_ctrl(void){
 				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
 				{
-					while(!cache_can_access(&gpu_l2_caches[my_pid]))
+					while(!cache_can_access_bottom(&gpu_l2_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
@@ -245,7 +245,7 @@ void switch_ctrl(void){
 				{
 					//make sure we can access the cache
 					//star todo add the ability to do something else if we can access the target cache
-					while(!cache_can_access(&l3_caches[my_pid]))
+					while(!cache_can_access_top(&l3_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
