@@ -10,6 +10,7 @@
 #include <cgm/cache.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
+#include <cgm/tasking.h>
 
 
 
@@ -52,19 +53,21 @@ void l2_cache_ctrl(void){
 		await(&l2_cache[my_pid], step);
 		step++;
 
+		printf("L2\n");
+
 		//check the top or bottom rx queues for messages.
 		message_packet = get_message(&(l2_caches[my_pid]), retry_ptr);
 
 		access_type = message_packet->access_type;
 
 		//Messages from L1_I_Cache
-		if (access_type == cgm_access_gets_i || cgm_access_retry_i)
+		if (access_type == cgm_access_gets_i || cgm_access_retry)
 		{
 			//stats
 			if(access_type == cgm_access_gets_i)
 				l2_caches[my_pid].loads++;
 
-			if(access_type == cgm_access_retry_i)
+			if(access_type == cgm_access_retry)
 				l2_caches[my_pid].retries++;
 
 			access_id = message_packet->access_id;
@@ -73,8 +76,9 @@ void l2_cache_ctrl(void){
 			//probe the address for set, tag, and offset.
 			cgm_cache_decode_address(&(l2_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
-			fprintf(cgm_debug,"l2_cache[%d] access_id %llu cycle %llu\n", my_pid, access_id, P_TIME);
-			fprintf(cgm_debug,"%s, addr 0x%08u, tag %d, set %d, offset %u\n\n", (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+			CGM_DEBUG(cache_debug_file,"l2_cache[%d] access_id %llu cycle %llu as %s at addr 0x%08u, tag %d, set %d, offset %u\n",
+					my_pid, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+
 
 			/////////
 			cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, cache_block_shared);
@@ -88,8 +92,8 @@ void l2_cache_ctrl(void){
 			if(cache_status == 1 && *state_ptr != 0)
 			{
 
-				fprintf(cgm_debug, "l2_cache[%d] access_id %llu cycle %llu\n", my_pid, access_id, P_TIME);
-				fprintf(cgm_debug, "l2_cache[%d] Hit\n\n", my_pid);
+				//fprintf(cgm_debug, "l2_cache[%d] access_id %llu cycle %llu\n", my_pid, access_id, P_TIME);
+				//fprintf(cgm_debug, "l2_cache[%d] Hit\n\n", my_pid);
 
 
 				if(access_type == cgm_access_retry_i)
@@ -113,8 +117,8 @@ void l2_cache_ctrl(void){
 				list_enqueue(l1_i_caches[my_pid].Rx_queue_bottom, message_packet);
 				future_advance(&l1_i_cache[my_pid], (etime.count + l1_i_caches[my_pid].wire_latency));
 
-				fprintf(cgm_debug, "l2_cache[%d] access_id %llu cycle %llu\n", my_pid, access_id, P_TIME);
-				fprintf(cgm_debug, "l1_i_cache[%d] access as %s\n\n", my_pid, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+				//fprintf(cgm_debug, "l2_cache[%d] access_id %llu cycle %llu\n", my_pid, access_id, P_TIME);
+			//	fprintf(cgm_debug, "l1_i_cache[%d] access as %s\n\n", my_pid, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
 			// L2 Cache Miss!
 			else if(cache_status == 0 || *state_ptr == 0)

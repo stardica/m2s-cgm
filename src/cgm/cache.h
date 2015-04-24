@@ -108,6 +108,7 @@ struct cache_t{
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
 	struct list_t *next_queue;
+	struct list_t *last_queue;
 	struct list_t *retry_queue;
 
 	//physical characteristics

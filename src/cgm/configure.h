@@ -23,10 +23,14 @@
 //global variables
 extern int cgmmem_check_config;
 
-
 int cgm_mem_configure(void);
 int cgm_cpu_configure(void);
 int cgm_gpu_configure(void);
+
+int debug_read_config(void* user, const char* section, const char* name, const char* value);
+int debug_finish_create(void);
+int stats_read_config(void* user, const char* section, const char* name, const char* value);
+int stats_finish_create(void);
 int cache_read_config(void* user, const char* section, const char* name, const char* value);
 int cache_finish_create(void);
 int directory_read_config(void* user, const char* section, const char* name, const char* value);

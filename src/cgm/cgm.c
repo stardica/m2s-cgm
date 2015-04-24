@@ -44,9 +44,26 @@ long long access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
-//file for stats
-FILE *cgm_debug;
-FILE *cgm_stats;
+//file for debugging and stats
+
+
+FILE *cache_debug_file;
+int cache_debug = 0;
+
+FILE *switch_debug_file;
+int switch_debug = 0;
+
+FILE *sysagent_debug_file;
+int sysagent_debug = 0;
+
+FILE *memctrl_debug_file;
+int memctrl_debug = 0;
+
+FILE *cgm_stats_file;
+int cgm_stats = 0;
+
+char *cgm_debug_output_path = "";
+char *cgm_stats_output_path = "";
 
 //globals for tasking
 eventcount volatile *sim_start;
@@ -54,10 +71,6 @@ eventcount volatile *sim_finish;
 
 
 void cgm_init(void){
-
-	char * debug_output_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_debug_out";
-	cgm_debug = fopen (debug_output_path, "w+");
-
 
 	cgm_access_record = list_create();
 	cgm_create_tasks();
@@ -77,8 +90,12 @@ void cgm_init(void){
 
 void cgm_configure(void){
 
+	int error = 0;
+
 	//star todo add error checking.
-	cgm_mem_configure();
+	error = cgm_mem_configure();
+	if (error) {fatal("cgm_mem_configure() failed\n");}
+
 	cgm_cpu_configure();
 
 #if GPU
@@ -223,8 +240,11 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	//mshr is full
-	if(j == mshr_size)
+	//printf("j = %d\n", j);
+	assert(j <= mshr_size);
+
+	//mshr is full stall
+	if(j > mshr_size)
 	{
 		return 0;
 	}
@@ -246,7 +266,28 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	//check if mshr queue is full
-	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].mshr))
+
+	//star this is the old code.
+	/*if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].mshr))
+	{
+		return 0;
+	}*/
+
+	int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
+	int i = 0;
+	int j = 0;
+
+	for(i = 0; i < mshr_size; i++)
+	{
+		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
+		{
+			j ++;
+			assert(mshr_size <= j);
+		}
+	}
+
+	//mshr is full
+	if(j == mshr_size)
 	{
 		return 0;
 	}
@@ -344,7 +385,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		fatal("cgm_fetch_access() unsupported access type\n");
 	}
 
-	//leave this for testing.
+	//star leave this for testing.
 	//printf("dequeue\n");
 	//list_dequeue(cgm_access_record);
 	//free(new_packet);
@@ -400,6 +441,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		fatal("cgm_issue_lspq_access() unsupported access type\n");
 	}
 
+	//star leave this for testing.
 	//put back on the core event queue to end memory system access.
 	//linked_list_add(new_packet->event_queue, new_packet->data);
 	//free(new_packet);
@@ -576,13 +618,11 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats---\n");
-	char * output_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_stats.ini";
-	cgm_stats = fopen (output_path, "w+");
 
 	cache_dump_stats();
 
-	fclose (cgm_debug);
-	fclose (cgm_stats);
+	//close files
+	CLOSE_FILES;
 
 	return;
 }

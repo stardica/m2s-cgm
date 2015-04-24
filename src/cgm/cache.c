@@ -345,23 +345,34 @@ struct cgm_packet_t *get_message(struct cache_t *cache, int *retry_ptr){
 
 	//star this is round robin
 	struct cgm_packet_t *new_message;
-	//int i = 0;
 
-	//printf("retry_ptr = %d\n", *retry_ptr);
-	//printf("list count = %d\n", list_count(cache->retry_queue));
+	new_message = list_get(cache->next_queue, 0);
+	//keep pointer to last queue
+	cache->last_queue = cache->next_queue;
 
+	//rotate the queues
+	if(cache->next_queue == cache->Rx_queue_top)
+	{
+		cache->next_queue = cache->Rx_queue_bottom;
+	}
+	else if(cache->next_queue == cache->Rx_queue_bottom)
+	{
+		cache->next_queue = cache->Rx_queue_top;
+	}
+	else
+	{
+		fatal("get_message() pointers arn't working");
+	}
 
-
-	new_message = list_get(cache->retry_queue, 0);
-
-
+	//if we didn't get a message try again (now that the queues are rotated)
 	if(!new_message)
 	{
-		//check for a message
+		//no message from last queue, try again
 		new_message = list_get(cache->next_queue, 0);
-		//printf("list count = %d\n", list_count(cache->next_queue));
+		//keep pointer to last queue
+		cache->last_queue = cache->next_queue;
 
-		//rotate the queues
+		//rotate the queues.
 		if(cache->next_queue == cache->Rx_queue_top)
 		{
 			cache->next_queue = cache->Rx_queue_bottom;
@@ -374,34 +385,10 @@ struct cgm_packet_t *get_message(struct cache_t *cache, int *retry_ptr){
 		{
 			fatal("get_message() pointers arn't working");
 		}
-
-		//if we didn't get a message try again (now that the queues are rotated)
-		if(!new_message)
-		{
-			//no message from last queue, try again
-			new_message = list_get(cache->next_queue, 0);
-
-			//rotate the queues.
-			if(cache->next_queue == cache->Rx_queue_top)
-			{
-				cache->next_queue = cache->Rx_queue_bottom;
-			}
-			else if(cache->next_queue == cache->Rx_queue_bottom)
-			{
-				cache->next_queue = cache->Rx_queue_top;
-			}
-			else
-			{
-				fatal("get_message() pointers arn't working");
-			}
-		}
 	}
+
 	//shouldn't be exiting without a message
 	assert(new_message);
-
-
-	printf("message type %d\n", new_message->access_type);
-
 	return new_message;
 }
 
@@ -555,38 +542,38 @@ void cache_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int i = 0;
 
-	fprintf(cgm_stats, "[General]\n");
-	fprintf(cgm_stats, "NumCores = %d\n", num_cores);
-	fprintf(cgm_stats, "ThreadsPerCore = %d\n", num_threads);
-	fprintf(cgm_stats, "TotalCycles = %lld\n", P_TIME);
-	fprintf(cgm_stats, "\n");
+	CGM_STATS(cgm_stats_file, "[General]\n");
+	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
+	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
+	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "\n");
 
 	for(i = 0; i < num_cores; i++)
 	{
-		fprintf(cgm_stats, "[L1_I_Cache_%d]\n", i);
-		fprintf(cgm_stats, "Sets = %d\n", l1_i_caches[i].num_sets);
-		fprintf(cgm_stats, "BlockSize = %d\n", l1_i_caches[i].block_size);
-		fprintf(cgm_stats, "Fetches = %lld\n", l1_i_caches[i].fetches);
-		fprintf(cgm_stats, "Hits = %lld\n", l1_i_caches[i].hits);
-		fprintf(cgm_stats, "Misses = %lld\n", l1_i_caches[i].misses);
-		fprintf(cgm_stats, "\n");
+		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
+		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_i_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].fetches);
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_i_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_i_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "\n");
 
-		fprintf(cgm_stats, "[L1_D_Cache_%d]\n", i);
-		fprintf(cgm_stats, "Sets = %d\n", l1_d_caches[i].num_sets);
-		fprintf(cgm_stats, "BlockSize = %d\n", l1_d_caches[i].block_size);
-		fprintf(cgm_stats, "Loads = %lld\n", l1_d_caches[i].loads);
-		fprintf(cgm_stats, "Stores = %lld\n", l1_d_caches[i].stores);
-		fprintf(cgm_stats, "Hits = %lld\n", l1_d_caches[i].hits);
-		fprintf(cgm_stats, "Misses = %lld\n", l1_d_caches[i].misses);
-		fprintf(cgm_stats, "\n");
+		CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_d_caches[i].num_sets);
+		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_d_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Loads = %lld\n", l1_d_caches[i].loads);
+		CGM_STATS(cgm_stats_file, "Stores = %lld\n", l1_d_caches[i].stores);
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_d_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_d_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "\n");
 
-		fprintf(cgm_stats, "[L2_Cache_%d]\n", i);
-		fprintf(cgm_stats, "Sets = %d\n", l2_caches[i].num_sets);
-		fprintf(cgm_stats, "BlockSize = %d\n", l2_caches[i].block_size);
-		fprintf(cgm_stats, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
-		fprintf(cgm_stats, "Hits = %lld\n", l2_caches[i].hits);
-		fprintf(cgm_stats, "Misses = %lld\n", l2_caches[i].misses);
-		fprintf(cgm_stats, "\n");
+		CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "Sets = %d\n", l2_caches[i].num_sets);
+		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l2_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "\n");
 	}
 
 	return;

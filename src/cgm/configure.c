@@ -35,13 +35,30 @@
 #include <cgm/switch.h>
 #include <cgm/sys-agent.h>
 
-
 int cgmmem_check_config = 0;
-
 
 int cgm_mem_configure(void){
 
 	int error = 0;
+
+	error = ini_parse(cgm_config_file_name_and_path, debug_read_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for debug configuration.\n");
+		return 1;
+	}
+
+	debug_finish_create();
+
+	error = ini_parse(cgm_config_file_name_and_path, stats_read_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for stats configuration.\n");
+		return 1;
+	}
+
+	stats_finish_create();
+
 
 	//configure the caches
 	error = ini_parse(cgm_config_file_name_and_path, cache_read_config, NULL);
@@ -242,6 +259,109 @@ int gpu_configure(Timing *self, struct config_t *config){
 		printf("GPU mem entry name is %s", compute_unit->mem_ctrl_ptr->name);
 		fflush(stdout);
 	}*/
+
+	return 1;
+}
+
+int debug_read_config(void* user, const char* section, const char* name, const char* value){
+
+	//star todo add debug category for protocol
+	if(MATCH("Debug", "Cache_Debug"))
+	{
+		cache_debug = atoi(value);
+	}
+
+	if(MATCH("Debug", "Switch_Debug"))
+	{
+		switch_debug = atoi(value);
+	}
+
+	if(MATCH("Debug", "SysAgent_Debug"))
+	{
+		sysagent_debug = atoi(value);
+	}
+	if(MATCH("Debug", "MemCtrl_Debug"))
+	{
+		memctrl_debug = atoi(value);
+	}
+
+
+	if(MATCH("Debug", "Path"))
+	{
+		cgm_debug_output_path = strdup(value);
+	}
+
+	return 1;
+}
+
+int debug_finish_create(void){
+
+	char buff[250];
+
+	if (cache_debug == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/cache_debug.out");
+		cache_debug_file = fopen (buff, "w+");
+	}
+
+	if(switch_debug == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/switch_debug.out");
+		switch_debug_file = fopen (buff, "w+");
+	}
+
+	if(sysagent_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/sysagent_debug.out");
+		sysagent_debug_file = fopen (buff, "w+");
+	}
+
+	if(memctrl_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/sysagent_debug.out");
+		memctrl_debug_file = fopen (buff, "w+");
+	}
+
+
+
+	return 1;
+}
+
+int stats_read_config(void* user, const char* section, const char* name, const char* value){
+
+	//star todo add debug category for protocol
+	if(MATCH("Stats", "CGM_Stats"))
+	{
+		cgm_stats = atoi(value);
+	}
+
+	if(MATCH("Stats", "Path"))
+	{
+		cgm_stats_output_path = strdup(value);
+	}
+
+	return 1;
+}
+
+int stats_finish_create(void){
+
+	char buff[250];
+
+	if (cgm_stats == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_stats_output_path);
+		sprintf(buff + strlen(buff), "/cgm_stats.out");
+		cgm_stats_file = fopen (buff, "w+");
+	}
 
 	return 1;
 }
@@ -848,7 +968,6 @@ int cache_finish_create(){
 			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
 			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
 		}
-
 
 
 		/////////////
