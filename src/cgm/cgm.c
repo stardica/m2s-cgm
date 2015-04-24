@@ -59,6 +59,9 @@ int sysagent_debug = 0;
 FILE *memctrl_debug_file;
 int memctrl_debug = 0;
 
+FILE *protocol_debug_file;
+int protocol_debug = 0;
+
 FILE *cgm_stats_file;
 int cgm_stats = 0;
 

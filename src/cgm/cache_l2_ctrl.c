@@ -79,6 +79,8 @@ void l2_cache_ctrl(void){
 			CGM_DEBUG(cache_debug_file,"l2_cache[%d] access_id %llu cycle %llu as %s at addr 0x%08u, tag %d, set %d, offset %u\n",
 					my_pid, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
+			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l2_cache[%d]\tRECIEVE l1_i_cache[%d] %s\n",
+								access_id, P_TIME, my_pid, my_pid, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			/////////
 			cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, cache_block_shared);

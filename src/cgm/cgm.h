@@ -49,6 +49,9 @@ extern int sysagent_debug;
 extern FILE *memctrl_debug_file;
 extern int memctrl_debug;
 
+extern FILE *protocol_debug_file;
+extern int protocol_debug;
+
 extern FILE *cgm_stats_file;
 extern int cgm_stats;
 
@@ -62,7 +65,8 @@ extern char *cgm_stats_output_path;
 #define CGM_DEBUG(file, ... ) 	if(cache_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
 								else if (switch_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
 								else if (sysagent_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
-								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}
+								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
+								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
 
@@ -70,6 +74,7 @@ extern char *cgm_stats_output_path;
 					if(switch_debug == 1){fclose (switch_debug_file);}\
 					if(sysagent_debug == 1){fclose (sysagent_debug_file);}\
 					if(memctrl_debug == 1){fclose (memctrl_debug_file);}\
+					if(protocol_debug == 1){fclose (protocol_debug_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
 #define STOP 	CLOSE_FILES;\

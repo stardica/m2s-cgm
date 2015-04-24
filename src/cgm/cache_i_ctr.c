@@ -116,8 +116,11 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
 				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
+			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
+					access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
 			//advance the L2 cache adding some wire delay time.
-			future_advance(&l2_cache[cache->id], (etime.count + (l2_caches[cache->id].wire_latency * 2)));
+			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
 		}
 		else if(mshr_status == 0)
 		{

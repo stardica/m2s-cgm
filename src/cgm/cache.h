@@ -17,6 +17,9 @@
 #include <lib/util/string.h>
 
 
+#define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
+
+
 //star todo prefetching, and coalescing
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;

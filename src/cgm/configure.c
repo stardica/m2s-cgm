@@ -284,6 +284,10 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 	{
 		memctrl_debug = atoi(value);
 	}
+	if(MATCH("Debug", "Protocol_Debug"))
+	{
+		protocol_debug = atoi(value);
+	}
 
 
 	if(MATCH("Debug", "Path"))
@@ -326,11 +330,17 @@ int debug_finish_create(void){
 	{
 		memset (buff,'\0' , 250);
 		sprintf(buff, "%s", cgm_debug_output_path);
-		sprintf(buff + strlen(buff), "/sysagent_debug.out");
+		sprintf(buff + strlen(buff), "/memctrl_debug.out");
 		memctrl_debug_file = fopen (buff, "w+");
 	}
 
-
+	if(protocol_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/protocol_debug.out");
+		protocol_debug_file = fopen (buff, "w+");
+	}
 
 	return 1;
 }
@@ -556,7 +566,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		WireLatency = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].wire_latency = WireLatency;
+			l1_i_caches[i].wire_latency = WireLatency;
 		}
 	}
 
