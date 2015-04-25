@@ -56,13 +56,12 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 	//printf("made it here with id %d\n", cache->id);
 	//STOP;
 
-	//charge the cycle for the look up.
+
+		//charge the cycle for the look up.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(1);
 
-	/////////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
-	/////////testing
+
 
 	//L3 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -144,8 +143,6 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l3_cache[%d] -> %s\n",
 				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			//advance the L2 cache adding some wire delay time.
-			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
 		}
 		else if(mshr_status == 0)
 		{

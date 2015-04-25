@@ -24,6 +24,8 @@ struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum 
 	new_packet->offset = offset;
 	new_packet->source_id = src_id;
 
+	/*printf("src_id %d\n", new_packet->source_id);
+	STOP;*/
 
 	//(char *)str_map_value(&cgm_mem_access_strn_map
 

@@ -9,6 +9,7 @@
 #include <assert.h>
 
 #include <arch/x86/timing/cpu.h>
+#include <lib/util/debug.h>
 
 #include <cgm/cache.h>
 #include <cgm/cgm.h>
@@ -61,6 +62,7 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 
 	CGM_DEBUG(cache_debug_file,"l2_cache[%d] access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->id, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+
 
 	//look up, and charge a cycle.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
@@ -141,8 +143,6 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
 				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			//advance the L2 cache adding some wire delay time.
-			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
 		}
 		else if(mshr_status == 0)
 		{
