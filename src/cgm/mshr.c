@@ -13,7 +13,7 @@
 
 #include <lib/util/debug.h>
 
-struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset){
+struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset, int src_id){
 
 	struct cgm_packet_status_t *new_packet = status_packet_create();
 
@@ -22,9 +22,10 @@ struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum 
 	new_packet->tag = tag;
 	new_packet->set = set;
 	new_packet->offset = offset;
+	new_packet->source_id = src_id;
 
-	//fprintf(cgm_debug, "access_id %llu at %llu\n", access_id, P_TIME);
-	//fprintf(cgm_debug, "miss_status_packet_create()\n\n");
+
+	//(char *)str_map_value(&cgm_mem_access_strn_map
 
 	return new_packet;
 }

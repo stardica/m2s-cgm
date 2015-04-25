@@ -13,9 +13,9 @@
 
 #include <cgm/cache.h>
 #include <cgm/cgm.h>
+#include <cgm/switch.h>
 
-
-void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -44,11 +44,11 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 	addr = message_packet->address;
 
 	//stats
-	if(access_type == cgm_access_fetch)
+	/*if(access_type == cgm_access_fetch)*/
 		cache->fetches++;
 
-	if(access_type == cgm_access_retry)
-		cache->retries++;
+	/*if(access_type == cgm_access_retry)
+		cache->retries++;*/
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
@@ -56,7 +56,7 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 	CGM_DEBUG(cache_debug_file,"l1_i_cache[%d] access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->id, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
-	//get the block and the state of the block and charge a cycle
+	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(2);
 
@@ -68,7 +68,7 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		/*if(access_type == cgm_access_retry)
 			retry_ptr--;*/
 
-		if(access_type == cgm_access_fetch)
+		/*if(access_type == cgm_access_fetch)*/
 			cache->hits++;
 
 		//remove packet from cache queue, global queue, and simulator memory
@@ -86,12 +86,12 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		//star todo there is a bug here 1 access fails retry in our MM.
 		assert(message_packet->access_type != cgm_access_retry);
 
-		if(access_type == cgm_access_fetch)
-			cache->misses++;
+		/*if(access_type == cgm_access_fetch)*/
+		cache->misses++;
 
 		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu miss\n", cache->id, access_id, P_TIME);
 
-		miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset);
+		miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet, message_packet);
 
 		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
@@ -125,8 +125,12 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		else if(mshr_status == 0)
 		{
 			//mshr is full so we can't progress, retry.
-			message_packet->access_type = cgm_access_retry;
-			future_advance(&l1_i_cache[cache->id], (etime.count + 2));
+			fatal("l1_i_cache_access_load(): MSHR full\n");
+
+			message_packet->access_type = cgm_access_load;
+			list_remove(cache->last_queue, message_packet);
+			list_enqueue(cache->retry_queue, message_packet);
+			future_advance(&l1_i_cache[cache->id], (etime.count + 4));
 
 		}
 		else
@@ -140,7 +144,7 @@ void cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 	return;
 }
 
-void cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
+void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -169,8 +173,8 @@ void cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_pack
 	addr = message_packet->address;
 
 	//stats
-	if(access_type == cgm_access_retry)
-		cache->retries++;
+	/*if(access_type == cgm_access_retry)*/
+	cache->retries++;
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
@@ -187,14 +191,13 @@ void cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_pack
 	{
 		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
 
-		/*if(access_type == cgm_access_retry)
-			retry_ptr--;*/
+		//if(access_type == cgm_access_retry)
+		//	retry_ptr--;
 
-		if(access_type == cgm_access_fetch)
-			cache->hits++;
+		/*if(access_type == cgm_access_fetch)*/
+		cache->hits++;
 
 		//remove packet from cache queue, global queue, and simulator memory
-		//note cycle already charged
 
 		list_remove(cache->retry_queue, message_packet);
 		remove_from_global(access_id);
@@ -208,7 +211,7 @@ void cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_pack
 	return;
 }
 
-void cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -257,11 +260,8 @@ void cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packe
 	{
 		/*we have outstanding mshr requests so set the retry state bit*/
 		*retry_ptr = cache->mshrs[mshr_status].num_entries;
-		//printf("retry_ptr %d\n", *retry_ptr);
 		assert(*retry_ptr > 0);
 	}
-
-	advance_time = etime.count + 2;
 
 	//move the access and any coalesced accesses to the retry queue.
 	for(i = 0; i < *retry_ptr; i++)
@@ -270,11 +270,8 @@ void cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packe
 		{
 			//move current message_packet to retry queue
 			message_packet->access_type = cgm_access_retry;
-			list_remove(cache->next_queue, message_packet);
+			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
-
-			//printf("list count %d\n", list_count(l1_i_caches[my_pid].retry_queue));
-
 			advance(&l1_i_cache[cache->id]);
 		}
 		else if( i > 0)
@@ -282,10 +279,13 @@ void cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packe
 			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
 			list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
 			free(miss_status_packet);
-			advance_time += 2;
 			advance(&l1_i_cache[cache->id]);
 		}
 	}
+
+	/*printf("mshr_status %d retry_ptr %d\n", mshr_status, *retry_ptr);
+	printf("list queue size %d\n", list_count(cache->retry_queue));
+	STOP;*/
 
 	//clear the mshr row for future use
 	mshr_clear(&(cache->mshrs[mshr_status]));
@@ -338,24 +338,26 @@ void l1_i_cache_ctrl(void){
 		await(&l1_i_cache[my_pid], step);
 		step++;
 
-		//check the top or bottom rx queues for messages.
-		message_packet = get_message(&(l1_i_caches[my_pid]), retry_ptr);
+		//get a message from the top or bottom queues.
+		message_packet = get_message(&(l1_i_caches[my_pid]));
 
 		access_type = message_packet->access_type;
+		access_id = message_packet->access_id;
+
+		//printf("retry type %s access id %llu at %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), access_id, P_TIME);
 
 
 		if (access_type == cgm_access_fetch)
 		{
-			cache_access_load(&(l1_i_caches[my_pid]), message_packet);
+			l1_i_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else if (access_type == cgm_access_retry)
 		{
-			cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
-
+			l1_i_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else if (access_type == cgm_access_puts)
 		{
-			cache_access_puts(&(l1_i_caches[my_pid]), message_packet);
+			l1_i_cache_access_puts(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else
 		{
@@ -368,6 +370,3 @@ void l1_i_cache_ctrl(void){
 	fatal("l1_i_cache_ctrl task is broken\n");
 	return;
 }
-
-
-

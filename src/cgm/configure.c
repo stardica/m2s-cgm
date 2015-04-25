@@ -644,6 +644,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("CPU_L2_Cache", "MaxCoalesce"))
+	{
+		maxcoal = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].max_coal = maxcoal;
+		}
+	}
+
 	if(MATCH("CPU_L2_Cache", "WireLatency"))
 	{
 		WireLatency = atoi(value);
@@ -682,7 +691,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].num_sets = slice_size;
+			l3_caches[i].num_sets = Sets;
 		}
 	}
 
@@ -740,6 +749,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l3_caches[i].directory_latency = DirectoryLatency;
+		}
+	}
+
+	if(MATCH("CPU_L3_Cache", "MaxCoalesce"))
+	{
+		maxcoal = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].max_coal = maxcoal;
 		}
 	}
 
@@ -919,7 +937,7 @@ int cache_finish_create(){
 	int num_cus = si_gpu_num_compute_units;
 	//int num_l2_groups = (si_gpu_num_compute_units/4);
 	struct cache_block_t *block;
-	int i, j, set, way = 0;
+	int i = 0, j = 0, set = 0, way = 0;
 	char buff[100];
 
 	//finish creating the CPU caches
@@ -960,10 +978,10 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d].retry_queue", i);
 		l1_i_caches[i].retry_queue->name = strdup(buff);
 
-		l1_i_caches[i].mshr = list_create();
+		/*l1_i_caches[i].mshr = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
-		l1_i_caches[i].mshr->name = strdup(buff);
+		l1_i_caches[i].mshr->name = strdup(buff);*/
 
 		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
@@ -1016,10 +1034,10 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_d_caches[%d].retry_queue", i);
 		l1_d_caches[i].retry_queue->name = strdup(buff);
 
-		l1_d_caches[i].mshr = list_create();
+		/*l1_d_caches[i].mshr = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].mshr", i);
-		l1_d_caches[i].mshr->name = strdup(buff);
+		l1_d_caches[i].mshr->name = strdup(buff);*/
 
 		l1_d_caches[i].mshrs = (void *) calloc(l1_d_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_d_caches[i].mshr_size; j++)
@@ -1067,10 +1085,15 @@ int cache_finish_create(){
 
 		l2_caches[i].next_queue = l2_caches[i].Rx_queue_top;
 
-		l2_caches[i].mshr = list_create();
+		l2_caches[i].retry_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].retry_queue", i);
+		l2_caches[i].retry_queue->name = strdup(buff);
+
+		/*l2_caches[i].mshr = list_create();
 		memset (buff, '\0', sizeof(buff));
 		snprintf(buff,100, "l2_caches[%d].mshr", i);
-		l2_caches[i].mshr->name = strdup(buff);
+		l2_caches[i].mshr->name = strdup(buff);*/
 
 		l2_caches[i].mshrs = (void *) calloc(l2_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l2_caches[i].mshr_size; j++)
@@ -1095,7 +1118,7 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d]", i);
 		l3_caches[i].name = strdup(buff);
-		l3_caches[i].id = 1;
+		l3_caches[i].id = i;
 		l3_caches[i].log_block_size = LOG2(l3_caches[i].block_size);
 		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
@@ -1116,19 +1139,28 @@ int cache_finish_create(){
 
 		l3_caches[i].next_queue = l3_caches[i].Rx_queue_top;
 
-		l3_caches[i].mshr = list_create();
+		l3_caches[i].retry_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].retry_queue", i);
+		l3_caches[i].retry_queue->name = strdup(buff);
+
+		/*l3_caches[i].mshr = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].mshr", i);
-		l3_caches[i].mshr->name = strdup(buff);
+		l3_caches[i].mshr->name = strdup(buff);*/
 
-		l3_caches[i].mshr_2 = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct list_t));
+		l3_caches[i].mshrs = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l3_caches[i].mshr_size; j++)
 		{
-			l3_caches[i].mshr_2[j] = list_create();
-
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l3_caches[%d].mshr[%d]", i, j);
-			l3_caches[i].mshr_2[j]->name = strdup(buff);
+			l3_caches[i].mshrs[j].name = strdup(buff);
+
+			l3_caches[i].mshrs[j].entires = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l3_caches[%d].mshr[%d].entires", i, j);
+			l3_caches[i].mshrs[j].entires->name = strdup(buff);
 		}
 
 
@@ -1667,7 +1699,7 @@ int switch_finish_create(void){
 
 int sys_agent_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports, WireLatency = 0;
+	int Ports = 0, WireLatency = 0;
 
 
 	if(MATCH("SysAgent", "Ports"))

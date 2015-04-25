@@ -58,7 +58,6 @@ extern struct cgm_packet_status_t{
 	int in_flight;
 
 	//for reverse routing
-	char *src_name;
 	int source_id;
 
 	int coalesced;

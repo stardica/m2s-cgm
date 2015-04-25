@@ -77,8 +77,7 @@ extern char *cgm_stats_output_path;
 					if(protocol_debug == 1){fclose (protocol_debug_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
-#define STOP 	CLOSE_FILES;\
-				getchar()
+#define STOP 	CLOSE_FILES; getchar()
 
 //global access ids
 extern long long fetch_access_id;

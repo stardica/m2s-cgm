@@ -221,6 +221,8 @@ void cache_create_tasks(void){
 		l3_cache[i] = *(new_eventcount(strdup(buff)));
 	}
 
+
+
 	//GPU L2
 	gpu_l2_cache = (void *) calloc(num_cus, sizeof(eventcount));
 	for(i = 0; i < num_cores; i++)
@@ -341,38 +343,30 @@ void cache_create_tasks(void){
 	return;
 }
 
-struct cgm_packet_t *get_message(struct cache_t *cache, int *retry_ptr){
+struct cgm_packet_t *get_message(struct cache_t *cache){
 
 	//star this is round robin
 	struct cgm_packet_t *new_message;
 
-	new_message = list_get(cache->next_queue, 0);
-	//keep pointer to last queue
-	cache->last_queue = cache->next_queue;
 
-	//rotate the queues
-	if(cache->next_queue == cache->Rx_queue_top)
+	//printf ("cache->name %s\n", cache->name);
+
+
+	int retry_queue_size = list_count(cache->retry_queue);
+
+	//pull from the retry queue first.
+	if(retry_queue_size > 0)
 	{
-		cache->next_queue = cache->Rx_queue_bottom;
-	}
-	else if(cache->next_queue == cache->Rx_queue_bottom)
-	{
-		cache->next_queue = cache->Rx_queue_top;
+		new_message = list_get(cache->retry_queue, 0);
 	}
 	else
 	{
-		fatal("get_message() pointers arn't working");
-	}
-
-	//if we didn't get a message try again (now that the queues are rotated)
-	if(!new_message)
-	{
-		//no message from last queue, try again
 		new_message = list_get(cache->next_queue, 0);
+
 		//keep pointer to last queue
 		cache->last_queue = cache->next_queue;
 
-		//rotate the queues.
+		//rotate the queues
 		if(cache->next_queue == cache->Rx_queue_top)
 		{
 			cache->next_queue = cache->Rx_queue_bottom;
@@ -385,10 +379,35 @@ struct cgm_packet_t *get_message(struct cache_t *cache, int *retry_ptr){
 		{
 			fatal("get_message() pointers arn't working");
 		}
+
+		//if we didn't get a message try again (now that the queues are rotated)
+		if(new_message == NULL)
+		{
+
+			new_message = list_get(cache->next_queue, 0);
+
+			//keep pointer to last queue
+			cache->last_queue = cache->next_queue;
+
+			//rotate the queues.
+			if(cache->next_queue == cache->Rx_queue_top)
+			{
+				cache->next_queue = cache->Rx_queue_bottom;
+			}
+			else if(cache->next_queue == cache->Rx_queue_bottom)
+			{
+				cache->next_queue = cache->Rx_queue_top;
+			}
+			else
+			{
+				fatal("get_message() pointers arn't working");
+			}
+		}
+
 	}
 
 	//shouldn't be exiting without a message
-	assert(new_message);
+	assert(new_message != NULL);
 	return new_message;
 }
 

@@ -53,6 +53,21 @@ int switch_pid = 0;
 };*/
 
 //supports quad core with ring bus
+
+struct str_map_t l1_strn_map =
+{ 	l1_number, {
+		{ "l1_i_cache[0]", l1_i_cache_0},
+		{ "l1_d_cache[0]", l1_d_cache_0},
+		{ "l1_i_cache[1]", l1_i_cache_1},
+		{ "l1_d_cache[1]", l1_d_cache_1},
+		{ "l1_i_cache[2]", l1_i_cache_2},
+		{ "l1_d_cache[2]", l1_d_cache_2},
+		{ "l1_i_cache[3]", l1_i_cache_3},
+		{ "l1_d_cache[3]", l1_d_cache_3},
+		}
+};
+
+
 struct str_map_t node_strn_map =
 { 	node_number, {
 		{ "l2_caches[0]", l2_cache_0},
@@ -151,14 +166,12 @@ void switch_ctrl(void){
 	int next_switch = 0;
 	int queue_status;
 
-
 	char *dest_name;
 	int dest_node;
 	char *src_name;
 	int src_node;
 	int switch_node = switches[my_pid].switch_node_number;
 	float distance;
-
 
 	assert(my_pid <= (num_cores + num_cus));
 
@@ -183,15 +196,10 @@ void switch_ctrl(void){
 		src_name = message_packet->src_name;
 		src_node = message_packet->source_id;
 
+		CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu src %s dest %s\n",
+			my_pid, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
-		if(message_packet->access_id == 1)
-		{
-			printf("switch id %d\n", my_pid);
-			printf("access id %llu\n", message_packet->access_id);
-			printf("src %s -> dest %s\n", message_packet->src_name, message_packet->dest_name);
-			getchar();
-		}
-
+		P_PAUSE(2);
 
 		//if dest is the L2/L3/SA connected to this switch.
 		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
@@ -214,9 +222,12 @@ void switch_ctrl(void){
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the cache's queue
-					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l2_cache[my_pid], (etime.count + l2_caches[my_pid].wire_latency));
+					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+
 					//done with this access
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+
 				}
 				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
@@ -231,9 +242,10 @@ void switch_ctrl(void){
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the cache's queue
-					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&gpu_l2_cache[my_pid], (etime.count + gpu_l2_caches[my_pid].wire_latency));
+					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
+					future_advance(&gpu_l2_cache[my_pid], WIRE_DELAY(gpu_l2_caches[my_pid].wire_latency));
 					//done with this access
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
 				}
 
 			}
@@ -256,18 +268,14 @@ void switch_ctrl(void){
 
 					//drop the packet into the cache's queue
 					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l3_cache[my_pid], (etime.count + l3_caches[my_pid].wire_latency));
+					future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
 					//done with this access
+
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
 				}
 				//for the system agent
 				else if(my_pid >= num_cores)
 				{
-
-					if(message_packet->access_id == 1)
-					{
-						printf("switch id %d accessing sys_agent queue\n", my_pid);
-						getchar();
-					}
 
 					while(!sys_agent_can_access())
 					{
@@ -280,15 +288,10 @@ void switch_ctrl(void){
 
 					//drop the packet into the sys agent queue
 					list_enqueue(system_agent->Rx_queue_top, message_packet);
-					future_advance(system_agent_ec, (etime.count + system_agent->wire_latency));
+					future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
 					//done with this access
 
-					if(message_packet->access_id == 1)
-					{
-						printf("switch id %d  sys_agent queue\n", my_pid);
-						getchar();
-					}
-
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
 				}
 			}
 			else
@@ -304,12 +307,11 @@ void switch_ctrl(void){
 			if(switches[my_pid].queue == north_queue || switches[my_pid].queue == south_queue)
 			{
 				//new packets from connected L2 or L3 cache.
-
-
 				if(dest_node > src_node)
 				{
+					distance = switch_get_distance(dest_node, src_node);
 
-					//get the distance from this switch to the destination (left to right)
+					/*//get the distance from this switch to the destination (left to right)
 					if(dest_node % 3 == 0 && src_node % 3 == 0)
 					{
 						//L2 to L2
@@ -324,8 +326,7 @@ void switch_ctrl(void){
 					{
 						//L3 to L3/SA
 						distance = (dest_node - src_node)/3;
-					}
-
+					}*/
 
 					//go in the direction with the shortest number of hops.
 					if(distance <= switches[my_pid].switch_median_node)
@@ -342,7 +343,9 @@ void switch_ctrl(void){
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_east, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
+						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 
 					}
 					else
@@ -359,29 +362,15 @@ void switch_ctrl(void){
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_west, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
+						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 					}
 				}
 				else if(src_node > dest_node)
 				{
 
-					//get the distance from this switch to the destination (right to left)
-					if(src_node % 3 == 0 && dest_node % 3 == 0)
-					{
-						//L2 to L2
-						distance = (src_node - dest_node)/3;
-					}
-					else if(src_node % 3 == 0 && dest_node % 3 != 0)
-					{
-						//L2 to L3/SA || L3 to L2 (works for both ways)
-						distance = ((src_node + 2) - dest_node)/3;
-					}
-					else
-					{
-						//L3 to L3/SA
-						distance = (src_node - dest_node)/3;
-					}
-
+					distance = switch_get_distance(dest_node, src_node);
 
 					//go in the direction with the shortest number of hops.
 					if(distance <= switches[my_pid].switch_median_node)
@@ -398,7 +387,8 @@ void switch_ctrl(void){
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_west, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
+						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 
 					}
 					else
@@ -415,7 +405,8 @@ void switch_ctrl(void){
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_east, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
+						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 					}
 				}
 			}
@@ -437,7 +428,8 @@ void switch_ctrl(void){
 
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_west, message_packet);
-					future_advance(&switches_ec[switches[my_pid].next_west_id], (etime.count + switches[switches[my_pid].next_west_id].wire_latency));
+					future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 
 				}
 				else if(switches[my_pid].queue == west_queue)
@@ -453,7 +445,8 @@ void switch_ctrl(void){
 
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_east, message_packet);
-					future_advance(&switches_ec[switches[my_pid].next_east_id], (etime.count + switches[switches[my_pid].next_east_id].wire_latency));
+					future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
 
 				}
 				else
@@ -473,6 +466,53 @@ void switch_ctrl(void){
 	fatal("switch_ctrl() quit\n");
 	return;
 }
+
+
+float switch_get_distance(int dest_node, int src_node){
+
+	float distance = 0;
+
+	if(dest_node > src_node)
+	{
+		//get the distance from this switch to the destination (left to right)
+		if(dest_node % 3 == 0 && src_node % 3 == 0)
+		{
+			//L2 to L2
+			distance = (dest_node - src_node)/3;
+		}
+		else if(dest_node % 3 != 0 && src_node % 3 == 0)
+		{
+			//L2 to L3/SA || L3 to L2 (works for both ways)
+			distance = (dest_node - (src_node + 2))/3;
+		}
+		else
+		{
+			//L3 to L3/SA
+			distance = (dest_node - src_node)/3;
+		}
+	}
+	else
+	{
+		//get the distance from this switch to the destination (right to left)
+		if(src_node % 3 == 0 && dest_node % 3 == 0)
+		{
+			//L2 to L2
+			distance = (src_node - dest_node)/3;
+		}
+		else if(src_node % 3 == 0 && dest_node % 3 != 0)
+		{
+			//L2 to L3/SA || L3 to L2 (works for both ways)
+			distance = ((src_node + 2) - dest_node)/3;
+		}
+		else
+		{
+			//L3 to L3/SA
+			distance = (src_node - dest_node)/3;
+		}
+	}
+	return distance;
+}
+
 
 struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 
@@ -579,120 +619,4 @@ enum port_name get_next_queue_rb(enum port_name queue){
 	}
 
 	return next_queue;
-}
-
-
-
-void get_path(void){
-
-	/*//todo need priority queue
-	int cost[10][10], path[10][10], i, j, n, p, min, v, distance[10], row, column;
-	int index = 1;
-
-	//Dijkstra's algorithm
-	for (i=1; i <=p; i ++)
-	{
-		distance[i] = 0;
-		row = 1;
-		for(j=1; j <=n; j++)
-		{
-			if(row!=v)
-			{
-				column=path[i][j+1];
-				distance[i] = distance[i] + cost[row][column];
-			}
-			row = column;
-
-		}
-	}
-
-	min = distance[1];
-
-	for(i=1; i<=p; i++)
-	{
-		if(distance[i]<=min)
-		{
-			min=distance[i];
-			index = i;
-		}
-	}*/
-
-
-
-	/***********************************************************
-	* You can use all the programs on  www.c-program-example.com
-	* for personal and learning purposes. For permissions to use the
-	* programs for commercial purposes,
-	* contact info@c-program-example.com
-	* To find more C programs, do visit www.c-program-example.com
-	* and browse!
-	*
-	*                      Happy Coding
-	***********************************************************/
-
-/*	#define infinity 999
-
-	void dij(int n,int v,int cost[10][10],int dist[]){
-
-		int i,u,count,w,flag[10],min;
-
-		for(i=1;i<=n;i++)
-		{
-			flag[i]=0,dist[i]=cost[v][i];
-		}
-
-		count=2;
-
-		while(count<=n)
-		{
-			min=99;
-			for(w=1;w<=n;w++)
-			{
-				if(dist[w]<min && !flag[w])
-				{
-					min=dist[w],u=w;
-				}
-
-				flag[u]=1;
-				count++;
-			}
-			for(w=1;w<=n;w++)
-			{
-				if((dist[u]+cost[u][w]<dist[w]) && !flag[w])
-				{
-					dist[w]=dist[u]+cost[u][w];
-				}
-			}
-		}
-	}
-
-	void main()
-	{
-	 int n,v,i,j,cost[10][10],dist[10];
-
-	 printf("\n Enter the number of nodes:");
-	 scanf("%d",&n);
-
-	 printf("\n Enter the cost matrix:\n");
-	 for(i=1;i<=n;i++)
-	  for(j=1;j<=n;j++)
-	  {
-	   scanf("%d",&cost[i][j]);
-	   if(cost[i][j]==0)
-	    cost[i][j]=infinity;
-	  }
-	 printf("\n Enter the source node:");
-	 scanf("%d",&v);
-
-	 dij(n,v,cost,dist);
-
-	 printf("\n Shortest path:\n");
-	 for(i=1;i<=n;i++)
-	  if(i!=v)
-	   printf("%d->%d,cost=%d\n",v,i,dist[i]);
-
-	 getchar();
-	}*/
-
-	return;
 }

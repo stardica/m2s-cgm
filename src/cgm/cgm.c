@@ -183,7 +183,7 @@ void cpu_gpu_run(void){
 
 		m2s_loop();
 
-		future_advance(sim_finish, etime.count + 1);
+		future_advance(sim_finish, (etime.count + 2));
 		//advance(sim_finish);
 
 	}
@@ -285,9 +285,10 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
 		{
 			j ++;
-			assert(mshr_size <= j);
 		}
 	}
+
+	assert(j <= mshr_size);
 
 	//mshr is full
 	if(j == mshr_size)

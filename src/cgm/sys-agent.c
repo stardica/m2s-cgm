@@ -101,6 +101,9 @@ void sys_agent_ctrl(void){
 		await(system_agent_ec, step);
 		step++;
 
+
+		STOP;
+
 		//printf("made it here 1\n");
 
 		//if we are here there should be a message in the queue
