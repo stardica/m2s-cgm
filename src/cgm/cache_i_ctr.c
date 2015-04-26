@@ -63,7 +63,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	//L1 I Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
+		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
 
 		/*if(access_type == cgm_access_retry)
 			retry_ptr--;*/
@@ -73,6 +73,11 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 		//remove packet from cache queue, global queue, and simulator memory
 		//note cycle already charged
+
+		if(access_id == 1)
+		{
+			printf("access_id 1 end\n");
+		}
 
 		list_remove(cache->last_queue, message_packet);
 		remove_from_global(access_id);
@@ -89,12 +94,12 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		/*if(access_type == cgm_access_fetch)*/
 		cache->misses++;
 
-		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu miss\n", cache->id, access_id, P_TIME);
+		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss\n", cache->id, access_id, P_TIME);
 
 		miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet, message_packet);
 
-		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
+		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
 
 		if(mshr_status == 1)
 		{
@@ -105,7 +110,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free\n", cache->id, access_id, P_TIME);
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free\n", cache->id, access_id, P_TIME);
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -113,7 +118,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
 				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
@@ -139,6 +144,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 
 		//done
+		//STOP;
 	}
 
 	return;
@@ -189,13 +195,13 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	//L1 I Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "\tl1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
+		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
 
 		//if(access_type == cgm_access_retry)
 		//	retry_ptr--;
 
 		/*if(access_type == cgm_access_fetch)*/
-		cache->hits++;
+		//cache->hits++;
 
 		//remove packet from cache queue, global queue, and simulator memory
 
@@ -339,7 +345,7 @@ void l1_i_cache_ctrl(void){
 		step++;
 
 		//get a message from the top or bottom queues.
-		message_packet = get_message(&(l1_i_caches[my_pid]));
+		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
 
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;

@@ -77,13 +77,73 @@ int sys_agent_can_access(void){
 	return 1;
 }
 
+struct cgm_packet_t *sysagent_get_message(void){
+
+	//star this is round robin
+	struct cgm_packet_t *new_message;
+
+
+	//star todo to give priorty stay on a particular queue as long as it is not empty;
+
+	new_message = list_get(system_agent->next_queue, 0);
+
+	//keep pointer to last queue
+	system_agent->last_queue = system_agent->next_queue;
+
+	//rotate the queues
+	if(system_agent->next_queue == system_agent->Rx_queue_top)
+	{
+		system_agent->next_queue = system_agent->Rx_queue_bottom;
+	}
+	else if(system_agent->next_queue == system_agent->Rx_queue_bottom)
+	{
+		system_agent->next_queue = system_agent->Rx_queue_top;
+	}
+	else
+	{
+		fatal("get_message() pointers arn't working");
+	}
+
+		//if we didn't get a message try again (now that the queues are rotated)
+	if(new_message == NULL)
+	{
+
+		new_message = list_get(system_agent->next_queue, 0);
+
+		//keep pointer to last queue
+		system_agent->last_queue = system_agent->next_queue;
+		//rotate the queues.
+			if(system_agent->next_queue == system_agent->Rx_queue_top)
+			{
+				system_agent->next_queue = system_agent->Rx_queue_bottom;
+			}
+			else if(system_agent->next_queue == system_agent->Rx_queue_bottom)
+			{
+				system_agent->next_queue = system_agent->Rx_queue_top;
+			}
+			else
+			{
+				fatal("get_message() pointers arn't working");
+			}
+	}
+
+	//shouldn't be exiting without a message
+	assert(new_message != NULL);
+	return new_message;
+}
+
+
+
+
+
+
 
 void sys_agent_ctrl(void){
 
 	int my_pid = system_agent_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	int i = 0;
+	//int i = 0;
 
 	long long access_id = 0;
 	enum cgm_access_kind_t access_type;
@@ -92,111 +152,53 @@ void sys_agent_ctrl(void){
 	set_id((unsigned int)my_pid);
 
 
-
 	while(1)
 	{
 
-		//printf("sys agent waiting\n");
+
 
 		await(system_agent_ec, step);
 		step++;
 
 
-		STOP;
-
-		//printf("made it here 1\n");
 
 		//if we are here there should be a message in the queue
-		message_packet = list_get(system_agent->Rx_queue_top, 0);
+		message_packet = sysagent_get_message();
 		assert(message_packet);
 
-		//printf("made it here 2\n");
-
+		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
-		access_type = message_packet->access_type;
 
-		//printf("made it here 3\n");
-
-		/*if (access_id == 1)
-		{
-			printf("system_agent\n");
-			printf("access id %llu\n", access_id);
-			printf("access type %d\n", access_type);
-			getchar();
-		}*/
-
-
-
-		//system agent passes the message to the correct IO system.
-		//for now we just go from SA to memctrl
-
-		//check the mapping of the memory address..
-
-		//star todo fix this. This isn't done right.
-
-
-
-
-		//for now pretend we are both the sys agent and the memctrl
-		if(access_type == cgm_access_gets)
+		if(access_type == cgm_access_gets_i)
 		{
 
-			if (access_id == 1)
-			{
-				printf("entered at %llu\n", (etime.count/2));
-			}
+			CGM_DEBUG(sysagent_debug_file,"sysagent access_id %llu cycle %llu as %s addr 0x%08u\n",
+							access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
 
-			//charge the memctrl delay
-			P_PAUSE(250);
-
-			if (access_id == 1)
-			{
-				printf("after paused %llu\n", (etime.count/2));
-				getchar();
-			}
-
-			//send back to L3 cache over switching network
-			//add source and dest
-
-
+			//set the dest and sources
 			message_packet->access_type = cgm_access_puts;
 			message_packet->dest_id = message_packet->source_id;
 			message_packet->dest_name = message_packet->src_name;
-
 			message_packet->src_name = system_agent->name;
 			message_packet->source_id = str_map_string(&node_strn_map, system_agent->name);
 
-
-			if (access_id == 1)
-			{
-				printf("Building message packet switch %d\n", my_pid);
-				printf("Source %s id %d\n", message_packet->src_name, message_packet->source_id);
-				printf("Dest %s id %d\n", message_packet->dest_name, message_packet->dest_id);
-				getchar();
-			}
-
-
-			//get the local switch number
-
-
-			/*while(!switch_can_access(switches[].south_queue))
+			while(!switch_can_access(system_agent->switch_queue))
 			{
 				P_PAUSE(1);
 			}
 
-			printf("made it here 4\n");
+			/*printf("queue name %s size %d\n", system_agent->switch_queue->name, list_count(system_agent->switch_queue));
+			STOP;*/
 
 			//success
-			list_remove(system_agent->Rx_queue_top, message_packet);
-			list_enqueue(switches[].south_queue, message_packet);
+			list_remove(system_agent->last_queue, message_packet);
+			list_enqueue(system_agent->switch_queue, message_packet);
 
-			future_advance(&switches_ec[], (etime.count + switches[].wire_latency));*/
+			future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
 			//done
 		}
 	}
-
 	return;
-
 }

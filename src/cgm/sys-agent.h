@@ -29,8 +29,12 @@ struct system_agent_t{
 
 	//queues
 	struct list_t *Rx_queue_top;
+	struct list_t *Rx_queue_bottom;
 
-	//link to switch
+	struct list_t *next_queue;
+	struct list_t *last_queue;
+
+	//ptr to switch
 	struct list_t *switch_queue;
 
 	int switch_id;
@@ -46,6 +50,8 @@ extern int system_agent_pid;
 void sys_agent_init(void);
 void sys_agent_create(void);
 void sys_agent_create_tasks(void);
+
+struct cgm_packet_t *sysagent_get_message(void);
 
 int sys_agent_can_access(void);
 

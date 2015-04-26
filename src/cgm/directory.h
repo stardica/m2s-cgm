@@ -15,6 +15,17 @@
 #include <lib/util/list.h>
 
 
+struct directory_entry_t{
+
+	//directory data. We can vary the size.
+	unsigned char *bit_vector_8; 		// 1 byte
+	unsigned short *bit_vector_16; 		// 2 bytes
+	unsigned long *bit_vector_24;		// 4 bytes
+	unsigned long long *bit_vector_64;	// 8 bytes
+
+};
+
+
 struct directory_t{
 
 	//directory mode
@@ -28,19 +39,9 @@ struct directory_t{
 	//directory queue(s) ass needed for cache access.
 	struct list_t **Rx_queue;	//l3_slice_0 or sysagent_0 queue
 
-
-	//directory data. We can vary the size.
-	unsigned char *bit_vector_8; 		// 1 byte
-	unsigned short *bit_vector_16; 		// 2 bytes
-	unsigned long *bit_vector_24;		// 4 bytes
-	unsigned long long *bit_vector_64;	// 8 bytes
-
 };
 
 extern struct directory_t *directory;
-
-extern int *directory_data;
-extern eventcount volatile *dir;
 
 void directory_init(void);
 void directory_create(void);

@@ -16,18 +16,15 @@
 
 #include <lib/util/list.h>
 
-
-
 //globals
 struct directory_t *directory;
 
-int *dir_data;
-eventcount volatile *dir;
+//eventcount volatile *dir;
 
 void directory_init(void){
 
 	directory_create();
-	directory_create_tasks();
+	//directory_create_tasks();
 
 	return;
 }
@@ -38,12 +35,18 @@ void directory_create(void){
 
 	//init the directory struct
 	directory = (void *) calloc(1, sizeof(struct directory_t));
-	dir_data = (void *) calloc(num_cores, sizeof(int));
-
 	return;
 }
 
-void directory_create_tasks(void){
+unsigned long long directory_map_block_number(unsigned int addr){
+
+	unsigned long long block_number = (addr & ~(directory->block_mask))/(directory->block_size);
+
+	return block_number;
+}
+
+
+/*void directory_create_tasks(void){
 
 
 	char buff[100];
@@ -59,9 +62,9 @@ void directory_create_tasks(void){
 	create_task(directory_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 	return;
-}
+}*/
 
-void directory_ctrl(void){
+/*void directory_ctrl(void){
 
 	long long step = 1;
 	int num_cores = x86_cpu_num_cores;
@@ -69,8 +72,8 @@ void directory_ctrl(void){
 
 	while(1)
 		{
-			/*wait here until there is a job to do.
-			In any given cycle I might have to service 1 to N number of caches*/
+			wait here until there is a job to do.
+			In any given cycle I might have to service 1 to N number of caches
 			await(dir, step);
 			step++;
 
@@ -91,12 +94,4 @@ void directory_ctrl(void){
 			}
 		}
 	return;
-}
-
-
-unsigned long long directory_map_block_number(unsigned int addr){
-
-	unsigned long long block_number = (addr & ~(directory->block_mask))/(directory->block_size);
-
-	return block_number;
-}
+}*/

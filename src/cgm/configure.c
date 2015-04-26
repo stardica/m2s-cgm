@@ -1511,7 +1511,7 @@ int directory_finish_create(void){
 	directory->block_mask = directory->block_size - 1; // this is 0 - N
 
 
-	if(directory->vector_size == 1)
+	/*if(directory->vector_size == 1)
 	{
 		directory->bit_vector_8 = (void *) calloc(directory->num_blocks, sizeof(unsigned char));
 	}
@@ -1530,7 +1530,7 @@ int directory_finish_create(void){
 	else
 	{
 		fatal("directory_finish_create() invalid vector size. Check the cgm_config.ini file");
-	}
+	}*/
 
 
 	//set up input queues
@@ -1720,28 +1720,35 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 
 int sys_agent_finish_create(void){
 
-	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
-
 	//star todo fix this
-	int extras = 1;
+	int num_cores = x86_cpu_num_cores;
+	//int extras = 1;
+	//int num_cus = si_gpu_num_compute_units;
 
 	char buff[100];
-
-	system_agent->Rx_queue_top = list_create();
 
 	//set cache name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "sys_agent");
 	system_agent->name = strdup(buff);
 
+	system_agent->switch_id = (num_cores);
+
+	system_agent->Rx_queue_top = list_create();
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "system_agent.Rx_queue_top");
 	system_agent->Rx_queue_top->name = strdup(buff);
 
+	system_agent->Rx_queue_bottom = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent.Rx_queue_bottom");
+	system_agent->Rx_queue_bottom->name = strdup(buff);
 
-	system_agent->switch_id = (num_cores + extras);
+	//point to switch queue.
 	system_agent->switch_queue = switches[system_agent->switch_id].south_queue;
+
+	//pointer to next queue.
+	system_agent->next_queue = system_agent->Rx_queue_top;
 
 	return 0;
 }
@@ -1756,12 +1763,6 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 		mem_ctrl->wire_latency = WireLatency;
 	}
 
-	if(MATCH("MemCtrl", "Ports"))
-	{
-		Ports = atoi(value);
-		mem_ctrl->num_ports = Ports;
-	}
-
 	return 0;
 }
 
@@ -1769,16 +1770,18 @@ int mem_ctrl_finish_create(void){
 
 	char buff[100];
 
-	mem_ctrl->Rx_queue_top = list_create();
-
 	//set cache name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl");
 	mem_ctrl->name = strdup(buff);
 
+	mem_ctrl->Rx_queue_top = list_create();
+
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl.Rx_queue_top");
 	mem_ctrl->Rx_queue_top->name = strdup(buff);
+
+	mem_ctrl->system_agent_queue = system_agent->Rx_queue_bottom;
 
 	return 0;
 }

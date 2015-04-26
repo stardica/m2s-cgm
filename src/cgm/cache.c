@@ -343,7 +343,7 @@ void cache_create_tasks(void){
 	return;
 }
 
-struct cgm_packet_t *get_message(struct cache_t *cache){
+struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	//star this is round robin
 	struct cgm_packet_t *new_message;
@@ -358,6 +358,7 @@ struct cgm_packet_t *get_message(struct cache_t *cache){
 	if(retry_queue_size > 0)
 	{
 		new_message = list_get(cache->retry_queue, 0);
+		cache->last_queue = cache->retry_queue;
 	}
 	else
 	{

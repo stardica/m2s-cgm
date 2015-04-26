@@ -16,9 +16,11 @@ extern struct mem_ctrl_t{
 	//Physical Characteristics
 	char *name;
 	int wire_latency;
-	int num_ports;
 
 	struct list_t *Rx_queue_top;
+
+	//ptr to sysagent queue
+	struct list_t *system_agent_queue;
 
 };
 
