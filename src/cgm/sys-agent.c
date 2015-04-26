@@ -154,15 +154,10 @@ void sys_agent_ctrl(void){
 
 	while(1)
 	{
-
-
-
 		await(system_agent_ec, step);
 		step++;
 
-
-
-		//if we are here there should be a message in the queue
+	//if we are here there should be a message in the queue
 		message_packet = sysagent_get_message();
 		assert(message_packet);
 

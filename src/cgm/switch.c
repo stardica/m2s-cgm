@@ -461,6 +461,7 @@ void switch_ctrl(void){
 		//end, clear the message_packet ptr
 		//this should be getting set up above in list_get(), but just for safe measure.
 		message_packet = NULL;
+
 	}
 
 	fatal("switch_ctrl() quit\n");

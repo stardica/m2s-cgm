@@ -290,6 +290,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_status = mshr_get(cache, set_ptr, tag_ptr);
 	if(mshr_status != -1)
 	{
+		printf(" L3 mshr_status == -1\n");
 		STOP;
 		assert(mshr_status != -1);
 	}

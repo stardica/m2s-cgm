@@ -67,7 +67,6 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
 	//////
 
-
 	//look up, and charge a cycle.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(2);
@@ -136,13 +135,17 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);
 
 			//success
+			//printf("queue size %d\n", list_count(cache->last_queue));
+
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(switches[cache->id].north_queue, message_packet);
+			//printf("queue size %d\n", list_count(cache->last_queue));
+			//printf("queue size %d\n", list_count(switches[cache->id].north_queue));
 
 			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 
-			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
-				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			/*CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
+				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));*/
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
 				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -164,6 +167,7 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			//access was coalesced. For now do nothing until later.
 		}
 		//done
+
 	}
 	return;
 }

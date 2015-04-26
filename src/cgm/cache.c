@@ -407,6 +407,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	}
 
+	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu pulled from %s\n", cache->name, new_message->access_id, P_TIME, cache->last_queue->name);
+
 	//shouldn't be exiting without a message
 	assert(new_message != NULL);
 	return new_message;

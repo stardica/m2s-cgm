@@ -114,8 +114,12 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+
+
+
 			message_packet->access_type = cgm_access_gets_i;
 			list_remove(cache->last_queue, message_packet);
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu removed from %s\n", cache->id, access_id, P_TIME, cache->last_queue->name);
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
 
 			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
@@ -144,9 +148,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 
 		//done
-		//STOP;
 	}
-
 	return;
 }
 
