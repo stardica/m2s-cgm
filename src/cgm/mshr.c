@@ -13,7 +13,7 @@
 
 #include <lib/util/debug.h>
 
-struct cgm_packet_status_t *miss_status_packet_create(long long access_id, enum cgm_access_kind_t access_type, int set, int tag, unsigned int offset, int src_id){
+struct cgm_packet_status_t *miss_status_packet_copy(struct cgm_packet_t *message_packet_old, struct cgm_packet_t *message_packet_new){
 
 	struct cgm_packet_status_t *new_packet = status_packet_create();
 
@@ -59,16 +59,18 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_status_t *miss_status_pack
 
 	if(row)
 	{
-		//duplicate tag and set detected try to coalesce up to the maximum
+		//duplicate tag and set detected and row is full.
 		if(cache->mshrs[row].num_entries > cache->max_coal)
 		{
-			//row is present but full
-			//fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
-			//fprintf(cgm_debug, "failed entry mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
+			CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu row full\n", cache->id, miss_status_packet->access_id, P_TIME);
 			return 0;
 		}
 		else
 		{
+
+			CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu coalesced in row %d and size %d\n",
+					cache->id, miss_status_packet->access_id, P_TIME, row, list_count(cache->mshrs[row].entires));
+
 			//add to mshr and increment number of entries.
 			message_packet->access_type = cgm_access_retry;
 			miss_status_packet->coalesced = 1;
@@ -151,9 +153,7 @@ int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr){
 			row = i;
 			break;
 		}
-
 	}
-
 	return row;
 }
 

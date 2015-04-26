@@ -52,6 +52,9 @@ extern int memctrl_debug;
 extern FILE *protocol_debug_file;
 extern int protocol_debug;
 
+extern FILE *mshr_debug_file;
+extern int mshr_debug;
+
 extern FILE *cgm_stats_file;
 extern int cgm_stats;
 
@@ -66,21 +69,17 @@ extern char *cgm_stats_output_path;
 								else if (switch_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
 								else if (sysagent_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
 								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
-								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}
+								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}\
+								else if (mshr_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
-
-
-
-
-
-
 
 #define CLOSE_FILES	if(cache_debug == 1){CGM_DEBUG(cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (cache_debug_file);}\
 					if(switch_debug == 1){CGM_DEBUG(switch_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (switch_debug_file);}\
 					if(sysagent_debug == 1){CGM_DEBUG(sysagent_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (sysagent_debug_file);}\
 					if(memctrl_debug == 1){CGM_DEBUG(memctrl_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (memctrl_debug_file);}\
 					if(protocol_debug == 1){CGM_DEBUG(protocol_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (protocol_debug_file);}\
+					if(mshr_debug == 1){CGM_DEBUG(mshr_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (mshr_debug_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
 #define STOP 	CLOSE_FILES; getchar()

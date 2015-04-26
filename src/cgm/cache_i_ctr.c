@@ -92,8 +92,13 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss\n", cache->id, access_id, P_TIME);
 
+
 		miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet, message_packet);
+
+		//printf("here\n");
+		//printf("miss_status_packet->coalesced_packet->name %llu\n", miss_status_packet->coalesced_packet->access_id);
+		//printf("here\n");
 
 		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
 
@@ -106,7 +111,8 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free size %d\n", cache->id, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free size %d\n",
+					cache->id, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -146,6 +152,127 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 		//done
 	}
+	return;
+}
+
+void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	struct cgm_packet_status_t *miss_status_packet;
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+	int state = 0;
+	int cache_status = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
+
+	int mshr_status = 0;
+	int retry = 0;
+	int *retry_ptr = &retry;
+
+	long long advance_time = 0;
+	int i = 0;
+
+	//the packet is from the L2 cache
+	access_type = message_packet->access_type;
+	addr = message_packet->address;
+	access_id = message_packet->access_id;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+
+	CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu puts\n", cache->id, access_id, P_TIME);
+
+	//charge the delay for writing cache block
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
+	P_PAUSE(1);
+
+	//get the mshr status
+	mshr_status = mshr_get(cache, set_ptr, tag_ptr);
+	assert(mshr_status != -1);
+
+	//get the number of entries in the mshr row
+	int entry_size = list_count(cache->mshrs[mshr_status].entires);
+	assert(entry_size == cache->mshrs[mshr_status].num_entries);
+	assert(entry_size > 0);
+
+	//printf("entry size %d\n", entry_size);
+	//move them to the retry queue
+	for(i = 0; i < entry_size; i ++)
+	{
+		//printf("i %d entry size %d\n", i, entry_size);
+
+		/*assert( i < list_count(cache->mshrs[mshr_status].entires));*/
+
+		miss_status_packet = list_dequeue(cache->mshrs[mshr_status].entires);
+
+		assert(miss_status_packet != NULL);
+
+		if (miss_status_packet->access_id == access_id)
+		{
+			//this is the first entry
+			//move current message_packet to retry queue
+			message_packet->access_type = cgm_access_retry;
+			list_remove(cache->last_queue, message_packet);
+			list_enqueue(cache->retry_queue, message_packet);
+
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
+			printf("test\n");
+
+		}
+		else
+		{
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+
+
+			//printf("miss_status_packet->coalesced_packet->name %s\n", miss_status_packet->coalesced_packet->name);
+		}
+	}
+
+	getchar();
+
+		//move the access and any coalesced accesses to the retry queue.
+	//for(i = 0; i < *retry_ptr; i++)
+
+	//printf("number of entries %d\n", list_count(cache->mshrs[mshr_status].entires));
+
+	//advance(&l1_i_cache[cache->id]);
+
+	/*for(i = 0; i < rt; i++)
+	{
+		if( i == 0)
+		{
+
+		}
+
+		else if( i > 0 && i < rt)
+		{
+			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
+
+
+			list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
+			free(miss_status_packet);
+			advance(&l1_i_cache[cache->id]);
+		}
+	}*/
+
+	/*printf("mshr_status %d retry_ptr %d\n", mshr_status, *retry_ptr);
+	printf("list queue size %d\n", list_count(cache->retry_queue));
+	STOP;*/
+
+	//clear the mshr row for future use
+	mshr_clear(&(cache->mshrs[mshr_status]));
+
+	//done.
 	return;
 }
 
@@ -207,89 +334,6 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 		fatal("cache_access_retry(): miss on retry\n");
 	}
 
-	return;
-}
-
-void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
-	struct cgm_packet_status_t *miss_status_packet;
-	enum cgm_access_kind_t access_type;
-	unsigned int addr = 0;
-	long long access_id = 0;
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
-	int state = 0;
-	int cache_status = 0;
-
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
-	int *state_ptr = &state;
-
-	int mshr_status = 0;
-	int retry = 0;
-	int *retry_ptr = &retry;
-
-	long long advance_time = 0;
-	int i = 0;
-
-
-	//the packet is from the L2 cache
-	access_type = message_packet->access_type;
-	addr = message_packet->address;
-	access_id = message_packet->access_id;
-
-	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
-
-	CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu puts\n", cache->id, access_id, P_TIME);
-
-	//charge the delay for writing cache block
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
-	P_PAUSE(1);
-
-	//get the mshr status
-	mshr_status = mshr_get(cache, set_ptr, tag_ptr);
-	assert(mshr_status != -1);
-
-	if(mshr_status >= 0)
-	{
-		/*we have outstanding mshr requests so set the retry state bit*/
-		*retry_ptr = cache->mshrs[mshr_status].num_entries;
-		assert(*retry_ptr > 0);
-	}
-
-	//move the access and any coalesced accesses to the retry queue.
-	for(i = 0; i < *retry_ptr; i++)
-	{
-		if( i == 0)
-		{
-			//move current message_packet to retry queue
-			message_packet->access_type = cgm_access_retry;
-			list_remove(cache->last_queue, message_packet);
-			list_enqueue(cache->retry_queue, message_packet);
-			advance(&l1_i_cache[cache->id]);
-		}
-		else if( i > 0)
-		{
-			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
-			list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
-			free(miss_status_packet);
-			advance(&l1_i_cache[cache->id]);
-		}
-	}
-
-	/*printf("mshr_status %d retry_ptr %d\n", mshr_status, *retry_ptr);
-	printf("list queue size %d\n", list_count(cache->retry_queue));
-	STOP;*/
-
-	//clear the mshr row for future use
-	mshr_clear(&(cache->mshrs[mshr_status]));
-
-	//done.
 	return;
 }
 

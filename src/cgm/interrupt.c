@@ -163,6 +163,7 @@ void interrupt_service_request(void){
 				//set when the interrupt should complete
 				uop = linked_list_find(core->event_queue, uop);
 				uop->when = P_TIME + lat;
+				//uop->when = etime.count + 2;
 				lat = 0;
 
 			}

@@ -288,6 +288,10 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 	{
 		protocol_debug = atoi(value);
 	}
+	if(MATCH("Debug", "MSHR_Debug"))
+	{
+		mshr_debug = atoi(value);
+	}
 
 
 	if(MATCH("Debug", "Path"))
@@ -340,6 +344,14 @@ int debug_finish_create(void){
 		sprintf(buff, "%s", cgm_debug_output_path);
 		sprintf(buff + strlen(buff), "/protocol_debug.out");
 		protocol_debug_file = fopen (buff, "w+");
+	}
+
+	if(mshr_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/mshr_debug.out");
+		mshr_debug_file = fopen (buff, "w+");
 	}
 
 	return 1;

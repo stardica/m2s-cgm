@@ -62,6 +62,9 @@ int memctrl_debug = 0;
 FILE *protocol_debug_file;
 int protocol_debug = 0;
 
+FILE *mshr_debug_file;
+int mshr_debug;
+
 FILE *cgm_stats_file;
 int cgm_stats = 0;
 

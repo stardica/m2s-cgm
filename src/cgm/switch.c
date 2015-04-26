@@ -236,7 +236,6 @@ void switch_ctrl(void){
 
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
-
 				}
 				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
@@ -275,12 +274,26 @@ void switch_ctrl(void){
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
-					//drop the packet into the cache's queue
-					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
-					//done with this access
+					//message_packet->access_type = cgm_access_puts;
 
+
+
+					//test code
+					message_packet->access_type = cgm_access_puts;
+					message_packet->dest_name = message_packet->src_name;
+					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->src_name = l3_caches[0].name;
+					message_packet->source_id = str_map_string(&node_strn_map, l3_caches[0].name);
+					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+
+					//old code
+					//drop the packet into the cache's queue
+					//list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+					//done with this access
 					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+
 				}
 				//for the system agent
 				else if(my_pid >= num_cores)
@@ -575,7 +588,7 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 		fatal("get_from_queue() invalid arbitration set switch %s\n", switches->name);
 	}
 
-	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu pulled from %s with size %d\n",
+	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu ptr get from %s with size %d\n",
 			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
 
 	return new_packet;
@@ -606,6 +619,9 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 	{
 		fatal("remove_from_queue() invalid port name\n");
 	}
+
+	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu removed from %s with size %d\n",
+			switches->name, message_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
 
 	return;
 }
