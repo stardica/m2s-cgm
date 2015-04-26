@@ -82,7 +82,6 @@ struct cgm_packet_t *sysagent_get_message(void){
 	//star this is round robin
 	struct cgm_packet_t *new_message;
 
-
 	//star todo to give priorty stay on a particular queue as long as it is not empty;
 
 	new_message = list_get(system_agent->next_queue, 0);

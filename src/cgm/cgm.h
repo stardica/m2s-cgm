@@ -62,19 +62,25 @@ extern char *cgm_stats_output_path;
 
 //debugging macros
 //pass string and put into the correct file.
-#define CGM_DEBUG(file, ... ) 	if(cache_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
-								else if (switch_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
-								else if (sysagent_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
-								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}\
-								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid file specified");}}
+#define CGM_DEBUG(file, ... ) 	if(cache_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid cache_debug file specified");}}\
+								else if (switch_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
+								else if (sysagent_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
+								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
+								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
 
-#define CLOSE_FILES	if(cache_debug == 1){fclose (cache_debug_file);}\
-					if(switch_debug == 1){fclose (switch_debug_file);}\
-					if(sysagent_debug == 1){fclose (sysagent_debug_file);}\
-					if(memctrl_debug == 1){fclose (memctrl_debug_file);}\
-					if(protocol_debug == 1){fclose (protocol_debug_file);}\
+
+
+
+
+
+
+#define CLOSE_FILES	if(cache_debug == 1){CGM_DEBUG(cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (cache_debug_file);}\
+					if(switch_debug == 1){CGM_DEBUG(switch_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (switch_debug_file);}\
+					if(sysagent_debug == 1){CGM_DEBUG(sysagent_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (sysagent_debug_file);}\
+					if(memctrl_debug == 1){CGM_DEBUG(memctrl_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (memctrl_debug_file);}\
+					if(protocol_debug == 1){CGM_DEBUG(protocol_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (protocol_debug_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
 #define STOP 	CLOSE_FILES; getchar()
@@ -96,7 +102,7 @@ extern eventcount volatile *sim_finish;
 void cgm_init(void);
 void cgm_configure(void);
 void cgm_create_tasks(void);
-void cgm_start(void);
+void cgm_mem_run(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 

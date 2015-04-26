@@ -98,6 +98,9 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 		list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
 		future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 
+		CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l2_cache[%d] Hit SEND %s to l1_i_cache[%d]\n",
+			access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), cache->id);
+
 	}
 	// L2 Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
@@ -124,7 +127,7 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu miss switch north queue free\n", cache->id, access_id, P_TIME);
+			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu miss switch north queue free size %d\n", cache->id, access_id, P_TIME, list_count(switches[cache->id].north_queue));
 
 			//send to L3 cache over switching network add source and dest here
 			//star todo send to correct l3 dest
@@ -135,17 +138,16 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);
 
 			//success
-			//printf("queue size %d\n", list_count(cache->last_queue));
 
 			list_remove(cache->last_queue, message_packet);
+			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
+					cache->id, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 			list_enqueue(switches[cache->id].north_queue, message_packet);
-			//printf("queue size %d\n", list_count(cache->last_queue));
-			//printf("queue size %d\n", list_count(switches[cache->id].north_queue));
 
 			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 
-			/*CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
-				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));*/
+			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu l2_cache[%d] as %s\n",
+				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
 				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -232,6 +234,8 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 		message_packet->access_type = cgm_access_puts;
 		//success, remove packet from l2 cache in queue
 		list_remove(cache->last_queue, message_packet);
+		CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
+				cache->id, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
 		future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 	}
@@ -288,9 +292,8 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_status = mshr_get(cache, set_ptr, tag_ptr);
 	if(mshr_status == -1)
 	{
-		printf(" L2 mshr_status == -1\n");
-		STOP;
-		assert(mshr_status != -1);
+		//STOP;
+		fatal("L2 mshr_status == -1\n");
 	}
 
 	if(mshr_status >= 0)

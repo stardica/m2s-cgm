@@ -118,6 +118,9 @@ struct switch_t{
 	struct list_t *next_east;
 	//struct list_t *next_south;
 	struct list_t *next_west;
+
+	struct list_t *current_queue;
+
 	//struct list_t *next_forward;
 	//struct list_t *next_back;
 

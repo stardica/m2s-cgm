@@ -45,6 +45,8 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 	/*if (access_type == cgm_access_retry_i)
 		l3_caches[my_pid].retries++;*/
 
+	//printf("entered l3 gets_i\n");
+
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(cache_debug_file,"l3_cache[%d] access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -74,7 +76,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			P_PAUSE(1);
 		}
 
-		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu miss switch south queue free\n", cache->id, access_id, P_TIME);
+		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu hit switch south queue free size %d\n", cache->id, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
 		//success
 		//remove packet from l3 cache in queue
@@ -85,6 +87,8 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 		message_packet->source_id = str_map_string(&node_strn_map, cache->name);
 
 		list_remove(cache->last_queue, message_packet);
+		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
+				cache->id, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		list_enqueue(switches[cache->id].south_queue, message_packet);
 		future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 		//done
@@ -129,7 +133,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 
 			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 
-			CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu l3_cache[%d] -> %s\n",
+			CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu l3_cache[%d] as %s\n",
 				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l3_cache[%d] -> %s\n",

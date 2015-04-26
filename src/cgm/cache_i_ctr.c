@@ -44,11 +44,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	addr = message_packet->address;
 
 	//stats
-	/*if(access_type == cgm_access_fetch)*/
-		cache->fetches++;
-
-	/*if(access_type == cgm_access_retry)
-		cache->retries++;*/
+	cache->loads++;
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
@@ -110,7 +106,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free\n", cache->id, access_id, P_TIME);
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss l2 queue free size %d\n", cache->id, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -119,14 +115,15 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 			message_packet->access_type = cgm_access_gets_i;
 			list_remove(cache->last_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu removed from %s\n", cache->id, access_id, P_TIME, cache->last_queue->name);
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
+					cache->id, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] -> %s\n",
+			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] as %s\n",
 				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
-					access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss SEND %s to l2_cache[%d]\n",
+					access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), cache->id);
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
@@ -198,12 +195,6 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
-
-		//if(access_type == cgm_access_retry)
-		//	retry_ptr--;
-
-		/*if(access_type == cgm_access_fetch)*/
-		//cache->hits++;
 
 		//remove packet from cache queue, global queue, and simulator memory
 

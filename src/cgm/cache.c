@@ -407,7 +407,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	}
 
-	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu pulled from %s\n", cache->name, new_message->access_id, P_TIME, cache->last_queue->name);
+	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
+			cache->name, new_message->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 	//shouldn't be exiting without a message
 	assert(new_message != NULL);
@@ -575,7 +576,7 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
 		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_i_caches[i].block_size);
-		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].fetches);
+		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].loads);
 		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_i_caches[i].hits);
 		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_i_caches[i].misses);
 		CGM_STATS(cgm_stats_file, "\n");

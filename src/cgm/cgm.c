@@ -129,7 +129,7 @@ void cgm_create_tasks(void){
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "cgm_start");
-	create_task(cgm_start, DEFAULT_STACK_SIZE, strdup(buff));
+	create_task(cgm_mem_run, DEFAULT_STACK_SIZE, strdup(buff));
 
 	//create the task for future advance.
 	//this is specific to future_advance()
@@ -141,27 +141,31 @@ void cgm_create_tasks(void){
 	return;
 }
 
+void cgm_dump_summary(void){
 
-void cgm_start(void){
+	printf("\n---Printing Stats---\n");
 
-	if(TSK == 1)
-	{
-		printf("cgm_start() advance sim_start\n");
-	}
+
+	cache_dump_stats();
+
+	CLOSE_FILES;
+
+	return;
+}
+
+void cgm_mem_run(void){
 
 	advance(sim_start);
 
-	if(TSK == 1)
-	{
-		printf("cgm_start() await sim_finish\n");
-	}
+	//simulation execution
 
 	await(sim_finish, 1);
 
-	if(TSK == 1)
-	{
-		printf("cgm_start() sim ending\n");
-	}
+	//dump stats on exit.
+
+	/*star todo fix this, this last thread needs to advance to the end,
+	but it seems there are still come outstanding threads running in the last few cycles.*/
+	//P_PAUSE(4);
 
 	return;
 }
@@ -173,19 +177,20 @@ void cpu_gpu_run(void){
 	while(1)
 	{
 
-		if(TSK == 1 && t_1 == 1)
-		{
-			printf("cpu_gpu_run()\n");
-		}
-
 		await(sim_start, t_1);
 		t_1++;
 
 		m2s_loop();
 
-		future_advance(sim_finish, (etime.count + 2));
-		//advance(sim_finish);
+		/*star todo there is a bug here
+		sim_finsih has to be advanced to 1 + the last cycle
+		but you don't know out of all the final threads
+		which one will run the longest until its done.
 
+		if you play with the dealy number you will eventualy find
+		the correct intput and the simulation will finish correctly.*/
+		future_advance(sim_finish, (etime.count + 8));
+		//advance(sim_finish);
 	}
 
 	return;
@@ -615,18 +620,6 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	{
 		fatal("cgm_lds_access() unsupported access type\n");
 	}
-
-	return;
-}
-
-void cgm_dump_summary(void){
-
-	printf("\n---Printing Stats---\n");
-
-	cache_dump_stats();
-
-	//close files
-	CLOSE_FILES;
 
 	return;
 }

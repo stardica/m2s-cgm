@@ -88,6 +88,15 @@ struct str_map_t node_strn_map =
 		}
 };
 
+struct str_map_t port_name_map =
+{ 	port_num, {
+		{ "north_queue", north_queue},
+		{ "east_queue", east_queue},
+		{ "south_queue", south_queue},
+		{ "west_queue", west_queue},
+		}
+};
+
 
 void switch_init(void){
 
@@ -532,18 +541,22 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 			if(switches->queue == north_queue)
 			{
 				new_packet = list_get(switches->north_queue, 0);
+				switches->current_queue = switches->north_queue;
 			}
 			else if(switches->queue == east_queue)
 			{
 				new_packet = list_get(switches->east_queue, 0);
+				switches->current_queue = switches->east_queue;
 			}
 			else if(switches->queue == south_queue)
 			{
 				new_packet = list_get(switches->south_queue, 0);
+				switches->current_queue = switches->south_queue;
 			}
 			else if(switches->queue == west_queue)
 			{
 				new_packet = list_get(switches->west_queue, 0);
+				switches->current_queue = switches->west_queue;
 			}
 
 			//when we have a packet break out.
@@ -561,6 +574,9 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 	{
 		fatal("get_from_queue() invalid arbitration set switch %s\n", switches->name);
 	}
+
+	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu pulled from %s with size %d\n",
+			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
 
 	return new_packet;
 }
