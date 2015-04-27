@@ -77,6 +77,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		//remove packet from cache queue, global queue, and simulator memory
 		list_remove(cache->last_queue, message_packet);
 		remove_from_global(access_id);
+
 		//free(message_packet);
 
 	}
