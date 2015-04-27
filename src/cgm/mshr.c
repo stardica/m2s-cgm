@@ -62,9 +62,6 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 	}
 
 
-
-
-
 	if(row)
 	{
 		//duplicate tag and set found, but row is full.
