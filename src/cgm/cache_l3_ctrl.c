@@ -84,7 +84,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 		message_packet->dest_name = message_packet->src_name;
 		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 		message_packet->src_name = cache->name;
-		message_packet->source_id = str_map_string(&node_strn_map, cache->name);
+	//	message_packet->source_id = str_map_string(&node_strn_map, cache->name);
 
 		list_remove(cache->last_queue, message_packet);
 		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
@@ -104,8 +104,8 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 
 		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu miss\n", cache->id, access_id, P_TIME);
 
-		miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
-		mshr_status = mshr_set(cache, miss_status_packet, message_packet);
+		//miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
+		//mshr_status = mshr_set(cache, miss_status_packet, message_packet);
 
 		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
 
@@ -123,7 +123,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			//star todo send to correct l3 dest
 			message_packet->access_type = cgm_access_gets_i;
 			message_packet->src_name = cache->name;
-			message_packet->source_id = str_map_string(&node_strn_map, cache->name);
+		//	message_packet->source_id = str_map_string(&node_strn_map, cache->name);
 			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
@@ -229,7 +229,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 		message_packet->dest_name = message_packet->src_name;
 		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 		message_packet->src_name = cache->name;
-		message_packet->source_id = str_map_string(&node_strn_map, cache->name);
+		//message_packet->source_id = str_map_string(&node_strn_map, cache->name);
 
 		list_remove(cache->last_queue, message_packet);
 		list_enqueue(switches[cache->id].south_queue, message_packet);
@@ -250,7 +250,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	//int num_cores = x86_cpu_num_cores;
 	//struct cgm_packet_t *message_packet;
-	struct cgm_packet_status_t *miss_status_packet;
+	struct cgm_packet_t *miss_status_packet;
 
 	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
@@ -320,7 +320,8 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 		else if( i > 0)
 		{
 			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
-			list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
+			//chaged here april 26
+			//list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
 			free(miss_status_packet);
 			advance(&l3_cache[cache->id]);
 		}

@@ -26,6 +26,5 @@ struct cgm_packet_status_t *status_packet_create(void){
 
 	new_packet = (void *) calloc(1, sizeof(struct cgm_packet_status_t));
 
-
 	return new_packet;
 }

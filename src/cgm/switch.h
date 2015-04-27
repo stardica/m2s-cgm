@@ -130,6 +130,7 @@ struct switch_t{
 };
 
 extern struct str_map_t node_strn_map;
+extern struct str_map_t l1_strn_map;
 
 
 extern struct switch_t *switches;

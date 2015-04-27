@@ -203,7 +203,7 @@ void switch_ctrl(void){
 		dest_node = message_packet->dest_id;
 
 		src_name = message_packet->src_name;
-		src_node = message_packet->source_id;
+		src_node = message_packet->src_id;
 
 		CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu src %s dest %s\n",
 			my_pid, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
@@ -283,7 +283,7 @@ void switch_ctrl(void){
 					message_packet->dest_name = message_packet->src_name;
 					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 					message_packet->src_name = l3_caches[0].name;
-					message_packet->source_id = str_map_string(&node_strn_map, l3_caches[0].name);
+					message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
 					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
 

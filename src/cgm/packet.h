@@ -19,51 +19,43 @@
 
 extern struct cgm_packet_t{
 
-	enum cgm_access_kind_t access_type;
 	char *name;
-
-	unsigned int address;
+	enum cgm_access_kind_t access_type;
 	long long access_id;
-
+	unsigned int address;
+	int set;
+	int tag;
+	unsigned int offset;
 	int coalesced;
 
 	//for routing
 	char *src_name;
-	int source_id;
-
+	int src_id;
 	char *dest_name;
 	int dest_id;
 
 	//for m2s CPU and GPU
 	struct linked_list_t *event_queue;
 	int *witness_ptr;
-
+	void *data;
 };
 
 
-/*extern struct cgm_packet_status_t{
+extern struct cgm_packet_status_t{
+
+	//used for global memory list
 
 	enum cgm_access_kind_t access_type;
 	unsigned int address;
 	long long access_id;
-	int set;
-	int tag;
-	unsigned int offset;
 	int in_flight;
 
 	//for reverse routing
-	int source_id;
-
-	int coalesced;
-	struct cgm_packet_t *coalesced_packet;
-
-};*/
+};
 
 
 //star todo create functions to load/access the packet as needed by the various memory system elements.
 struct cgm_packet_t *packet_create(void);
 struct cgm_packet_status_t *status_packet_create(void);
-
-void packet_copy()
 
 #endif /* PACKET_H_ */

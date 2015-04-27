@@ -173,10 +173,10 @@ void sys_agent_ctrl(void){
 
 			//set the dest and sources
 			message_packet->access_type = cgm_access_puts;
-			message_packet->dest_id = message_packet->source_id;
+			message_packet->dest_id = message_packet->src_id;
 			message_packet->dest_name = message_packet->src_name;
 			message_packet->src_name = system_agent->name;
-			message_packet->source_id = str_map_string(&node_strn_map, system_agent->name);
+			message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
 
 			while(!switch_can_access(system_agent->switch_queue))
 			{

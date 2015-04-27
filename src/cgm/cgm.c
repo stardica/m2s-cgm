@@ -373,7 +373,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_type = access_kind;
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
-	new_packet->in_flight = 1;
+	//new_packet->in_flight = 1;
 	new_packet->name = strdup(buff);
 
 
@@ -425,7 +425,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->address = addr;
 	new_packet->event_queue = event_queue;
 	new_packet->data = event_queue_item;
-	new_packet->in_flight = 1;
+	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
@@ -505,7 +505,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
-	new_packet->in_flight = 1;
+	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
@@ -549,7 +549,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
-	new_packet->in_flight = 1;
+	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
@@ -597,7 +597,7 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
-	new_packet->in_flight = 1;
+	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 

@@ -101,7 +101,7 @@ struct cache_t{
 	int log_set_size;
 
 	//mshr control links
-	unsigned int mshr_size;
+	int mshr_size;
 	struct list_t *mshr;
 	struct list_t **mshr_2;
 	struct mshr_t *mshrs;
