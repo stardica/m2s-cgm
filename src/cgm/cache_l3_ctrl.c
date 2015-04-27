@@ -322,7 +322,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
 			//chaged here april 26
 			//list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
-			free(miss_status_packet);
+			//free(miss_status_packet);
 			advance(&l3_cache[cache->id]);
 		}
 	}

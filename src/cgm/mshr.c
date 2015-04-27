@@ -67,7 +67,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		//duplicate tag and set found, but row is full.
 		if(cache->mshrs[row].num_entries > cache->max_coal)
 		{
-			CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu row full\n", cache->id, miss_status_packet->access_id, P_TIME);
+			CGM_DEBUG(mshr_debug_file, "%s mshr access_id %llu cycle %llu row full\n", cache->name, miss_status_packet->access_id, P_TIME);
 			return 0;
 		}
 		else
@@ -158,22 +158,14 @@ int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access
 		//compare if the mshr entries match the tag and set
 		if(cache->mshrs[i].num_entries > 0 && cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
 		{
-			/*for(j = 0; j < cache->mshrs[i].num_entries; j ++)
+			row = i;
+
+			//star todo fix this there is a temporal issue with the MSHR
+			temp = list_get(cache->mshrs[i].entires, 0);
+			if(temp->access_id == access_id)
 			{
-				temp = list_get(cache->mshrs[i].entires, i);
-
-				if(temp)
-				{
-					if(temp->access_id == access_id)
-					{*/
-						row = i;
-						break;
-
-			/*		}
-
-				}
-
-			}*/
+				break;
+			}
 
 		}
 	}

@@ -77,7 +77,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		//remove packet from cache queue, global queue, and simulator memory
 		list_remove(cache->last_queue, message_packet);
 		remove_from_global(access_id);
-		free(message_packet);
+		//free(message_packet);
 
 	}
 	//L1 I Cache Miss!
@@ -89,13 +89,6 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 		miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
-
-		/*mshr_dump(cache);
-		getchar();*/
-
-		/*printf("miss_status_packet access_id %llu, set %d, tag %d\n", miss_status_packet->access_id, miss_status_packet->set, miss_status_packet->tag );
-		printf("message_packet access_id %llu,  set %d, tag %d\n", message_packet->access_id, message_packet->set, message_packet->tag);
-		getchar();*/
 
 		CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu miss mshr status %d\n", cache->id, access_id, P_TIME, mshr_status);
 
@@ -131,13 +124,15 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
 
 			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2_cache[%d] as %s\n",
-				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+					cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss SEND %s to l2_cache[%d]\n",
 					access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), cache->id);
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
+
 		}
 		else //mshr == 0
 		{
@@ -165,7 +160,6 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	unsigned int offset = 0;
 	int way = 0;
 	int state = 0;
-
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
@@ -200,22 +194,16 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
 	assert(cache->mshrs[mshr_row].num_entries > 0);
 
-	//printf("entry size %d\n", entry_size);
-	//move them to the retry queue
+	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu mshr_row %d num_entries %d\n", cache->name, access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
 
-	CGM_DEBUG(mshr_debug_file, "access_id %llu cycle %llu mshr_row %d num_entries %d\n", access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
-
-
-	/*mshr_dump(cache);
-	getchar();*/
-
+	//move them to the retry queueS
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
 	{
 
 		miss_status_packet = list_dequeue(cache->mshrs[mshr_row].entires);
 
-		CGM_DEBUG(mshr_debug_file, "access_id %llu coalesced %d tag %d set %d\n",
-				miss_status_packet->access_id, miss_status_packet->coalesced, miss_status_packet->tag, miss_status_packet->set);
+		CGM_DEBUG(mshr_debug_file, "%s access_id %llu coalesced %d tag %d set %d\n",
+				cache->name, miss_status_packet->access_id, miss_status_packet->coalesced, miss_status_packet->tag, miss_status_packet->set);
 
 		assert(miss_status_packet != NULL);
 		assert(miss_status_packet->address != 0);
@@ -327,7 +315,7 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 
 		list_remove(cache->retry_queue, message_packet);
 		remove_from_global(access_id);
-		free(message_packet);
+		//free(message_packet);
 	}
 	else
 	{

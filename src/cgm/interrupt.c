@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <cgm/cgm.h>
 #include <cgm/interrupt.h>
@@ -171,8 +172,8 @@ void interrupt_service_request(void){
 			id++; //go to the next lds unit
 		}
 
-		//the interrupt is complete we can free it now.
-		free(isr);
+		//the interrupt is complete we can free it now. list_dequeue free's the element.
+		//free(isr);
 		lat = 0;
 	}
 

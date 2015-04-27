@@ -65,12 +65,12 @@ extern char *cgm_stats_output_path;
 
 //debugging macros
 //pass string and put into the correct file.
-#define CGM_DEBUG(file, ... ) 	if(cache_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid cache_debug file specified");}}\
-								else if (switch_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
-								else if (sysagent_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
-								else if (memctrl_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
-								else if (protocol_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}\
-								else if (mshr_debug == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
+#define CGM_DEBUG(file, ... ) 	if(cache_debug == 1 && file == cache_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid cache_debug file specified");}}\
+								else if (switch_debug == 1 && file == switch_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
+								else if (sysagent_debug == 1 && file == sysagent_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
+								else if (memctrl_debug == 1 && file == memctrl_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
+								else if (protocol_debug == 1 && file == protocol_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}\
+								else if (mshr_debug == 1 && file == mshr_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
 

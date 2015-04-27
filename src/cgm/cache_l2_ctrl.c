@@ -59,7 +59,7 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			cache->id, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//look up, and charge a cycle.
@@ -158,44 +158,6 @@ void l2_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			//mshr is full so we can't progress, retry.
 			fatal("l1_i_cache_access_load(): MSHR full\n");
 		}
-
-
-		//fixed
-		/*if(mshr_status == 1)
-		{
-			//access is unique in the MSHR
-			//while the next level's queue is full stall
-			while(!switch_can_access(switches[cache->id].north_queue))
-			{
-				P_PAUSE(1);
-			}
-
-			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu miss switch north queue free size %d\n",
-					cache->id, access_id, P_TIME, list_count(switches[cache->id].north_queue));
-
-			//send to L3 cache over switching network add source and dest here
-			//star todo send to correct l3 dest
-			message_packet->access_type = cgm_access_gets_i;
-			message_packet->src_name = cache->name;
-			message_packet->source_id = str_map_string(&node_strn_map, cache->name);
-			message_packet->dest_name = l3_caches[cache->id].name;
-			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);
-
-
-			list_remove(cache->last_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
-					cache->id, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-			list_enqueue(switches[cache->id].north_queue, message_packet);
-
-			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
-
-			CGM_DEBUG(cache_debug_file, "l2_cache[%d] access_id %llu cycle %llu l2_cache[%d] as %s\n",
-				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-
-			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l2_cache[%d] -> %s\n",
-				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-
-		}*/
 
 	}
 	return;
@@ -321,12 +283,9 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	//printf("mshr_row %d\n", mshr_row);
 
-
 	//check the number of entries in the mshr row
 	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
 	assert(cache->mshrs[mshr_row].num_entries > 0);
-
-
 
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
 	{
@@ -371,39 +330,6 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//clear the mshr row for future use
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
-
-
-	//fixed
-	//===============================================
-	/*if(mshr_status >= 0)
-	{
-		we have outstanding mshr requests so set the retry state bit
-		*retry_ptr = cache->mshrs[mshr_status].num_entries;
-		assert(*retry_ptr > 0);
-	}
-
-	//move the access and any coalesced accesses to the retry queue.
-	for(i = 0; i < *retry_ptr; i++)
-	{
-		if( i == 0)
-		{
-			//move current message_packet to retry queue
-			message_packet->access_type = cgm_access_retry;
-			list_remove(cache->last_queue, message_packet);
-			list_enqueue(cache->retry_queue, message_packet);
-			advance(&l2_cache[cache->id]);
-		}
-		else if( i > 0)
-		{
-			miss_status_packet = list_remove_at(cache->mshrs[mshr_status].entires, i);
-			miss_status_packet->coalesced_packet->access_type = cgm_access_retry;
-			list_enqueue(cache->retry_queue, miss_status_packet->coalesced_packet);
-			free(miss_status_packet);
-			advance(&l2_cache[cache->id]);
-		}
-	}
-
-	mshr_clear(&(cache->mshrs[mshr_status]));*/
 
 	return;
 }

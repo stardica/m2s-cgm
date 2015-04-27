@@ -48,7 +48,7 @@ void gpu_lds_unit_ctrl(void){
 			(*message_packet->witness_ptr)++;
 
 			list_remove(gpu_lds_units[my_pid].Rx_queue_top, message_packet);
-			free(message_packet);
+			//free(message_packet);
 		}
 		else
 		{

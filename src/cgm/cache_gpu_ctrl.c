@@ -87,7 +87,7 @@ void gpu_v_cache_ctrl(void){
 			(*message_packet->witness_ptr)++;
 
 			list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
-			free(message_packet);
+			//free(message_packet);
 
 		}
 		else
@@ -158,7 +158,7 @@ void gpu_s_cache_ctrl(void){
 			(*message_packet->witness_ptr)++;
 
 			list_remove(gpu_s_caches[my_pid].Rx_queue_top, message_packet);
-			free(message_packet);
+			//free(message_packet);
 
 		}
 		else

@@ -479,7 +479,7 @@ int remove_from_global(long long id){
 		else if(packet->access_id == id)
 		{
 			list_remove_at(cgm_access_record, i);
-			free(packet);
+			//free(packet);
 
 			// this leaves the access in the list, but slows down the simulation a lot.
 			//packet->in_flight = 0;

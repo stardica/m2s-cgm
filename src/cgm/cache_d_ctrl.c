@@ -9,6 +9,11 @@
 #include <arch/x86/timing/cpu.h>
 
 
+
+
+
+
+
 void l1_d_cache_ctrl(void){
 
 
@@ -55,10 +60,10 @@ void l1_d_cache_ctrl(void){
 		cgm_cache_decode_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
 
-		//for testing
+		/////////testing
 		list_remove(l1_d_caches[my_pid].Rx_queue_top, message_packet);
 		linked_list_add(message_packet->event_queue, message_packet->data);
-		free(message_packet);
+		/////////testing
 
 
 		//service requests from CPU
