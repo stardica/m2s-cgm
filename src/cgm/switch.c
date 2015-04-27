@@ -277,20 +277,21 @@ void switch_ctrl(void){
 					//message_packet->access_type = cgm_access_puts;
 
 
-
-					//test code
-					message_packet->access_type = cgm_access_puts;
+					/////////test code
+					/*message_packet->access_type = cgm_access_puts;
 					message_packet->dest_name = message_packet->src_name;
 					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 					message_packet->src_name = l3_caches[0].name;
 					message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
 					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+					/////////test code
+
 
 					//old code
 					//drop the packet into the cache's queue
-					//list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
 

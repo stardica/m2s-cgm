@@ -12,6 +12,7 @@
 #include <cgm/cache.h>
 
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet_old, int set, int tag, unsigned int offset, int src_id){
 
@@ -43,6 +44,10 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 	int row = 0;
 	int size = 0;
 
+
+	/*printf("cycle %llu access_id %llu tag %d set %d\n", P_TIME, miss_status_packet->access_id, miss_status_packet->tag, miss_status_packet->set);
+	mshr_dump(cache);*/
+
 	//store the miss in the mshr
 	//check for existing memory accesses to same set and tag
 	for(i = 0; i < cache->mshr_size; i ++)
@@ -56,6 +61,10 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 
 	}
 
+
+
+
+
 	if(row)
 	{
 		//duplicate tag and set found, but row is full.
@@ -67,8 +76,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		else
 		{
 
-			CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu coalesced in row %d and size %d\n",
-					cache->id, miss_status_packet->access_id, P_TIME, row, list_count(cache->mshrs[row].entires));
+			/*CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu tag %d set %d coalesced in row %d and size %d\n",
+					cache->id, miss_status_packet->access_id, P_TIME, miss_status_packet->tag, miss_status_packet->set, row, list_count(cache->mshrs[row].entires));*/
 
 			//add to mshr and increment number of entries.
 			miss_status_packet->access_type = cgm_access_retry;
@@ -132,28 +141,75 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 }
 
 
-int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr){
+int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access_id){
 
 	//unsigned int mshr_size = cache->mshr_size;
 
 	int tag = *tag_ptr;
 	int set = *set_ptr;
-	int i = 0;
+	long long id = access_id;
+	int i = 0, j = 0;
 	int row = -1;
+
+	struct cgm_packet_t *temp;
 
 	//seek the miss in the mshr
 
 	//check for existing memory accesses to same set and tag
 	for(i = 0; i < cache->mshr_size; i ++)
 	{
-		//compare if the mshr has entries compare the tag and set
+		//compare if the mshr entries match the tag and set
 		if(cache->mshrs[i].num_entries > 0 && cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
 		{
-			row = i;
-			break;
+			/*for(j = 0; j < cache->mshrs[i].num_entries; j ++)
+			{
+				temp = list_get(cache->mshrs[i].entires, i);
+
+				if(temp)
+				{
+					if(temp->access_id == access_id)
+					{*/
+						row = i;
+						break;
+
+			/*		}
+
+				}
+
+			}*/
+
 		}
 	}
+
 	return row;
+}
+
+void mshr_dump(struct cache_t *cache){
+
+	int i = 0, j = 0;
+	struct cgm_packet_t *temp;
+
+	for(i = 0; i < cache->mshr_size; i ++)
+	{
+		printf("mshr[%d] size %d\n", i, cache->mshrs[i].num_entries);
+
+		for(j = 0; j < cache->mshrs[i].num_entries; j ++)
+		{
+			temp = list_get(cache->mshrs[i].entires, 0);
+
+			if(temp)
+			{
+				printf("entry %d access_id %llu tag %d set %d\n", j, temp->access_id, temp->tag, temp->set);
+			}
+			else
+			{
+				printf("entry pulled but list not cleared yet\n");
+			}
+
+		}
+	}
+
+	return;
 }
 
 void mshr_clear(struct mshr_t *mshrs){

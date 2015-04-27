@@ -5,7 +5,10 @@
  *      Author: stardica
  */
 
+#include <stdio.h>
+
 #include <cgm/cache.h>
+#include <cgm/packet.h>
 #include <cgm/switch.h>
 #include <arch/x86/timing/cpu.h>
 
@@ -14,7 +17,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//int num_cores = x86_cpu_num_cores;
 	//struct cgm_packet_t *message_packet;
-	struct cgm_packet_status_t *miss_status_packet;
+	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
 	long long access_id = 0;
@@ -32,20 +35,16 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 	int *state_ptr = &state;
 
 	int mshr_status = 0;
-	int retry = 0;
-	int *retry_ptr = &retry;
 
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;
 	addr = message_packet->address;
 
+
+	//printf(" access_id %llu, tag %d set %d offset %d\n", access_id, message_packet->tag, message_packet->set, message_packet->offset);
+
 	//stats
 	cache->loads++;
-
-	/*if (access_type == cgm_access_retry_i)
-		l3_caches[my_pid].retries++;*/
-
-	//printf("entered l3 gets_i\n");
 
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
@@ -53,12 +52,13 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			cache->id, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//charge the cycle for the look up.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(1);
+
 
 
 	//L3 Cache Hit!
@@ -76,15 +76,15 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			P_PAUSE(1);
 		}
 
-		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu hit switch south queue free size %d\n", cache->id, access_id, P_TIME, list_count(switches[cache->id].south_queue));
+		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu switch south queue free size %d\n", cache->id, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
 		//success
 		//remove packet from l3 cache in queue
 		message_packet->access_type = cgm_access_puts;
 		message_packet->dest_name = message_packet->src_name;
-		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+		message_packet->dest_id = message_packet->src_id;
 		message_packet->src_name = cache->name;
-	//	message_packet->source_id = str_map_string(&node_strn_map, cache->name);
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 		list_remove(cache->last_queue, message_packet);
 		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu removed from %s size %d\n",
@@ -92,7 +92,6 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 		list_enqueue(switches[cache->id].south_queue, message_packet);
 		future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 		//done
-
 	}
 	//L3 Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
@@ -136,7 +135,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu l3_cache[%d] as %s\n",
 				cache->id, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l1_i_cache[%d] Miss\tSEND l3_cache[%d] -> %s\n",
+			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu l2_cache[%d] Miss\tSEND l3_cache[%d] -> %s\n",
 				access_id, P_TIME, cache->id, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 		}
@@ -155,6 +154,7 @@ void l3_cache_access_gets_i(struct cache_t *cache, struct cgm_packet_t *message_
 			//access was coalesced. For now do nothing until later.
 		}
 		//done
+		STOP;
 	}
 
 	return;
@@ -291,7 +291,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	P_PAUSE(1);
 
 	//get the mshr status
-	mshr_status = mshr_get(cache, set_ptr, tag_ptr);
+	mshr_status = mshr_get(cache, set_ptr, tag_ptr, access_id);
 	if(mshr_status != -1)
 	{
 		printf(" L3 mshr_status == -1\n");

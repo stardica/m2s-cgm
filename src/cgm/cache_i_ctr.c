@@ -90,6 +90,9 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
 
+		/*mshr_dump(cache);
+		getchar();*/
+
 		/*printf("miss_status_packet access_id %llu, set %d, tag %d\n", miss_status_packet->access_id, miss_status_packet->set, miss_status_packet->tag );
 		printf("message_packet access_id %llu,  set %d, tag %d\n", message_packet->access_id, message_packet->set, message_packet->tag);
 		getchar();*/
@@ -190,7 +193,7 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	P_PAUSE(1);
 
 	//get the mshr status
-	mshr_row = mshr_get(cache, set_ptr, tag_ptr);
+	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
 	assert(mshr_row != -1);
 
 	//check the number of entries in the mshr row
@@ -199,17 +202,29 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//printf("entry size %d\n", entry_size);
 	//move them to the retry queue
+
+	CGM_DEBUG(mshr_debug_file, "access_id %llu cycle %llu mshr_row %d num_entries %d\n", access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
+
+
+	/*mshr_dump(cache);
+	getchar();*/
+
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
 	{
-		//printf("i %d entry size %d\n", i, entry_size)
 
 		miss_status_packet = list_dequeue(cache->mshrs[mshr_row].entires);
+
+		CGM_DEBUG(mshr_debug_file, "access_id %llu coalesced %d tag %d set %d\n",
+				miss_status_packet->access_id, miss_status_packet->coalesced, miss_status_packet->tag, miss_status_packet->set);
 
 		assert(miss_status_packet != NULL);
 		assert(miss_status_packet->address != 0);
 
+
 		if (miss_status_packet->access_id == access_id)
 		{
+			assert(miss_status_packet->access_id == access_id);
+
 			//this is the first entry and was not coalesced
 			assert(miss_status_packet->coalesced == 0);
 
@@ -225,17 +240,25 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 		else
 		{
 			//this is a coalesced packet
+			if(miss_status_packet->coalesced != 1)
+			{
+				printf("breaking access_id %llu cycle %llu\n", access_id, P_TIME);
+				printf("i %d miss sp %llu, coalesced %d\n", i, miss_status_packet->access_id, miss_status_packet->coalesced);
+
+				mshr_dump(cache);
+
+				STOP;
+			}
+
 			assert(miss_status_packet->coalesced == 1);
 
 			//drop it into the retry queue
 			list_enqueue(cache->retry_queue, miss_status_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );*/
-			//printf("miss_status_packet->coalesced_packet->name %s\n", miss_status_packet->coalesced_packet->name);
 		}
 	}
 
-	long long time = etime.count;
+	long long time = etime.count; //:-P
 
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
