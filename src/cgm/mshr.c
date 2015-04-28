@@ -33,6 +33,11 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 		new_packet->data = message_packet_old->data;
 	}
 
+	if(message_packet_old->cpu_access_type)
+	{
+		new_packet->cpu_access_type = message_packet_old->cpu_access_type;
+	}
+
 	assert(new_packet->address != 0 || new_packet->access_id != 0);
 	assert(new_packet->set != 0 || new_packet->tag != 0);
 

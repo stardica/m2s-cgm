@@ -22,6 +22,7 @@ extern struct cgm_packet_t{
 	char *name;
 	enum cgm_access_kind_t access_type;
 	enum cgm_access_kind_t l1_access_type;
+	enum cgm_access_kind_t cpu_access_type;
 	long long access_id;
 	unsigned int address;
 	int set;
