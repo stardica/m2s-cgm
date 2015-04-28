@@ -16,7 +16,7 @@
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
 
-void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -114,8 +114,8 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(cache_debug_file, "l1_i_cache[%d] access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->id, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet->access_type = cgm_access_gets_i;
 			list_remove(cache->last_queue, message_packet);
@@ -133,22 +133,20 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
-
 		}
 		else //mshr == 0
 		{
 			//mshr is full so we can't progress, retry.
 			fatal("l1_i_cache_access_load(): MSHR full\n");
 
-			/*message_packet->access_type = cgm_access_load;
+			message_packet->access_type = cgm_access_load;
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
-			future_advance(&l1_i_cache[cache->id], (etime.count + 4));*/
+			future_advance(&l1_i_cache[cache->id], (etime.count + 4));
 		}
-
 	}
 	return;
-}
+}*/
 
 void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -380,10 +378,10 @@ void l1_i_cache_ctrl(void){
 
 		//printf("retry type %s access id %llu at %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), access_id, P_TIME);
 
-
 		if (access_type == cgm_access_fetch)
 		{
-			l1_i_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
+			//l1_i_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
+			cgm_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else if (access_type == cgm_access_retry)
 		{

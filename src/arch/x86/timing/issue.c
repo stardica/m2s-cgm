@@ -88,14 +88,6 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
-		//void memctrl_issue_lspq_access(struct list_t *request_queue,
-		//								 enum mem_ctrl_access_kind_t access_kind,
-		//								 unsigned int addr,
-		//								 struct linked_list_t *event_queue,
-		//								 void *event_queue_item);{
-		//fprintf(issue_trace, "storing on cycle %llu\n", P_TIME);
-
-		//printf("storing to address 0x%08X\n", store->phy_addr);
 		cgm_issue_lspq_access(self, cgm_access_store, store->phy_addr, core->event_queue, store);
 
 #else
