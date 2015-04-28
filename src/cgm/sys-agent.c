@@ -167,8 +167,8 @@ void sys_agent_ctrl(void){
 		if(access_type == cgm_access_gets_i)
 		{
 
-			CGM_DEBUG(sysagent_debug_file,"sysagent access_id %llu cycle %llu as %s addr 0x%08u\n",
-							access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
+			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+							system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
 
 			//set the dest and sources

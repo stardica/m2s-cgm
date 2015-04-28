@@ -36,6 +36,12 @@ struct str_map_t
 	} map[];
 };
 
+extern struct str_map_t l1_strn_map;
+extern struct str_map_t node_strn_map;
+extern struct str_map_t port_name_map;
+
+
+
 int str_map_string(struct str_map_t *map, char *s);
 int str_map_string_err(struct str_map_t *map, char *s, int *err_ptr);
 int str_map_string_err_msg(struct str_map_t *map, char *s, char *err_msg);

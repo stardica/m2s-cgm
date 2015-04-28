@@ -413,10 +413,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		QueueSize = atoi(value);
 	}
 
-
-	////////////
 	//CPU Caches
-	////////////
+
+	////////////////////////
+	//l1_d_caches
+	////////////////////////
 
 	/*configure CPU D caches*/
 	if(MATCH("CPU_L1_D_Cache", "Sets"))
@@ -464,6 +465,16 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("CPU_L1_D_Cache", "MaxCoalesce"))
+	{
+		maxcoal = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].max_coal = maxcoal;
+		}
+	}
+
+
 	if(MATCH("CPU_L1_D_Cache", "MSHR"))
 	{
 		MSHR = atoi(value);
@@ -499,6 +510,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			l1_d_caches[i].num_ports = Ports;
 		}
 	}
+
+
+	////////////////////////
+	//l1_i_caches
+	////////////////////////
 
 	/*configure CPU I caches*/
 	if(MATCH("CPU_L1_I_Cache", "Sets"))

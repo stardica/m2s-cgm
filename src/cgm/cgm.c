@@ -284,13 +284,13 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		return 0;
 	}*/
 
-	int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
+	int mshr_size = thread->d_cache_ptr[thread->core->id].mshr_size;
 	int i = 0;
 	int j = 0;
 
 	for(i = 0; i < mshr_size; i++)
 	{
-		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
+		if(thread->d_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
 		{
 			j ++;
 		}

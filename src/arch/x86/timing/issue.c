@@ -181,18 +181,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 
 #if CGM
-		//star todo	(1) fill in the mod data client request.
-		//			(2) fix the mod_access function.
-
-		/* create and fill the mod_client_info_t object */
-		//star >> repos is just a repository of objects.
-		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
-		//client_info->prefetcher_eip = load->eip;
 
 		/* Access memory system */
-		//star added test.
-		//PrintUOPStatus(load);
-		//fprintf(issue_trace, "loading on cycle %llu\n", P_TIME);
 		cgm_issue_lspq_access(self, cgm_access_load, load->phy_addr, core->event_queue, load);
 
 #else

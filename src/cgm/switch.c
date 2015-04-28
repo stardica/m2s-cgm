@@ -205,8 +205,8 @@ void switch_ctrl(void){
 		src_name = message_packet->src_name;
 		src_node = message_packet->src_id;
 
-		CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu src %s dest %s\n",
-			my_pid, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
+		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+			switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
 		P_PAUSE(2);
 
@@ -235,7 +235,7 @@ void switch_ctrl(void){
 					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
 
 					//done with this access
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}
 				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
@@ -253,7 +253,7 @@ void switch_ctrl(void){
 					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
 					future_advance(&gpu_l2_cache[my_pid], WIRE_DELAY(gpu_l2_caches[my_pid].wire_latency));
 					//done with this access
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}
 
 			}
@@ -293,7 +293,7 @@ void switch_ctrl(void){
 					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 					future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
 					//done with this access
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
 				//for the system agent
@@ -314,7 +314,7 @@ void switch_ctrl(void){
 					future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
 					//done with this access
 
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}
 			}
 			else
@@ -368,7 +368,7 @@ void switch_ctrl(void){
 						list_enqueue(switches[my_pid].next_east, message_packet);
 						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
 
-						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 					}
 					else
@@ -387,7 +387,7 @@ void switch_ctrl(void){
 						list_enqueue(switches[my_pid].next_west, message_packet);
 						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
 
-						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
 				}
 				else if(src_node > dest_node)
@@ -411,7 +411,7 @@ void switch_ctrl(void){
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_west, message_packet);
 						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 					}
 					else
@@ -429,7 +429,7 @@ void switch_ctrl(void){
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_east, message_packet);
 						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-						CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
 				}
 			}
@@ -452,7 +452,7 @@ void switch_ctrl(void){
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_west, message_packet);
 					future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
 				else if(switches[my_pid].queue == west_queue)
@@ -469,7 +469,7 @@ void switch_ctrl(void){
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_east, message_packet);
 					future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-					CGM_DEBUG(switch_debug_file,"switch[%d] access_id %llu cycle %llu delivered to next hop\n", my_pid, message_packet->access_id, P_TIME);
+					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
 				else

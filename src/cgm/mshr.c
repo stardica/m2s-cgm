@@ -19,12 +19,19 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 	struct cgm_packet_t *new_packet = packet_create();
 
 	new_packet->access_type = message_packet_old->access_type;
+	new_packet->l1_access_type = message_packet_old->access_type;
 	new_packet->access_id = message_packet_old->access_id;
 	new_packet->address = message_packet_old->address;
 	new_packet->set = set;
 	new_packet->tag = tag;
 	new_packet->offset = offset;
 	new_packet->src_id = src_id;
+
+	if(message_packet_old->event_queue && message_packet_old->data)
+	{
+		new_packet->event_queue = message_packet_old->event_queue;
+		new_packet->data = message_packet_old->data;
+	}
 
 	assert(new_packet->address != 0 || new_packet->access_id != 0);
 	assert(new_packet->set != 0 || new_packet->tag != 0);
@@ -45,8 +52,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 	int size = 0;
 
 
-	/*printf("cycle %llu access_id %llu tag %d set %d\n", P_TIME, miss_status_packet->access_id, miss_status_packet->tag, miss_status_packet->set);
-	mshr_dump(cache);*/
+	//CGM_DEBUG(mshr_debug_file, "cycle %llu access_id %llu tag %d set %d\n", P_TIME, miss_status_packet->access_id, miss_status_packet->tag, miss_status_packet->set);
 
 	//store the miss in the mshr
 	//check for existing memory accesses to same set and tag
@@ -73,8 +79,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		else
 		{
 
-			/*CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu tag %d set %d coalesced in row %d and size %d\n",
-					cache->id, miss_status_packet->access_id, P_TIME, miss_status_packet->tag, miss_status_packet->set, row, list_count(cache->mshrs[row].entires));*/
+			CGM_DEBUG(mshr_debug_file, "mshr[%d] access_id %llu cycle %llu tag %d set %d coalesced in row %d and size %d\n",
+					cache->id, miss_status_packet->access_id, P_TIME, miss_status_packet->tag, miss_status_packet->set, row, list_count(cache->mshrs[row].entires));
 
 			//add to mshr and increment number of entries.
 			miss_status_packet->access_type = cgm_access_retry;
@@ -120,10 +126,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 
 			//stats
 			cache->mshr_entires++;
-
-			//fprintf(cgm_debug, "access_id %llu at %llu\n", miss_status_packet->access_id, P_TIME);
-			//fprintf(cgm_debug, "entered in mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
 			return 1;
+
 		}
 		else
 		{
@@ -141,7 +145,6 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access_id){
 
 	//unsigned int mshr_size = cache->mshr_size;
-
 	int tag = *tag_ptr;
 	int set = *set_ptr;
 	long long id = access_id;
@@ -149,7 +152,6 @@ int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access
 	int row = -1;
 
 	struct cgm_packet_t *temp;
-
 	//seek the miss in the mshr
 
 	//check for existing memory accesses to same set and tag

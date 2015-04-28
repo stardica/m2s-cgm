@@ -191,7 +191,7 @@ void cache_dump_stats(void);
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
 
-//int cache_mesi_load(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+int cache_get_state(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 
 //borrowed from m2s mem-system and tweaked a bit
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -203,7 +203,7 @@ int cache_replace_block(struct cache_t *cache, int set);
 void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
-void cgm_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+//void cgm_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
