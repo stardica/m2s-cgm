@@ -41,8 +41,8 @@ void gpu_lds_unit_ctrl(void){
 		if(access_type == cgm_access_load || access_type == cgm_access_store)
 		{//then the packet is from the L2 cache
 
-			//LDS is close to the CU so delay two cycles for now
-			P_PAUSE(etime.count + 2);
+			//LDS is close to the CU so delay a couple cycles for now
+			P_PAUSE(etime.count + 4);
 
 			//clear the gpu uop witness_ptr
 			(*message_packet->witness_ptr)++;

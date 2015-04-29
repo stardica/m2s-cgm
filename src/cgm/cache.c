@@ -76,6 +76,7 @@ struct str_map_t cgm_cache_block_state_map =
 };
 
 int QueueSize;
+int gpu_l2_qty;
 int mem_miss = 100;
 
 
@@ -135,7 +136,7 @@ void cache_create(void){
 	//star todo make defaults so we don't always have to include cgm_config.ini
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	//int gpu_group_cache_num = (num_cus/4);
+	int gpu_group_cache_num = (num_cus/4);
 
 
 	////////////
@@ -165,7 +166,7 @@ void cache_create(void){
 	gpu_s_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
 
 	//initialize the GPU L2 caches.
-	gpu_l2_caches = (void *) calloc(num_cus, sizeof(struct cache_t));
+	gpu_l2_caches = (void *) calloc(gpu_group_cache_num, sizeof(struct cache_t));
 
 	//initialize the GPU LDS
 	gpu_lds_units = (void *) calloc(num_cus, sizeof(struct cache_t));

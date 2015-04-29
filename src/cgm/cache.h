@@ -138,6 +138,7 @@ struct cache_t{
 //global variables.
 //star todo bring this into the cache struct
 extern int QueueSize;
+extern int gpu_l2_qty;
 int mem_miss;
 
 //CPU caches

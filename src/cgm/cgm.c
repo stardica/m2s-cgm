@@ -606,12 +606,8 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 		//get the core ID number should be <= number of cores
-
 		id = lds_ptr->compute_unit->id;
 		assert( id < num_cus);
-
-		//set flag on target GPU LDS unit
-		//gpu_lds_units_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);

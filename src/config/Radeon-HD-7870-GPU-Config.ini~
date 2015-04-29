@@ -1,4 +1,3 @@
-
 ;Radeon HD 7870 Configuration file
 ;7870 has 20 CUs
 
@@ -8,6 +7,7 @@
 ;Frequency for the Southern Islands GPU in MHz (default 1000).
 ;Number of compute units in the GPU (default 32).
 ;Frequency = 1000
+;this number should be divisible by 4
 NumComputeUnits = 4
 
 ;parameters for the Compute Units.
