@@ -64,7 +64,7 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -135,6 +135,9 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&gpu_l2_cache[cgm_cache_map(cache->id)], WIRE_DELAY(gpu_l2_caches[cgm_cache_map(cache->id)].wire_latency));
+
+			STOP;
+
 		}
 		else //mshr == 0
 		{
@@ -178,7 +181,7 @@ void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 	addr = message_packet->address;
 
 	//stats
-	/*if(access_type == cgm_access_retry)*/
+
 	cache->retries++;
 
 	//probe the address for set, tag, and offset.
@@ -186,6 +189,8 @@ void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+
+
 
 	//get the block and the state of the block and charge a cycle
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
