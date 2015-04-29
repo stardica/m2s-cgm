@@ -47,8 +47,11 @@ char *cgm_config_file_name_and_path;
 //file for debugging and stats
 
 
-FILE *cache_debug_file;
-int cache_debug = 0;
+FILE *CPU_cache_debug_file;
+int CPU_cache_debug = 0;
+
+FILE *GPU_cache_debug_file;
+int GPU_cache_debug = 0;
 
 FILE *switch_debug_file;
 int switch_debug = 0;

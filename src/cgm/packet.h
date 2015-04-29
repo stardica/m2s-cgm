@@ -23,6 +23,9 @@ extern struct cgm_packet_t{
 	enum cgm_access_kind_t access_type;
 	enum cgm_access_kind_t l1_access_type;
 	enum cgm_access_kind_t cpu_access_type;
+	enum cgm_access_kind_t gpu_access_type;
+	int gpu_cache_id;
+
 	long long access_id;
 	unsigned int address;
 	int set;

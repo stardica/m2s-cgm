@@ -37,8 +37,11 @@
 extern char *cgm_config_file_name_and_path;
 
 //debugging
-extern FILE *cache_debug_file;
-extern int cache_debug;
+extern FILE *CPU_cache_debug_file;
+extern int CPU_cache_debug;
+
+extern FILE *GPU_cache_debug_file;
+extern int GPU_cache_debug;
 
 extern FILE *switch_debug_file;
 extern int switch_debug;
@@ -65,7 +68,8 @@ extern char *cgm_stats_output_path;
 
 //debugging macros
 //pass string and put into the correct file.
-#define CGM_DEBUG(file, ... ) 	if(cache_debug == 1 && file == cache_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid cache_debug file specified");}}\
+#define CGM_DEBUG(file, ... ) 	if(CPU_cache_debug == 1 && file == CPU_cache_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid cache_debug file specified");}}\
+								else if (GPU_cache_debug == 1 && file == GPU_cache_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
 								else if (switch_debug == 1 && file == switch_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid switch_debug file specified");}}\
 								else if (sysagent_debug == 1 && file == sysagent_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
 								else if (memctrl_debug == 1 && file == memctrl_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
@@ -74,7 +78,8 @@ extern char *cgm_stats_output_path;
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
 
-#define CLOSE_FILES	if(cache_debug == 1){CGM_DEBUG(cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (cache_debug_file);}\
+#define CLOSE_FILES	if(CPU_cache_debug == 1){CGM_DEBUG(CPU_cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (CPU_cache_debug_file);}\
+					if(GPU_cache_debug == 1){CGM_DEBUG(GPU_cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (GPU_cache_debug_file);}\
 					if(switch_debug == 1){CGM_DEBUG(switch_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (switch_debug_file);}\
 					if(sysagent_debug == 1){CGM_DEBUG(sysagent_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (sysagent_debug_file);}\
 					if(memctrl_debug == 1){CGM_DEBUG(memctrl_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (memctrl_debug_file);}\
@@ -82,7 +87,8 @@ extern char *cgm_stats_output_path;
 					if(mshr_debug == 1){CGM_DEBUG(mshr_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (mshr_debug_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
-#define STOP 	CLOSE_FILES; getchar()
+#define STOP 	CLOSE_FILES;\
+				getchar()
 
 //global access ids
 extern long long fetch_access_id;

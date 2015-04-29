@@ -266,9 +266,14 @@ int gpu_configure(Timing *self, struct config_t *config){
 int debug_read_config(void* user, const char* section, const char* name, const char* value){
 
 	//star todo add debug category for protocol
-	if(MATCH("Debug", "Cache_Debug"))
+	if(MATCH("Debug", "CPU_cache_Debug"))
 	{
-		cache_debug = atoi(value);
+		CPU_cache_debug = atoi(value);
+	}
+
+	if(MATCH("Debug", "GPU_cache_Debug"))
+	{
+		GPU_cache_debug = atoi(value);
 	}
 
 	if(MATCH("Debug", "Switch_Debug"))
@@ -306,12 +311,20 @@ int debug_finish_create(void){
 
 	char buff[250];
 
-	if (cache_debug == 1)
+	if (CPU_cache_debug == 1)
 	{
 		memset (buff,'\0' , 250);
 		sprintf(buff, "%s", cgm_debug_output_path);
-		sprintf(buff + strlen(buff), "/cache_debug.out");
-		cache_debug_file = fopen (buff, "w+");
+		sprintf(buff + strlen(buff), "/CPU_cache_debug.out");
+		CPU_cache_debug_file = fopen (buff, "w+");
+	}
+
+	if (GPU_cache_debug == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/GPU_cache_debug.out");
+		GPU_cache_debug_file = fopen (buff, "w+");
 	}
 
 	if(switch_debug == 1)
@@ -392,6 +405,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
 	int Slices = 0;
@@ -995,7 +1009,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "Sets"))
 	{
 		Sets = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].num_sets = Sets;
 		}
@@ -1004,7 +1018,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "Assoc"))
 	{
 		Assoc = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].assoc = Assoc;
 		}
@@ -1013,7 +1027,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "BlockSize"))
 	{
 		BlockSize = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].block_size = BlockSize;
 		}
@@ -1022,7 +1036,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "Latency"))
 	{
 		Latency = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].latency = Latency;
 		}
@@ -1031,7 +1045,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "Policy"))
 	{
 		Policy = strdup(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].policy = Policy;
 		}
@@ -1040,7 +1054,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "MSHR"))
 	{
 		MSHR = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].mshr_size = MSHR;
 		}
@@ -1049,7 +1063,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].directory_latency = DirectoryLatency;
 		}
@@ -1058,7 +1072,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "MaxCoalesce"))
 	{
 		maxcoal = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].max_coal = maxcoal;
 		}
@@ -1067,7 +1081,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("GPU_L2_Cache", "WireLatency"))
 	{
 		WireLatency = atoi(value);
-		for (i = 0; i < num_cus; i++)
+		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].wire_latency = WireLatency;
 		}

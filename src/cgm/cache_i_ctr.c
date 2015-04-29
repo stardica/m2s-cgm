@@ -57,7 +57,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->offset = offset;
 
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
@@ -71,7 +71,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
 		cache->hits++;
 
@@ -85,12 +85,12 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	{
 		cache->misses++;
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
 		miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
 		mshr_status = mshr_set((void *)cache, miss_status_packet);
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
 		if(mshr_status == 2)
 		{
@@ -98,7 +98,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			//remove the message packet on coalesce, but don't send to next cache
 			list_remove(cache->last_queue, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu coalesced packet removed removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced packet removed removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		}
 		else if(mshr_status == 1)
@@ -110,7 +110,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
@@ -118,12 +118,12 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 			message_packet->access_type = cgm_access_gets_i;
 			list_remove(cache->last_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu l2_cache[%d] as %s\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2_cache[%d] as %s\n",
 					cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 
@@ -178,7 +178,7 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	assert(addr != NULL);
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
+	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//charge the delay for writing cache block
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
@@ -297,7 +297,7 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//get the block and the state of the block and charge a cycle
@@ -307,7 +307,7 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	//L1 I Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
 		//remove packet from cache queue, global queue, and simulator memory
 

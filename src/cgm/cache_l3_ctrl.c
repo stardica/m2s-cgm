@@ -49,7 +49,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
@@ -64,7 +64,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//L3 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "l3_cache[%d] access_id %llu cycle %llu hit\n", cache->id, access_id, P_TIME);
 
 		cache->hits++;
 
@@ -79,7 +79,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n", cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n", cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
 			//success
 			//remove packet from l3 cache in queue
@@ -90,7 +90,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 			list_remove(cache->last_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 			list_enqueue(switches[cache->id].south_queue, message_packet);
 			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
@@ -109,12 +109,12 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		cache->misses++;
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
 		//miss_status_packet = miss_status_packet_create(message_packet->access_id, message_packet->access_type, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		//mshr_status = mshr_set(cache, miss_status_packet, message_packet);
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
 		if(mshr_status == 1)
 		{
@@ -125,7 +125,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss switch south queue free\n", cache->name, access_id, P_TIME);
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch south queue free\n", cache->name, access_id, P_TIME);
 
 			//star todo send to correct l3 dest
 			message_packet->access_type = cgm_access_gets_i;
@@ -140,7 +140,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] as %s\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] as %s\n",
 				cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
@@ -206,7 +206,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//look up, and charge a cycle.
@@ -217,7 +217,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 	// L3 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
 		cache->hits++;
 
@@ -230,7 +230,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 			P_PAUSE(1);
 		}
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss switch south queue free\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch south queue free\n", cache->name, access_id, P_TIME);
 
 		//success
 		//remove packet from l3 cache in queue
@@ -291,7 +291,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
+	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//charge the delay for writing cache block
 

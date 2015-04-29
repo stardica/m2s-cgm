@@ -55,11 +55,11 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//look up, and charge a cycle.
@@ -70,20 +70,20 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
 		cache->hits++;
 
 		assert(*state_ptr != cache_block_invalid);
 
 
-		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared)
+		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
 		{
 
 			//success, remove packet from l2 cache in queue
 			list_remove(cache->last_queue, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 
@@ -96,7 +96,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 					P_PAUSE(1);
 				}
 
-				CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
+				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
 				message_packet->access_type = cgm_access_puts;
@@ -112,7 +112,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 					P_PAUSE(1);
 				}
 
-				CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
+				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 						cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
 				message_packet->access_type = cgm_access_puts;
@@ -139,7 +139,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		cache->misses++;
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
 		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
@@ -149,7 +149,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 		mshr_dump(cache);
 		getchar();*/
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
 		if(mshr_status == 2)
 		{
@@ -158,7 +158,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			list_remove(cache->last_queue, message_packet);
 
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu coalesced packet removed removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced packet removed removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		}
 		else if(mshr_status == 1)
@@ -170,7 +170,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu miss switch north queue free size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch north queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(switches[cache->id].north_queue));
 
 			//printf(" l2 miss type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -183,12 +183,12 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);
 
 			list_remove(cache->last_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 			list_enqueue(switches[cache->id].north_queue, message_packet);
 
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] send %s\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] send %s\n",
 					cache->name, access_id, P_TIME, cache->id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND l2_cache[%d] %s\n",
@@ -248,7 +248,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//look up, and charge a cycle.
@@ -260,7 +260,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu retry hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu retry hit\n", cache->name, access_id, P_TIME);
 
 
 
@@ -268,7 +268,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 		{
 
 			list_remove(cache->retry_queue, message_packet);
-			CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 			//send to correct l1 cache and change access type
@@ -280,7 +280,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 					P_PAUSE(1);
 				}
 
-					CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
+					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 							cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
 					message_packet->access_type = cgm_access_puts;
@@ -296,7 +296,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 					P_PAUSE(1);
 				}
 
-				CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
+				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 					cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
 				message_packet->access_type = cgm_access_puts;
@@ -328,7 +328,7 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 		//success, remove packet from l2 cache in queue
 		list_remove(cache->last_queue, message_packet);
 
-		CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 		list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
@@ -379,7 +379,7 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//probe the address for set, tag, and offset.
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
+	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//charge the delay for writing cache block
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
@@ -585,11 +585,6 @@ void l2_cache_ctrl(void){
 
 		if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
 		{
-			//if (access_type == cgm_access_gets_d)
-			//{
-				//printf(" l2 start name %s type %s\n", message_packet->name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-			//}
-
 			l2_cache_access_gets(&l2_caches[my_pid], message_packet);
 		}
 		else if (access_type == cgm_access_retry)

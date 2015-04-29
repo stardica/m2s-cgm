@@ -59,6 +59,76 @@ enum l1_map{
 
 };
 
+enum gpu_l1_map{
+
+	gpu_s_cache_0 = 0,
+	gpu_v_cache_0,
+	gpu_s_cache_1,
+	gpu_v_cache_1,
+	gpu_s_cache_2,
+	gpu_v_cache_2,
+	gpu_s_cache_3,
+	gpu_v_cache_3,
+	gpu_s_cache_4,
+	gpu_v_cache_4,
+	gpu_s_cache_5,
+	gpu_v_cache_5,
+	gpu_s_cache_6,
+	gpu_v_cache_6,
+	gpu_s_cache_7,
+	gpu_v_cache_7,
+	gpu_s_cache_8,
+	gpu_v_cache_8,
+	gpu_s_cache_9,
+	gpu_v_cache_9,
+	gpu_s_cache_10,
+	gpu_v_cache_10,
+	gpu_s_cache_11,
+	gpu_v_cache_11,
+	gpu_s_cache_12,
+	gpu_v_cache_12,
+	gpu_s_cache_13,
+	gpu_v_cache_13,
+	gpu_s_cache_14,
+	gpu_v_cache_14,
+	gpu_s_cache_15,
+	gpu_v_cache_15,
+	gpu_s_cache_16,
+	gpu_v_cache_16,
+	gpu_s_cache_17,
+	gpu_v_cache_17,
+	gpu_s_cache_18,
+	gpu_v_cache_18,
+	gpu_s_cache_19,
+	gpu_v_cache_19,
+	gpu_s_cache_20,
+	gpu_v_cache_20,
+	gpu_s_cache_21,
+	gpu_v_cache_21,
+	gpu_s_cache_22,
+	gpu_v_cache_22,
+	gpu_s_cache_23,
+	gpu_v_cache_23,
+	gpu_s_cache_24,
+	gpu_v_cache_24,
+	gpu_s_cache_25,
+	gpu_v_cache_25,
+	gpu_s_cache_26,
+	gpu_v_cache_26,
+	gpu_s_cache_27,
+	gpu_v_cache_27,
+	gpu_s_cache_28,
+	gpu_v_cache_28,
+	gpu_s_cache_29,
+	gpu_v_cache_29,
+	gpu_s_cache_30,
+	gpu_v_cache_30,
+	gpu_s_cache_31,
+	gpu_v_cache_31,
+	gpu_l1_number
+};
+
+
 enum port_name
 {
 	north_queue = 0,
@@ -131,6 +201,7 @@ struct switch_t{
 
 extern struct str_map_t node_strn_map;
 extern struct str_map_t l1_strn_map;
+extern struct str_map_t gpu_l1_strn_map;
 
 
 extern struct switch_t *switches;

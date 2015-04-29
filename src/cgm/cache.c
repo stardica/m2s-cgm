@@ -42,6 +42,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_gets" ,cgm_access_gets},
 		{"cgm_access_gets_i" ,cgm_access_gets_i},
 		{"cgm_access_gets_d", cgm_access_gets_d},
+		{"cgm_access_gets_s", cgm_access_gets_s},
+		{"cgm_access_gets_v", cgm_access_gets_v},
 		{"cgm_access_getx" ,cgm_access_getx},
 		{"cgm_access_inv" ,cgm_access_inv},
 		{"cgm_access_putx" ,cgm_access_putx},
@@ -179,7 +181,7 @@ void cache_create_tasks(void){
 	//star todo make this dynamic
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	//int num_cus_4 = (num_cus / 4);
+	int gpu_group_cache_num = (num_cus/4);
 	char buff[100];
 	int i = 0;
 
@@ -226,8 +228,8 @@ void cache_create_tasks(void){
 
 
 	//GPU L2
-	gpu_l2_cache = (void *) calloc(num_cus, sizeof(eventcount));
-	for(i = 0; i < num_cores; i++)
+	gpu_l2_cache = (void *) calloc(gpu_group_cache_num, sizeof(eventcount));
+	for(i = 0; i < gpu_group_cache_num; i++)
 	{
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_cache_%d", i);
@@ -277,8 +279,6 @@ void cache_create_tasks(void){
 		//printf("l1_i_cache_tasks[i].id = %d name = %s\n", l1_i_cache_tasks[i].id, l1_i_cache_tasks[i].name);
 	}
 
-	//getchar();
-
 	//l1 d caches
 	l1_d_cache_tasks = (void *) calloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
@@ -307,8 +307,8 @@ void cache_create_tasks(void){
 	}
 
 	//gpu l2 caches
-	gpu_l2_cache_tasks = (void *) calloc(num_cus, sizeof(task));
-	for(i = 0; i < num_cus; i++)
+	gpu_l2_cache_tasks = (void *) calloc(gpu_group_cache_num, sizeof(task));
+	for(i = 0; i < gpu_group_cache_num; i++)
 	{
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_cache_ctrl");
@@ -406,7 +406,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	}
 
-	CGM_DEBUG(cache_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
+	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
 			cache->name, new_message->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 	//shouldn't be exiting without a message
@@ -414,6 +414,50 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	return new_message;
 }
 
+
+int cgm_cache_map(int cache_id){
+
+	int map;
+
+	if(cache_id < 4)
+	{
+		map = 0;
+	}
+	else if(cache_id >= 4 && cache_id < 8)
+	{
+		map = 1;
+	}
+	else if(cache_id >= 8 && cache_id < 12)
+	{
+		map = 2;
+	}
+	else if(cache_id >= 12 && cache_id < 16)
+	{
+		map = 3;
+	}
+	else if(cache_id >= 16 && cache_id < 20)
+	{
+		map = 4;
+	}
+	else if(cache_id >= 20 && cache_id < 24)
+	{
+		map = 5;
+	}
+	else if(cache_id >= 24 && cache_id < 28)
+	{
+		map = 6;
+	}
+	else if(cache_id >= 28 && cache_id < 32)
+	{
+		map = 7;
+	}
+	else if (cache_id < 0 && cache_id > 31)
+	{
+		fatal("cgm_cache_map(): cache_id out of bounds\n");
+	}
+
+	return map;
+}
 
 int cache_can_access_top(struct cache_t *cache){
 
