@@ -13,6 +13,7 @@
 
 #include <cgm/cgm.h>
 #include <cgm/mem-ctrl.h>
+#include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 #include <cgm/cache.h>
@@ -87,9 +88,36 @@ void memctrl_ctrl(void){
 
 	while(1)
 	{
-		//printf("in mem_ctrl\n");
+
+
+
+		//printf("mem_ctrl\n");
 		await(mem_ctrl_ec, step);
 		step++;
+
+		//star todo connect up DRAMsim here.
+		message_packet = list_dequeue(mem_ctrl->Rx_queue_top);
+		assert(message_packet);
+
+		access_type = message_packet->access_type;
+		access_id = message_packet->access_id;
+		addr = message_packet->address;
+
+		CGM_DEBUG(memctrl_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+		mem_ctrl->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
+
+		P_PAUSE(8);
+
+		while(!sys_agent_can_access_bottom())
+		{
+			P_PAUSE(1);
+		}
+
+		list_enqueue(system_agent->Rx_queue_bottom, message_packet);
+		future_advance(system_agent_ec, (etime.count + 2));
+
+		printf("stop is at bottom of mem ctrl\n");
+		STOP;
 	}
 
 	return;

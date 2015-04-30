@@ -54,6 +54,7 @@ void sys_agent_create_tasks(void);
 struct cgm_packet_t *sysagent_get_message(void);
 
 int sys_agent_can_access(void);
+int sys_agent_can_access_bottom(void);
 
 void sys_agent_ctrl(void);
 

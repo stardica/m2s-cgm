@@ -14,6 +14,7 @@
 
 #include <cgm/cgm.h>
 #include <cgm/sys-agent.h>
+#include <cgm/mem-ctrl.h>
 #include <cgm/tasking.h>
 #include <cgm/cache.h>
 #include <cgm/packet.h>
@@ -77,6 +78,19 @@ int sys_agent_can_access(void){
 	return 1;
 }
 
+int sys_agent_can_access_bottom(void){
+
+	//check if in queue is full
+	if(QueueSize <= list_count(system_agent->Rx_queue_bottom))
+	{
+		return 0;
+	}
+
+	//we can access the system agent
+	return 1;
+}
+
+
 struct cgm_packet_t *sysagent_get_message(void){
 
 	//star this is round robin
@@ -131,6 +145,74 @@ struct cgm_packet_t *sysagent_get_message(void){
 	return new_message;
 }
 
+void system_agent_route(struct cgm_packet_t *message_packet){
+
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+
+	access_type = message_packet->access_type;
+	access_id = message_packet->access_id;
+	addr = message_packet->address;
+
+
+	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
+
+	if(access_type == cgm_access_gets)
+	{
+
+
+
+		while(!memctrl_can_access())
+		{
+			P_PAUSE(1);
+		}
+
+
+		list_remove(system_agent->last_queue, message_packet);
+		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
+		future_advance(mem_ctrl_ec, WIRE_DELAY(mem_ctrl->wire_latency));
+
+	}
+	else if(access_type == cgm_access_puts)
+	{
+
+		//set the dest and sources
+		message_packet->access_type = cgm_access_puts;
+		message_packet->dest_id = message_packet->src_id;
+		message_packet->dest_name = message_packet->src_name;
+		message_packet->src_name = system_agent->name;
+		message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
+
+		while(!switch_can_access(system_agent->switch_queue))
+		{
+			P_PAUSE(1);
+		}
+
+		//success
+		list_remove(system_agent->last_queue, message_packet);
+		list_enqueue(system_agent->switch_queue, message_packet);
+
+		future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
+	}
+
+
+	return;
+}
+
+void sys_dir_lookup(struct cgm_packet_t *message_packet){
+
+
+	return;
+}
+
+void sys_mem_access(struct cgm_packet_t *message_packet){
+
+
+	return;
+}
+
 
 void sys_agent_ctrl(void){
 
@@ -141,7 +223,7 @@ void sys_agent_ctrl(void){
 
 	long long access_id = 0;
 	enum cgm_access_kind_t access_type;
-	unsigned int addr;
+	//unsigned int addr;
 
 	set_id((unsigned int)my_pid);
 
@@ -151,43 +233,27 @@ void sys_agent_ctrl(void){
 		await(system_agent_ec, step);
 		step++;
 
-	//if we are here there should be a message in the queue
+		//if we are here there should be a message in the queue
 		message_packet = sysagent_get_message();
 		assert(message_packet);
 
 		access_type = message_packet->access_type;
 		access_id = message_packet->access_id;
-		addr = message_packet->address;
+		//addr = message_packet->address;
 
-		if(access_type == cgm_access_gets)
+		//star todo this is where we will receive our other directory coherence messages
+		//for no lets just patch it up.
+		if(access_type == cgm_access_gets || access_type == cgm_access_puts)
 		{
-
-			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
-							system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
-
-
-			//set the dest and sources
-			message_packet->access_type = cgm_access_puts;
-			message_packet->dest_id = message_packet->src_id;
-			message_packet->dest_name = message_packet->src_name;
-			message_packet->src_name = system_agent->name;
-			message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
-
-			while(!switch_can_access(system_agent->switch_queue))
-			{
-				P_PAUSE(1);
-			}
-
-			/*printf("queue name %s size %d\n", system_agent->switch_queue->name, list_count(system_agent->switch_queue));
-			STOP;*/
-
-			//success
-			list_remove(system_agent->last_queue, message_packet);
-			list_enqueue(system_agent->switch_queue, message_packet);
-
-			future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
-			//done
+			system_agent_route(message_packet);
+		}
+		else
+		{
+			fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
+					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 		}
 	}
+
+	fatal("sys_agent_ctrl task is broken\n");
 	return;
 }

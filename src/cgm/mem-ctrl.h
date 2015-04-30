@@ -38,6 +38,7 @@ void memctrl_init(void);
 void memctrl_create(void);
 void memctrl_create_tasks(void);
 void memctrl_ctrl(void);
+int memctrl_can_access(void);
 
 
 #endif /* MEMCTRL_H_ */
