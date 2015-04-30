@@ -60,11 +60,13 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	message_packet->offset = offset;
 
 
+
+
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -85,6 +87,7 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	//Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
 	{
+
 		cache->misses++;
 
 		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
@@ -109,8 +112,12 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			//while the next level of cache's in queue is full stall
 			while(!cache_can_access_top(&gpu_l2_caches[cgm_cache_map(cache->id)]))
 			{
+				printf("cache_can_access_top(&gpu_l2_caches[cgm_cache_map(cache->id)]))\n");
+
 				P_PAUSE(1);
 			}
+
+
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_cache_map(cache->id)].Rx_queue_top));
@@ -135,8 +142,6 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&gpu_l2_cache[cgm_cache_map(cache->id)], WIRE_DELAY(gpu_l2_caches[cgm_cache_map(cache->id)].wire_latency));
-
-			STOP;
 
 		}
 		else //mshr == 0
@@ -251,11 +256,10 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 
-
 	CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//charge the delay for writing cache block
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	P_PAUSE(1);
 
 	//get the mshr status
@@ -327,7 +331,7 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 		printf("advances\n");*/
 
 		time += 2;
-		future_advance(&gpu_s_cache[cache->id], etime.count + 2);
+		future_advance(&gpu_s_cache[cache->id], time);
 	}
 
 	//clear the mshr row for future use
@@ -346,11 +350,13 @@ void gpu_s_cache_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;
 
 	struct cgm_packet_t *message_packet;
-	struct cgm_packet_status_t *mshr_packet;
+	//struct cgm_packet_status_t *mshr_packet;
 
 	enum cgm_access_kind_t access_type;
-	unsigned int addr = 0;
 	long long access_id = 0;
+
+/*	unsigned int addr = 0;
+
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
@@ -362,7 +368,7 @@ void gpu_s_cache_ctrl(void){
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
 	int *way_ptr = &way;
-	int *state_ptr = &state;
+	int *state_ptr = &state;*/
 
 	assert(my_pid <= num_cus);
 	set_id((unsigned int)my_pid);
@@ -370,9 +376,11 @@ void gpu_s_cache_ctrl(void){
 	while(1)
 	{
 
+
 		//wait here until there is a job to do
 		await(&gpu_s_cache[my_pid], step);
 		step++;
+
 
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
@@ -386,7 +394,6 @@ void gpu_s_cache_ctrl(void){
 		//continue;
 		/////////testing
 
-		//printf("retry type %s access id %llu at %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), access_id, P_TIME);
 
 		if (access_type == cgm_access_load)
 		{

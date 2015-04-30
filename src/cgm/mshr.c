@@ -38,8 +38,13 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 		new_packet->cpu_access_type = message_packet_old->cpu_access_type;
 	}
 
+	if(message_packet_old->gpu_access_type)
+	{
+		new_packet->gpu_access_type = message_packet_old->gpu_access_type;
+	}
+
 	assert(new_packet->address != 0 || new_packet->access_id != 0);
-	assert(new_packet->set != 0 || new_packet->tag != 0);
+	//assert(new_packet->set != 0 || new_packet->tag != 0);
 
 	return new_packet;
 }

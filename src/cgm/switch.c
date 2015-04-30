@@ -67,6 +67,7 @@ struct str_map_t l1_strn_map =
 		}
 };
 
+
 struct str_map_t gpu_l1_strn_map =
 { gpu_l1_number, {
 		{ "gpu_s_caches[0]", gpu_s_cache_0},

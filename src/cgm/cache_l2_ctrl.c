@@ -429,10 +429,13 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 		}
 	}
 
+	long long time = etime.count; //:-P
+
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
-		advance(&l2_cache[cache->id]);
+		time += 2;
+		future_advance(&l2_cache[cache->id], time);
 	}
 
 	//clear the mshr row for future use

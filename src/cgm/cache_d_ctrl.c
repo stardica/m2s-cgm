@@ -449,7 +449,7 @@ void l1_d_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 		printf("advances\n");*/
 
 		time += 2;
-		future_advance(&l1_d_cache[cache->id], etime.count + 2);
+		future_advance(&l1_d_cache[cache->id], time);
 	}
 
 	//clear the mshr row for future use
