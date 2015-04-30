@@ -82,7 +82,7 @@ struct cgm_packet_t *sysagent_get_message(void){
 	//star this is round robin
 	struct cgm_packet_t *new_message;
 
-	//star todo to give priorty stay on a particular queue as long as it is not empty;
+	//star todo to give priority stay on a particular queue as long as it is not empty;
 
 	new_message = list_get(system_agent->next_queue, 0);
 
@@ -132,11 +132,6 @@ struct cgm_packet_t *sysagent_get_message(void){
 }
 
 
-
-
-
-
-
 void sys_agent_ctrl(void){
 
 	int my_pid = system_agent_pid++;
@@ -164,7 +159,7 @@ void sys_agent_ctrl(void){
 		access_id = message_packet->access_id;
 		addr = message_packet->address;
 
-		if(access_type == cgm_access_gets_i)
+		if(access_type == cgm_access_gets)
 		{
 
 			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",

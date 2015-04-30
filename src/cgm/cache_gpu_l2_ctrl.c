@@ -139,9 +139,9 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 
 		//star todo fix this debug statement.
 		/*CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Hit SEND %s to %s\n",
-			access_id, P_TIME, cache->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), gpu_s_caches[cache->id].name);*/
-
+				access_id, P_TIME, cache->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), gpu_s_caches[cache->id].name);*/
 	}
+
 	// L2 Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
 	{

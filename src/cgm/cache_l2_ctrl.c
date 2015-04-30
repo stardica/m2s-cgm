@@ -59,7 +59,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//look up, and charge a cycle.
@@ -177,6 +177,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			message_packet->l1_access_type = message_packet->access_type;
 			message_packet->access_type = cgm_access_gets;
+			message_packet->l2_cache_id = cache->id;
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 			message_packet->dest_name = l3_caches[cache->id].name;

@@ -245,13 +245,13 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 			uop->global_mem_witness--;
 
+			//CGM_DEBUG(GPU_cache_debug_file, "vector access cycle %llu, addr 0x%08u, type %s\n", P_TIME, uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
+			//getchar();
 #if CGM
 		cgm_vector_access(vector_mem, access_kind, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
 		mod_access(vector_mem->compute_unit->vector_cache, access_kind_m2s, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 #endif
-
-
 
 		}
 
