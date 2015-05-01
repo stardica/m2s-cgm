@@ -225,5 +225,4 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 
 //void get_path(void);
 
-
 #endif /* SWITCH_H_ */

@@ -1988,12 +1988,18 @@ int sys_agent_finish_create(void){
 
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports, WireLatency = 0;
+	int Ports = 0, WireLatency = 0, DRAMLatency = 0;
 
 	if(MATCH("MemCtrl", "WireLatency"))
 	{
 		WireLatency = atoi(value);
 		mem_ctrl->wire_latency = WireLatency;
+	}
+
+	if(MATCH("MemCtrl", "DRAMLatency"))
+	{
+		DRAMLatency = atoi(value);
+		mem_ctrl->DRAM_latency = DRAMLatency;
 	}
 
 	return 0;

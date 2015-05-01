@@ -121,12 +121,13 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			}
 			else
 			{
-				fatal("l2_cache_access_gets(): %s access_id %llu cycle %llu incorrect access type\n", cache->name, access_id, P_TIME);
+				fatal("l2_cache_access_gets(): %s access_id %llu cycle %llu incorrect access type %s\n",
+						cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
 		}
 		else
 		{
-			fatal("l1_d_cache_access_load(): incorrect block state set");
+			fatal("l2_cache_access_load(): incorrect block state set");
 		}
 
 		CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Hit SEND %s to %s\n",
@@ -202,7 +203,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 		{
 			//mshr is full so we can't progress, retry.
 
-			printf("breaking MSHR full\n");
+			printf("%s breaking MSHR full\n", cache->name);
 			mshr_dump(cache);
 			STOP;
 
@@ -306,7 +307,8 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 			}
 			else
 			{
-				fatal("l2_cache_access_gets(): %s access_id %llu cycle %llu incorrect access type\n", cache->name, access_id, P_TIME);
+				fatal("l2_cache_access_gets(): %s access_id %llu cycle %llu incorrect l1 access type %s\n",
+						cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->l1_access_type));
 			}
 		}
 		else
@@ -442,13 +444,15 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//clear the mshr row for future use
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
+	//printf("stopping\n");
+	//STOP;
 
 	return;
 }
 
-void l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*else if (access_type == cgm_access_load)
+	else if (access_type == cgm_access_load)
 			{
 				//stats
 				l2_caches[my_pid].loads++;
@@ -489,13 +493,13 @@ void l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_pa
 					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
 				}
 
-			}*/
+			}
 	return;
-}
+}*/
 
-void l2_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l2_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*else if (access_type == cgm_access_store)
+	else if (access_type == cgm_access_store)
 	{
 		//stats
 		l2_caches[my_pid].stores++;
@@ -535,12 +539,12 @@ void l2_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
 				}
-			}*/
+			}
 		//}
 
 
 	return;
-}
+}*/
 
 
 void l2_cache_ctrl(void){
@@ -599,14 +603,14 @@ void l2_cache_ctrl(void){
 		{
 			l2_cache_access_puts(&l2_caches[my_pid], message_packet);
 		}
-		else if(access_type == cgm_access_load)
+		/*else if(access_type == cgm_access_load)
 		{
 			l2_cache_access_load(&l2_caches[my_pid], message_packet);
 		}
 		else if (access_type == cgm_access_store)
 		{
 			l2_cache_access_store(&l2_caches[my_pid], message_packet);
-		}
+		}*/
 		else
 		{
 			fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",

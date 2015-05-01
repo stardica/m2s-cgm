@@ -178,10 +178,10 @@ int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access
 			{
 				break;
 			}
-			else if (temp->access_id != access_id)
+			/*else if (temp->access_id != access_id)
 			{
 				row = -1;
-			}
+			}*/
 		}
 	}
 

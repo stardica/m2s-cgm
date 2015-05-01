@@ -89,8 +89,6 @@ void memctrl_ctrl(void){
 	while(1)
 	{
 
-
-
 		//printf("mem_ctrl\n");
 		await(mem_ctrl_ec, step);
 		step++;
@@ -113,11 +111,11 @@ void memctrl_ctrl(void){
 			P_PAUSE(1);
 		}
 
-		list_enqueue(system_agent->Rx_queue_bottom, message_packet);
-		future_advance(system_agent_ec, (etime.count + 2));
+		message_packet->access_type = cgm_access_puts;
 
-		printf("stop is at bottom of mem ctrl\n");
-		STOP;
+		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+		future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
+
 	}
 
 	return;

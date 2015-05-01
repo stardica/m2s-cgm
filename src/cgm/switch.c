@@ -370,7 +370,7 @@ void switch_ctrl(void){
 				else if(my_pid >= num_cores)
 				{
 
-					while(!sys_agent_can_access())
+					while(!sys_agent_can_access_top())
 					{
 						//the sys agent queue is full try again next cycle
 						P_PAUSE(1);

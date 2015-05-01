@@ -11,11 +11,15 @@
 
 #include <cgm/tasking.h>
 
+#define DRAM_DELAY(DRAM_latency) (etime.count + (DRAM_latency * 2))
+
+
 extern struct mem_ctrl_t{
 
 	//Physical Characteristics
 	char *name;
 	int wire_latency;
+	int DRAM_latency;
 
 	struct list_t *Rx_queue_top;
 
