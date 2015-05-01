@@ -342,14 +342,13 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			/* Access global memory */
 			uop->global_mem_witness--;
 
-			/*printf("in scalar mem_read witness is %d\n", uop->global_mem_witness);
-			fflush(stdout);
-			getchar();*/
-
 			//uop->global_mem_witness was -1 on each test run.
 
 			/* FIXME Get rid of dependence on wavefront here */
 			uop->global_mem_access_addr = uop->wavefront->scalar_work_item->global_mem_access_addr;
+
+			/*printf("scalar memory access 0x%08x\n", uop->global_mem_access_addr);
+			getchar();*/
 
 #if CGM
 			//memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);

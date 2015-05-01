@@ -40,7 +40,9 @@ void mmu_done(void);
 void mmu_dump_report(void);
 
 int mmu_address_space_new(void);
+
 unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
+
 int mmu_valid_phy_addr(unsigned int phy_addr);
 
 void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);

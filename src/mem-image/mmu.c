@@ -39,8 +39,6 @@ unsigned int mmu_log_page_size;
 unsigned int mmu_page_mask;
 
 
-
-
 /*
  * Private variables
  */
@@ -78,8 +76,6 @@ struct mmu_t
 };
 
 static struct mmu_t *mmu;
-
-
 
 
 /*

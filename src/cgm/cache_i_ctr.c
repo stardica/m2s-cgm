@@ -321,6 +321,8 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 		fatal("cache_access_retry(): miss on retry cycle %llu access_id %llu\n", P_TIME, access_id);
 	}
 
+	//STOP;
+
 	return;
 }
 
