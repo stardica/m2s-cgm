@@ -146,6 +146,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 		mshr_status = mshr_set(cache, miss_status_packet);
 
 
+
 		/*printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 		mshr_dump(cache);
 		getchar();*/
