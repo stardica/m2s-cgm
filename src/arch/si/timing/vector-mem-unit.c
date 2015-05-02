@@ -251,7 +251,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			//CGM_DEBUG(GPU_cache_debug_file, "vector access cycle %llu, addr 0x%08u, type %s\n", P_TIME, uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
 			//getchar();
 
-			printf("work_item_uop->global_mem_access_addr 0x%08x %s\n", work_item_uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
+			//printf("work_item_uop->global_mem_access_addr 0x%08x %s\n", work_item_uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
 			//getchar();
 
 #if CGM
