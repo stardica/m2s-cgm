@@ -67,10 +67,10 @@ void l1_d_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message
 	message_packet->set = set;
 	message_packet->offset = offset;
 
-	/////////testing
-	//list_remove(cache->Rx_queue_top, message_packet);
-	//linked_list_add(message_packet->event_queue, message_packet->data);
-	/////////testing
+
+	//////testing
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//////testing
 
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -79,7 +79,7 @@ void l1_d_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	P_PAUSE(cache->latency);
 
 
 	//Cache Hit!
@@ -239,7 +239,7 @@ void l1_d_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -378,7 +378,7 @@ void l1_d_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//star todo insert a function to set the correct block state here
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	P_PAUSE(1);
+	P_PAUSE(cache->latency);
 
 	//get the mshr status
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
@@ -499,7 +499,7 @@ void l1_d_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 
 	//get the block and the state of the block and charge a cycle
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	//P_PAUSE(2);
 
 	//Cache Hit!
 	if(message_packet->cpu_access_type == cgm_access_store)

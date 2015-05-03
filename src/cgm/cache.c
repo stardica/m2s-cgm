@@ -414,6 +414,35 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	return new_message;
 }
 
+int cgm_l3_cache_map(int *set){
+
+
+	int num_cores = x86_cpu_num_cores;
+	int map = -1;
+
+	//star todo fix this
+	int map_type = 0;
+
+	//stripe or block
+	if (map_type == 0)
+	{
+		//map = *(set) % num_cores;
+		map = (unsigned int) *set & (unsigned int) (num_cores - 1);
+
+	}
+	else if (map_type == 1)
+	{
+		//get the address range
+		fatal("cgm_l3_cache_map(): invalid map_type set\n");
+
+	}
+
+	/*printf("l3 cache map() set %d map %d", *set, map);
+	getchar();*/
+
+	assert(map >= 0 && map <= (num_cores - 1));
+	return map;
+}
 
 int cgm_cache_map(int cache_id){
 

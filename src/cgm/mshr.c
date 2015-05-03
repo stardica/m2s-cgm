@@ -141,8 +141,10 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		}
 		else
 		{
-
-			fatal("mshr_set(): non empty row selected cycle %llu access_id %llu\n", P_TIME, miss_status_packet->access_id);
+			printf("crashing mshr set\n");
+			mshr_dump(cache);
+			STOP;
+			fatal("mshr_set(): %s non empty row selected cycle %llu access_id %llu\n", cache->name, P_TIME, miss_status_packet->access_id);
 			//return 0;
 		}
 

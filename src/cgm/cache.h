@@ -206,7 +206,9 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 //void cgm_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+int cgm_l3_cache_map(int *set);
 int cgm_cache_map(int cache_id);
+
 
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 

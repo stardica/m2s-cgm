@@ -66,7 +66,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -182,7 +182,7 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//charge the delay for writing cache block
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	P_PAUSE(1);
+	P_PAUSE(cache->latency);
 
 	//get the mshr status
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
@@ -302,7 +302,7 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 
 	//get the block and the state of the block and charge a cycle
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	//P_PAUSE(1);
 
 	//L1 I Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -393,8 +393,8 @@ void l1_i_cache_ctrl(void){
 		}
 		else
 		{
-			fatal("l1_i_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			fatal("l1_i_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
+				l1_i_caches[my_pid].name, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 		}
 	}
 

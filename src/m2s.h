@@ -12,7 +12,7 @@
 
 //star for our development controls and incremental coding.
 
-#define SKIP 25000
+#define SKIP 100000
 
 //GPU 1 or 0 takes in and out all of the GPU and runtime code
 //CGM 1 or 0 takes in and out the new memory system

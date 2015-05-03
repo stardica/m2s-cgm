@@ -53,7 +53,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	//charge the cycle for the look up.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(1);
+	P_PAUSE(cache->latency);
 
 
 	//L3 Cache Hit!
@@ -211,7 +211,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	//look up, and charge a cycle.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	//P_PAUSE(2);
 
 	// L3 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -311,7 +311,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//charge the delay for writing cache block
 
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, tag, cache_block_shared);
-	P_PAUSE(1);
+	P_PAUSE(cache->latency);
 
 
 	//mshr_dump(cache);
