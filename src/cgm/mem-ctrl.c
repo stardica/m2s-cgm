@@ -17,6 +17,8 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 #include <cgm/cache.h>
+//#include <dramsim/DRAMSim.h>
+
 
 //structure declarations
 struct mem_ctrl_t *mem_ctrl;

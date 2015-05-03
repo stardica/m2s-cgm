@@ -416,7 +416,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 int cgm_l3_cache_map(int *set){
 
-
 	int num_cores = x86_cpu_num_cores;
 	int map = -1;
 
@@ -427,6 +426,7 @@ int cgm_l3_cache_map(int *set){
 	if (map_type == 0)
 	{
 		//map = *(set) % num_cores;
+		//star this is a faster way to do the look up.
 		map = (unsigned int) *set & (unsigned int) (num_cores - 1);
 
 	}
