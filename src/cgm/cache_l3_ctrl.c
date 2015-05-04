@@ -244,7 +244,7 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
-			printf("message package l1 access type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->l1_access_type));
+			//printf("message package l1 access type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->l1_access_type));
 
 			/*printf("dest %s\n", message_packet->dest_name);
 			printf("src %s\n", message_packet->src_name);
