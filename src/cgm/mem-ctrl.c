@@ -91,6 +91,7 @@ void memctrl_ctrl(void){
 	while(1)
 	{
 
+
 		//printf("mem_ctrl\n");
 		await(mem_ctrl_ec, step);
 		step++;
