@@ -38,9 +38,9 @@ enum node_map{
 	l2_cache_3,
 	switch_3,
 	l3_cache_3,
-	l2_cache_4,
+	hub_iommu_4,
 	switch_4,
-	sys_agent,
+	sys_agent_4,
 	node_number
 
 };
@@ -128,6 +128,17 @@ enum gpu_l1_map{
 	gpu_l1_number
 };
 
+enum gpu_l2_map{
+	gpu_l2_caches_0,
+	gpu_l2_caches_1,
+	gpu_l2_caches_2,
+	gpu_l2_caches_3,
+	gpu_l2_caches_4,
+	gpu_l2_caches_5,
+	gpu_l2_caches_6,
+	gpu_l2_caches_7,
+	gpu_l2_number
+};
 
 enum port_name
 {
@@ -154,6 +165,7 @@ struct switch_t{
 	int switch_node_number;
 	float switch_median_node;
 	int port_num;
+	int latency;
 
 	/*int num_routes;
 	struct route_t *my_routes;*/
@@ -202,6 +214,7 @@ struct switch_t{
 extern struct str_map_t node_strn_map;
 extern struct str_map_t l1_strn_map;
 extern struct str_map_t gpu_l1_strn_map;
+extern struct str_map_t gpu_l2_strn_map;
 
 
 extern struct switch_t *switches;

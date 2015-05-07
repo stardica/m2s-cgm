@@ -102,6 +102,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 			//fprintf(cgm_debug, "coalesced in mshr row %d with size %d\n\n", row, cache->mshrs[row].num_entries);
 
 			//list_remove(cache->Rx_queue_top, message_packet);
+
+
 			list_enqueue(cache->mshrs[row].entires, miss_status_packet);
 
 			//stats

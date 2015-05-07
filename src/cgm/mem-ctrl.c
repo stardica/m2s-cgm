@@ -107,7 +107,7 @@ void memctrl_ctrl(void){
 		CGM_DEBUG(memctrl_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 		mem_ctrl->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
-		P_PAUSE(8);
+		P_PAUSE(mem_ctrl->latency);
 
 		while(!sys_agent_can_access_bottom())
 		{
@@ -119,7 +119,11 @@ void memctrl_ctrl(void){
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 		future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
 
+
+	STOP;
 	}
+
+
 
 	return;
 }

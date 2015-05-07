@@ -35,6 +35,7 @@
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
+#include <cgm/mshr.h>
 
 int cgmmem_check_config = 0;
 
@@ -1132,7 +1133,6 @@ int cache_finish_create(){
 	//finish creating the CPU caches
 	for(i = 0; i < num_cores ; i++ )
 	{
-
 		/////////////
 		//L1 I Cache
 		/////////////
@@ -1488,6 +1488,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "gpu_v_caches[%d].mshr[%d].entires", i, j);
 			gpu_v_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(gpu_v_caches[i].mshrs[j]));
 		}
 
 
@@ -1538,6 +1540,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "gpu_s_caches[%d].mshr[%d].entires", i, j);
 			gpu_s_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(gpu_s_caches[i].mshrs[j]));
 		}
 
 
@@ -1675,6 +1679,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "gpu_l2_caches[%d].mshr[%d].entires", i, j);
 			gpu_l2_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(gpu_l2_caches[i].mshrs[j]));
 		}
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
@@ -1810,6 +1816,7 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int Ports = 0;
 	int i = 0;
 	int WireLatency = 0;
+	int Latency = 0;
 
 	//star todo fix this
 	int extras = 1;
@@ -1833,9 +1840,24 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		}
 	}
 
+	if(MATCH("Switch", "Latency"))
+	{
+		Latency = atoi(value);
+
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			switches[i].latency = Latency;
+		}
+	}
+
 	if(MATCH("Hub-IOMMU", "WireLatency"))
 	{
 		hub_iommu->wire_latency = atoi(value);
+	}
+
+	if(MATCH("Hub-IOMMU", "Latency"))
+	{
+		hub_iommu->latency = atoi(value);
 	}
 
 	return 0;
@@ -1977,7 +1999,9 @@ int switch_finish_create(void){
 
 int sys_agent_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports = 0, WireLatency = 0;
+	int Ports = 0;
+	int WireLatency = 0;
+	int Latency = 0;
 
 
 	if(MATCH("SysAgent", "Ports"))
@@ -1992,6 +2016,13 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 		WireLatency = atoi(value);
 		system_agent->wire_latency = WireLatency;
 	}
+
+	if(MATCH("SysAgent", "Latency"))
+	{
+		Latency = atoi(value);
+		system_agent->latency = Latency;
+	}
+
 
 	return 0;
 }
@@ -2033,7 +2064,16 @@ int sys_agent_finish_create(void){
 
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports = 0, WireLatency = 0, DRAMLatency = 0;
+	int Ports = 0;
+	int WireLatency = 0;
+	int DRAMLatency = 0;
+	int Latency = 0;
+
+	if(MATCH("MemCtrl", "Latency"))
+	{
+		Latency = atoi(value);
+		mem_ctrl->latency = Latency;
+	}
 
 	if(MATCH("MemCtrl", "WireLatency"))
 	{

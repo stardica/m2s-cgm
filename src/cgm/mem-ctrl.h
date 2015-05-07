@@ -20,6 +20,7 @@ extern struct mem_ctrl_t{
 	char *name;
 	int wire_latency;
 	int DRAM_latency;
+	int latency;
 
 	struct list_t *Rx_queue_top;
 

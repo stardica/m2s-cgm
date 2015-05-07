@@ -26,6 +26,7 @@ struct system_agent_t{
 	char *name;
 	unsigned int wire_latency;
 	unsigned int num_ports;
+	int latency;
 
 	//queues
 	struct list_t *Rx_queue_top;

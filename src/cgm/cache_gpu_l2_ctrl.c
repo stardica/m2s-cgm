@@ -16,7 +16,7 @@
 #include <lib/util/list.h>
 
 #include <cgm/cgm.h>
-
+#include <cgm/hub-iommu.h>
 #include <cgm/switch.h>
 
 
@@ -65,7 +65,7 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 
 	//look up, and charge a cycle.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	P_PAUSE(cache->latency);
 
 	// L2 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -145,18 +145,16 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 	// L2 Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
 	{
-
 		cache->misses++;
 
 		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
-		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
+		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, cache->id);
 		mshr_status = mshr_set(cache, miss_status_packet);
 
-
-		/*printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
-		mshr_dump(cache);
-		getchar();*/
+		//printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		//mshr_dump(cache);
+		//getchar();
 
 		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
@@ -174,39 +172,45 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 		{
 			//access is unique in the MSHR so send forward
 			//while the next level of cache's in queue is full stall
-			while(!switch_can_access(switches[cache->id].north_queue))
+			while(!hub_iommu_can_access(hub_iommu->Rx_queue_top[cache->id]))
 			{
-				printf("!switch_can_access(switches[cache->id].north_queue)\n");
+				//printf("!hub_iommu_can_access(switches[cache->id].north_queue)\n");
 
 				P_PAUSE(1);
 			}
 
-			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch north queue free size %d\n",
-					cache->name, access_id, P_TIME, list_count(switches[cache->id].north_queue));
+			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss %s size %d\n",
+					cache->name, access_id, P_TIME, hub_iommu->Rx_queue_top[cache->id]->name, list_count(hub_iommu->Rx_queue_top[cache->id]));
 
-			//printf(" l2 miss type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			//printf(" gpu l2 miss type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			//getchar();
 
 			message_packet->l1_access_type = message_packet->access_type;
 			message_packet->access_type = cgm_access_gets;
 			message_packet->src_name = cache->name;
-			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
-			message_packet->dest_name = l3_caches[cache->id].name;
-			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);
+			message_packet->src_id = str_map_string(&gpu_l2_strn_map, cache->name);
+			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
+			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
+
+			/*message_packet->dest_name = l3_caches[cache->id].name;
+			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[cache->id].name);*/
 
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(switches[cache->id].north_queue, message_packet);
+			list_enqueue(hub_iommu->Rx_queue_top[cache->id], message_packet);
+			//list_enqueue(switches[cache->id].north_queue, message_packet);
 
-			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] send %s\n",
-					cache->name, access_id, P_TIME, cache->id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s send %s\n",
+					cache->name, access_id, P_TIME, cache->name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND l2_cache[%d] %s\n",
-					access_id, P_TIME, cache->name, l3_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			//star todo figure out what to do with this.
+			/*CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
+					access_id, P_TIME, cache->name, gpu_l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));*/
 
 			//advance the L2 cache adding some wire delay time.
-			future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+			future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
 		}
 		else //mshr == 0 || -1
 		{
@@ -291,6 +295,7 @@ void gpu_l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messa
 					P_PAUSE(1);
 				}
 
+				//fixme
 					CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 							cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
@@ -310,6 +315,7 @@ void gpu_l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messa
 				CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 					cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
+				//fixme
 				message_packet->access_type = cgm_access_puts;
 				list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
 				future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));

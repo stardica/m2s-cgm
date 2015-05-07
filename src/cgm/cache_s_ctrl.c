@@ -64,16 +64,15 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
-
 
 	/*printf("gpu_s_cache addr 0x%08u\n",  addr);
 	getchar();*/
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -152,7 +151,7 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			mshr_dump(cache);
 
 			//mshr is full so we can't progress, retry.
-			fatal("l1_i_cache_access_load(): MSHR full\n");
+			fatal("gpu_s_cache_access_load(): MSHR full\n");
 		}
 	}
 
@@ -262,7 +261,7 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 
 	//charge the delay for writing cache block
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	P_PAUSE(1);
+	P_PAUSE(cache->latency);
 
 	//get the mshr status
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
@@ -343,8 +342,6 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 }
 
 
-
-
 void gpu_s_cache_ctrl(void){
 
 	int my_pid = gpu_s_pid++;
@@ -352,25 +349,9 @@ void gpu_s_cache_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;
 
 	struct cgm_packet_t *message_packet;
-	//struct cgm_packet_status_t *mshr_packet;
 
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
-
-/*	unsigned int addr = 0;
-
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
-	int state = 0;
-	int cache_status;
-
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
-	int *state_ptr = &state;*/
 
 	assert(my_pid <= num_cus);
 	set_id((unsigned int)my_pid);
@@ -378,12 +359,9 @@ void gpu_s_cache_ctrl(void){
 	while(1)
 	{
 
-
 		//wait here until there is a job to do
 		await(&gpu_s_cache[my_pid], step);
 		step++;
-
-		//printf("cpu_s_running\n");
 
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));

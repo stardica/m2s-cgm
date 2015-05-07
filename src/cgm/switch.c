@@ -21,6 +21,7 @@
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
+#include <cgm/hub-iommu.h>
 #include <cgm/packet.h>
 #include <cgm/cache.h>
 #include <cgm/sys-agent.h>
@@ -138,6 +139,19 @@ struct str_map_t gpu_l1_strn_map =
 };
 
 
+struct str_map_t gpu_l2_strn_map =
+{ gpu_l2_number, {
+		{ "gpu_l2_caches[0]", gpu_l2_caches_0},
+		{ "gpu_l2_caches[1]", gpu_l2_caches_1},
+		{ "gpu_l2_caches[2]", gpu_l2_caches_2},
+		{ "gpu_l2_caches[3]", gpu_l2_caches_3},
+		{ "gpu_l2_caches[4]", gpu_l2_caches_4},
+		{ "gpu_l2_caches[5]", gpu_l2_caches_5},
+		{ "gpu_l2_caches[6]", gpu_l2_caches_6},
+		{ "gpu_l2_caches[7]", gpu_l2_caches_7},
+		}
+};
+
 struct str_map_t node_strn_map =
 { node_number, {
 		{ "l2_caches[0]", l2_cache_0},
@@ -148,13 +162,13 @@ struct str_map_t node_strn_map =
 		{ "l3_caches[1]", l3_cache_1},
 		{ "l2_caches[2]", l2_cache_2},
 		{ "switch[2]", switch_2},
+		{ "l3_caches[2]", l3_cache_2},
 		{ "l2_caches[3]", l2_cache_3},
 		{ "switch[3]", switch_3},
-		{ "l3_caches[2]", l3_cache_2},
-		{ "l2_caches[4]", l2_cache_4},
-		{ "switch[4]", switch_4},
 		{ "l3_caches[3]", l3_cache_3},
-		{ "sys_agent", sys_agent},
+		{ "hub_iommu", hub_iommu_4},
+		{ "switch[4]", switch_4},
+		{ "sys_agent", sys_agent_4},
 		}
 };
 
@@ -278,7 +292,7 @@ void switch_ctrl(void){
 		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
 			switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
-		P_PAUSE(2);
+		P_PAUSE(switches[my_pid].latency);
 
 		//if dest is the L2/L3/SA connected to this switch.
 		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
@@ -310,18 +324,18 @@ void switch_ctrl(void){
 				//GPU and other L2 caches
 				else if(my_pid >= num_cores)
 				{
-					while(!cache_can_access_bottom(&gpu_l2_caches[my_pid]))
+					while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
 					{
-						//the L2 cache queue is full try again next cycle
+						//the hub-iommu cache queue is full try again next cycle
 						P_PAUSE(1);
 					}
 
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
-					//drop the packet into the cache's queue
-					list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
-					future_advance(&gpu_l2_cache[my_pid], WIRE_DELAY(gpu_l2_caches[my_pid].wire_latency));
+					//drop the packet into the hub's
+					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+					future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}

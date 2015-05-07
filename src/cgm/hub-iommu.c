@@ -10,9 +10,11 @@
 
 #include <arch/si/timing/gpu.h>
 
+#include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <lib/util/debug.h>
 
+#include <cgm/cgm.h>
 #include <cgm/tasking.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/switch.h>
@@ -78,7 +80,7 @@ void hub_iommu_create_tasks(void){
 	return;
 }
 
-struct cgm_packet_t *hub_iommu_get_from_queue(){
+struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
 
 	int num_cus = si_gpu_num_compute_units;
@@ -137,6 +139,18 @@ struct cgm_packet_t *hub_iommu_get_from_queue(){
 
 }
 
+int hub_iommu_can_access(struct list_t *queue){
+
+	//check if in queue is full
+	if(QueueSize <= list_count(queue))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+
 void hub_iommu_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
@@ -151,8 +165,17 @@ void hub_iommu_ctrl(void){
 		await(hub_iommu_ec, step);
 		step++;
 
+		//if we made it here we should have a packet.
+		message_packet = hub_iommu_get_from_queue();
+		assert(message_packet);
 
+		printf("in hub_iommu\n");
+		STOP;
 
+		P_PAUSE(hub_iommu->latency);
+
+		/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+				switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);*/
 
 
 
