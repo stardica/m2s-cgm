@@ -19,7 +19,7 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 	struct cgm_packet_t *new_packet = packet_create();
 
 	new_packet->access_type = message_packet_old->access_type;
-	new_packet->l1_access_type = message_packet_old->access_type;
+	new_packet->l1_access_type = message_packet_old->l1_access_type;
 	new_packet->access_id = message_packet_old->access_id;
 	new_packet->address = message_packet_old->address;
 	new_packet->set = set;
@@ -59,8 +59,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 	//unsigned int offset = miss_status_packet->offset;
 	int i = 0;
 	int row = 0;
-	int size = 0;
-
+	//int size = 0;
 
 	//CGM_DEBUG(mshr_debug_file, "cycle %llu access_id %llu tag %d set %d\n", P_TIME, miss_status_packet->access_id, miss_status_packet->tag, miss_status_packet->set);
 
@@ -71,6 +70,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		//compare if the mshr has entries compare the tag and set
 		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
 		{
+
+
 			row = i;
 			break;
 		}
@@ -141,9 +142,9 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		}
 		else
 		{
-			/*printf("crashing mshr set\n");
+			printf("crashing mshr set\n");
 			mshr_dump(cache);
-			STOP;*/
+			STOP;
 			fatal("mshr_set(): %s non empty row selected cycle %llu access_id %llu\n", cache->name, P_TIME, miss_status_packet->access_id);
 			//return 0;
 		}
@@ -170,7 +171,7 @@ int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access
 	for(i = 0; i < cache->mshr_size; i ++)
 	{
 		//compare if the mshr entries match the tag and set
-		if(cache->mshrs[i].num_entries > 0 && cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
+		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set) //cache->mshrs[i].num_entries > 0
 		{
 			row = i;
 

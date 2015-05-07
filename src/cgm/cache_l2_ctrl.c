@@ -62,7 +62,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//look up, and charge a cycle.
@@ -78,7 +78,6 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 		cache->hits++;
 
 		assert(*state_ptr != cache_block_invalid);
-
 
 		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
 		{
@@ -145,6 +144,9 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
+
+		//message_packet->l1_access_type = message_packet->access_type;
+		message_packet->access_type = cgm_access_gets;
 		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
 
@@ -179,9 +181,6 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			l3_map = cgm_l3_cache_map(set_ptr);
 
-
-			message_packet->l1_access_type = message_packet->access_type;
-			message_packet->access_type = cgm_access_gets;
 			message_packet->l2_cache_id = cache->id;
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);

@@ -87,8 +87,14 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss\n", cache->name, access_id, P_TIME);
 
+		//star todo find a better way to do this.
+		message_packet->cpu_access_type = cgm_access_fetch;
+		message_packet->access_type = cgm_access_gets_i;
+		message_packet->l1_access_type = cgm_access_gets_i;
+
 		miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
-		mshr_status = mshr_set((void *)cache, miss_status_packet);
+		mshr_status = mshr_set(cache, miss_status_packet);
+
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
@@ -116,7 +122,6 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
 
-			message_packet->access_type = cgm_access_gets_i;
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
@@ -138,7 +143,6 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			printf("breaking MSHR full\n");
 			mshr_dump(cache);
 			STOP;
-
 
 			//mshr is full so we can't progress, retry.
 			fatal("l1_i_cache_access_load(): MSHR full\n");

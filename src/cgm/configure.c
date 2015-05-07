@@ -33,6 +33,7 @@
 #include <cgm/mem-ctrl.h>
 #include <cgm/directory.h>
 #include <cgm/switch.h>
+#include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
 
 int cgmmem_check_config = 0;
@@ -1183,6 +1184,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
 			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(l1_i_caches[i].mshrs[j]));
 		}
 
 
@@ -1239,6 +1242,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d].entires", i, j);
 			l1_d_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(l1_d_caches[i].mshrs[j]));
 		}
 
 
@@ -1295,6 +1300,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l2_caches[%d].mshr[%d].entires", i, j);
 			l2_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(l2_caches[i].mshrs[j]));
 		}
 
 
@@ -1349,6 +1356,8 @@ int cache_finish_create(){
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "l3_caches[%d].mshr[%d].entires", i, j);
 			l3_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(l3_caches[i].mshrs[j]));
 		}
 
 
@@ -1824,6 +1833,10 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		}
 	}
 
+	if(MATCH("Hub-IOMMU", "WireLatency"))
+	{
+		hub_iommu->wire_latency = atoi(value);
+	}
 
 	return 0;
 }
@@ -1832,6 +1845,7 @@ int switch_finish_create(void){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 
 	//star todo fix this
 	int extras = 1;
@@ -1925,7 +1939,38 @@ int switch_finish_create(void){
 		fatal("switch_finish_create() port_num error\n");
 	}
 
+	////////////
+	//GPU hub-iommu
+	////////////
 
+
+	//configure the gpu hub-iommu here (its pretty much a big switch).
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "hub_iommu");
+	hub_iommu->name = strdup(buff);
+
+	hub_iommu->gpu_l2_num = gpu_group_cache_num;
+
+	//create one in queue for each gpu l2 caches
+	hub_iommu->Rx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
+
+	for(i = 0; i < gpu_group_cache_num; i ++)
+	{
+		hub_iommu->Rx_queue_top[i] = list_create();
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "hub_iommu.Rx_queue_top[%d]", i);
+		hub_iommu->Rx_queue_top[i]->name = strdup(buff);
+	}
+
+	//create the bottom queue
+	hub_iommu->Rx_queue_bottom = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "hub_iommu.Rx_queue_bottom");
+	hub_iommu->Rx_queue_bottom->name = strdup(buff);
+
+	//set a pointer to the next queue
+	hub_iommu->next_queue = hub_iommu->Rx_queue_top[0];
 
 	return 0;
 }

@@ -48,7 +48,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//charge the cycle for the look up.
@@ -134,7 +134,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 					cache->name, access_id, P_TIME, switches[cache->id].south_queue->name, list_count(switches[cache->id].south_queue));
 
-			message_packet->access_type = cgm_access_gets;
+			//message_packet->access_type = cgm_access_gets;
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
@@ -320,7 +320,8 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
 	if(mshr_row == -1)
 	{
-		printf("%s crashing %llu access_id %llu\n", cache->name, P_TIME, access_id);
+		printf("%s crashing %llu access_id %llu type %s\n", cache->name, P_TIME, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->cpu_access_type));
+		mshr_dump(cache);
 		assert(mshr_row != -1);
 	}
 
@@ -373,7 +374,8 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
 		time += 2;
-		future_advance(&l3_cache[cache->id], time);
+		//future_advance(&l3_cache[cache->id], time);
+		advance(&l3_cache[cache->id]);
 	}
 
 	//clear the mshr row for future use

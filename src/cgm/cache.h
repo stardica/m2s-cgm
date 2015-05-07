@@ -102,8 +102,8 @@ struct cache_t{
 
 	//mshr control links
 	int mshr_size;
-	struct list_t *mshr;
-	struct list_t **mshr_2;
+	//struct list_t *mshr;
+	//struct list_t **mshr_2;
 	struct mshr_t *mshrs;
 	int max_coal;
 

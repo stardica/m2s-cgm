@@ -155,8 +155,8 @@ struct switch_t{
 	float switch_median_node;
 	int port_num;
 
-	int num_routes;
-	struct route_t *my_routes;
+	/*int num_routes;
+	struct route_t *my_routes;*/
 
 	enum port_name queue;
 	enum arbitrate arb_style;
@@ -212,17 +212,16 @@ extern int switch_pid;
 //function prototypes
 void switch_init(void);
 void switch_create(void);
-//void route_create(void);
 void switch_create_tasks(void);
 void switch_ctrl(void);
+
 float switch_get_distance(int dest_node, int src_node);
-
 int switch_can_access(struct list_t *queue);
-
 enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
 
+//void route_create(void);
 //void get_path(void);
 
 #endif /* SWITCH_H_ */

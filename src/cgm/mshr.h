@@ -26,6 +26,8 @@ struct mshr_t{
 };
 
 struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet_old, int set, int tag, unsigned int offset, int src_id);
+
+
 int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet);
 int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access_id);
 void mshr_dump(struct cache_t *cache);
