@@ -404,6 +404,9 @@ void l3_cache_ctrl(void){
 		await(&l3_cache[my_pid], step);
 		step++;
 
+
+		printf("cpu_l3_running\n");
+
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));
 

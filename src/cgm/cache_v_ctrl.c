@@ -59,7 +59,7 @@ void gpu_v_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	message_packet->offset = offset;
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 
@@ -556,6 +556,8 @@ void gpu_v_cache_ctrl(void){
 		//In any given cycle I might have to service 1 to N number of caches
 		await(&gpu_v_cache[my_pid], step);
 		step++;
+
+		//printf("gpu_v_running\n");
 
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));

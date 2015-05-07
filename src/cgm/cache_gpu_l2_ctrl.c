@@ -59,7 +59,7 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 
@@ -396,10 +396,10 @@ void gpu_l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *messag
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	P_PAUSE(1);
 
-	//get the mshr status
-	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
-	assert(mshr_row != -1);
+	printf("l2_cache_access_puts\n");
+	getchar();
 
+	//get the mshr status
 	//printf("mshr_row %d\n", mshr_row);
 
 	//check the number of entries in the mshr row

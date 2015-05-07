@@ -69,7 +69,7 @@ void l1_d_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message
 
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 
@@ -231,7 +231,7 @@ void l1_d_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->offset = offset;
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 
@@ -578,6 +578,8 @@ void l1_d_cache_ctrl(void){
 		//wait here until there is a job to do.
 		await(&l1_d_cache[my_pid], step);
 		step++;
+
+		//printf("cpu_d_running\n");
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));

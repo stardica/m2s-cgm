@@ -64,7 +64,7 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 
@@ -383,6 +383,7 @@ void gpu_s_cache_ctrl(void){
 		await(&gpu_s_cache[my_pid], step);
 		step++;
 
+		//printf("cpu_s_running\n");
 
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));

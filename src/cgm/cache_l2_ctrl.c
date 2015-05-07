@@ -395,7 +395,7 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
 	assert(mshr_row != -1);
 
-	//printf("mshr_row %d\n", mshr_row);
+
 
 	//check the number of entries in the mshr row
 	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
@@ -588,6 +588,9 @@ void l2_cache_ctrl(void){
 		/*wait here until there is a job to do.*/
 		await(&l2_cache[my_pid], step);
 		step++;
+
+
+		printf("cpu_l2_running\n");
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
