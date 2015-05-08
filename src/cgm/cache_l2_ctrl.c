@@ -607,6 +607,7 @@ void l2_cache_ctrl(void){
 		{
 			//printf("cgm_access_puts\n");
 
+
 			l2_cache_access_puts(&l2_caches[my_pid], message_packet);
 		}
 		/*else if(access_type == cgm_access_load)
