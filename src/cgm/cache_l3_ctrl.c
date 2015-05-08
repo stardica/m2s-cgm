@@ -48,7 +48,7 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//charge the cycle for the look up.
@@ -405,7 +405,7 @@ void l3_cache_ctrl(void){
 		step++;
 
 
-		printf("cpu_l3_running\n");
+		//printf("cpu_l3_running\n");
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));

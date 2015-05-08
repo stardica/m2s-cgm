@@ -36,6 +36,9 @@ struct hub_iommu_t{
 	unsigned int gpu_l2_num;
 	int latency;
 
+	struct list_t *switch_queue;
+	int switch_id;
+
 	struct list_t **Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
 	struct list_t *next_queue;
@@ -55,6 +58,7 @@ void hub_iommu_create_tasks(void);
 void hub_iommu_ctrl(void);
 
 struct cgm_packet_t *hub_iommu_get_from_queue(void);
+void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
 int hub_iommu_can_access(struct list_t *queue);
 
 #endif /* __IOMMU_H__ */

@@ -283,23 +283,30 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 		switch_debug = atoi(value);
 	}
 
+	if(MATCH("Debug", "Hub_IOMMU_Debug"))
+	{
+		hub_iommu_debug = atoi(value);
+	}
+
 	if(MATCH("Debug", "SysAgent_Debug"))
 	{
 		sysagent_debug = atoi(value);
 	}
+
 	if(MATCH("Debug", "MemCtrl_Debug"))
 	{
 		memctrl_debug = atoi(value);
 	}
+
 	if(MATCH("Debug", "Protocol_Debug"))
 	{
 		protocol_debug = atoi(value);
 	}
+
 	if(MATCH("Debug", "MSHR_Debug"))
 	{
 		mshr_debug = atoi(value);
 	}
-
 
 	if(MATCH("Debug", "Path"))
 	{
@@ -335,6 +342,14 @@ int debug_finish_create(void){
 		sprintf(buff, "%s", cgm_debug_output_path);
 		sprintf(buff + strlen(buff), "/switch_debug.out");
 		switch_debug_file = fopen (buff, "w+");
+	}
+
+	if(hub_iommu_debug == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/hub_iommu_debug.out");
+		hub_iommu_debug_file = fopen (buff, "w+");
 	}
 
 	if(sysagent_debug ==1)
@@ -1993,6 +2008,10 @@ int switch_finish_create(void){
 
 	//set a pointer to the next queue
 	hub_iommu->next_queue = hub_iommu->Rx_queue_top[0];
+
+	//connect to switch queue
+	hub_iommu->switch_id = (num_cores + extras - 1);
+	hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
 
 	return 0;
 }

@@ -77,13 +77,25 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
-		cache->hits++;
+		assert(*state_ptr != cache_block_invalid);
 
-		//remove packet from cache queue, global queue, and simulator memory
-		(*message_packet->witness_ptr)++;
-		list_remove(cache->last_queue, message_packet);
+		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
+		{
+
+			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+
+			cache->hits++;
+
+			//remove packet from cache queue, global queue, and simulator memory
+			(*message_packet->witness_ptr)++;
+			list_remove(cache->last_queue, message_packet);
+		}
+		else
+		{
+			fatal("gpu_s_cache_access_load(): incorrect block state set");
+		}
+
 	}
 	//Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
@@ -117,8 +129,6 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 
 				P_PAUSE(1);
 			}
-
-
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_cache_map(cache->id)].Rx_queue_top));
@@ -197,12 +207,12 @@ void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 
-
 	//get the block and the state of the block and charge a cycle
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(2);
+	//P_PAUSE(2);
 
-	//L1 I Cache Hit!
+
+	//L1 Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
@@ -217,9 +227,11 @@ void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 	{
 		printf("breaking\n");
 		STOP;
-		fatal("cache_access_retry(): miss on retry cycle %llu access_id %llu\n", P_TIME, access_id);
+		fatal("gpu_s_cache_access_retry(): miss on retry cycle %llu access_id %llu\n", P_TIME, access_id);
 	}
 
+	/*printf("gpu s cache retry\n");
+	STOP;*/
 
 	return;
 }
@@ -271,7 +283,8 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
 	assert(cache->mshrs[mshr_row].num_entries > 0);
 
-	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu mshr_row %d num_entries %d\n", cache->name, access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
+	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu mshr_row %d num_entries %d\n",
+			cache->name, access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
 
 	//move them to the retry queueS
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
@@ -316,7 +329,6 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 			}
 
 			assert(miss_status_packet->coalesced == 1);
-
 			//drop it into the retry queue
 			list_enqueue(cache->retry_queue, miss_status_packet);
 

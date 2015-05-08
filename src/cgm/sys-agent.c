@@ -245,6 +245,10 @@ void sys_agent_ctrl(void){
 		access_id = message_packet->access_id;
 		//addr = message_packet->address;
 
+		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+				system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
+
+
 		//star todo this is where we will receive our other directory coherence messages
 		//for now lets just patch it up.
 		if(access_type == cgm_access_gets || access_type == cgm_access_puts)
@@ -256,6 +260,10 @@ void sys_agent_ctrl(void){
 			fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 		}
+
+		/*printf("system agent end\n");
+		STOP;*/
+
 	}
 
 	fatal("sys_agent_ctrl task is broken\n");

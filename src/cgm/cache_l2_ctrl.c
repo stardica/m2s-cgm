@@ -62,7 +62,7 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//look up, and charge a cycle.
@@ -395,8 +395,6 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
 	assert(mshr_row != -1);
 
-
-
 	//check the number of entries in the mshr row
 	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
 	assert(cache->mshrs[mshr_row].num_entries > 0);
@@ -590,7 +588,7 @@ void l2_cache_ctrl(void){
 		step++;
 
 
-		printf("cpu_l2_running\n");
+		//printf("cpu_l2_running\n");
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
@@ -607,6 +605,8 @@ void l2_cache_ctrl(void){
 		}
 		else if(access_type == cgm_access_puts)
 		{
+			//printf("cgm_access_puts\n");
+
 			l2_cache_access_puts(&l2_caches[my_pid], message_packet);
 		}
 		/*else if(access_type == cgm_access_load)

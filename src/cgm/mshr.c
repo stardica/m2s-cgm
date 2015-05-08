@@ -27,18 +27,23 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 	new_packet->offset = offset;
 	new_packet->src_id = src_id;
 
+	//copy the CPU and GPU return items
 	if(message_packet_old->event_queue && message_packet_old->data)
 	{
 		new_packet->event_queue = message_packet_old->event_queue;
 		new_packet->data = message_packet_old->data;
 	}
+	else if(message_packet_old->witness_ptr)
+	{
+		new_packet->witness_ptr = message_packet_old->witness_ptr;
+	}
 
+	//copy the CPU and GPU access types
 	if(message_packet_old->cpu_access_type)
 	{
 		new_packet->cpu_access_type = message_packet_old->cpu_access_type;
 	}
-
-	if(message_packet_old->gpu_access_type)
+	else if(message_packet_old->gpu_access_type)
 	{
 		new_packet->gpu_access_type = message_packet_old->gpu_access_type;
 	}

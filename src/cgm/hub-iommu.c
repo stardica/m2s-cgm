@@ -21,7 +21,6 @@
 #include <cgm/packet.h>
 
 
-
 //max number of GPU hub queues 8:1
 struct str_map_t queue_strn_map =
 { 	queue_num, {
@@ -80,6 +79,17 @@ void hub_iommu_create_tasks(void){
 	return;
 }
 
+int hub_iommu_can_access(struct list_t *queue){
+
+	//check if in queue is full
+	if(QueueSize <= list_count(queue))
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
 
@@ -102,7 +112,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 		hub_iommu->last_queue = hub_iommu->next_queue;
 
 		//rotate
-		current_queue_num = str_map_string(&queue_strn_map, hub_iommu->last_queue->name);
+		current_queue_num = str_map_string(&queue_strn_map, hub_iommu->next_queue->name);
 
 		if(current_queue_num < (gpu_group_cache_num -1))
 		{
@@ -123,7 +133,6 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 		else
 		{
 			fatal("hub_iommu_get_from_queue(): unexpected queuing behavior\n");
-
 		}
 
 	}while(new_message == NULL);
@@ -139,17 +148,74 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
 }
 
-int hub_iommu_can_access(struct list_t *queue){
+void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 
-	//check if in queue is full
-	if(QueueSize <= list_count(queue))
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	int last_queue_num = -1;
+	int l2_src_id = -1;
+
+	//get the number of the last queue
+	last_queue_num = str_map_string(&queue_strn_map, hub_iommu->last_queue->name);
+
+	/*printf("in hub_iommu access_id %llu %s cycle %llu\n", message_packet->access_id, message_packet->name, P_TIME);
+	printf("in hub_iommu access_id %llu %s cycle %llu\n", message_packet->access_id, message_packet->name, P_TIME);
+	STOP;*/
+
+	//if we are pointing to one of the top queues put the packet on the switch.
+	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
 	{
-		return 0;
+
+		while(!switch_can_access(hub_iommu->switch_queue))
+		{
+			P_PAUSE(1);
+		}
+
+		//switch queue has a slot
+
+		//save the gpu l2 cache id
+		message_packet->l2_cache_id = message_packet->src_id;
+		message_packet->l2_cache_name = message_packet->src_name;
+
+		//change src name and id
+		message_packet->src_name = hub_iommu->name;
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+
+		list_remove(hub_iommu->last_queue, message_packet);
+		list_enqueue(hub_iommu->switch_queue, message_packet);
+
+		future_advance(&switches_ec[hub_iommu->switch_id], WIRE_DELAY(switches[hub_iommu->switch_id].wire_latency));
+
+		CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu delivered\n",
+				hub_iommu->name, message_packet->access_id, P_TIME);
+
+	}
+	//if we are pointing to the bottom queue route to the correct GPU l2 cache
+	else if(last_queue_num == Rx_queue_bottom)
+	{
+		//return trip for memory access
+		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->l2_cache_name);
+
+		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
+		{
+			P_PAUSE(1);
+		}
+
+
+		list_remove(hub_iommu->last_queue, message_packet);
+		list_enqueue(gpu_l2_caches[l2_src_id].Rx_queue_bottom, message_packet);
+
+		future_advance(&gpu_l2_cache[l2_src_id], WIRE_DELAY(gpu_l2_caches[l2_src_id].wire_latency));
+
+	}
+	else
+	{
+		fatal("hub_iommu_put_next_queue(): got a queue id that is out of range\n");
+
 	}
 
-	return 1;
+	return;
 }
-
 
 void hub_iommu_ctrl(void){
 
@@ -169,15 +235,14 @@ void hub_iommu_ctrl(void){
 		message_packet = hub_iommu_get_from_queue();
 		assert(message_packet);
 
-		printf("in hub_iommu\n");
-		STOP;
+		CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+				hub_iommu->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
+		//star todo add GPU virtual to physical translation here
 		P_PAUSE(hub_iommu->latency);
 
-		/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-				switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);*/
-
-
+		//star the hub mostly multiplexes GPU memory requests.
+		hub_iommu_put_next_queue(message_packet);
 
 	}
 	fatal("hub_iommu_ctrl() quit\n");

@@ -321,7 +321,7 @@ void switch_ctrl(void){
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}
-				//GPU and other L2 caches
+				//GPU hub_iommu
 				else if(my_pid >= num_cores)
 				{
 					while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
@@ -333,7 +333,7 @@ void switch_ctrl(void){
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
-					//drop the packet into the hub's
+					//drop the packet into the hub's bottom queue
 					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
 					future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
 					//done with this access

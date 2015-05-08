@@ -61,7 +61,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -198,10 +198,9 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 
 	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu mshr_row %d num_entries %d\n", cache->name, access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
 
-	//move them to the retry queueS
+	//move them to the retry queue
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
 	{
-
 		miss_status_packet = list_dequeue(cache->mshrs[mshr_row].entires);
 
 		CGM_DEBUG(mshr_debug_file, "%s access_id %llu coalesced %d tag %d set %d\n",

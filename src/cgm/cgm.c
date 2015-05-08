@@ -56,6 +56,9 @@ int GPU_cache_debug = 0;
 FILE *switch_debug_file;
 int switch_debug = 0;
 
+FILE *hub_iommu_debug_file;
+int hub_iommu_debug = 0;
+
 FILE *sysagent_debug_file;
 int sysagent_debug = 0;
 
