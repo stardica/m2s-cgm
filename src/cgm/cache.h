@@ -219,7 +219,7 @@ void gpu_lds_unit_ctrl(void);
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_l1_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
+//void cpu_l1_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);

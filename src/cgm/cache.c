@@ -1350,7 +1350,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	//P_PAUSE(cache->latency);
 
-	// L2 Cache Hit!
+	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu retry hit\n", cache->name, access_id, P_TIME);
@@ -1363,7 +1363,23 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 			//send to correct l1 cache and change access type
-			if(cache->cache_type == l2_cache_t)
+			if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
+			{
+				//CPU L1 I cache
+				if(message_packet->cpu_access_type == cgm_access_fetch)
+				{
+					//remove packet from cache queue, global queue, and simulator memory
+					list_remove(cache->last_queue, message_packet);
+					remove_from_global(access_id);
+				}
+				//CPU L1 D cache
+				if(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
+				{
+					list_remove(cache->last_queue, message_packet);
+					linked_list_add(message_packet->event_queue, message_packet->data);
+				}
+			}
+			else if(cache->cache_type == l2_cache_t)
 			{
 
 				if (message_packet->l1_access_type == cgm_access_gets_i)
@@ -1748,7 +1764,7 @@ void l1_i_cache_ctrl(void){
 		else if (access_type == cgm_access_retry)
 		{
 			//l1_i_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
-			cpu_l1_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
+			cpu_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else
 		{
@@ -1809,7 +1825,7 @@ void l1_d_cache_ctrl(void){
 		else if (access_type == cgm_access_retry)
 		{
 			//l1_d_cache_access_retry(&(l1_d_caches[my_pid]), message_packet);
-			cpu_l1_cache_access_retry(&(l1_d_caches[my_pid]), message_packet);
+			cpu_cache_access_retry(&(l1_d_caches[my_pid]), message_packet);
 		}
 		else
 		{
