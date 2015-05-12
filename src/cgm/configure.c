@@ -1156,6 +1156,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d]", i);
 		l1_i_caches[i].name = strdup(buff);
 		l1_i_caches[i].id = i;
+		l1_i_caches[i].cache_type = l1_i_cache_t;
 		l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
@@ -1164,6 +1165,9 @@ int cache_finish_create(){
 		l1_i_caches[i].invalid_hits = 0;
 		l1_i_caches[i].misses = 0;
 		l1_i_caches[i].fetches = 0;
+
+		//pointer to my own event count
+		l1_i_caches[i].ec_ptr = &l1_i_cache[i];
 
 		l1_i_caches[i].Rx_queue_top = list_create();
 		memset (buff,'\0' , 100);
@@ -1181,11 +1185,6 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].retry_queue", i);
 		l1_i_caches[i].retry_queue->name = strdup(buff);
-
-		/*l1_i_caches[i].mshr = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].mshr", i);
-		l1_i_caches[i].mshr->name = strdup(buff);*/
 
 		l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
@@ -1213,6 +1212,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_d_caches[%d]", i);
 		l1_d_caches[i].name = strdup(buff);
 		l1_d_caches[i].id = i;
+		l1_d_caches[i].cache_type = l1_d_cache_t;
 		l1_d_caches[i].log_block_size = LOG2(l1_d_caches[i].block_size);
 		l1_d_caches[i].log_set_size = LOG2(l1_d_caches[i].num_sets);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
@@ -1222,6 +1222,9 @@ int cache_finish_create(){
 		l1_d_caches[i].misses = 0;
 		l1_d_caches[i].loads = 0;
 		l1_d_caches[i].stores = 0;
+
+		//pointer to my own event count
+		l1_d_caches[i].ec_ptr = &l1_d_cache[i];
 
 		l1_d_caches[i].Rx_queue_top = list_create();
 		memset (buff,'\0' , 100);
@@ -1239,11 +1242,6 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].retry_queue", i);
 		l1_d_caches[i].retry_queue->name = strdup(buff);
-
-		/*l1_d_caches[i].mshr = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_d_caches[%d].mshr", i);
-		l1_d_caches[i].mshr->name = strdup(buff);*/
 
 		l1_d_caches[i].mshrs = (void *) calloc(l1_d_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_d_caches[i].mshr_size; j++)
@@ -1271,6 +1269,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l2_caches[%d]", i);
 		l2_caches[i].name = strdup(buff);
 		l2_caches[i].id = i;
+		l2_caches[i].cache_type = l2_cache_t;
 		l2_caches[i].log_block_size = LOG2(l2_caches[i].block_size);
 		l2_caches[i].log_set_size = LOG2(l2_caches[i].num_sets);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
@@ -1280,6 +1279,9 @@ int cache_finish_create(){
 		l2_caches[i].misses = 0;
 		l2_caches[i].loads = 0;
 		l2_caches[i].retries = 0;
+
+		//pointer to my own event count
+		l2_caches[i].ec_ptr = &l2_cache[i];
 
 		l2_caches[i].Rx_queue_top = list_create();
 		memset (buff, '\0', sizeof(buff));
@@ -1297,11 +1299,6 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l2_caches[%d].retry_queue", i);
 		l2_caches[i].retry_queue->name = strdup(buff);
-
-		/*l2_caches[i].mshr = list_create();
-		memset (buff, '\0', sizeof(buff));
-		snprintf(buff,100, "l2_caches[%d].mshr", i);
-		l2_caches[i].mshr->name = strdup(buff);*/
 
 		l2_caches[i].mshrs = (void *) calloc(l2_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l2_caches[i].mshr_size; j++)
@@ -1329,6 +1326,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l3_caches[%d]", i);
 		l3_caches[i].name = strdup(buff);
 		l3_caches[i].id = i;
+		l3_caches[i].cache_type = l3_cache_t;
 		l3_caches[i].log_block_size = LOG2(l3_caches[i].block_size);
 		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
@@ -1336,6 +1334,9 @@ int cache_finish_create(){
 		l3_caches[i].hits = 0;
 		l3_caches[i].invalid_hits = 0;
 		l3_caches[i].misses = 0;
+
+		//pointer to my own event counter
+		l3_caches[i].ec_ptr = &l3_cache[i];
 
 		l3_caches[i].Rx_queue_top = list_create();
 		memset (buff,'\0' , 100);
@@ -1353,11 +1354,6 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].retry_queue", i);
 		l3_caches[i].retry_queue->name = strdup(buff);
-
-		/*l3_caches[i].mshr = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].mshr", i);
-		l3_caches[i].mshr->name = strdup(buff);*/
 
 		l3_caches[i].mshrs = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l3_caches[i].mshr_size; j++)
@@ -1452,6 +1448,8 @@ int cache_finish_create(){
 
 		//star todo init directory here?
 	}
+
+
 
 	//finish creating the GPU caches
 	for(i = 0 ; i < num_cus; i++)

@@ -5,6 +5,7 @@
  *      Author: stardica
  */
 
+/*
 #include <stdio.h>
 #include <assert.h>
 
@@ -14,12 +15,13 @@
 #include <cgm/cache.h>
 #include <cgm/cgm.h>
 #include <cgm/switch.h>
-//#include <cgm/protocol.h>
+#include <cgm/protocol.h>
 #include <cgm/tasking.h>
+*/
 
 
 
-void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//int num_cores = x86_cpu_num_cores;
 	//struct cgm_packet_t *message_packet;
@@ -45,8 +47,8 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int mshr_status = 0;
 	int l3_map = -1;
 
-	/*int retry = 0;
-	int *retry_ptr = &retry;*/
+	int retry = 0;
+	int *retry_ptr = &retry;
 
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;
@@ -150,9 +152,9 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
 
-		/*printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 		mshr_dump(cache);
-		getchar();*/
+		getchar();
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
@@ -215,13 +217,10 @@ void l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	}
 	return;
-}
+}*/
 
-void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//int num_cores = x86_cpu_num_cores;
-	//struct cgm_packet_t *message_packet;
-	//struct cgm_packet_status_t *mshr_packet;
 
 	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
@@ -239,9 +238,6 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	//int mshr_status = 0;
-	//int retry = 0;
-	//int *retry_ptr = &retry;
 
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;
@@ -320,39 +316,11 @@ void l2_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 		}
 	}
 
-
-		/*old code
-		//while the next level of cache's in queue is full stall
-		while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
-		{
-			P_PAUSE(1);
-		}
-
-		//change access type, i cache only ever reads so puts is ok.
-		message_packet->access_type = cgm_access_puts;
-
-		//success, remove packet from l2 cache in queue
-		list_remove(cache->last_queue, message_packet);
-
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
-				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-
-		list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
-		future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
-	}
-	else
-	{
-		fatal("l2_cache_access_retry(): miss on retry\n");
-	}*/
-
-
 	return;
-}
+}*/
 
-void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//int num_cores = x86_cpu_num_cores;
-	//struct cgm_packet_t *message_packet;
 	struct cgm_packet_t *miss_status_packet;
 
 	enum cgm_access_kind_t access_type;
@@ -372,8 +340,8 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int *state_ptr = &state;
 
 	int mshr_row = -1;
-	/*int retry = 0;
-	int *retry_ptr = &retry;*/
+	int retry = 0;
+	int *retry_ptr = &retry;
 
 	int i = 0;
 
@@ -416,9 +384,11 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
-			printf("test\n");*/
+
+
+			return;		printf("test\n");
 		}
 		else
 		{
@@ -428,13 +398,15 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 			//drop it into the retry queue
 			list_enqueue(cache->retry_queue, miss_status_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );*/
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			//printf("miss_status_packet->coalesced_packet->name %s\n", miss_status_packet->coalesced_packet->name);
 		}
 	}
 
 	long long time = etime.count; //:-P
 
+
+			return;
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
@@ -449,7 +421,7 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//STOP;
 
 	return;
-}
+}*/
 
 /*void l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -548,7 +520,7 @@ void l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 }*/
 
 
-void l2_cache_ctrl(void){
+/*void l2_cache_ctrl(void){
 
 	int my_pid = l2_pid++;
 	long long step = 1;
@@ -583,7 +555,7 @@ void l2_cache_ctrl(void){
 	while(1)
 	{
 
-		/*wait here until there is a job to do.*/
+		wait here until there is a job to do.
 		await(&l2_cache[my_pid], step);
 		step++;
 
@@ -597,7 +569,8 @@ void l2_cache_ctrl(void){
 
 		if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
 		{
-			l2_cache_access_gets(&l2_caches[my_pid], message_packet);
+			//l2_cache_access_gets(&l2_caches[my_pid], message_packet);
+			cpu_cache_access_get(&l2_caches[my_pid], message_packet);
 		}
 		else if (access_type == cgm_access_retry)
 		{
@@ -605,19 +578,8 @@ void l2_cache_ctrl(void){
 		}
 		else if(access_type == cgm_access_puts)
 		{
-			//printf("cgm_access_puts\n");
-
-
 			l2_cache_access_puts(&l2_caches[my_pid], message_packet);
 		}
-		/*else if(access_type == cgm_access_load)
-		{
-			l2_cache_access_load(&l2_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_store)
-		{
-			l2_cache_access_store(&l2_caches[my_pid], message_packet);
-		}*/
 		else
 		{
 			fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -625,7 +587,7 @@ void l2_cache_ctrl(void){
 		}
 	}
 
-	/* should never get here*/
+	 should never get here
 	fatal("l2_cache_ctrl task is broken\n");
 	return;
-}
+}*/

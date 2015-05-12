@@ -26,6 +26,14 @@ extern struct str_map_t cache_block_state_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
 
+enum cache_type_enum
+{
+	l1_i_cache_t,
+	l1_d_cache_t,
+	l2_cache_t,
+	l3_cache_t
+};
+
 
 enum cache_waylist_enum
 {
@@ -83,6 +91,11 @@ struct cache_t{
 	//star >> my added elements.
 	char *name;
 	int id;
+
+	enum cache_type_enum cache_type;
+
+	//this is so the cache can advance itself
+	eventcount *ec_ptr;
 
 	//cache configuration settings
 	unsigned int num_slices;
@@ -183,34 +196,11 @@ extern task *gpu_v_cache_tasks;
 extern task *gpu_s_cache_tasks;
 extern task *gpu_lds_tasks;
 
-//function prototypes
+//simulator functions
 void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
-
-int cache_can_access_top(struct cache_t *cache);
-int cache_can_access_bottom(struct cache_t *cache);
-
-int cache_get_state(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
-
-//borrowed from m2s mem-system and tweaked a bit
-void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
-int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
-void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
-void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
-void cache_access_block(struct cache_t *cache, int set, int way);
-int cache_replace_block(struct cache_t *cache, int set);
-void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
-void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
-
-//void cgm_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-int cgm_l3_cache_map(int *set);
-int cgm_cache_map(int cache_id);
-
-
-struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 
 //tasks
 void l1_i_cache_ctrl(void);
@@ -221,6 +211,40 @@ void gpu_s_cache_ctrl(void);
 void gpu_v_cache_ctrl(void);
 void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
+
+
+
+
+//cache functions
+struct cgm_packet_t *cache_get_message(struct cache_t *cache);
+void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_l1_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_l1_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
+int cgm_l3_cache_map(int *set);
+int cgm_cache_map(int cache_id);
+int cache_can_access_top(struct cache_t *cache);
+int cache_can_access_bottom(struct cache_t *cache);
+
+
+//borrowed from m2s mem-system and tweaked a bit
+void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
+int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
+//void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
+//void cache_access_block(struct cache_t *cache, int set, int way);
+//int cache_replace_block(struct cache_t *cache, int set);
+//void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
+void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
+
+
+//this needs to be deleted
+//int cache_get_state(struct cache_t *cache, enum cgm_access_kind_t access_type, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 
 
 #endif /*CACHE_H_*/

@@ -5,6 +5,7 @@
  *      Author: stardica
  */
 
+/*
 #include <stdio.h>
 
 #include <arch/x86/timing/cpu.h>
@@ -15,9 +16,10 @@
 #include <cgm/cgm.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
+*/
 
 //star todo try to combine this into a single fucniton for both the L1 I and L1 D caches.
-void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -119,8 +121,8 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -133,7 +135,7 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
-					access_id, P_TIME, cache->name, l2_caches[cache->id].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), cache->id);
+					access_id, P_TIME, cache->name, l2_caches[cache->id].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
@@ -149,9 +151,9 @@ void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 	}
 	return;
-}
+}*/
 
-void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -222,9 +224,9 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
-			printf("test\n");*/
+			printf("test\n");
 		}
 		else
 		{
@@ -252,8 +254,8 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
-		/*printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
-		printf("advances\n");*/
+		printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
+		printf("advances\n");
 
 		time += 2;
 		future_advance(&l1_i_cache[cache->id], time);
@@ -263,9 +265,9 @@ void l1_i_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
 	return;
-}
+}*/
 
-void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -294,7 +296,7 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	addr = message_packet->address;
 
 	//stats
-	/*if(access_type == cgm_access_retry)*/
+	if(access_type == cgm_access_retry)
 	cache->retries++;
 
 	//probe the address for set, tag, and offset.
@@ -327,9 +329,9 @@ void l1_i_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message
 	//STOP;
 
 	return;
-}
+}*/
 
-void l1_i_cache_ctrl(void){
+/*void l1_i_cache_ctrl(void){
 
 	//my_pid increments for the number of CPU cores. i.e. 0 - 4 for a quad core
 	int my_pid = l1_i_pid++;
@@ -339,30 +341,6 @@ void l1_i_cache_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
-
-	//struct cgm_packet_status_t *miss_status_packet;
-
-	//unsigned int addr = 0;
-
-	//int set = 0;
-	//int tag = 0;
-	//unsigned int offset = 0;
-	//int way = 0;
-	//int state = 0;
-	//int cache_status = 0;
-
-	/*int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
-	int *state_ptr = &state;*/
-
-	//int mshr_status = 0;
-	//int retry = 0;
-	//int *retry_ptr = &retry;
-
-	/*int i = 0;
-	long long advance_time = 0;*/
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -386,15 +364,18 @@ void l1_i_cache_ctrl(void){
 
 		if (access_type == cgm_access_fetch)
 		{
-			l1_i_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			l1_i_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
+			//l1_i_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
+			cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else if (access_type == cgm_access_puts)
 		{
-			l1_i_cache_access_puts(&(l1_i_caches[my_pid]), message_packet);
+			//l1_i_cache_access_puts(&(l1_i_caches[my_pid]), message_packet);
+			cpu_l1_cache_access_puts(&(l1_i_caches[my_pid]), message_packet);
+		}
+		else if (access_type == cgm_access_retry)
+		{
+			//l1_i_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
+			cpu_l1_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else
 		{
@@ -403,7 +384,7 @@ void l1_i_cache_ctrl(void){
 		}
 	}
 
-	/* should never get here*/
+	 should never get here
 	fatal("l1_i_cache_ctrl task is broken\n");
 	return;
-}
+}*/

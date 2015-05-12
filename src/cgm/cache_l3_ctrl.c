@@ -5,6 +5,7 @@
  *      Author: stardica
  */
 
+/*
 #include <stdio.h>
 
 #include <cgm/cache.h>
@@ -12,9 +13,10 @@
 #include <cgm/switch.h>
 #include <cgm/sys-agent.h>
 #include <arch/x86/timing/cpu.h>
+*/
 
 
-void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -167,10 +169,10 @@ void l3_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *message_pa
 	}
 
 	return;
-}
+}*/
 
 
-void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//int num_cores = x86_cpu_num_cores;
 	//struct cgm_packet_t *message_packet;
@@ -246,9 +248,9 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 
 			//printf("message package l1 access type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->l1_access_type));
 
-			/*printf("dest %s\n", message_packet->dest_name);
+			printf("dest %s\n", message_packet->dest_name);
 			printf("src %s\n", message_packet->src_name);
-			getchar();*/
+			getchar();
 
 
 
@@ -268,10 +270,10 @@ void l3_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_p
 
 
 	return;
-}
+}*/
 
 
-void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//int num_cores = x86_cpu_num_cores;
 	//struct cgm_packet_t *message_packet;
@@ -351,9 +353,9 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
-			printf("test\n");*/
+			printf("test\n");
 		}
 		else
 		{
@@ -363,7 +365,7 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 			//drop it into the retry queue
 			list_enqueue(cache->retry_queue, miss_status_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );*/
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			//printf("miss_status_packet->coalesced_packet->name %s\n", miss_status_packet->coalesced_packet->name);
 		}
 	}
@@ -382,11 +384,11 @@ void l3_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_pa
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
 	return;
-}
+}*/
 
 
 
-void l3_cache_ctrl(void){
+/*void l3_cache_ctrl(void){
 
 	int my_pid = l3_pid++;
 	int num_cores = x86_cpu_num_cores;
@@ -400,7 +402,7 @@ void l3_cache_ctrl(void){
 
 	while(1)
 	{
-		/*wait here until there is a job to do.*/
+		wait here until there is a job to do.
 		await(&l3_cache[my_pid], step);
 		step++;
 
@@ -415,15 +417,19 @@ void l3_cache_ctrl(void){
 
 		if (access_type == cgm_access_gets)
 		{
-			l3_cache_access_gets(&l3_caches[my_pid], message_packet);
+			//l3_cache_access_gets(&l3_caches[my_pid], message_packet);
+			cpu_cache_access_get(&l3_caches[my_pid], message_packet);
+		}
+
+		else if (access_type == cgm_access_puts)
+		{
+			//l3_cache_access_puts(&l3_caches[my_pid], message_packet);
+			cpu_cache_access_put(&l3_caches[my_pid], message_packet);
 		}
 		else if (access_type == cgm_access_retry)
 		{
-			l3_cache_access_retry(&l3_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			l3_cache_access_puts(&l3_caches[my_pid], message_packet);
+			//l3_cache_access_retry(&l3_caches[my_pid], message_packet);
+			cpu_cache_access_retry(&l3_caches[my_pid], message_packet);
 		}
 		else
 		{
@@ -432,7 +438,7 @@ void l3_cache_ctrl(void){
 		}
 
 	}
-	/* should never get here*/
+	 should never get here
 	fatal("l3_cache_ctrl task is broken\n");
 	return;
-}
+}*/
