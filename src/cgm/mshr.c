@@ -6,13 +6,11 @@
  */
 
 
-#include <cgm/mshr.h>
-#include <cgm/packet.h>
-#include <cgm/protocol.h>
-#include <cgm/cache.h>
-
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+
+#include <cgm/mshr.h>
+#include <cgm/protocol.h>
 
 struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet_old, int set, int tag, unsigned int offset, int src_id){
 
@@ -54,10 +52,45 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 	return new_packet;
 }
 
+int l1_mshr_set(struct cache_t *cache, int mshr_row, int *tag_ptr, int *set_ptr, long long access_id){
+
+	cache->mshrs[mshr_row].tag = *tag_ptr;
+	cache->mshrs[mshr_row].set = *set_ptr;
+	cache->mshrs[mshr_row].access_id = access_id;
+	cache->mshrs[mshr_row].valid = 1;
+	cache->mshrs[mshr_row].num_entries ++;
+
+	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu tag %d set %d added to row %d and size %d\n",
+		cache->mshrs[mshr_row].name, access_id, P_TIME, *tag_ptr, *set_ptr, mshr_row, list_count(cache->mshrs[mshr_row].entires));
+
+	return 1;
+}
+
+int l1_mshr_coalesce(struct cache_t *cache, struct cgm_packet_t *message_packet, int mshr_row){
+
+	//stats
+	cache->coalesces++;
+
+	int tag = message_packet->tag;
+	int set = message_packet->set;
+
+	//we are coalescing so the tag and set should be the same...
+	assert(cache->mshrs[mshr_row].tag == tag && cache->mshrs[mshr_row].set == set);
+
+	//add to mshr and increment number of entries.
+	message_packet->coalesced = 1;
+	cache->mshrs[mshr_row].num_entries++;
+
+	list_enqueue(cache->mshrs[mshr_row].entires, message_packet);
+
+	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu tag %d set %d coalesced in row %d and size %d\n",
+		cache->mshrs[mshr_row].name, message_packet->access_id, P_TIME, message_packet->tag, message_packet->set, mshr_row, list_count(cache->mshrs[mshr_row].entires));
+
+	return 1;
+}
+
 //returns 1 if accesses is stored or 0 if failed/full.
 int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
-
-	//unsigned int mshr_size = cache->mshr_size;
 
 	int tag = miss_status_packet->tag;
 	int set = miss_status_packet->set;
@@ -75,8 +108,6 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 		//compare if the mshr has entries compare the tag and set
 		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set)
 		{
-
-
 			row = i;
 			break;
 		}
@@ -159,44 +190,91 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 	}
 
 	fatal("mshr_set() reached bottom\n");
+	return -1;
 }
 
 
-int mshr_get(struct cache_t *cache, int *set_ptr, int *tag_ptr, long long access_id){
+int mshr_get_status(struct cache_t *cache, int *tag_ptr, int *set_ptr, long long access_id){
 
-	//unsigned int mshr_size = cache->mshr_size;
 	int tag = *tag_ptr;
 	int set = *set_ptr;
 	long long id = access_id;
-	int i = 0, j = 0;
+
+	int i = 0;
+	int j = 0;
 	int row = -1;
 
-	struct cgm_packet_t *temp;
+	//struct cgm_packet_t *temp;
 	//seek the miss in the mshr
 
 	//check for existing memory accesses to same set and tag
 	for(i = 0; i < cache->mshr_size; i ++)
 	{
 		//compare if the mshr entries match the tag and set
-		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set) //cache->mshrs[i].num_entries > 0
+		if(cache->mshrs[i].tag == tag && cache->mshrs[i].set == set && cache->mshrs[i].valid == 1)
 		{
 			row = i;
-
-			//star todo fix this there is a temporal issue with the MSHR
-			temp = list_get(cache->mshrs[i].entires, 0);
+			/*temp = list_get(cache->mshrs[i].entires, 0);
 			if(temp->access_id == access_id)
 			{
 				break;
-			}
-			/*else if (temp->access_id != access_id)
-			{
-				row = -1;
 			}*/
 		}
 	}
 
+
+	//debug
+	if(row == -1)
+	{
+		CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu tag %d set %d mshr status not found\n",
+			cache->name, access_id, P_TIME, tag, set);
+	}
+	else
+	{
+		CGM_DEBUG(mshr_debug_file, "%s mshr status access_id %llu cycle %llu tag %d set %d mshr status found row %d and size %d\n",
+			cache->mshrs[row].name, access_id, P_TIME, tag, set, row, list_count(cache->mshrs[row].entires));
+	}
+
+	assert(row < cache->mshr_size);
 	return row;
 }
+
+int mshr_get_empty_row(struct cache_t *cache, int *tag_ptr, int *set_ptr, long long access_id){
+
+	int tag = *tag_ptr;
+	int set = *set_ptr;
+
+	int i = 0;
+	int row = -1;
+
+	for(i = 0; i < cache->mshr_size; i ++)
+	{
+		//compare if the MSHR entries match the tag and set
+		if(cache->mshrs[i].tag == -1 && cache->mshrs[i].set == -1 && cache->mshrs[i].valid == -1)
+		{
+			row = i;
+			break;
+		}
+	}
+
+	//debug
+	if(row == -1)
+	{
+		CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu tag %d set %d mshr status empty row not found\n",
+			cache->name, access_id, P_TIME, tag, set);
+	}
+	else
+	{
+		CGM_DEBUG(mshr_debug_file, "%s mshr status access_id %llu cycle %llu tag %d set %d mshr status found empty row %d and size %d\n",
+			cache->mshrs[row].name, access_id, P_TIME, tag, set, row, list_count(cache->mshrs[row].entires));
+	}
+
+	//printf("row = %d cache_mshr_size %d\n", row, cache->mshr_size);
+	assert(row < cache->mshr_size);
+	return row;
+}
+
+
 
 void mshr_dump(struct cache_t *cache){
 
@@ -233,6 +311,7 @@ void mshr_clear(struct mshr_t *mshrs){
 	mshrs->offset = -1;
 	mshrs->num_entries = 0;
 	mshrs->valid = -1;
+	mshrs->access_id = -1;
 	list_clear(mshrs->entires);
 
 	return;

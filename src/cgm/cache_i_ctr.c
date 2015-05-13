@@ -18,6 +18,127 @@
 #include <cgm/protocol.h>
 */
 
+/*void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	struct cgm_packet_t *miss_status_packet;
+
+	enum cgm_access_kind_t access_type;
+	unsigned int addr = 0;
+	long long access_id = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+	int state = 0;
+	//int cache_status;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+	int *state_ptr = &state;
+
+	int mshr_row = -1;
+	int retry = 0;
+	int *retry_ptr = &retry;
+
+	int i = 0;
+
+	//the packet is from the L2 cache
+	access_type = message_packet->access_type;
+	addr = message_packet->address;
+	access_id = message_packet->access_id;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+
+	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
+
+	//charge the delay for writing cache block
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	P_PAUSE(cache->latency);
+
+	//get the mshr status
+	mshr_row = mshr_get_status(cache, set_ptr, tag_ptr, access_id);
+	if(mshr_row == -1)
+	{
+		printf("%s crashing %llu access_id %llu type %s\n", cache->name, P_TIME, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->cpu_access_type));
+		mshr_dump(cache);
+		assert(mshr_row != -1);
+	}
+
+	//check the number of entries in the mshr row
+	assert(list_count(cache->mshrs[mshr_row].entires) == cache->mshrs[mshr_row].num_entries);
+	assert(cache->mshrs[mshr_row].num_entries > 0);
+
+	CGM_DEBUG(mshr_debug_file, "%s access_id %llu cycle %llu mshr_row %d num_entries %d\n", cache->name, access_id, P_TIME, mshr_row, cache->mshrs[mshr_row].num_entries);
+
+	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i++)
+	{
+		//printf("i %d entry size %d\n", i, entry_size)
+		miss_status_packet = list_dequeue(cache->mshrs[mshr_row].entires);
+
+		CGM_DEBUG(mshr_debug_file, "%s access_id %llu coalesced %d tag %d set %d\n",
+				cache->name, miss_status_packet->access_id, miss_status_packet->coalesced, miss_status_packet->tag, miss_status_packet->set);
+
+		assert(miss_status_packet != NULL);
+
+		if (miss_status_packet->access_id == access_id)
+		{
+			//this is the first entry and was not coalesced
+			assert(miss_status_packet->coalesced == 0);
+
+			//we can put either the message_packet or miss_status_packet in the retry queue.
+			message_packet->access_type = cgm_access_retry;
+			list_remove(cache->last_queue, message_packet);
+			list_enqueue(cache->retry_queue, message_packet);
+
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
+			printf("test\n");
+		}
+		else
+		{
+			//this is a coalesced packet
+			if(miss_status_packet->coalesced != 1)
+			{
+				printf("breaking access_id %llu cycle %llu\n", access_id, P_TIME);
+				printf("i %d miss sp %llu, coalesced %d\n", i, miss_status_packet->access_id, miss_status_packet->coalesced);
+
+				mshr_dump(cache);
+
+				STOP;
+			}
+			assert(miss_status_packet->coalesced == 1);
+
+			//drop it into the retry queue
+			list_enqueue(cache->retry_queue, miss_status_packet);
+		}
+	}
+
+	//advance myself by the number of packets.
+	long long time = etime.count;  :-P
+	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
+	{
+		time += 2;
+		future_advance(cache->ec_ptr, time);
+	}
+
+	//clear the mshr row for future use
+	mshr_clear(&(cache->mshrs[mshr_row]));
+
+	return;
+
+}*/
+
+
+
+
+
+
+
+
+
 //star todo try to combine this into a single fucniton for both the L1 I and L1 D caches.
 /*void l1_i_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 

@@ -123,15 +123,15 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 		{
 			//access is unique in the MSHR so send forward
 			//while the next level of cache's in queue is full stall
-			while(!cache_can_access_top(&gpu_l2_caches[cgm_cache_map(cache->id)]))
+			while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
 			{
-				printf("cache_can_access_top(&gpu_l2_caches[cgm_cache_map(cache->id)]))\n");
+				printf("cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))\n");
 
 				P_PAUSE(1);
 			}
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
-					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_cache_map(cache->id)].Rx_queue_top));
+					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -142,17 +142,17 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(gpu_l2_caches[cgm_cache_map(cache->id)].Rx_queue_top, message_packet);
+			list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top, message_packet);
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
-					cache->name, access_id, P_TIME, gpu_l2_caches[cgm_cache_map(cache->id)].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+					cache->name, access_id, P_TIME, gpu_l2_caches[cgm_gpu_cache_map(cache->id)].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
-					access_id, P_TIME, cache->name, gpu_l2_caches[cgm_cache_map(cache->id)].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+					access_id, P_TIME, cache->name, gpu_l2_caches[cgm_gpu_cache_map(cache->id)].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			//advance the L2 cache adding some wire delay time.
-			future_advance(&gpu_l2_cache[cgm_cache_map(cache->id)], WIRE_DELAY(gpu_l2_caches[cgm_cache_map(cache->id)].wire_latency));
+			future_advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)], WIRE_DELAY(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].wire_latency));
 
 		}
 		else //mshr == 0
@@ -276,7 +276,7 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	P_PAUSE(cache->latency);
 
 	//get the mshr status
-	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
+	mshr_row = mshr_get_status(cache, set_ptr, tag_ptr, access_id);
 	assert(mshr_row != -1);
 
 	//check the number of entries in the mshr row

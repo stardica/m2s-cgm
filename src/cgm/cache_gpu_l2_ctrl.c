@@ -408,7 +408,7 @@ void gpu_l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *messag
 	getchar();*/
 
 	//get the mshr status
-	mshr_row = mshr_get(cache, set_ptr, tag_ptr, access_id);
+	mshr_row = mshr_get_status(cache, set_ptr, tag_ptr, access_id);
 	assert(mshr_row != -1);
 	//printf("mshr_row %d\n", mshr_row);
 
