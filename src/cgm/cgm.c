@@ -432,11 +432,14 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->name = strdup(buff);
 
 
+
+
 	//////////////testing
 	//put back on the core event queue to end memory system access.
-	linked_list_add(new_packet->event_queue, new_packet->data);
-	free(new_packet);
-	return;
+	//linked_list_add(event_queue, event_queue_item);
+	//free(new_packet);
+	///printf("last item event_queue_item %llu\n", P_TIME);
+	//return;
 	//////////////testing
 
 	//For memory system load store request

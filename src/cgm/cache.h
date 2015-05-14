@@ -115,10 +115,13 @@ struct cache_t{
 
 	//mshr control links
 	int mshr_size;
-	//struct list_t *mshr;
-	//struct list_t **mshr_2;
 	struct mshr_t *mshrs;
+
+	struct list_t *ota;
+
 	int max_coal;
+
+
 
 	//cache queues
 	struct list_t *Rx_queue_top;
@@ -229,7 +232,6 @@ int cgm_l3_cache_map(int *set);
 
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
-
 
 
 int cgm_gpu_cache_map(int cache_id);
