@@ -54,6 +54,7 @@ struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet
 
 int l1_mshr_set(struct cache_t *cache, int mshr_row, int *tag_ptr, int *set_ptr, long long access_id){
 
+
 	cache->mshrs[mshr_row].tag = *tag_ptr;
 	cache->mshrs[mshr_row].set = *set_ptr;
 	cache->mshrs[mshr_row].access_id = access_id;

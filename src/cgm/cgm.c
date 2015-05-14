@@ -240,7 +240,6 @@ void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
-
 	X86Thread *thread;
 	thread = self;
 

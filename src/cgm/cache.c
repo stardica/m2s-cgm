@@ -459,10 +459,10 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	if(cache->cache_type == l1_d_cache_t)
+	/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -496,7 +496,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 		else
 		{
-			fatal("l1_d_cache_access_load(): incorrect block state set");
+			fatal("cpu_l1_cache_access_load(): incorrect block state set");
 		}
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
@@ -528,6 +528,8 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 
 
+
+
 		//check MSHR status
 		//mshr_status = mshr_get_status(cache, tag_ptr, set_ptr, access_id);
 
@@ -548,7 +550,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			//while the next level of cache's in queue is full stall
 			while(!cache_can_access_top(&l2_caches[cache->id]))
 			{
-				printf("stall\n");
+				//printf("stall\n");
 				P_PAUSE(1);
 			}
 
@@ -649,10 +651,10 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 
 	//////testing
-	if(cache->cache_type == l1_d_cache_t)
+	/*if(cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -698,7 +700,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	}
 
 	//Cache Miss!
-	if(cache_status == 0 || *state_ptr == 0)
+	else if(cache_status == 0 || *state_ptr == 0)
 	{
 		//on both a miss and invalid hit the state_ptr should be zero
 
@@ -710,12 +712,12 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 		message_packet->l1_access_type = cgm_access_gets_d;
 
 
-		miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
+	/*	miss_status_packet = miss_status_packet_copy(message_packet, *set_ptr, *tag_ptr, *offset_ptr, str_map_string(&l1_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
 
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);*/
 
-		if(mshr_status == 2)
+		/*if(mshr_status == 2)
 		{
 			//access was coalesced
 			//remove the message packet on coalesce, but don't send to next cache
@@ -725,12 +727,12 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		}
 		else if(mshr_status == 1)
-		{
+		{*/
 			//access is unique in the MSHR so send forward
 			//while the next level of cache's in queue is full stall
 			while(!cache_can_access_top(&l2_caches[cache->id]))
 			{
-				printf("stall\n");
+				//printf("stall\n");
 				P_PAUSE(1);
 			}
 
@@ -755,7 +757,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//advance the L2 cache adding some wire delay time.
 			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
-		}
+		/*}
 		else //mshr == 0
 		{
 			printf("breaking\n");
@@ -764,6 +766,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			//mshr is full so we can't progress, retry.
 			fatal("l1_d_cache_access_load(): MSHR full\n");
 		}
+	}*/
 	}
 
 	return;
@@ -889,10 +892,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 
 	//////testing
-	if(cache->cache_type == l2_cache_t || cache->cache_type == l2_cache_t)
+	/*if(cache->cache_type == l3_cache_t) //cache->cache_type == l2_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 
@@ -925,7 +928,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
 					{
-						printf("stall\n");
+						//printf("stall\n");
 						P_PAUSE(1);
 					}
 
@@ -943,7 +946,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
 					{
-						printf("stall\n");
+						//printf("stall\n");
 						P_PAUSE(1);
 					}
 
@@ -969,7 +972,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				//star todo possible deadlock situation if both the l2 and core are trying to fill a full queue
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
-					printf("stall\n");
+					//printf("stall\n");
 					P_PAUSE(1);
 				}
 
@@ -1011,8 +1014,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	else if(cache_status == 0 || *state_ptr == 0)
 	{
 
-		printf("cpu_cache_access_get() MISS!!\n");
-		getchar();
+		/*printf("cpu_cache_access_get() MISS!!\n");
+		getchar();*/
 
 		cache->misses++;
 
@@ -1020,12 +1023,12 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		//message_packet->access_type = cgm_access_gets;
 
-		miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
+		/*miss_status_packet = miss_status_packet_copy(message_packet, set, tag, offset, str_map_string(&node_strn_map, cache->name));
 		mshr_status = mshr_set(cache, miss_status_packet);
 
-		/*printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
+		printf("%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 		mshr_dump(cache);
-		getchar();*/
+		getchar();
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
@@ -1039,7 +1042,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 		}
 		else if(mshr_status == 1)
-		{
+		{*/
 			//access is unique in the MSHR so send forward
 			//while the next level of cache's in queue is full stall
 
@@ -1049,7 +1052,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			{
 				while(!switch_can_access(switches[cache->id].north_queue))
 				{
-					printf("stall\n");
+					//printf("stall\n");
 					P_PAUSE(1);
 				}
 
@@ -1060,6 +1063,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 				l3_map = cgm_l3_cache_map(set_ptr);
 
+				message_packet->access_type = cgm_access_gets;
 				message_packet->l2_cache_id = cache->id;
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -1085,7 +1089,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			{
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
-					printf("stall\n");
+					//printf("stall\n");
 					P_PAUSE(1);
 				}
 
@@ -1116,7 +1120,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				fatal("cpu_cache_access_get(): miss bad cache type access_id %llu cycle %llu\n", access_id, P_TIME);
 			}
 
-		}
+		/*}
 		else //mshr == 0 || -1
 		{
 			//mshr is full so we can't progress, retry.
@@ -1126,7 +1130,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			STOP;
 
 			fatal("cpu_cache_access_load(): MSHR full\n");
-		}
+		}*/
 
 	}
 	return;
@@ -1318,7 +1322,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
 					{
-						printf("stall\n");
+						//printf("stall\n");
 						P_PAUSE(1);
 					}
 
@@ -1335,7 +1339,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
 					{
-						printf("stall\n");
+						//printf("stall\n");
 						P_PAUSE(1);
 					}
 
@@ -1358,7 +1362,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				//Send up to L2 cache
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
-					printf("stall\n");
+					//printf("stall\n");
 					P_PAUSE(1);
 				}
 
@@ -1368,7 +1372,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				//success
 				//remove packet from l3 cache in queue
 				message_packet->access_type = cgm_access_puts;
-
 				message_packet->dest_id = message_packet->l2_cache_id;
 				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 				message_packet->src_name = cache->name;

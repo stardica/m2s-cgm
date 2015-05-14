@@ -114,18 +114,20 @@ void memctrl_ctrl(void){
 			P_PAUSE(1);
 		}
 
-		message_packet->access_type = cgm_access_puts;
 
-		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 
-		//future_advance(system_agent_ec, etime.count + 2);
 		future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
 
-		/*printf("mem ctrl stop\n");
-		STOP;*/
+		message_packet->access_type = cgm_access_puts;
+		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+
+		//future_advance(system_agent_ec, etime.count + 100);
+		/*printf("time = %llu \n", etime.count);
+		printf("DRAM_DELAY(mem_ctrl->DRAM_latency) = %llu \n", DRAM_DELAY(mem_ctrl->DRAM_latency));
+		getchar();*/
+
+		/*STOP;*/
 	}
-
-
 
 	return;
 }

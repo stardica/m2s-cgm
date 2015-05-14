@@ -117,8 +117,8 @@ void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 
 //caches
-int cgm_can_issue_access(X86Thread *self, unsigned int addr);
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr);
+int cgm_can_issue_access(X86Thread *self, unsigned int addr);
 int cgm_in_flight_access(long long id);
 long long cgm_fetch_access(X86Thread *self, unsigned int addr);
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);

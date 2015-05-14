@@ -11,7 +11,7 @@
 
 #include <cgm/tasking.h>
 
-#define DRAM_DELAY(DRAM_latency) (etime.count + (DRAM_latency * 2))
+#define DRAM_DELAY(DRAM_latency) (etime.count + ((long long) DRAM_latency * 2))
 
 
 extern struct mem_ctrl_t{
