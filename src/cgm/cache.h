@@ -117,10 +117,10 @@ struct cache_t{
 	int mshr_size;
 	struct mshr_t *mshrs;
 
-	struct list_t *ota;
-
+	//outstanding request table
+	int **ort;
+	struct list_t *ort_list;
 	int max_coal;
-
 
 
 	//cache queues

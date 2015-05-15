@@ -38,4 +38,8 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet);
 void mshr_dump(struct cache_t *cache);
 void mshr_clear(struct mshr_t *mshrs);
 
+//ort functions
+
+
+
 #endif /* MSHR_H_ */

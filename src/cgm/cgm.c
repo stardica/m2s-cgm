@@ -155,7 +155,6 @@ void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats---\n");
 
-
 	cache_dump_stats();
 
 	CLOSE_FILES;

@@ -1142,7 +1142,7 @@ int cache_finish_create(){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	struct cache_block_t *block;
-	int i = 0, j = 0, set = 0, way = 0;
+	int i = 0, j = 0, k = 0, set = 0, way = 0;
 	char buff[100];
 
 	//finish creating the CPU caches
@@ -1202,6 +1202,26 @@ int cache_finish_create(){
 			mshr_clear(&(l1_i_caches[i].mshrs[j]));
 		}
 
+		l1_i_caches[i].ort_list = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].ort_list", i);
+		l1_i_caches[i].ort_list->name = strdup(buff);
+
+		l1_i_caches[i].ort = (int **)malloc(l1_i_caches[i].mshr_size * sizeof(int *));
+		for (j = 0; j < l1_i_caches[i].mshr_size; j++)
+		{
+			l1_i_caches[i].ort[j] = (int *)malloc(3 * sizeof(int));
+		}
+
+		//init ort
+		for (j = 0; j <  l1_i_caches[i].mshr_size; j++)
+		{
+			for (k = 0; k < 3; k++)
+			{
+				l1_i_caches[i].ort[j][k] = -1;
+			}
+		}
+
 
 		/////////////
 		//L1 D Cache
@@ -1259,6 +1279,25 @@ int cache_finish_create(){
 			mshr_clear(&(l1_d_caches[i].mshrs[j]));
 		}
 
+		l1_d_caches[i].ort_list = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].ort_list", i);
+		l1_d_caches[i].ort_list->name = strdup(buff);
+
+		l1_d_caches[i].ort = (int **)malloc(l1_d_caches[i].mshr_size * sizeof(int *));
+		for (j = 0; j < l1_d_caches[i].mshr_size; j++)
+		{
+			l1_d_caches[i].ort[j] = (int *)malloc(3 * sizeof(int));
+		}
+
+		//init ort
+		for (j = 0; j <  l1_d_caches[i].mshr_size; j++)
+		{
+			for (k = 0; k < 3; k++)
+			{
+				l1_d_caches[i].ort[j][k] = -1;
+			}
+		}
 
 		/////////////
 		//L2 Cache
