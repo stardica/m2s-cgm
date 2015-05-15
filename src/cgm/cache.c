@@ -1310,7 +1310,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 		if (!ort_packet)
 		{
 			//no coalesced packets.
-			break;
+			continue;
 		}
 		else if(ort_packet->tag == tag && ort_packet->set == set)
 		{
