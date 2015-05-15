@@ -199,7 +199,7 @@ void cpu_gpu_run(void){
 
 		if you play with the dealy number you will eventualy find
 		the correct intput and the simulation will finish correctly.*/
-		future_advance(sim_finish, (etime.count + 8));
+		future_advance(sim_finish, (etime.count + 2));
 		//advance(sim_finish);
 	}
 

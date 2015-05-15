@@ -528,8 +528,6 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 
 
-
-
 		//check MSHR status
 		//mshr_status = mshr_get_status(cache, tag_ptr, set_ptr, access_id);
 
@@ -557,23 +555,22 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
+			P_PAUSE(l2_caches[cache->id].wire_latency);
+
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
-
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2_cache[%d] as %s\n",
 					cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-
-
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
 					access_id, P_TIME, cache->name, l2_caches[cache->id].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			//advance the L2 cache adding some wire delay time.
-			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
+			//future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
+			advance(&l2_cache[cache->id]);
 
 		/*}
 		//coalesce
@@ -588,8 +585,6 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 		}*/
-
-
 
 		/*}
 		else if(mshr_status == 1)
@@ -665,7 +660,6 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(cache->latency);
 
-
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)// && *state_ptr != cache_block_shared)
 	{
@@ -739,24 +733,24 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
+			P_PAUSE(l2_caches[cache->id].wire_latency);
+
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
 
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-
 			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
-
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
 				cache->name, access_id, P_TIME, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-
-
 			CGM_DEBUG(protocol_debug_file, "%s Access_id %llu cycle %llu %s miss SEND %s %s\n",
 				cache->name, access_id, P_TIME, cache->name, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			//advance the L2 cache adding some wire delay time.
-			future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
+			//future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
+
+			advance(&l2_cache[cache->id]);
 		/*}
 		else //mshr == 0
 		{
@@ -892,10 +886,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 
 	//////testing
-	/*if(cache->cache_type == l3_cache_t) //cache->cache_type == l2_cache_t)
+	if(cache->cache_type == l3_cache_t) //cache->cache_type == l2_cache_t ||
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}*/
+	}
 	//////testing
 
 
@@ -935,10 +929,14 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 							cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
+					P_PAUSE(l1_i_caches[cache->id].wire_latency);
+
 					message_packet->access_type = cgm_access_puts;
 					list_remove(cache->last_queue, message_packet);
 					list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
-					future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
+
+					//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
+					advance(&l1_i_cache[cache->id]);
 
 				}
 				else if (message_packet->access_type == cgm_access_gets_d)
@@ -953,10 +951,14 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 							cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
+					P_PAUSE(l1_d_caches[cache->id].wire_latency);
+
 					message_packet->access_type = cgm_access_puts;
 					list_remove(cache->last_queue, message_packet);
 					list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
-					future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
+
+					//future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
+					advance(&l1_d_cache[cache->id]);
 				}
 				else
 				{
@@ -979,6 +981,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
+				P_PAUSE(switches[cache->id].wire_latency);
+
 				//success
 				//remove packet from l3 cache in queue
 				message_packet->access_type = cgm_access_puts;
@@ -992,7 +996,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 						cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 				list_enqueue(switches[cache->id].south_queue, message_packet);
-				future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+				advance(&switches_ec[cache->id]);
+				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 				//done
 			}
 			else
@@ -1059,6 +1064,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch north queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].north_queue));
 
+				P_PAUSE(switches[cache->id].wire_latency);
 				//printf(" l2 miss type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 				l3_map = cgm_l3_cache_map(set_ptr);
@@ -1083,7 +1089,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 						access_id, P_TIME, cache->name, l3_caches[l3_map].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 				//advance the L2 cache adding some wire delay time.
-				future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+				advance(&switches_ec[cache->id]);
+				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 			}
 			else if(cache->cache_type == l3_cache_t)
 			{
@@ -1096,6 +1103,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 						cache->name, access_id, P_TIME, switches[cache->id].south_queue->name, list_count(switches[cache->id].south_queue));
 
+				P_PAUSE(switches[cache->id].wire_latency);
+
 				//message_packet->access_type = cgm_access_gets;
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -1106,13 +1115,14 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				list_remove(cache->last_queue, message_packet);
 				list_enqueue(switches[cache->id].south_queue, message_packet);
 
-				future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
-
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] as %s\n",
 						cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 				CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
 					access_id, P_TIME, cache->name, system_agent->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
+				advance(&switches_ec[cache->id]);
+				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 
 			}
 			else
@@ -1175,7 +1185,6 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	P_PAUSE(cache->latency);
 
-
 	//get the mshr status
 	/*mshr_row = mshr_get_status(cache, tag_ptr, set_ptr, access_id);
 	if(mshr_row == -1)
@@ -1202,7 +1211,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	list_enqueue(cache->retry_queue, message_packet);
 
 	////////testing
-	future_advance(cache->ec_ptr, etime.count + 2);
+	advance(cache->ec_ptr);
 	////////testing
 
 	/*adv ++;
@@ -1329,10 +1338,13 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 								cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
+						P_PAUSE(l1_i_caches[cache->id].wire_latency);
+
 						message_packet->access_type = cgm_access_puts;
 						list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
-						future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 
+						advance(&l1_i_cache[cache->id]);
+						//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 				}
 				else if (message_packet->l1_access_type == cgm_access_gets_d)
 				{
@@ -1343,12 +1355,16 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						P_PAUSE(1);
 					}
 
+					P_PAUSE(l1_d_caches[cache->id].wire_latency);
+
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 							cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
 					message_packet->access_type = cgm_access_puts;
 					list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
-					future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
+
+					advance(&l1_d_cache[cache->id]);
+					//future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
 				}
 				else
 				{
@@ -1369,6 +1385,8 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
+				P_PAUSE(switches[cache->id].wire_latency);
+
 				//success
 				//remove packet from l3 cache in queue
 				message_packet->access_type = cgm_access_puts;
@@ -1382,7 +1400,9 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
 				list_enqueue(switches[cache->id].south_queue, message_packet);
-				future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+
+				advance(&switches_ec[cache->id]);
+				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
 			}
 		}
 		else

@@ -216,8 +216,6 @@ void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
 
 
-
-
 //cache functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);

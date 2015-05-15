@@ -1,4 +1,5 @@
 /*
+
  * switch.c
  *
  *  Created on: Feb 9, 2015
@@ -311,12 +312,16 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}
 
+					P_PAUSE(l2_caches[my_pid].wire_latency);
+
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the cache's queue
 					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
-					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+
+					advance(&l2_cache[my_pid]);
+					//future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
 
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
@@ -330,12 +335,17 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}
 
+					P_PAUSE(hub_iommu->wire_latency);
+
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the hub's bottom queue
 					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
-					future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
+
+
+					advance(hub_iommu_ec);
+					//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 				}
@@ -354,6 +364,9 @@ void switch_ctrl(void){
 						//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
 					}
+
+
+					P_PAUSE(l3_caches[my_pid].wire_latency);
 
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
@@ -375,7 +388,8 @@ void switch_ctrl(void){
 					//old code
 					//drop the packet into the cache's queue
 					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+					advance(&l3_cache[my_pid]);
+					//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
 					//done with this access
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
@@ -390,12 +404,16 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}
 
+					P_PAUSE(system_agent->wire_latency);
+
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the sys agent queue
 					list_enqueue(system_agent->Rx_queue_top, message_packet);
-					future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
+
+					advance(system_agent_ec);
+					//future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
 					//done with this access
 
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
@@ -445,12 +463,16 @@ void switch_ctrl(void){
 							P_PAUSE(1);
 						}
 
+						P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
+
 						//success, remove packet from the switche's queue
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_east, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+						advance(&switches_ec[switches[my_pid].next_east_id]);
+						//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
 
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
@@ -464,12 +486,16 @@ void switch_ctrl(void){
 							P_PAUSE(1);
 						}
 
+						P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
+
 						//success, remove packet from the switche's queue
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_west, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+						advance(&switches_ec[switches[my_pid].next_west_id]);
+						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
 
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
@@ -489,12 +515,18 @@ void switch_ctrl(void){
 							P_PAUSE(1);
 						}
 
+						P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
+
 						//success, remove packet from the switche's queue
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_west, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+						advance(&switches_ec[switches[my_pid].next_west_id]);
+						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 					}
@@ -507,12 +539,17 @@ void switch_ctrl(void){
 							P_PAUSE(1);
 						}
 
+						P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
+
 						//success, remove packet from the switche's queue
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
 						list_enqueue(switches[my_pid].next_east, message_packet);
-						future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+						advance(&switches_ec[switches[my_pid].next_east_id]);
+						//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
 				}
@@ -530,12 +567,17 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}
 
+					P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
+
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_west, message_packet);
-					future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+					advance(&switches_ec[switches[my_pid].next_west_id]);
+					//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
@@ -546,13 +588,17 @@ void switch_ctrl(void){
 						//the switch queue is full try again next cycle
 						P_PAUSE(1);
 					}
+					P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
 
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//drop the packet into the next switche's queue
 					list_enqueue(switches[my_pid].next_east, message_packet);
-					future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+					advance(&switches_ec[switches[my_pid].next_east_id]);
+					//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
 					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
