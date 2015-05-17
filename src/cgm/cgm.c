@@ -244,11 +244,11 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 
 	//check if mshr queue is full
 
-	int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
+	//int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
 	int i = 0;
 	int j = 0;
 
-	for(i = 0; i < mshr_size; i++)
+	/*for(i = 0; i < mshr_size; i++)
 	{
 		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
 		{
@@ -263,7 +263,23 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	if(j > mshr_size)
 	{
 		return 0;
+	}*/
+
+
+	for (i = 0; i < thread->i_cache_ptr[thread->core->id].mshr_size; i++)
+	{
+		if(thread->i_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][2] == -1)
+		{
+			//hit in the ORT table
+			break;
+		}
 	}
+
+	if(i == thread->i_cache_ptr[thread->core->id].mshr_size)
+	{
+		return 0;
+	}
+
 
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
