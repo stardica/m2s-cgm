@@ -24,7 +24,7 @@ extern struct mem_ctrl_t{
 
 	struct list_t *Rx_queue_top;
 
-	//ptr to sysagent queue
+	//ptr to system agent queue
 	struct list_t *system_agent_queue;
 
 };

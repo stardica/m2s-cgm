@@ -189,10 +189,10 @@ struct switch_t{
 	//struct list_t *west_queue_lane2;
 
 	//for switches with 6 ports
-	struct list_t *forward_queue_lane1;
-	struct list_t *forward_queue_lane2;
-	struct list_t *back_queue_lane1;
-	struct list_t *back_queue_lane2;
+	//struct list_t *forward_queue_lane1;
+	//struct list_t *forward_queue_lane2;
+	//struct list_t *back_queue_lane1;
+	//struct list_t *back_queue_lane2;
 
 	//pointers to neighbors
 	//for ring busses you just need an east/west queue ptr

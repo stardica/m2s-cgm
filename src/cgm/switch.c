@@ -240,7 +240,7 @@ void switch_create_tasks(void){
 
 int switch_can_access(struct list_t *queue){
 
-	//check if in queue is full
+	//check if target queue is full
 	if(QueueSize <= list_count(queue))
 	{
 		return 0;

@@ -113,13 +113,13 @@ void memctrl_ctrl(void){
 		{
 			P_PAUSE(1);
 		}
+		//future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
 
-
-
-		future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
 
 		message_packet->access_type = cgm_access_puts;
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+		advance(system_agent_ec);
+
 
 		//future_advance(system_agent_ec, etime.count + 100);
 		/*printf("time = %llu \n", etime.count);

@@ -170,7 +170,8 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
-		future_advance(mem_ctrl_ec, WIRE_DELAY(mem_ctrl->wire_latency));
+		//future_advance(mem_ctrl_ec, WIRE_DELAY(mem_ctrl->wire_latency));
+		advance(mem_ctrl_ec);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
@@ -195,7 +196,8 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->switch_queue, message_packet);
 
-		future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
+		//future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
+		advance(&switches_ec[system_agent->switch_id]);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));

@@ -162,6 +162,10 @@ void interrupt_service_request(void){
 
 				}
 
+				/////////testing
+				//lat = 2;
+				/////////testing
+
 				//set when the interrupt should complete
 				uop = linked_list_find(core->event_queue, uop);
 				uop->when = P_TIME + lat;

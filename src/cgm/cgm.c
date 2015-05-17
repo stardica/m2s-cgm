@@ -169,7 +169,6 @@ void cgm_mem_run(void){
 	//simulation execution
 
 	await(sim_finish, 1);
-
 	//dump stats on exit.
 
 	/*star todo fix this, this last thread needs to advance to the end,
@@ -195,9 +194,8 @@ void cpu_gpu_run(void){
 		sim_finsih has to be advanced to 1 + the last cycle
 		but you don't know out of all the final threads
 		which one will run the longest until its done.
-
-		if you play with the dealy number you will eventualy find
-		the correct intput and the simulation will finish correctly.*/
+		if you play with the delay number you will eventually find
+		the correct delay and the simulation will finish correctly.*/
 		future_advance(sim_finish, (etime.count + 2));
 		//advance(sim_finish);
 	}
@@ -242,30 +240,10 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-	//check if mshr queue is full
-
-	//int mshr_size = thread->i_cache_ptr[thread->core->id].mshr_size;
 	int i = 0;
 	int j = 0;
 
-	/*for(i = 0; i < mshr_size; i++)
-	{
-		if(thread->i_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
-		{
-			j ++;
-		}
-	}
-
-	//printf("j = %d\n", j);
-	assert(j <= mshr_size);
-
-	//mshr is full stall
-	if(j > mshr_size)
-	{
-		return 0;
-	}*/
-
-
+	//check if mshr/ort queue is full
 	for (i = 0; i < thread->i_cache_ptr[thread->core->id].mshr_size; i++)
 	{
 		if(thread->i_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][2] == -1)
@@ -297,30 +275,20 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-	//check if mshr queue is full
-
-	//star this is the old code.
-	/*if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].mshr))
-	{
-		return 0;
-	}*/
-
-	int mshr_size = thread->d_cache_ptr[thread->core->id].mshr_size;
 	int i = 0;
 	int j = 0;
 
-	for(i = 0; i < mshr_size; i++)
+	//check if mshr/ort queue is full
+	for (i = 0; i < thread->d_cache_ptr[thread->core->id].mshr_size; i++)
 	{
-		if(thread->d_cache_ptr[thread->core->id].mshrs[i].num_entries > 0)
+		if(thread->d_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][2] == -1)
 		{
-			j ++;
+			//hit in the ORT table
+			break;
 		}
 	}
 
-	assert(j <= mshr_size);
-
-	//mshr is full
-	if(j == mshr_size)
+	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
 	{
 		return 0;
 	}
