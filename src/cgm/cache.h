@@ -229,6 +229,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
 
 int cgm_l3_cache_map(int *set);
+int cgm_l2_cache_map(int src_id);
 
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);

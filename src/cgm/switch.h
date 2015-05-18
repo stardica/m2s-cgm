@@ -42,7 +42,6 @@ enum node_map{
 	switch_4,
 	sys_agent_4,
 	node_number
-
 };
 
 enum l1_map{
@@ -57,6 +56,14 @@ enum l1_map{
 	l1_d_cache_3,
 	l1_number
 
+};
+
+enum cpu_l2_map{
+		l2_caches_0,
+		l2_caches_1,
+		l2_caches_2,
+		l2_caches_3,
+		l2_number
 };
 
 enum gpu_l1_map{
@@ -213,6 +220,7 @@ struct switch_t{
 
 extern struct str_map_t node_strn_map;
 extern struct str_map_t l1_strn_map;
+extern struct str_map_t l2_strn_map;
 extern struct str_map_t gpu_l1_strn_map;
 extern struct str_map_t gpu_l2_strn_map;
 

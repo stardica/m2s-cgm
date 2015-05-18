@@ -69,6 +69,14 @@ struct str_map_t l1_strn_map =
 		}
 };
 
+struct str_map_t l2_strn_map =
+{ l2_number, {
+		{ "l2_caches[0]", l2_caches_0},
+		{ "l2_caches[1]", l2_caches_1},
+		{ "l2_caches[2]", l2_caches_2},
+		{ "l2_caches[3]", l2_caches_3},
+		}
+};
 
 struct str_map_t gpu_l1_strn_map =
 { gpu_l1_number, {
@@ -152,6 +160,7 @@ struct str_map_t gpu_l2_strn_map =
 		{ "gpu_l2_caches[7]", gpu_l2_caches_7},
 		}
 };
+
 
 struct str_map_t node_strn_map =
 { node_number, {
@@ -614,7 +623,6 @@ void switch_ctrl(void){
 		//end, clear the message_packet ptr
 		//this should be getting set up above in list_get(), but just for safe measure.
 		message_packet = NULL;
-
 	}
 
 	fatal("switch_ctrl() quit\n");
