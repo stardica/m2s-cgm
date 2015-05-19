@@ -20,11 +20,10 @@
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
 
 
-//star todo prefetching, and coalescing
+//star todo integrate m2s prefetcher
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 extern struct str_map_t cgm_mem_access_strn_map;
-
 
 enum cache_type_enum
 {
@@ -36,7 +35,6 @@ enum cache_type_enum
 	gpu_v_cache_t,
 	gpu_l2_cache_t
 };
-
 
 enum cache_waylist_enum
 {
@@ -108,6 +106,7 @@ struct cache_t{
 	unsigned int num_ports;
 	//enum cache_policy_t policy;
 	const char *policy;
+	int slice_type;
 
 	//cache data
 	struct cache_set_t *sets;
@@ -209,6 +208,7 @@ void cache_create_tasks(void);
 void cache_dump_stats(void);
 
 //tasks
+
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
@@ -227,6 +227,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
+
 int cgm_l3_cache_map(int *set);
 
 void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);

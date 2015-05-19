@@ -1996,21 +1996,25 @@ int cgm_l3_cache_map(int *set){
 	int map = -1;
 
 	//star todo fix this
-	int map_type = 0;
+	int map_type = l3_caches[0].slice_type;
+	//int map_type = 1;
 
 	//stripe or block
-	if (map_type == 0)
+	if (map_type == 1)
 	{
 		//map = *(set) % num_cores;
 		//star this is a faster way to do the look up.
 		map = (unsigned int) *set & (unsigned int) (num_cores - 1);
-
 	}
-	else if (map_type == 1)
+	else if (map_type == 0)
 	{
 		//get the address range
+		//fatal("cgm_l3_cache_map(): invalid map_type set\n");
+		map = 0;
+	}
+	else
+	{
 		fatal("cgm_l3_cache_map(): invalid map_type set\n");
-
 	}
 
 	assert(map >= 0 && map <= (num_cores - 1));

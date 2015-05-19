@@ -425,7 +425,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
-	int Slices = 0;
+	int Sliced = 0;
 	int Sets = 0;
 	int Qty = 0;
 	int Assoc = 0;
@@ -740,8 +740,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	//l3_caches
 	////////////////////////
 
-
 	/*configure CPU L3 caches*/
+	if(MATCH("CPU_L3_Cache", "Sliced"))
+	{
+		Sliced = atoi(value);
+
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].slice_type = Sliced;
+		}
+	}
+
+
+	/*configure CPU L3 caches
 	if(MATCH("CPU_L3_Cache", "Slices"))
 	{
 		Slices = atoi(value);
@@ -750,7 +761,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		{
 			l3_caches[i].num_slices = Slices;
 		}
-	}
+	}*/
 
 
 	if(MATCH("CPU_L3_Cache", "Sets"))
