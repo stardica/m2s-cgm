@@ -6,6 +6,7 @@
  */
 
 
+/*
 #include <stdio.h>
 
 #include <arch/si/timing/gpu.h>
@@ -18,9 +19,10 @@
 #include <cgm/cgm.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
+*/
 
 
-void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -67,8 +69,8 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
-	/*printf("gpu_s_cache addr 0x%08u\n",  addr);
-	getchar();*/
+	printf("gpu_s_cache addr 0x%08u\n",  addr);
+	getchar();
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
@@ -133,8 +135,8 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet->access_type = cgm_access_gets_s;
 			message_packet->gpu_cache_id = cache->id;
@@ -166,9 +168,9 @@ void gpu_s_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	}
 
 	return;
-}
+}*/
 
-void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_status_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -230,14 +232,14 @@ void gpu_s_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 		fatal("gpu_s_cache_access_retry(): miss on retry cycle %llu access_id %llu\n", P_TIME, access_id);
 	}
 
-	/*printf("gpu s cache retry\n");
-	STOP;*/
+	printf("gpu s cache retry\n");
+	STOP;
 
 	return;
-}
+}*/
 
 
-void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;
 	enum cgm_access_kind_t access_type;
@@ -311,9 +313,9 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
-			printf("test\n");*/
+			printf("test\n");
 		}
 		else
 		{
@@ -340,8 +342,8 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
-		/*printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
-		printf("advances\n");*/
+		printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
+		printf("advances\n");
 
 		time += 2;
 		future_advance(&gpu_s_cache[cache->id], time);
@@ -351,63 +353,4 @@ void gpu_s_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
 	return;
-}
-
-
-void gpu_s_cache_ctrl(void){
-
-	int my_pid = gpu_s_pid++;
-	long long step = 1;
-	int num_cus = si_gpu_num_compute_units;
-
-	struct cgm_packet_t *message_packet;
-
-	enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-
-	assert(my_pid <= num_cus);
-	set_id((unsigned int)my_pid);
-
-	while(1)
-	{
-
-		//wait here until there is a job to do
-		await(&gpu_s_cache[my_pid], step);
-		step++;
-
-		//get a message from the top or bottom queues.
-		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
-
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
-
-		/////////testing
-		//(*message_packet->witness_ptr)++;
-		//list_remove(gpu_s_caches[my_pid].Rx_queue_top, message_packet);
-		//continue;
-		/////////testing
-
-
-		if (access_type == cgm_access_load)
-		{
-			gpu_s_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			gpu_s_cache_access_retry(&(gpu_s_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			gpu_s_cache_access_puts(&(gpu_s_caches[my_pid]), message_packet);
-		}
-		else
-		{
-			fatal("gpu_s_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-		}
-	}
-
-	/* should never get here*/
-	fatal("gpu_s_cache_ctrl task is broken\n");
-	return;
-}
+}*/

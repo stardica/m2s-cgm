@@ -59,7 +59,7 @@ void gpu_l2_cache_access_gets(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
 	//////testing
 
 
@@ -563,68 +563,3 @@ void gpu_l2_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *messag
 
 	return;
 }*/
-
-
-void gpu_l2_cache_ctrl(void){
-
-	int my_pid = gpu_l2_pid++;
-	long long step = 1;
-
-	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = (num_cus/4);
-
-
-	struct cgm_packet_t *message_packet;
-	enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-
-
-	assert(my_pid <= gpu_group_cache_num);
-	set_id((unsigned int)my_pid);
-
-	while(1)
-	{
-
-		/*wait here until there is a job to do.*/
-		await(&gpu_l2_cache[my_pid], step);
-		step++;
-
-		//check the top or bottom rx queues for messages.
-		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
-
-		access_type = message_packet->access_type;
-
-
-
-		if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
-		{
-			gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			gpu_l2_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
-		}
-		else if(access_type == cgm_access_puts)
-		{
-
-			gpu_l2_cache_access_puts(&gpu_l2_caches[my_pid], message_packet);
-		}
-		/*else if(access_type == cgm_access_load)
-		{
-			l2_cache_access_load(&l2_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_store)
-		{
-			l2_cache_access_store(&l2_caches[my_pid], message_packet);
-		}*/
-		else
-		{
-			fatal("gpu_l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-		}
-	}
-
-	/* should never get here*/
-	fatal("gpu_l2_cache_ctrl task is broken\n");
-	return;
-}

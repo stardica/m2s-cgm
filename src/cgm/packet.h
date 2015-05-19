@@ -24,9 +24,9 @@ extern struct cgm_packet_t{
 	enum cgm_access_kind_t l1_access_type;
 	enum cgm_access_kind_t cpu_access_type;
 	enum cgm_access_kind_t gpu_access_type;
+
 	int gpu_cache_id;
 
-	//Making changes here
 	char *l2_cache_name;
 	int l2_cache_id;
 

@@ -19,6 +19,9 @@ enum cgm_access_kind_t {
 	cgm_access_store,
 	cgm_access_nc_store,
 	cgm_access_nc_load,
+	cgm_access_store_v,
+	cgm_access_load_s,
+	cgm_access_load_v,
 	cgm_access_prefetch,
 	cgm_access_gets, //get shared
 	cgm_access_gets_i, //get shared specific to i caches

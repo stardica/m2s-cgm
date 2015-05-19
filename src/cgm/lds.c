@@ -35,21 +35,17 @@ void gpu_lds_unit_ctrl(void){
 		assert(message_packet);
 
 		access_type = message_packet->access_type;
-		//for now treat the LDS unit as a register and charge a small amount of cycles for it's access.
 
-		//star todo figure out what to do with this.
+		//for now charge a small amount of cycles for it's access.
 		if(access_type == cgm_access_load || access_type == cgm_access_store)
 		{//then the packet is from the L2 cache
 
 			//LDS is close to the CU so delay a couple cycles for now
-			// 6 is 3 cycles.
-			P_PAUSE(etime.count + 6);
+			P_PAUSE(etime.count + gpu_lds_units[my_pid].latency);
 
 			//clear the gpu uop witness_ptr
 			(*message_packet->witness_ptr)++;
-
 			list_remove(gpu_lds_units[my_pid].Rx_queue_top, message_packet);
-			//free(message_packet);
 		}
 		else
 		{

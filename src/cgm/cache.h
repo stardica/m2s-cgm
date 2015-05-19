@@ -31,7 +31,10 @@ enum cache_type_enum
 	l1_i_cache_t,
 	l1_d_cache_t,
 	l2_cache_t,
-	l3_cache_t
+	l3_cache_t,
+	gpu_s_cache_t,
+	gpu_v_cache_t,
+	gpu_l2_cache_t
 };
 
 
@@ -216,27 +219,26 @@ void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
 
 
-
 //cache functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cpu_l1_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
 void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
-
 int cgm_l3_cache_map(int *set);
-int cgm_l2_cache_map(int src_id);
+
+void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_gpu_cache_map(int cache_id);
+
 
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
-
-
-int cgm_gpu_cache_map(int cache_id);
 
 //borrowed from m2s mem-system and tweaked a bit
 void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -248,5 +250,8 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 //void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
+
+//void cpu_l1_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*int cgm_l2_cache_map(int src_id);*/
 
 #endif /*CACHE_H_*/

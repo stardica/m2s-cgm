@@ -253,7 +253,7 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	if(i == thread->i_cache_ptr[thread->core->id].mshr_size)
+	if(i == (thread->i_cache_ptr[thread->core->id].mshr_size -1))
 	{
 		return 0;
 	}
@@ -502,7 +502,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	//(*witness_ptr)++;
 
 	//Add to the target L1 Cache Rx Queue
-	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
+	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = vector_mem_ptr->compute_unit->id;
@@ -546,7 +546,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	//(*witness_ptr)++;
 
 	//Add to the target L1 Cache Rx Queue
-	if(access_kind == cgm_access_load)
+	if(access_kind == cgm_access_load_s)
 	{
 		//get the core ID number should be <= number of cores
 		id = scalar_unit_ptr->compute_unit->id;
