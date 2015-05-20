@@ -276,6 +276,8 @@ void switch_ctrl(void){
 	int switch_node = switches[my_pid].switch_node_number;
 	float distance;
 
+	long long access_id = 0;
+
 	assert(my_pid <= (num_cores + num_cus));
 
 	set_id((unsigned int)my_pid);
@@ -299,6 +301,8 @@ void switch_ctrl(void){
 		src_name = message_packet->src_name;
 		src_node = message_packet->src_id;
 
+		access_id = message_packet->access_id;
+
 		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
 			switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
@@ -317,7 +321,7 @@ void switch_ctrl(void){
 					//star todo add the ability to do something else if we can access the target cache
 					while(!cache_can_access_bottom(&l2_caches[my_pid]))
 					{
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);//the L2 cache queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
 					}
 
@@ -341,7 +345,7 @@ void switch_ctrl(void){
 					while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
 					{
 						//the hub-iommu cache queue is full try again next cycle
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -372,7 +376,7 @@ void switch_ctrl(void){
 					while(!cache_can_access_top(&l3_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -412,7 +416,7 @@ void switch_ctrl(void){
 					while(!sys_agent_can_access_top())
 					{
 						//the sys agent queue is full try again next cycle
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -472,7 +476,7 @@ void switch_ctrl(void){
 						while(!switch_can_access(switches[my_pid].next_east))
 						{
 							//the switch queue is full try again next cycle
-							printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
 						}
 
@@ -496,7 +500,7 @@ void switch_ctrl(void){
 						while(!switch_can_access(switches[my_pid].next_west))
 						{
 							//the switch queue is full try again next cycle
-							printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
 						}
 
@@ -526,7 +530,7 @@ void switch_ctrl(void){
 						while(!switch_can_access(switches[my_pid].next_west))
 						{
 							//the switch queue is full try again next cycle
-							printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
 						}
 
@@ -551,7 +555,7 @@ void switch_ctrl(void){
 						while(!switch_can_access(switches[my_pid].next_east))
 						{
 							//the switch queue is full try again next cycle
-							printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
 						}
 
@@ -580,7 +584,7 @@ void switch_ctrl(void){
 					while(!switch_can_access(switches[my_pid].next_west))
 					{
 						//the switch queue is full try again next cycle
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -603,7 +607,7 @@ void switch_ctrl(void){
 					while(!switch_can_access(switches[my_pid].next_east))
 					{
 						//the switch queue is full try again next cycle
-						printf("%s stalled cycle %llu\n", switches[my_pid].name, P_TIME);
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}
 					P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
