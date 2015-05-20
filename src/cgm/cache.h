@@ -235,6 +235,8 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 int cgm_gpu_cache_map(int cache_id);
 
 

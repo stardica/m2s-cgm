@@ -1,9 +1,10 @@
 /*
+
  * cache_v_ctrl.c
  *
  *  Created on: Apr 28, 2015
  *      Author: stardica
- */
+
 
 
 
@@ -67,8 +68,8 @@ void gpu_v_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 	//////testing
 
 
-	/*printf("gpu_v_cache addr 0x%08u\n",  addr);
-	getchar();*/
+	printf("gpu_v_cache addr 0x%08u\n",  addr);
+	getchar();
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
@@ -95,7 +96,6 @@ void gpu_v_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 		}
 
 	}
-
 	//Cache Miss!
 	else if(cache_status == 0 || *state_ptr == 0)
 	{
@@ -131,8 +131,8 @@ void gpu_v_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet->access_type = cgm_access_gets_v;
 			message_packet->gpu_cache_id = cache->id;
@@ -275,8 +275,8 @@ void gpu_v_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messag
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet->gpu_access_type = cgm_access_store;
 			message_packet->gpu_cache_id = cache->id;
@@ -359,18 +359,18 @@ void gpu_v_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *messag
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 
-		/*if(message_packet->gpu_access_type == cgm_access_nc_store || message_packet->gpu_access_type == cgm_access_store || message_packet->gpu_access_type == cgm_access_load)
-		{*/
+		if(message_packet->gpu_access_type == cgm_access_nc_store || message_packet->gpu_access_type == cgm_access_store || message_packet->gpu_access_type == cgm_access_load)
+		{
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
 
 			(*message_packet->witness_ptr)++;
 			list_remove(cache->retry_queue, message_packet);
 
-		/*}
+		}
 		else
 		{
 			fatal("gpu_v_cache_access_retry(): %s miss on retry cycle %llu access_id %llu %s\n", cache->name, P_TIME, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->gpu_access_type));
-		}*/
+		}
 	}
 	else
 	{
@@ -460,9 +460,9 @@ void gpu_v_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 			list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			/*printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
+			printf("miss_status_packet->access_id %llu access_id %llu\n", miss_status_packet->access_id, access_id );
 			printf("miss_status_packet %s\n", message_packet->name);//miss_status_packet->coalesced_packet->name);
-			printf("test\n");*/
+			printf("test\n");
 		}
 		else
 		{
@@ -482,13 +482,13 @@ void gpu_v_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 		}
 	}
 
-	long long time /* :-P */ = etime.count;
+	long long time  :-P  = etime.count;
 
 	//advance the cache by the number of packets
 	for(i = 0; i < cache->mshrs[mshr_row].num_entries; i ++)
 	{
-		/*printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
-		printf("advances\n");*/
+		printf("entries %d\n", cache->mshrs[mshr_row].num_entries);
+		printf("advances\n");
 
 		time += 2;
 		future_advance(&gpu_v_cache[cache->id], time);
@@ -497,8 +497,9 @@ void gpu_v_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message
 	//clear the mshr row for future use
 	mshr_clear(&(cache->mshrs[mshr_row]));
 
-	/*printf("gpu v cache puts\n");
-	STOP;*/
+	printf("gpu v cache puts\n");
+	STOP;
 
 	return;
 }
+*/

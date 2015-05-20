@@ -1,3 +1,127 @@
+	
+	/*void gpu_l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	else if (access_type == cgm_access_load)
+			{
+				//stats
+				l2_caches[my_pid].loads++;
+
+				cache_status = cgm_cache_find_block(&(l2_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+
+				// L2 Cache Hit!
+				if(cache_status == 1)
+				{
+					//stats
+					l2_caches[my_pid].hits++;
+
+					//This is a hit in the L2 cache need to send up to L1 cache
+					//remove packet from l2 cache in queue
+					message_packet->access_type = cgm_access_l2_load_reply;
+
+					list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Rx_queue_top, message_packet);
+					//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
+				}
+				// L2 Cache Miss!
+				else if(cache_status == 0)
+				{
+					//stats
+					l2_caches[my_pid].misses++;
+					//for now pretend that it is the last level of cache and memory ctrl.
+					P_PAUSE(mem_miss);
+
+					message_packet->access_type = cgm_access_l2_load_reply;
+
+					cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, 4);
+
+					list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Rx_queue_top, message_packet);
+
+					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
+				}
+
+			}
+	return;
+}*/
+
+/*void gpu_l2_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	else if (access_type == cgm_access_store)
+	{
+		//stats
+		l2_caches[my_pid].stores++;
+		cache_status = cgm_cache_find_block(&(l2_caches[my_pid]), tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+
+		// L2 Cache Hit!
+		if(cache_status == 1)
+		{
+			//stats
+			l2_caches[my_pid].hits++;
+
+			cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, 4);
+					//This is a hit in the L2 cache need to send up to L1 cache
+					//remove packet from l2 cache in queue
+					message_packet->access_type = cgm_access_l2_store_reply;
+					list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Rx_queue_top, message_packet);
+					//cgm_cache_set_block(&(l2_caches[0]), *set_ptr, *way_ptr, tag, 1);
+
+					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
+				}
+				// L2 Cache Miss!
+				else if(cache_status == 0)
+				{
+					//stats
+					l2_caches[my_pid].misses++;
+
+					//for now pretend that it is the last level of cache and memory ctrl.
+					P_PAUSE(mem_miss);
+
+					message_packet->access_type = cgm_access_l2_store_reply;
+
+					cgm_cache_set_block(&(l2_caches[my_pid]), *set_ptr, *way_ptr, tag, 4);
+
+					list_remove(l2_caches[my_pid].Rx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Rx_queue_top, message_packet);
+
+					future_advance(l1_d_cache, (etime.count + l1_d_caches[my_pid].wire_latency));
+				}
+			}
+		//}
+
+	return;
+}*/
+	
+	
+	
+	
+	
+/*old code
+		//while the next level of cache's in queue is full stall
+		while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
+		{
+			P_PAUSE(1);
+		}
+
+		//change access type, i cache only ever reads so puts is ok.
+		message_packet->access_type = cgm_access_puts;
+
+		//success, remove packet from l2 cache in queue
+		list_remove(cache->last_queue, message_packet);
+
+		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
+				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
+
+		list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
+		future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
+	}
+	else
+	{
+		fatal("l2_cache_access_retry(): miss on retry\n");
+	}*/
+
 /*void cpu_l1_cache_access_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *miss_status_packet;

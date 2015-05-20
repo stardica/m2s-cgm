@@ -1575,6 +1575,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_s_caches[%d]", i);
 		gpu_s_caches[i].name = strdup(buff);
 		gpu_s_caches[i].id = i;
+		gpu_s_caches[i].cache_type = gpu_s_cache_t;
 		gpu_s_caches[i].log_block_size = LOG2(gpu_s_caches[i].block_size);
 		gpu_s_caches[i].log_set_size = LOG2(gpu_s_caches[i].num_sets);
 		gpu_s_caches[i].block_mask = gpu_s_caches[i].block_size - 1;
@@ -1647,8 +1648,8 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_v_caches[%d]", i);
 		gpu_v_caches[i].name = strdup(buff);
-
 		gpu_v_caches[i].id = i;
+		gpu_v_caches[i].cache_type = gpu_v_cache_t;
 		gpu_v_caches[i].log_block_size = LOG2(gpu_v_caches[i].block_size);
 		gpu_v_caches[i].log_set_size = LOG2(gpu_v_caches[i].num_sets);
 		gpu_v_caches[i].block_mask = gpu_v_caches[i].block_size - 1;
@@ -1808,8 +1809,8 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d]", i);
 		gpu_l2_caches[i].name = strdup(buff);
-
 		gpu_l2_caches[i].id = i;
+		gpu_l2_caches[i].cache_type = gpu_l2_cache_t;
 		gpu_l2_caches[i].log_block_size = LOG2(gpu_l2_caches[i].block_size);
 		gpu_l2_caches[i].log_set_size = LOG2(gpu_l2_caches[i].num_sets);
 		gpu_l2_caches[i].block_mask = gpu_l2_caches[i].block_size - 1;
@@ -1873,7 +1874,6 @@ int cache_finish_create(){
 				gpu_l2_caches[i].ort[j][k] = -1;
 			}
 		}
-
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < gpu_l2_caches[i].num_sets; set++)

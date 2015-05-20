@@ -253,7 +253,7 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	if(i == (thread->i_cache_ptr[thread->core->id].mshr_size -1))
+	if(i >= (thread->i_cache_ptr[thread->core->id].mshr_size -1))
 	{
 		return 0;
 	}
@@ -288,7 +288,7 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
+	if(i >= (thread->d_cache_ptr[thread->core->id].mshr_size - 1))
 	{
 		return 0;
 	}
@@ -412,8 +412,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
-
-
 
 
 	//////////////testing
@@ -551,9 +549,6 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		//get the core ID number should be <= number of cores
 		id = scalar_unit_ptr->compute_unit->id;
 		assert( id < num_cus);
-
-		//set flag on target GPU LDS unit
-		//gpu_s_caches_data[id]++;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
