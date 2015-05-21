@@ -152,6 +152,11 @@ int cpu_configure(Timing *self, struct config_t *config){
 		fflush(stdout);
 	}
 
+	if(num_cores <= 0 || num_cores > 4)
+	{
+		fatal("Number of cores must be between 1 - 4\n");
+	}
+
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Core *core;
 	X86Thread *thread;
@@ -176,15 +181,11 @@ int cpu_configure(Timing *self, struct config_t *config){
 
 			//core->threads[j]->i_cache_ptr = &l1_i_caches[core->id];
 			//core->threads[j]->d_cache_ptr = &l1_d_caches[core->id];
-
 		}
-
 		/*core = cpu->cores[i];
 		core->threads[0]->i_cache_ptr = &l1_i_caches[core->id];
 		core->threads[0]->d_cache_ptr = &l1_d_caches[core->id];*/
-
 	}
-
 	//getchar();
 	return 1;
 }

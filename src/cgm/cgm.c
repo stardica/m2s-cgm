@@ -292,11 +292,10 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-/*	printf("%s ort size %d\n", thread->d_cache_ptr[thread->core->id].name, i);
-	fflush(stdout);*/
-
 	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
 	{
+		printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
+		printf("return 0 cycle %llu\n", P_TIME);
 		return 0;
 	}
 
@@ -349,8 +348,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	int num_cores = x86_cpu_num_cores;
 	enum cgm_access_kind_t access_kind = cgm_access_fetch;
 	int id = 0;
-
-	//printf("accessing I cache cycle %llu\n", P_TIME);
 
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
