@@ -2013,6 +2013,8 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	//star todo fix this
 	int extras = 1;
 
+
+
 	if(MATCH("Switch", "Ports"))
 	{
 		Ports = atoi(value);
@@ -2103,7 +2105,22 @@ int switch_finish_create(void){
 			switches[i].queue = west_queue;
 
 			//init the switche's network node number
-			switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
+
+			//star todo fix this (we shouldn't need to specifiy this).
+
+			//for now manually set the last switch to node 13
+			//if you don't you can't change the number of cores from 4
+			if(i == num_cores)
+			{
+				switches[i].switch_node_number = str_map_string(&node_strn_map, "switch[4]");
+			}
+			else
+			{
+				switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
+			}
+
+
+
 			median ++;//= switches[i].switch_node_number;
 		}
 

@@ -303,8 +303,8 @@ void switch_ctrl(void){
 
 		access_id = message_packet->access_id;
 
-		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-			switches[my_pid].name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
+		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s %d dest %s %d \n",
+			switches[my_pid].name, message_packet->access_id, P_TIME, src_name, src_node, dest_name, dest_node);
 
 		P_PAUSE(switches[my_pid].latency);
 
@@ -740,9 +740,9 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 		fatal("get_from_queue() invalid arbitration set switch %s\n", switches->name);
 	}
 
-	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu ptr get from %s with size %d\n",
+	/*CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu get from %s with size %d\n",
 			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
-
+*/
 	return new_packet;
 }
 

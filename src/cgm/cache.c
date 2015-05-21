@@ -556,10 +556,20 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			}
 
 			//sanity check the table row
-			assert(i < cache->mshr_size);
-			assert(cache->ort[i][0] == -1);
-			assert(cache->ort[i][1] == -1);
-			assert(cache->ort[i][2] == -1);
+			if(i >= cache->mshr_size)
+			{
+				/*advance(cache->ec_ptr);
+				return;*/
+
+				printf("%s crashing ort is full access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+				ort_dump(cache);
+				STOP;
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+
+			}
 
 			//insert into table
 			cache->ort[i][0] = tag;
@@ -612,6 +622,20 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 
 	}
+
+	return;
+}
+
+
+void ort_dump(struct cache_t *cache){
+
+	int i = 0;
+
+	for (i = 0; i <  cache->mshr_size; i++)
+	{
+		printf("ort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
+	}
+
 
 	return;
 }
@@ -734,6 +758,9 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 		//entry was not found
 		if(i == cache->mshr_size)
 		{
+
+
+
 			//get an empty row
 			for (i = 0; i <  cache->mshr_size; i++)
 			{
@@ -747,15 +774,14 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			//sanity check the table row
 			if(i >= cache->mshr_size)
 			{
-				printf("mshr full crashing\n");
-				STOP;
-
-				fatal("cpu_l1_cache_access_store(): mshr full access_id %llu cycle %llu", access_id, P_TIME);
+				printf("%s crashing ort is full access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+				ort_dump(cache);
 				assert(i < cache->mshr_size);
 				assert(cache->ort[i][0] == -1);
 				assert(cache->ort[i][1] == -1);
 				assert(cache->ort[i][2] == -1);
 			}
+
 
 			//insert into table
 			cache->ort[i][0] = tag;
@@ -854,7 +880,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 
 	//////testing
-	/*if(cache->cache_type == l3_cache_t) //cache->cache_type == l2_cache_t) //
+	/*if(cache->cache_type == l3_cache_t)//cache->cache_type == l2_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	}*/
@@ -1016,13 +1042,16 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					}
 				}
 
-
-
 				//sanity check the table row
-				assert(i < cache->mshr_size);
-				assert(cache->ort[i][0] == -1);
-				assert(cache->ort[i][1] == -1);
-				assert(cache->ort[i][2] == -1);
+				if(i >= cache->mshr_size)
+				{
+					printf("%s crashing ort is full\n", cache->name);
+
+					assert(i < cache->mshr_size);
+					assert(cache->ort[i][0] == -1);
+					assert(cache->ort[i][1] == -1);
+					assert(cache->ort[i][2] == -1);
+				}
 
 				//insert into table
 				cache->ort[i][0] = tag;
@@ -1122,10 +1151,15 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			fflush(stdout);*/
 
 			//sanity check the table row
-			assert(i < cache->mshr_size);
-			assert(cache->ort[i][0] == -1);
-			assert(cache->ort[i][1] == -1);
-			assert(cache->ort[i][2] == -1);
+			if(i >= cache->mshr_size)
+			{
+				printf("%s crashing ort is full\n", cache->name);
+
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+			}
 
 			//insert into table
 			cache->ort[i][0] = tag;
@@ -1533,10 +1567,10 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
+	if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -1732,10 +1766,10 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->offset = offset;
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t)
+	if(cache->cache_type == gpu_v_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+	}
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -2482,6 +2516,24 @@ int cgm_gpu_cache_map(int cache_id){
 
 
 int cache_can_access_top(struct cache_t *cache){
+
+	int i = 0;
+	int j = 0;
+
+	//check if mshr/ort queue is full
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+		{
+			//hit in the ORT table
+			break;
+		}
+	}
+
+	if(i >= cache->mshr_size -1)
+	{
+		return 0;
+	}
 
 
 	//check if in queue is full

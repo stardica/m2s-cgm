@@ -241,7 +241,8 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	int i = 0;
-	int j = 0;
+	//int j = 0;
+
 
 	//check if mshr/ort queue is full
 	for (i = 0; i < thread->i_cache_ptr[thread->core->id].mshr_size; i++)
@@ -253,7 +254,10 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	if(i >= (thread->i_cache_ptr[thread->core->id].mshr_size -1))
+	/*printf("ort size %d\n", thread->i_cache_ptr[thread->core->id].mshr_size);
+	getchar();*/
+
+	if(i == thread->i_cache_ptr[thread->core->id].mshr_size)
 	{
 		return 0;
 	}
@@ -276,7 +280,7 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	thread = self;
 
 	int i = 0;
-	int j = 0;
+	//int j = 0;
 
 	//check if mshr/ort queue is full
 	for (i = 0; i < thread->d_cache_ptr[thread->core->id].mshr_size; i++)
@@ -288,7 +292,10 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	if(i >= (thread->d_cache_ptr[thread->core->id].mshr_size - 1))
+/*	printf("%s ort size %d\n", thread->d_cache_ptr[thread->core->id].name, i);
+	fflush(stdout);*/
+
+	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
 	{
 		return 0;
 	}
@@ -342,6 +349,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	int num_cores = x86_cpu_num_cores;
 	enum cgm_access_kind_t access_kind = cgm_access_fetch;
 	int id = 0;
+
+	//printf("accessing I cache cycle %llu\n", P_TIME);
 
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
