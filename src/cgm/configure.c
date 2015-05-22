@@ -1660,6 +1660,7 @@ int cache_finish_create(){
 		gpu_v_caches[i].misses = 0;
 
 		//pointer to my own event count
+
 		gpu_v_caches[i].ec_ptr = &gpu_v_cache[i];
 
 		gpu_v_caches[i].Rx_queue_top = list_create();
