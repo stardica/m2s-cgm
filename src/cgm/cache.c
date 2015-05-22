@@ -479,10 +479,10 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
+	/*if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -701,10 +701,10 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 
 	//////testing
-	if(cache->cache_type == l1_d_cache_t)
+	/*if(cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -900,10 +900,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 
 	//////testing
-	if(cache->cache_type == l2_cache_t) // cache->cache_type == l3_cache_t)
+	/*if(cache->cache_type == l2_cache_t) // cache->cache_type == l3_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}
+	}*/
 	//////testing
 
 	//look up, and charge a cycle.
@@ -1589,10 +1589,10 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	if(cache->cache_type == gpu_v_cache_t)// || cache->cache_type == gpu_s_cache_t)
+	/*if(cache->cache_type == gpu_v_cache_t)// || cache->cache_type == gpu_s_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}
+	}*/
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -1788,10 +1788,10 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->offset = offset;
 
 	//////testing
-	if(cache->cache_type == gpu_v_cache_t)
+	/*if(cache->cache_type == gpu_v_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}
+	}*/
 	//////testing
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",

@@ -294,8 +294,8 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
 	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
 	{
-		printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
-		printf("return 0 cycle %llu\n", P_TIME);
+		/*printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
+		printf("return 0 cycle %llu\n", P_TIME);*/
 		return 0;
 	}
 
