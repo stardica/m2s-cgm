@@ -1589,10 +1589,10 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
+	if(cache->cache_type == gpu_v_cache_t)// || cache->cache_type == gpu_s_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -1788,10 +1788,10 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->offset = offset;
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t)
+	if(cache->cache_type == gpu_v_cache_t)
 	{
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+	}
 	//////testing
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -2087,18 +2087,18 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 		if(cache->cache_type == gpu_l2_cache_t)
 		{
 			//miss so check ORT status
-			for (i = 0; i <  cache->mshr_size; i++)
+			/*for (i = 0; i <  cache->mshr_size; i++)
 			{
 				if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
 				{
 					//hit in the ORT table
 					break;
 				}
-			}
+			}*/
 
 
-			if(i == cache->mshr_size)
-			{
+			/*if(i == cache->mshr_size)
+			{*/
 				//get an empty row
 				for (i = 0; i <  cache->mshr_size; i++)
 				{
@@ -2161,7 +2161,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 				CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, mshr_status);
 
-			}
+			/*}
 			else if (i >= 0 && i < cache->mshr_size)
 			{
 				//entry found in ORT so coalesce access
@@ -2176,7 +2176,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			else
 			{
 				fatal("gpu_cache_access_get(): %s ort row outside of bounds\n", cache->name);
-			}
+			}*/
 		}
 		else
 		{
@@ -2379,7 +2379,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						advance(&gpu_s_cache[message_packet->gpu_cache_id]);
 
 						//retry coalesced packets.
-						cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
+						//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 
 				}
 				else if (message_packet->l1_access_type == cgm_access_gets_v)
@@ -2405,7 +2405,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					advance(&gpu_v_cache[message_packet->gpu_cache_id]);
 
 					//retry coalesced packets.
-					cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
+					//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 				}
 				else
 				{

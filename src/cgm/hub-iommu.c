@@ -139,8 +139,8 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
 
 	//star todo change this to hub_iommu_debug_file
-	/*CGM_DEBUG(hub_iommu_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
-			cache->name, new_message->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));*/
+	CGM_DEBUG(hub_iommu_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
+			hub_iommu->name, new_message->access_id, P_TIME,hub_iommu->last_queue->name, list_count(hub_iommu->last_queue));
 
 	//shouldn't be exiting without a message
 	assert(new_message != NULL);
