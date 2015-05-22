@@ -1894,7 +1894,7 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 			while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
 			{
-				//printf("stall\n");
+				printf("%s stalled cycle %llu \n", cache->name, P_TIME);
 				P_PAUSE(1);
 			}
 
@@ -2018,7 +2018,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&gpu_s_caches[message_packet->gpu_cache_id]))
 					{
-						printf("%s stalled\n", cache->name);
+						printf("%s stalled cycle %llu\n", cache->name, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -2040,7 +2040,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&gpu_v_caches[message_packet->gpu_cache_id]))
 					{
-						printf("%s stalled\n", cache->name);
+						printf("%s stalled cycle %llu\n", cache->name, P_TIME);
 						P_PAUSE(1);
 					}
 
@@ -2387,13 +2387,15 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&gpu_v_caches[message_packet->gpu_cache_id]))
 					{
+						printf("%s stalled cycle %llu \n", cache->name, P_TIME);
 						P_PAUSE(1);
 					}
 
 					P_PAUSE(gpu_v_caches[message_packet->gpu_cache_id].wire_latency);
 
 					CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
-							cache->name, access_id, P_TIME, gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom->name, list_count(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom));
+							cache->name, access_id, P_TIME, gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom->name,
+							list_count(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom));
 
 					message_packet->access_type = cgm_access_puts;
 					list_remove(cache->last_queue, message_packet);
