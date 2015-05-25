@@ -432,13 +432,16 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int Assoc = 0;
 	int BlockSize = 0;
 	int Latency = 0;
-	const char* Policy = "";
+	int Policy = 0;
 	int Ports = 0;
 	int MSHR = 0;
 	int DirectoryLatency = 0;
 	int WireLatency = 0;
 	int maxcoal = 0;
 
+	////////////////////////
+	//MISC Settings
+	////////////////////////
 
 	/*get max queue size*/
 	if(MATCH("Queue", "Size"))
@@ -446,7 +449,30 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		QueueSize = atoi(value);
 	}
 
-	//CPU Caches
+	if(MATCH("Debug", "L1_INF"))
+	{
+		l1_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "L2_INF"))
+	{
+		l2_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "L3_INF"))
+	{
+		l3_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "GPU_L1_INF"))
+	{
+		gpu_l1_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "GPU_L2_INF"))
+	{
+		gpu_l2_inf = atoi(value);
+	}
 
 	////////////////////////
 	//l1_d_caches
@@ -491,10 +517,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L1_D_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].policy = Policy;
+			l1_d_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -588,10 +614,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L1_I_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_i_caches[i].policy = Policy;
+			l1_i_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -684,10 +710,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L2_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l2_caches[i].policy = Policy;
+			l2_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -805,11 +831,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L3_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 
 		for (i = 0; i < num_cores; i++)
 		{
-			l3_caches[i].policy = Policy;
+			l3_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -912,10 +938,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("GPU_S_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			gpu_s_caches[i].policy = Policy;
+			gpu_s_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -999,10 +1025,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("GPU_V_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
-			gpu_v_caches[i].policy = Policy;
+			gpu_v_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -1094,10 +1120,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("GPU_L2_Cache", "Policy"))
 	{
-		Policy = strdup(value);
+		Policy = atoi(value);
 		for (i = 0; i < gpu_group_cache_num; i++)
 		{
-			gpu_l2_caches[i].policy = Policy;
+			gpu_l2_caches[i].policy_type = Policy;
 		}
 	}
 
@@ -1137,35 +1163,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-
-	/*configure GPU LDS units*/
-	/*if(MATCH("GPU_LDS", "BlockSize"))
-	{
-		BlockSize = atoi(value);
-		for (i = 0; i < num_cus; i++)
-		{
-			gpu_lds_units[i].block_size = BlockSize;
-		}
-	}
-
-	if(MATCH("GPU_LDS", "Latency"))
-	{
-		Latency = atoi(value);
-		for (i = 0; i < num_cus; i++)
-		{
-			gpu_lds_units[i].latency = Latency;
-		}
-	}
-
-	if(MATCH("GPU_LDS", "Ports"))
-	{
-		Ports = atoi(value);
-		for (i = 0; i < num_cus; i++)
-		{
-			gpu_lds_units[i].num_ports = Ports;
-		}
-	}*/
-
 	return 0;
 }
 
@@ -1198,6 +1195,15 @@ int cache_finish_create(){
 		l1_i_caches[i].invalid_hits = 0;
 		l1_i_caches[i].misses = 0;
 		l1_i_caches[i].fetches = 0;
+
+		if(l1_i_caches[i].policy_type == 1)
+		{
+			l1_i_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
 
 		//pointer to my own event count
 		l1_i_caches[i].ec_ptr = &l1_i_cache[i];
@@ -1255,7 +1261,6 @@ int cache_finish_create(){
 			}
 		}
 
-
 		/////////////
 		//L1 D Cache
 		/////////////
@@ -1275,6 +1280,15 @@ int cache_finish_create(){
 		l1_d_caches[i].misses = 0;
 		l1_d_caches[i].loads = 0;
 		l1_d_caches[i].stores = 0;
+
+		if(l1_d_caches[i].policy_type == 1)
+		{
+			l1_d_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
 
 		//pointer to my own event count
 		l1_d_caches[i].ec_ptr = &l1_d_cache[i];
@@ -1352,6 +1366,15 @@ int cache_finish_create(){
 		l2_caches[i].loads = 0;
 		l2_caches[i].retries = 0;
 
+		if(l2_caches[i].policy_type == 1)
+		{
+			l2_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
+
 		//pointer to my own event count
 		l2_caches[i].ec_ptr = &l2_cache[i];
 
@@ -1428,6 +1451,15 @@ int cache_finish_create(){
 		l3_caches[i].invalid_hits = 0;
 		l3_caches[i].misses = 0;
 
+		if(l3_caches[i].policy_type == 1)
+		{
+			l3_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
+
 		//pointer to my own event counter
 		l3_caches[i].ec_ptr = &l3_cache[i];
 
@@ -1483,7 +1515,6 @@ int cache_finish_create(){
 				l3_caches[i].ort[j][k] = -1;
 			}
 		}
-
 
 
 		//Initialize array of sets
@@ -1586,6 +1617,16 @@ int cache_finish_create(){
 		gpu_s_caches[i].misses = 0;
 		gpu_s_caches[i].fetches = 0;
 
+		if(gpu_s_caches[i].policy_type == 1)
+		{
+			gpu_s_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
+
+
 		//pointer to my own event count
 		gpu_s_caches[i].ec_ptr = &gpu_s_cache[i];
 
@@ -1659,8 +1700,16 @@ int cache_finish_create(){
 		gpu_v_caches[i].invalid_hits = 0;
 		gpu_v_caches[i].misses = 0;
 
-		//pointer to my own event count
+		if(gpu_v_caches[i].policy_type == 1)
+		{
+			gpu_v_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
 
+		//pointer to my own event count
 		gpu_v_caches[i].ec_ptr = &gpu_v_cache[i];
 
 		gpu_v_caches[i].Rx_queue_top = list_create();
@@ -1820,6 +1869,15 @@ int cache_finish_create(){
 		gpu_l2_caches[i].hits = 0;
 		gpu_l2_caches[i].invalid_hits = 0;
 		gpu_l2_caches[i].misses = 0;
+
+		if(gpu_l2_caches[i].policy_type == 1)
+		{
+			gpu_l2_caches[i].policy = cache_policy_lru;
+		}
+		else
+		{
+			fatal("Invalid cache policy\n");
+		}
 
 		//pointer to my own event count
 		gpu_l2_caches[i].ec_ptr = &gpu_l2_cache[i];

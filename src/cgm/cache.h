@@ -104,8 +104,8 @@ struct cache_t{
 	unsigned int block_size;
 	unsigned int assoc;
 	unsigned int num_ports;
-	//enum cache_policy_t policy;
-	const char *policy;
+	enum cache_policy_t policy;
+	int policy_type;
 	int slice_type;
 
 	//cache data
@@ -156,8 +156,14 @@ struct cache_t{
 //global variables.
 //star todo bring this into the cache struct
 extern int QueueSize;
-extern int gpu_l2_qty;
-int mem_miss;
+extern int l1_inf;
+extern int l2_inf;
+extern int l3_inf;
+extern int gpu_l1_inf;
+extern int gpu_l2_inf;
+
+//extern int gpu_l2_qty;
+//int mem_miss;
 
 //CPU caches
 extern struct cache_t *l1_i_caches;
@@ -245,13 +251,13 @@ int cache_can_access_bottom(struct cache_t *cache);
 void ort_dump(struct cache_t *cache);
 
 //borrowed from m2s mem-system and tweaked a bit
-void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
+void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
-//void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
-//void cache_access_block(struct cache_t *cache, int set, int way);
-//int cache_replace_block(struct cache_t *cache, int set);
-//void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
+void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
+void cgm_cache_access_block(struct cache_t *cache, int set, int way);
+int cgm_cache_replace_block(struct cache_t *cache, int set);
+//void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
 

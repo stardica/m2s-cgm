@@ -32,6 +32,8 @@
 
 #include <instrumentation/stats.h>
 
+
+
 struct str_map_t cgm_mem_access_strn_map =
 { 	num_access_types, 	{
 		{"cgm_access_invalid" ,cgm_access_invalid},
@@ -83,8 +85,11 @@ struct str_map_t cgm_cache_block_state_map =
 };
 
 int QueueSize;
-int gpu_l2_qty;
-int mem_miss = 100;
+int l1_inf = 0;
+int l2_inf = 0;
+int l3_inf = 0;
+int gpu_l1_inf = 0;
+int gpu_l2_inf = 0;
 
 
 //CPU caches
@@ -407,7 +412,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 				fatal("get_message() pointers arn't working");
 			}
 		}
-
 	}
 
 	//debugging
@@ -424,7 +428,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	else
 	{
 		fatal("cache_get_message(): bad cache type\n");
-
 	}
 
 	//shouldn't be exiting without a message
@@ -467,27 +470,30 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	addr = message_packet->address;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	//store the decode
 	message_packet->tag = tag;
 	message_packet->set = set;
 	message_packet->offset = offset;
 
-
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
+	if(l1_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}*/
+		if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		}
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	//P_PAUSE(cache->latency);
+	cgm_cache_access_block(cache, set, way);
+	P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -556,8 +562,6 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 				break;
 			}
 		}
-
-		//printf("cache ort row number %d cycle %llu\n", i, P_TIME);
 
 		//entry was not found
 		if(i == cache->mshr_size)
@@ -693,7 +697,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	addr = message_packet->address;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 	//store the decode for later
 	message_packet->tag = tag;
 	message_packet->set = set;
@@ -701,10 +705,13 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 
 	//////testing
-	/*if(cache->cache_type == l1_d_cache_t)
+	if(l1_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}*/
+		if(cache->cache_type == l1_d_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		}
+	}
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -893,17 +900,27 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	cache->loads++;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 
 	//////testing
-	/*if(cache->cache_type == l2_cache_t) // cache->cache_type == l3_cache_t)
+	if(l2_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-	}*/
+		if(cache->cache_type == l2_cache_t) // cache->cache_type == l3_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		}
+	}
+	else if(l3_inf)
+	{
+		if(cache->cache_type == l3_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		}
+	}
 	//////testing
 
 	//look up, and charge a cycle.
@@ -1282,7 +1299,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	access_id = message_packet->access_id;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	/*printf("%s puts access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
 	fflush(stdout);*/
@@ -1292,6 +1309,10 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//charge the delay for writing cache block
 	//star todo add LRU evict here
 	P_PAUSE(cache->latency);
+
+
+	/*find a victim*/
+
 	cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 
 
@@ -1373,7 +1394,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	cache->retries++;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
@@ -1577,7 +1598,7 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	addr = message_packet->address;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	//store the decode
 	message_packet->tag = tag;
@@ -1589,10 +1610,13 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t)// || cache->cache_type == gpu_s_cache_t)
+	if(gpu_l1_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+		if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+		}
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -1781,17 +1805,20 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	addr = message_packet->address;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 	//store the decode for later
 	message_packet->tag = tag;
 	message_packet->set = set;
 	message_packet->offset = offset;
 
 	//////testing
-	/*if(cache->cache_type == gpu_v_cache_t)
+	if(gpu_l1_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+		if(cache->cache_type == gpu_v_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+		}
+	}
 	//////testing
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -1979,16 +2006,19 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	cache->loads++;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(cache->cache_type == gpu_l2_cache_t)
+	if(gpu_l2_inf)
 	{
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-	}*/
+		if(cache->cache_type == gpu_l2_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
+		}
+	}
 	//////testing
 
 	//look up, and charge a cycle.
@@ -2189,10 +2219,6 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 }
 
 
-
-
-
-
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *ort_packet;
@@ -2225,7 +2251,7 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	access_id = message_packet->access_id;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
@@ -2302,7 +2328,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	cache->retries++;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_decode_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
@@ -2367,7 +2393,8 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					}
 
 						CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
-							cache->name, access_id, P_TIME, gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom->name, list_count(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom));
+							cache->name, access_id, P_TIME, gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom->name,
+							list_count(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom));
 
 						P_PAUSE(gpu_s_caches[message_packet->gpu_cache_id].wire_latency);
 
@@ -2549,7 +2576,6 @@ int cgm_gpu_cache_map(int cache_id){
 }
 
 
-
 int cache_can_access_top(struct cache_t *cache){
 
 	int i = 0;
@@ -2597,7 +2623,7 @@ int cache_can_access_bottom(struct cache_t *cache){
 
 
 /* Return {tag, set, offset} for a given address */
-void cgm_cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
+void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
 	//star i reworked this a little//addr = message_packet->address;
 	*(tag_ptr) = (addr >> (cache->log_block_size + cache->log_set_size));//addr & ~(cache->block_mask);
@@ -2663,7 +2689,54 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	cache->sets[set].blocks[way].state = state;
 }
 
+/* Return the way of the block to be replaced in a specific set,
+ * depending on the replacement policy */
+int cgm_cache_replace_block(struct cache_t *cache, int set)
+{
+	//struct cache_block_t *block;
+
+	/* Try to find an invalid block. Do this in the LRU order, to avoid picking the
+	 * MRU while its state has not changed to valid yet. */
+	assert(set >= 0 && set < cache->num_sets);
+	/*
+	for (block = cache->sets[set].way_tail; block; block = block->way_prev)
+		if (!block->state)
+			return block->way;
+	*/
+
+	/* LRU and FIFO replacement: return block at the
+	 * tail of the linked list */
+	if (cache->policy == cache_policy_lru || cache->policy == cache_policy_fifo)
+	{
+		int way = cache->sets[set].way_tail->way;
+		cgm_cache_update_waylist(&cache->sets[set], cache->sets[set].way_tail, cache_waylist_head);
+		return way;
+	}
+
+	//star >> never enters here on LRU policy.
+	/* Random replacement */
+	assert(cache->policy == cache_policy_random);
+	assert(0);
+	return random() % cache->assoc;
+}
+
+void cgm_cache_access_block(struct cache_t *cache, int set, int way)
+{
+	int move_to_head;
+
+	assert(set >= 0 && set < cache->num_sets);
+	assert(way >= 0 && way < cache->assoc);
+
+	/* A block is moved to the head of the list for LRU policy.
+	 * It will also be moved if it is its first access for FIFO policy, i.e., if the
+	 * state of the block was invalid. */
+	move_to_head = cache->policy == cache_policy_lru || (cache->policy == cache_policy_fifo && !cache->sets[set].blocks[way].state);
+	if (move_to_head && cache->sets[set].blocks[way].way_prev)
+		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
+}
+
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where){
+
 	if (!blk->way_prev && !blk->way_next)
 	{
 		assert(set->way_head == blk && set->way_tail == blk);
@@ -2831,7 +2904,7 @@ void l1_d_cache_ctrl(void){
 		access_id = message_packet->access_id;
 
 		//probe the address for set, tag, and offset.
-		//cgm_cache_decode_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
+		//cgm_cache_probe_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
 
 		if (access_type == cgm_access_load)
 		{

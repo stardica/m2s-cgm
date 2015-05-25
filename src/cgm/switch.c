@@ -380,14 +380,12 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}
 
-
 					P_PAUSE(l3_caches[my_pid].wire_latency);
 
 					//success, remove packet from the switche's queue
 					remove_from_queue(&switches[my_pid], message_packet);
 
 					//message_packet->access_type = cgm_access_puts;
-
 
 					/////////test code
 					/*message_packet->access_type = cgm_access_puts;
@@ -398,7 +396,6 @@ void switch_ctrl(void){
 					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
 					/////////test code
-
 
 					//old code
 					//drop the packet into the cache's queue

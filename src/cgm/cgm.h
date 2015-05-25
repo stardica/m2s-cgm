@@ -31,7 +31,6 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 
-#define CLOSE (fclose(cgm_debug))
 
 //config file
 extern char *cgm_config_file_name_and_path;
@@ -95,9 +94,11 @@ extern char *cgm_stats_output_path;
 #define STOP 	CLOSE_FILES;\
 				getchar()
 
+//#define CLOSE (fclose(cgm_debug))
+
 //global access ids
-extern long long fetch_access_id;
-extern long long lspq_access_id;
+//extern long long fetch_access_id;
+//extern long long lspq_access_id;
 
 //global access record
 extern struct list_t *cgm_access_record;
