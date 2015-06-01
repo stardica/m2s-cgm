@@ -17,33 +17,40 @@
 #include <lib/util/list.h>
 
 //globals
-struct directory_t *directory;
+unsigned int dir_mode = 0; //1 = soc mode 0 equals system agent mode
+unsigned long long dir_mem_image_size = 0;
+unsigned int dir_block_size = 0;
+unsigned long long dir_num_blocks = 0;
+unsigned int dir_block_mask = 0;
+unsigned int dir_vector_size = 0;
+
+//struct directory_t *directory;
 
 //eventcount volatile *dir;
 
-void directory_init(void){
+/*void directory_init(void){
 
-	directory_create();
+	//directory_create();
 	//directory_create_tasks();
 
 	return;
-}
+}*/
 
-void directory_create(void){
+/*void directory_create(void){
 
 	int num_cores = x86_cpu_num_cores;
 
 	//init the directory struct
-	directory = (void *) calloc(1, sizeof(struct directory_t));
+	//directory = (void *) calloc(1, sizeof(struct directory_t));
 	return;
-}
+}*/
 
-unsigned long long directory_map_block_number(unsigned int addr){
+/*unsigned long long directory_map_block_number(unsigned int addr){
 
 	unsigned long long block_number = (addr & ~(directory->block_mask))/(directory->block_size);
 
-	return block_number;
-}
+	return dir_block_number;
+}*/
 
 
 /*void directory_create_tasks(void){

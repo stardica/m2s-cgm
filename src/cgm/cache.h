@@ -139,6 +139,7 @@ struct cache_t{
 
 	//directory bit vectors for coherence
 	unsigned int dir_latency;
+	union directory_t **dir;
 
 	//statistics
 	long long fetches;

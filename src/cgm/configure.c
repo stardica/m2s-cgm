@@ -1961,22 +1961,22 @@ int directory_read_config(void* user, const char* section, const char* name, con
 
 	if(MATCH("Directory", "MemSize"))
 	{
-		directory->mem_image_size = atoll(value);//4GB;
+		dir_mem_image_size = atoll(value);//4GB;
 	}
 
 	if(MATCH("Directory", "BlockSize"))
 	{
-		directory->block_size = atoi(value);
+		dir_block_size = atoi(value);
 	}
 
 	if(MATCH("Directory", "Mode"))
 	{
-		directory->mode = atoi(value);
+		dir_mode = atoi(value);
 	}
 
 	if(MATCH("Directory", "VectorSize"))
 	{
-		directory->vector_size = atoi(value);
+		dir_vector_size = atoi(value);
 	}
 
 
@@ -1994,7 +1994,7 @@ int directory_finish_create(void){
 	// this can also be set up as one entry per system agent.
 
 	//do some checks
-	if(directory->block_size != l3_caches->block_size)
+	if(dir_block_size != l3_caches->block_size)
 	{
 		fatal("directory_finish_create() block size needs to match l3 block size. Check the cgm_config.ini file");
 	}
@@ -2002,13 +2002,13 @@ int directory_finish_create(void){
 	//init the data vectors
 	//m2s doesn't natively account for dir memory overhead IN the memory image
 	//get the number of blocks in the system
-	directory->num_blocks = (directory->mem_image_size/directory->block_size);
+	dir_num_blocks = (dir_mem_image_size/dir_block_size);
 
 	//this accounts for directory overhead
 	//directory->num_blocks = (directory->mem_image_size/(directory->block_size + directory->vector_size));
 
 	//get the block mask
-	directory->block_mask = directory->block_size - 1; // this is 0 - N
+	dir_block_mask = dir_block_size - 1; // this is 0 - N
 
 
 	/*if(directory->vector_size == 1)
@@ -2034,7 +2034,7 @@ int directory_finish_create(void){
 
 
 	//set up input queues
-	if (directory->mode)
+	/*if (directory->mode)
 	{
 		directory->Rx_queue = (void *) calloc(num_cores, sizeof(struct list_t));
 
@@ -2050,7 +2050,7 @@ int directory_finish_create(void){
 	else
 	{
 		fatal("directory_finish_create() currently only support distributed mode. Check the cgm_config.ini file");
-	}
+	}*/
 
 	/*printf("directory->mem_image_size %llu\n", directory->mem_image_size);
 	printf("directory->block_size %llu\n", directory->block_size);

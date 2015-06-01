@@ -94,7 +94,7 @@ void cgm_init(void){
 	cache_init();
 	switch_init();
 	hub_iommu_init();
-	directory_init();
+	//directory_init();
 	sys_agent_init();
 	memctrl_init();
 
