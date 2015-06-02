@@ -105,6 +105,10 @@ void interrupt_service_request(void){
 		while (id < num_cores)
 		{
 
+
+			//printf("running interrupt\n");
+			//getchar();
+
 			if(interrupt_cores[id] > 0)
 			{
 

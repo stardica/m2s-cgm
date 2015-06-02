@@ -291,6 +291,9 @@ void switch_ctrl(void){
 
 		//if we made it here we should have a packet.
 		message_packet = get_from_queue(&switches[my_pid]);
+
+
+
 		assert(message_packet);
 
 		//send the packet to it's destination OR on to the next hop
@@ -308,7 +311,7 @@ void switch_ctrl(void){
 
 		P_PAUSE(switches[my_pid].latency);
 
-		//if dest is the L2/L3/SA connected to this switch.
+		//if dest is the L2/L3/HUB-IOMMU/SA connected to this switch.
 		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
 		{
 			//if the node number is lower this means it is an L2 cache
@@ -319,51 +322,66 @@ void switch_ctrl(void){
 				{
 					//make sure we can access the cache
 					//star todo add the ability to do something else if we can access the target cache
-					while(!cache_can_access_bottom(&l2_caches[my_pid]))
+					/*while(!cache_can_access_bottom(&l2_caches[my_pid]))
 					{
 						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);//the L2 cache queue is full try again next cycle
 						P_PAUSE(1);
+					}*/
+
+					//check the dest queue, if it is busy try another packet
+					if(!cache_can_access_bottom(&l2_caches[my_pid]))
+					{
+						printf("entered switch\n");
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
+					else
+					{
+						//route the packet
+						P_PAUSE(l2_caches[my_pid].wire_latency);
 
-					P_PAUSE(l2_caches[my_pid].wire_latency);
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
 
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
+						//drop the packet into the cache's queue
+						list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 
-					//drop the packet into the cache's queue
-					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+						advance(&l2_cache[my_pid]);
+						//future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
 
-					advance(&l2_cache[my_pid]);
-					//future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
-
-					//done with this access
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						//done with this access
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
 				}
 				//GPU hub_iommu
 				else if(my_pid >= num_cores)
 				{
-					while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
+					/*while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
 					{
 						//the hub-iommu cache queue is full try again next cycle
 						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
+					}*/
+
+					if(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
+					{
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
+					else
+					{
+						P_PAUSE(hub_iommu->wire_latency);
 
-					P_PAUSE(hub_iommu->wire_latency);
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
 
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
+						//drop the packet into the hub's bottom queue
+						list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
 
-					//drop the packet into the hub's bottom queue
-					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
-
-
-					advance(hub_iommu_ec);
-					//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
-					//done with this access
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						advance(hub_iommu_ec);
+						//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
+						//done with this access
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
 				}
-
 			}
 			//if the node number is high this means it is an L3 cache or the sys agent
 			else if(dest_node > switch_node)
@@ -373,63 +391,80 @@ void switch_ctrl(void){
 				{
 					//make sure we can access the cache
 					//star todo add the ability to do something else if we can access the target cache
-					while(!cache_can_access_top(&l3_caches[my_pid]))
+					/*while(!cache_can_access_top(&l3_caches[my_pid]))
 					{
 						//the L2 cache queue is full try again next cycle
 						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
+					}*/
+
+
+					if(!cache_can_access_top(&l3_caches[my_pid]))
+					{
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
+					else
+					{
 
-					P_PAUSE(l3_caches[my_pid].wire_latency);
+						P_PAUSE(l3_caches[my_pid].wire_latency);
 
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
 
-					//message_packet->access_type = cgm_access_puts;
+						//message_packet->access_type = cgm_access_puts;
 
-					/////////test code
-					/*message_packet->access_type = cgm_access_puts;
-					message_packet->dest_name = message_packet->src_name;
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
-					message_packet->src_name = l3_caches[0].name;
-					message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
-					list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-					future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
-					/////////test code
+						/////////test code
+						/*message_packet->access_type = cgm_access_puts;
+						message_packet->dest_name = message_packet->src_name;
+						message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+						message_packet->src_name = l3_caches[0].name;
+						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
+						list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+						future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+						/////////test code
 
-					//old code
-					//drop the packet into the cache's queue
-					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					advance(&l3_cache[my_pid]);
-					//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
-					//done with this access
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						//old code
+						//drop the packet into the cache's queue
+						list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+						advance(&l3_cache[my_pid]);
+						//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+						//done with this access
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
 
 				}
 				//for the system agent
 				else if(my_pid >= num_cores)
 				{
 
-					while(!sys_agent_can_access_top())
+					/*while(!sys_agent_can_access_top())
 					{
 						//the sys agent queue is full try again next cycle
 						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
+					}*/
+
+					if(!sys_agent_can_access_top())
+					{
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
+					else
+					{
 
-					P_PAUSE(system_agent->wire_latency);
+						P_PAUSE(system_agent->wire_latency);
 
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
 
-					//drop the packet into the sys agent queue
-					list_enqueue(system_agent->Rx_queue_top, message_packet);
+						//drop the packet into the sys agent queue
+						list_enqueue(system_agent->Rx_queue_top, message_packet);
 
-					advance(system_agent_ec);
-					//future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
-					//done with this access
+						advance(system_agent_ec);
+						//future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
+						//done with this access
 
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
 				}
 			}
 			else
@@ -470,49 +505,65 @@ void switch_ctrl(void){
 					if(distance <= switches[my_pid].switch_median_node)
 					{//go east
 
-						while(!switch_can_access(switches[my_pid].next_east))
+						/*while(!switch_can_access(switches[my_pid].next_east))
 						{
 							//the switch queue is full try again next cycle
 							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
+						}*/
+
+						if(!switch_can_access(switches[my_pid].next_east))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
 						}
+						else
+						{
 
-						P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
+							P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
 
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
 
-						//drop the packet into the next switche's queue
-						list_enqueue(switches[my_pid].next_east, message_packet);
+							//drop the packet into the next switche's queue
+							list_enqueue(switches[my_pid].next_east, message_packet);
 
-						advance(&switches_ec[switches[my_pid].next_east_id]);
-						//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+							advance(&switches_ec[switches[my_pid].next_east_id]);
+							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
 
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						}
 
 					}
 					else
 					{//go west
 
-						while(!switch_can_access(switches[my_pid].next_west))
+						/*while(!switch_can_access(switches[my_pid].next_west))
 						{
 							//the switch queue is full try again next cycle
 							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
+						}*/
+
+						if(!switch_can_access(switches[my_pid].next_west))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
 						}
+						else
+						{
 
-						P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
+							P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
 
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
 
-						//drop the packet into the next switche's queue
-						list_enqueue(switches[my_pid].next_west, message_packet);
+							//drop the packet into the next switche's queue
+							list_enqueue(switches[my_pid].next_west, message_packet);
 
-						advance(&switches_ec[switches[my_pid].next_west_id]);
-						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+							advance(&switches_ec[switches[my_pid].next_west_id]);
+							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
 
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						}
 					}
 				}
 				else if(src_node > dest_node)
@@ -524,13 +575,89 @@ void switch_ctrl(void){
 					if(distance <= switches[my_pid].switch_median_node)
 					{//go west
 
-						while(!switch_can_access(switches[my_pid].next_west))
+						/*while(!switch_can_access(switches[my_pid].next_west))
 						{
 							//the switch queue is full try again next cycle
 							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 							P_PAUSE(1);
+						}*/
+
+						if(!switch_can_access(switches[my_pid].next_west))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
+						}
+						else
+						{
+
+							P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
+
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
+
+							//drop the packet into the next switche's queue
+							list_enqueue(switches[my_pid].next_west, message_packet);
+
+							advance(&switches_ec[switches[my_pid].next_west_id]);
+							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
 
+					}
+					else
+					{//go east
+
+						/*while(!switch_can_access(switches[my_pid].next_east))
+						{
+							//the switch queue is full try again next cycle
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+							P_PAUSE(1);
+						}*/
+
+						if (!switch_can_access(switches[my_pid].next_east))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
+						}
+						else
+						{
+
+							P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
+
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
+
+							//drop the packet into the next switche's queue
+							list_enqueue(switches[my_pid].next_east, message_packet);
+
+							advance(&switches_ec[switches[my_pid].next_east_id]);
+							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						}
+					}
+				}
+			}
+			else if(switches[my_pid].queue == east_queue || switches[my_pid].queue == west_queue)
+			{
+				//packet came from another switch, but needs to continue on.
+
+				if(switches[my_pid].queue == east_queue)
+				{//go west
+
+					/*while(!switch_can_access(switches[my_pid].next_west))
+					{
+						//the switch queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
+
+					if(!switch_can_access(switches[my_pid].next_west))
+					{
+						future_advance(&switches_ec[my_pid], etime.count + 2);
+
+					}
+					else
+					{
 						P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
 
 						//success, remove packet from the switche's queue
@@ -542,19 +669,26 @@ void switch_ctrl(void){
 						advance(&switches_ec[switches[my_pid].next_west_id]);
 						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
 
-
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
+
+				}
+				else if(switches[my_pid].queue == west_queue)
+				{//go east
+					/*while(!switch_can_access(switches[my_pid].next_east))
+					{
+						//the switch queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
+
+					if(!switch_can_access(switches[my_pid].next_east))
+					{
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 
 					}
 					else
-					{//go east
-
-						while(!switch_can_access(switches[my_pid].next_east))
-						{
-							//the switch queue is full try again next cycle
-							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
-							P_PAUSE(1);
-						}
+					{
 
 						P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
 
@@ -569,56 +703,6 @@ void switch_ctrl(void){
 
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
-				}
-			}
-			else if(switches[my_pid].queue == east_queue || switches[my_pid].queue == west_queue)
-			{
-				//packet came from another switch, but needs to continue on.
-
-				if(switches[my_pid].queue == east_queue)
-				{//go west
-
-					while(!switch_can_access(switches[my_pid].next_west))
-					{
-						//the switch queue is full try again next cycle
-						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
-						P_PAUSE(1);
-					}
-
-					P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
-
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
-
-					//drop the packet into the next switche's queue
-					list_enqueue(switches[my_pid].next_west, message_packet);
-
-					advance(&switches_ec[switches[my_pid].next_west_id]);
-					//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-
-				}
-				else if(switches[my_pid].queue == west_queue)
-				{//go east
-					while(!switch_can_access(switches[my_pid].next_east))
-					{
-						//the switch queue is full try again next cycle
-						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
-						P_PAUSE(1);
-					}
-					P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
-
-					//success, remove packet from the switche's queue
-					remove_from_queue(&switches[my_pid], message_packet);
-
-					//drop the packet into the next switche's queue
-					list_enqueue(switches[my_pid].next_east, message_packet);
-
-					advance(&switches_ec[switches[my_pid].next_east_id]);
-					//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-
-					CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 
 				}
 				else
@@ -694,6 +778,8 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 	//choose a port this cycle to work from
 	if(switches->arb_style == round_robin)
 	{
+
+		//get a packet
 		for(i = 0; i < switches->port_num; i++)
 		{
 			//set switches->queue to the next queue.

@@ -16,7 +16,6 @@
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/thread.h>
 
-
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define LOG2(x) ((int) rint((log((double) (x))) / (log(2.0))))
 

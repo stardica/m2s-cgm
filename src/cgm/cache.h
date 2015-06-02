@@ -245,10 +245,13 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 
 int cgm_gpu_cache_map(int cache_id);
+int get_ort_status(struct cache_t *cache);
 
 
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
+
+int get_ort_status(struct cache_t *cache);
 void ort_dump(struct cache_t *cache);
 
 //borrowed from m2s mem-system and tweaked a bit

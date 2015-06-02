@@ -354,51 +354,74 @@ void cache_create_tasks(void){
 	return;
 }
 
+
+int get_ort_status(struct cache_t *cache){
+
+	int status = -1;
+	int i = 0;
+
+	// checks the ort to find an empty row
+	for (i = 0; i <  cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+		{
+			//hit in the ORT table
+			status = i;
+			break;
+		}
+	}
+
+	return status;
+}
+
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
-	//star this is round robin
 	struct cgm_packet_t *new_message;
-	//printf ("cache->name %s\n", cache->name);
+	int ort_status = -1;
 
+	//check the ORT status
+	ort_status = get_ort_status(cache);
 	int retry_queue_size = list_count(cache->retry_queue);
 
-	//pull from the retry queue first.
-	if(retry_queue_size > 0)
-	{
-		new_message = list_get(cache->retry_queue, 0);
-		cache->last_queue = cache->retry_queue;
-	}
-	else
-	{
-		new_message = list_get(cache->next_queue, 0);
+	/*if the ort is full we can't process a CPU request
+	because misses will overrun the table.*/
+	//printf("%s cache ort size %d\n", cache->name, ort_status);
 
-		//keep pointer to last queue
-		cache->last_queue = cache->next_queue;
+	if(ort_status == cache->mshr_size)
+	{
+		//printf("%s cache ort full\n", cache->name);
+		getchar();
 
-		//rotate the queues
-		if(cache->next_queue == cache->Rx_queue_top)
+		//try to pull from the retry queue
+		if(retry_queue_size > 0)
 		{
-			cache->next_queue = cache->Rx_queue_bottom;
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
 		}
-		else if(cache->next_queue == cache->Rx_queue_bottom)
+		/*we can't process the CPU request and
+		there isn't another message to process so stall*/
+		else
 		{
-			cache->next_queue = cache->Rx_queue_top;
+			new_message = NULL;
+		}
+
+	}
+	else if(ort_status < cache->mshr_size)
+	{
+		//try to pull from the retry queue first.
+		if(retry_queue_size > 0)
+		{
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
 		}
 		else
 		{
-			fatal("get_message() pointers arn't working");
-		}
-
-		//if we didn't get a message try again (now that the queues are rotated)
-		if(new_message == NULL)
-		{
-
 			new_message = list_get(cache->next_queue, 0);
 
 			//keep pointer to last queue
 			cache->last_queue = cache->next_queue;
 
-			//rotate the queues.
+			//rotate the queues
 			if(cache->next_queue == cache->Rx_queue_top)
 			{
 				cache->next_queue = cache->Rx_queue_bottom;
@@ -411,7 +434,38 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			{
 				fatal("get_message() pointers arn't working");
 			}
+
+			//if we didn't get a message try again (now that the queues are rotated)
+			if(new_message == NULL)
+			{
+
+				new_message = list_get(cache->next_queue, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->next_queue;
+
+				//rotate the queues.
+				if(cache->next_queue == cache->Rx_queue_top)
+				{
+					cache->next_queue = cache->Rx_queue_bottom;
+				}
+				else if(cache->next_queue == cache->Rx_queue_bottom)
+				{
+					cache->next_queue = cache->Rx_queue_top;
+				}
+				else
+				{
+					fatal("get_message() pointers arn't working");
+				}
+			}
 		}
+
+		//printf("%llu\n", new_message->access_id);
+		//assert(new_message != NULL);
+	}
+	else
+	{
+		fatal("cache_get_message() ort row out of bounds %d\n", ort_status);
 	}
 
 	//debugging
@@ -431,7 +485,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	}
 
 	//shouldn't be exiting without a message
-	assert(new_message != NULL);
+	//assert(new_message != NULL);
 	return new_message;
 }
 
@@ -493,7 +547,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	cgm_cache_access_block(cache, set, way);
-	P_PAUSE(cache->latency);
+	//P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -601,16 +655,16 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->ort[i][2] = 1;
 
 			//forward message_packet
-			while(!cache_can_access_top(&l2_caches[cache->id]))
+			/*while(!cache_can_access_top(&l2_caches[cache->id]))
 			{
 				//printf("stall\n");
 				P_PAUSE(1);
-			}
+			}*/
 
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			P_PAUSE(l2_caches[cache->id].wire_latency);
+			//P_PAUSE(l2_caches[cache->id].wire_latency);
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -659,7 +713,6 @@ void ort_dump(struct cache_t *cache){
 	{
 		printf("ort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
 	}
-
 
 	return;
 }
@@ -720,7 +773,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(cache->latency);
+	//P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)// && *state_ptr != cache_block_shared)
@@ -815,16 +868,16 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			cache->ort[i][1] = set;
 			cache->ort[i][2] = 1;
 
-			while(!cache_can_access_top(&l2_caches[cache->id]))
+			/*while(!cache_can_access_top(&l2_caches[cache->id]))
 			{
 				//printf("stall\n");
 				P_PAUSE(1);
-			}
+			}*/
 
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			P_PAUSE(l2_caches[cache->id].wire_latency);
+			//P_PAUSE(l2_caches[cache->id].wire_latency);
 
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
@@ -925,7 +978,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	//look up, and charge a cycle.
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	P_PAUSE(cache->latency);
+	//P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -953,13 +1006,14 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
 					{
 						//printf("stall\n");
+						//getchar();
 						P_PAUSE(1);
 					}
 
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 							cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
-					P_PAUSE(l1_i_caches[cache->id].wire_latency);
+					//P_PAUSE(l1_i_caches[cache->id].wire_latency);
 
 					message_packet->access_type = cgm_access_puts;
 					list_remove(cache->last_queue, message_packet);
@@ -975,13 +1029,14 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
 					{
 						//printf("stall\n");
+						//getchar();
 						P_PAUSE(1);
 					}
 
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 							cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
-					P_PAUSE(l1_d_caches[cache->id].wire_latency);
+					//P_PAUSE(l1_d_caches[cache->id].wire_latency);
 
 					message_packet->access_type = cgm_access_puts;
 					list_remove(cache->last_queue, message_packet);
@@ -1002,16 +1057,16 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				//This is a hit in the L3 cache, send up to L2 cache
 				//while the next level of cache's in queue is full stall
 				//star todo possible deadlock situation if both the l2 and core are trying to fill a full queue
-				while(!switch_can_access(switches[cache->id].south_queue))
+				/*while(!switch_can_access(switches[cache->id].south_queue))
 				{
 					//printf("stall\n");
 					P_PAUSE(1);
-				}
+				}*/
 
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
-				P_PAUSE(switches[cache->id].wire_latency);
+				//P_PAUSE(switches[cache->id].wire_latency);
 
 				//success
 				message_packet->access_type = cgm_access_puts;
@@ -1082,8 +1137,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				//sanity check the table row
 				if(i >= cache->mshr_size)
 				{
-					printf("%s crashing ort is full\n", cache->name);
-
+					printf("%s crashing ort is full here i = %d\n", cache->name, i);
+					ort_dump(cache);
 					assert(i < cache->mshr_size);
 					assert(cache->ort[i][0] == -1);
 					assert(cache->ort[i][1] == -1);
@@ -1095,16 +1150,16 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				cache->ort[i][1] = set;
 				cache->ort[i][2] = 1;
 
-				while(!switch_can_access(switches[cache->id].north_queue))
+				/*while(!switch_can_access(switches[cache->id].north_queue))
 				{
 					//printf("stall\n");
 					P_PAUSE(1);
-				}
+				}*/
 
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu miss switch north queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].north_queue));
 
-				P_PAUSE(switches[cache->id].wire_latency);
+				//P_PAUSE(switches[cache->id].wire_latency);
 
 				l3_map = cgm_l3_cache_map(set_ptr);
 				message_packet->access_type = cgm_access_gets;
@@ -1203,16 +1258,16 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->ort[i][1] = set;
 			cache->ort[i][2] = 1;
 
-			while(!switch_can_access(switches[cache->id].south_queue))
+			/*while(!switch_can_access(switches[cache->id].south_queue))
 			{
 				//printf("stall\n");
 				P_PAUSE(1);
-			}
+			}*/
 
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 				cache->name, access_id, P_TIME, switches[cache->id].south_queue->name, list_count(switches[cache->id].south_queue));
 
-			P_PAUSE(switches[cache->id].wire_latency);
+			//P_PAUSE(switches[cache->id].wire_latency);
 
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -1308,7 +1363,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	//charge the delay for writing cache block
 	//star todo add LRU evict here
-	P_PAUSE(cache->latency);
+	//P_PAUSE(cache->latency);
 
 
 	/*find a victim*/
@@ -1424,7 +1479,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//clear out the returned memory request
 
 					//remove packet from cache retry queue and global queue
-					P_PAUSE(1);
+					//P_PAUSE(1);
 					list_remove(cache->last_queue, message_packet); /*check here */
 					remove_from_global(access_id);
 
@@ -1435,7 +1490,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				//CPU L1 D cache
 				if(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 				{
-					P_PAUSE(1);
+					//P_PAUSE(1);
 					list_remove(cache->last_queue, message_packet); /*check here */
 					linked_list_add(message_packet->event_queue, message_packet->data);
 
@@ -1453,13 +1508,14 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					while(!cache_can_access_bottom(&l1_i_caches[cache->id]))
 					{
 						//printf("stall\n");
+						//getchar();
 						P_PAUSE(1);
 					}
 
 						CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
 								cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));
 
-						P_PAUSE(l1_i_caches[cache->id].wire_latency);
+						//P_PAUSE(l1_i_caches[cache->id].wire_latency);
 
 						message_packet->access_type = cgm_access_puts;
 						list_remove(cache->last_queue, message_packet); /*check here */
@@ -1478,10 +1534,11 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
 					{
 						//printf("stall\n");
+						//getchar();
 						P_PAUSE(1);
 					}
 
-					P_PAUSE(l1_d_caches[cache->id].wire_latency);
+					//P_PAUSE(l1_d_caches[cache->id].wire_latency);
 
 					CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s free size %d\n",
 							cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
@@ -1509,13 +1566,14 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
 					//printf("stall\n");
+					//getchar();
 					P_PAUSE(1);
 				}
 
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu switch south queue free size %d\n",
 						cache->name, access_id, P_TIME, list_count(switches[cache->id].south_queue));
 
-				P_PAUSE(switches[cache->id].wire_latency);
+				//P_PAUSE(switches[cache->id].wire_latency);
 
 				//success
 				//remove packet from l3 cache in queue
@@ -1528,18 +1586,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
-
-				/*if(access_id == 368386)
-				{
-
-					printf("dest name %s id %d\n", str_map_value(&node_strn_map, message_packet->l2_cache_name), message_packet->l2_cache_id);
-
-					message_packet->dest_id = message_packet->l2_cache_id;
-					message_packet->dest_name = message_packet->l2_cache_id
-					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&l2_strn_map, cache->name);
-				}*/
-
 
 				list_remove(cache->last_queue, message_packet);
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -2848,28 +2894,52 @@ void l1_i_cache_ctrl(void){
 		await(&l1_i_cache[my_pid], step);
 		step++;
 
-		//get a message from the top or bottom queues.
+		//try to process a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
+		if (message_packet == NULL)
+		{
+			//the cache state is preventing the cache from working this cycle stall.
+			//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
+			future_advance(&l1_i_cache[my_pid], etime.count + 2);
 
-		if (access_type == cgm_access_fetch)
-		{
-			cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			cpu_cache_access_put(&(l1_i_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			cpu_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
 		}
 		else
 		{
-			fatal("l1_i_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
-				l1_i_caches[my_pid].name, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+
+			if (access_type == cgm_access_fetch)
+			{
+				/*message is from the CPU, only fetch
+				if the in queue of the L2 cache has an open slot*/
+				if(cache_can_access_top(&l2_caches[my_pid]))
+				{
+					//printf("entered i cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
+					cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
+					future_advance(&l1_i_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				//message from L2
+				cpu_cache_access_put(&(l1_i_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				//organic retry
+				cpu_cache_access_retry(&(l1_i_caches[my_pid]), message_packet);
+			}
+			else
+			{
+				fatal("l1_i_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
+						l1_i_caches[my_pid].name, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
 
@@ -2900,34 +2970,69 @@ void l1_d_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
+		if (message_packet == NULL)
+		{
+			//the cache state is preventing the cache from working this cycle stall.
+			//printf("%s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
+			future_advance(&l1_d_cache[my_pid], etime.count + 2);
 
-		//probe the address for set, tag, and offset.
-		//cgm_cache_probe_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
-
-		if (access_type == cgm_access_load)
-		{
-			cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_store)
-		{
-			cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			cpu_cache_access_put(&(l1_d_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			cpu_cache_access_retry(&(l1_d_caches[my_pid]), message_packet);
 		}
 		else
 		{
-			fatal("l1_d_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+
+			//probe the address for set, tag, and offset.
+			//cgm_cache_probe_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
+
+			if (access_type == cgm_access_load)
+			{
+				if(cache_can_access_top(&l2_caches[my_pid]))
+				{
+					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
+					cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					//printf("%s load stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
+					future_advance(&l1_d_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_store)
+			{
+
+				//printf("l2 cache queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
+				if(cache_can_access_top(&l2_caches[my_pid]))
+				{
+					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
+					cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					//printf("%s store stalling access_id %llu cycle %llu l2 cache queue size %d\n", l1_d_caches[my_pid].name, access_id, P_TIME, list_count(l2_caches[my_pid].Rx_queue_top));
+					//getchar();
+					future_advance(&l1_d_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				cpu_cache_access_put(&(l1_d_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				cpu_cache_access_retry(&(l1_d_caches[my_pid]), message_packet);
+			}
+			else
+			{
+				fatal("l1_d_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
+
 	//should never get here
 	fatal("l1_d_cache_ctrl task is broken\n");
 	return;
@@ -2956,24 +3061,45 @@ void l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-
-		if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
+		if (message_packet == NULL)
 		{
-			cpu_cache_access_get(&l2_caches[my_pid], message_packet);
-		}
-		else if(access_type == cgm_access_puts)
-		{
-			cpu_cache_access_put(&l2_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			cpu_cache_access_retry(&l2_caches[my_pid], message_packet);
+			//the cache state is preventing the cache from working this cycle stall.
+			//printf("%s stalling cycle %llu\n", l2_caches[my_pid].name, P_TIME);
+			future_advance(&l2_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
-			fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+
+			if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
+			{
+
+				if(switch_can_access(switches[my_pid].north_queue))
+				{
+					cpu_cache_access_get(&l2_caches[my_pid], message_packet);
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					future_advance(&l2_cache[my_pid], etime.count + 2);
+				}
+
+
+			}
+			else if(access_type == cgm_access_puts)
+			{
+				cpu_cache_access_put(&l2_caches[my_pid], message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				cpu_cache_access_retry(&l2_caches[my_pid], message_packet);
+			}
+			else
+			{
+				fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
 
@@ -3003,44 +3129,47 @@ void l3_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
-
-		assert(message_packet != NULL);
-
-		//no L3 should route to another L3
-		/*if(!strcmp(l3_caches[0].name, message_packet->src_name) ||
-				!strcmp(l3_caches[1].name, message_packet->src_name)||
-				!strcmp(l3_caches[2].name, message_packet->src_name)||
-				!strcmp(l3_caches[3].name, message_packet->src_name))
+		if (message_packet == NULL)
 		{
-			STOP;
-			fatal("bad route access_id %llu cycle %llu src %s dest %s\n", access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
-		}*/
-
-		/*printf("%s access_id %llu cycle %llu %s\n", l3_caches[my_pid].name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
-		fflush(stdout);*/
-
-
-		if (access_type == cgm_access_gets)
-		{
-			cpu_cache_access_get(&l3_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			cpu_cache_access_put(&l3_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			cpu_cache_access_retry(&l3_caches[my_pid], message_packet);
+			//the cache state is preventing the cache from working this cycle stall.
+			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
+			future_advance(&l3_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
-			fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-		}
+			assert(message_packet != NULL);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
 
+			if (access_type == cgm_access_gets)
+			{
+				if(switch_can_access(switches[my_pid].south_queue))
+				{
+					cpu_cache_access_get(&l3_caches[my_pid], message_packet);
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					//printf("running here\n");
+					future_advance(&l3_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				cpu_cache_access_put(&l3_caches[my_pid], message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				cpu_cache_access_retry(&l3_caches[my_pid], message_packet);
+			}
+			else
+			{
+				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
+		}
 	}
+
 	/* should never get here*/
 	fatal("l3_cache_ctrl task is broken\n");
 	return;
@@ -3194,8 +3323,6 @@ void gpu_l2_cache_ctrl(void){
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
 
 		access_type = message_packet->access_type;
-
-
 
 		if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
 		{
