@@ -385,12 +385,11 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	/*if the ort is full we can't process a CPU request
 	because misses will overrun the table.*/
-	//printf("%s cache ort size %d\n", cache->name, ort_status);
 
 	if(ort_status == cache->mshr_size)
 	{
 		//printf("%s cache ort full\n", cache->name);
-		getchar();
+		//getchar();
 
 		//try to pull from the retry queue
 		if(retry_queue_size > 0)
@@ -402,6 +401,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		there isn't another message to process so stall*/
 		else
 		{
+			printf("here\n");
 			new_message = NULL;
 		}
 
@@ -1770,12 +1770,12 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->ort[i][2] = 1;
 
 			//forward message_packet
-			while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
+			/*while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
 			{
 				printf("%s stalled cycle %llu \n", cache->name, P_TIME);
 
 				P_PAUSE(1);
-			}
+			}*/
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 					cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
@@ -1965,11 +1965,11 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			cache->ort[i][1] = set;
 			cache->ort[i][2] = 1;
 
-			while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
+			/*while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
 			{
 				printf("%s stalled cycle %llu \n", cache->name, P_TIME);
 				P_PAUSE(1);
-			}
+			}*/
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top));
@@ -3197,33 +3197,50 @@ void gpu_s_cache_ctrl(void){
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
-
-		/////////testing
-		//(*message_packet->witness_ptr)++;
-		//list_remove(gpu_s_caches[my_pid].Rx_queue_top, message_packet);
-		//continue;
-		/////////testing
-
-		if (access_type == cgm_access_load_s)
+		if (message_packet == NULL)
 		{
-			gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			gpu_cache_access_put(&(gpu_s_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			gpu_cache_access_retry(&(gpu_s_caches[my_pid]), message_packet);
+			printf("stalling\n");
+			future_advance(&gpu_s_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
-			fatal("gpu_s_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+
+
+			if (access_type == cgm_access_load_s)
+			{
+				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+				{
+					gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					printf("stalling\n");
+					future_advance(&gpu_s_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				gpu_cache_access_put(&(gpu_s_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				gpu_cache_access_retry(&(gpu_s_caches[my_pid]), message_packet);
+			}
+			else
+			{
+				fatal("gpu_s_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
+
+	/////////testing
+	//(*message_packet->witness_ptr)++;
+	//list_remove(gpu_s_caches[my_pid].Rx_queue_top, message_packet);
+	//continue;
+	/////////testing
 
 	/* should never get here*/
 	fatal("gpu_s_cache_ctrl task is broken\n");
@@ -3255,39 +3272,67 @@ void gpu_v_cache_ctrl(void){
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
+		if (message_packet == NULL)
+		{
+			printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+			future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+		}
+		else
+		{
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
 
+
+			if(access_type == cgm_access_load_v)
+			{
+				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+				{
+					gpu_l1_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
+					//gpu_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+				}
+
+			}
+			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
+			{
+
+				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+				{
+					gpu_l1_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
+					//gpu_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+				}
+
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				gpu_cache_access_retry(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				gpu_cache_access_put(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else
+			{
+				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
+
+
+		}
 		/////////testing
 		//(*message_packet->witness_ptr)++;
 		//list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
 		//continue;
 		/////////testing
-
-
-		if(access_type == cgm_access_load_v)
-		{
-			gpu_l1_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
-			//gpu_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
-		{
-			gpu_l1_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
-			//gpu_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			gpu_cache_access_retry(&(gpu_v_caches[my_pid]), message_packet);
-		}
-		else if (access_type == cgm_access_puts)
-		{
-			gpu_cache_access_put(&(gpu_v_caches[my_pid]), message_packet);
-		}
-		else
-		{
-			fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
-					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-		}
 
 	}
 	//should never get here
@@ -3322,27 +3367,47 @@ void gpu_l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
 
-		access_type = message_packet->access_type;
-
-		if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
+		if (message_packet == NULL)
 		{
-			gpu_cache_access_get(&gpu_l2_caches[my_pid], message_packet);
-			//gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
-		}
-		else if (access_type == cgm_access_retry)
-		{
-			gpu_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
-			//gpu_l2_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
-		}
-		else if(access_type == cgm_access_puts)
-		{
-			gpu_cache_access_put(&gpu_l2_caches[my_pid], message_packet);
-			//gpu_l2_cache_access_puts(&gpu_l2_caches[my_pid], message_packet);
+			//the cache state is preventing the cache from working this cycle stall.
+			printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+			printf("stalling\n");
+			future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
-			fatal("gpu_l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
-				access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+
+			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
+			{
+
+				if(hub_iommu_can_access(hub_iommu->Rx_queue_top[my_pid]))
+				{
+					gpu_cache_access_get(&gpu_l2_caches[my_pid], message_packet);
+					//gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
+				}
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				gpu_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
+				//gpu_l2_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_puts)
+			{
+				gpu_cache_access_put(&gpu_l2_caches[my_pid], message_packet);
+				//gpu_l2_cache_access_puts(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else
+			{
+				fatal("gpu_l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
+					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
 	/* should never get here*/

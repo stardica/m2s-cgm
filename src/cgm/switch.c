@@ -398,40 +398,78 @@ void switch_ctrl(void){
 						P_PAUSE(1);
 					}*/
 
-
-					if(!cache_can_access_top(&l3_caches[my_pid]))
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-					}
-					else
+					//divert to correct input queue based on access type
+					if(message_packet->access_type == cgm_access_gets)
 					{
 
-						P_PAUSE(l3_caches[my_pid].wire_latency);
+						if(!cache_can_access_top(&l3_caches[my_pid]))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
+						}
+						else
+						{
 
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
+							P_PAUSE(l3_caches[my_pid].wire_latency);
 
-						//message_packet->access_type = cgm_access_puts;
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
 
-						/////////test code
-						/*message_packet->access_type = cgm_access_puts;
-						message_packet->dest_name = message_packet->src_name;
-						message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
-						message_packet->src_name = l3_caches[0].name;
-						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
-						list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-						future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
-						/////////test code
+							//message_packet->access_type = cgm_access_puts;
 
-						//old code
-						//drop the packet into the cache's queue
-						list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-						advance(&l3_cache[my_pid]);
-						//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
-						//done with this access
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+							/////////test code
+							/*message_packet->access_type = cgm_access_puts;
+							message_packet->dest_name = message_packet->src_name;
+							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+							message_packet->src_name = l3_caches[0].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
+							list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+							future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+							/////////test code
+
+							//old code
+							//drop the packet into the cache's queue
+							list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+							advance(&l3_cache[my_pid]);
+							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+							//done with this access
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						}
 					}
+					else if(message_packet->access_type == cgm_access_puts)
+					{
+						if(!cache_can_access_bottom(&l3_caches[my_pid]))
+						{
+							future_advance(&switches_ec[my_pid], etime.count + 2);
+						}
+						else
+						{
 
+							P_PAUSE(l3_caches[my_pid].wire_latency);
+
+							//success, remove packet from the switche's queue
+							remove_from_queue(&switches[my_pid], message_packet);
+
+							//message_packet->access_type = cgm_access_puts;
+
+							/////////test code
+							/*message_packet->access_type = cgm_access_puts;
+							message_packet->dest_name = message_packet->src_name;
+							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+							message_packet->src_name = l3_caches[0].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
+							list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+							future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+							/////////test code
+
+							//old code
+							//drop the packet into the cache's queue
+							list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+							advance(&l3_cache[my_pid]);
+							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+							//done with this access
+							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+						}
+					}
 				}
 				//for the system agent
 				else if(my_pid >= num_cores)
