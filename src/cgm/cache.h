@@ -252,6 +252,8 @@ int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
 
 int get_ort_status(struct cache_t *cache);
+int ort_search(struct cache_t *cache, int tag, int set);
+void ort_clear(struct cache_t *cache, int entry);
 void ort_dump(struct cache_t *cache);
 
 //borrowed from m2s mem-system and tweaked a bit

@@ -26,8 +26,8 @@ enum cgm_access_kind_t {
 	cgm_access_gets, //get shared
 	cgm_access_gets_i, //get shared specific to i caches
 	cgm_access_gets_d, //get shared specific to d caches
-	cgm_access_gets_s, //get shared specific to i caches
-	cgm_access_gets_v, //get shared specific to d caches
+	cgm_access_gets_s, //get shared specific to s caches
+	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
 	cgm_access_inv,  //invalidation request
 	cgm_access_putx, //request for writeback of cache block exclusive data.
@@ -39,6 +39,9 @@ enum cgm_access_kind_t {
 	cgm_access_retry_i,
 	num_access_types
 };
+
+//implements a MESI protocol for a single core machine.
+
 
 
 #endif /*PROTOCOL_H_*/

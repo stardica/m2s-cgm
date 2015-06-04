@@ -119,8 +119,6 @@ int EV_MOD_NMOESI_MESSAGE_FINISH;
 
 
 
-
-
 /* NMOESI Protocol */
 
 void mod_handler_nmoesi_load(int event, void *data)
@@ -959,7 +957,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* Debug */
 		if (stack->hit)
-			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%s\n", stack->id, stack->tag, mod->name, stack->set, stack->way, str_map_value(&cache_block_state_map, stack->state));
+			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%s\n",
+					stack->id, stack->tag, mod->name, stack->set, stack->way, str_map_value(&cache_block_state_map, stack->state));
 
 		/* Statistics */
 		mod->accesses++;
@@ -2638,8 +2637,7 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 			stack->id, mod->name);
 
 		if (stack->reply == reply_ack_data)
-			cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
-				cache_block_modified);
+			cache_set_block(mod->cache, stack->set, stack->way, stack->tag, cache_block_modified);
 
 		/* Ignore while pending */
 		assert(stack->pending > 0);
