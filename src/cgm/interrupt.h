@@ -15,10 +15,8 @@
 
 //#include <cgm/cgm.h>
 #include <cgm/tasking.h>
-
-
-#include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/uop.h>
+#include <arch/x86/timing/cpu.h>
 #include <lib/util/list.h>
 #include <lib/util/debug.h>
 
@@ -70,6 +68,7 @@ void interrupt_create_tasks(void);
 struct interrupt_t *interrupt_service_routine_create(void);
 
 void interrupt_service_request(void);
+
 
 
 #endif /* __INTERRUPT_H__ */

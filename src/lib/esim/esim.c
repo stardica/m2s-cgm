@@ -27,7 +27,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 #include <lib/esim/esim.h>
 
