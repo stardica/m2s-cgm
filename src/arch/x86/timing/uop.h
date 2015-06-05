@@ -17,12 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #ifndef X86_ARCH_TIMING_UOP_H
 #define X86_ARCH_TIMING_UOP_H
 
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
-#include <cgm/interrupt.h>
+
+//#include <cgm/interrupt.h>
+
 
 /*
  * Object 'x86_uop_t'
@@ -122,4 +125,3 @@ void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f);
 
 
 #endif
-

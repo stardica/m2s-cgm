@@ -66,7 +66,7 @@ extern struct list_t *Uop_List;
 
 
 
-extern struct Uop_Status_t{
+struct Uop_Status_t{
 
 	long long UopID;
 	int ctx_pid;

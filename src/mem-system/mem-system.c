@@ -16,6 +16,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+#include <m2s.h>
+
+#if CGM
+#else
+
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -402,3 +408,4 @@ struct net_t *mem_system_get_net(char *net_name)
 	return NULL;
 }
 
+#endif

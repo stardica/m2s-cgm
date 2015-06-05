@@ -8,23 +8,45 @@
 #ifndef CGM_H_
 #define CGM_H_
 
-#include <stdio.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <m2s.h>
+
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
-#include <lib/util/debug.h>
 
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/uop.h>
+#include <arch/x86/timing/cpu.h>
+#include <arch/si/timing/gpu.h>
 #include <arch/si/timing/vector-mem-unit.h>
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/lds-unit.h>
+#include <arch/si/timing/compute-unit.h>
 
+
+#include <cgm/cache.h>
+#include <cgm/directory.h>
+#include <cgm/mem-ctrl.h>
+#include <cgm/configure.h>
+#include <cgm/sys-agent.h>
+#include <cgm/ini-parse.h>
 #include <cgm/tasking.h>
+#include <cgm/interrupt.h>
+#include <cgm/packet.h>
+#include <cgm/switch.h>
+#include <cgm/protocol.h>
+
+/*
 #include <cgm/cache.h>
 #include <cgm/protocol.h>
+*/
 
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)

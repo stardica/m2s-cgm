@@ -5,6 +5,11 @@
  *      Author: stardica
  */
 
+
+#include <cgm/mem-ctrl.h>
+
+
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +22,7 @@
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 #include <cgm/cache.h>
+*/
 
 //#include <DRAMSim/DRAMSim.h>
 //#include <dramsim/DRAMSim.h>

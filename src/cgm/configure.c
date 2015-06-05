@@ -5,37 +5,21 @@
  *      Author: stardica
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <lib/util/debug.h>
-#include <lib/util/config.h>
-#include <lib/util/list.h>
-#include <lib/util/linked-list.h>
-#include <lib/util/string.h>
-
-#include <arch/common/arch.h>
-
-#include <arch/x86/timing/cpu.h>
-#include <arch/x86/timing/core.h>
-#include <arch/x86/timing/thread.h>
-
-#include <arch/si/timing/gpu.h>
-#include <arch/si/timing/compute-unit.h>
-
 #include <cgm/configure.h>
-#include <cgm/cgm.h>
+
+/*
+
+
 #include <cgm/ini-parse.h>
 #include <cgm/cache.h>
 #include <cgm/tasking.h>
-#include <cgm/mem-ctrl.h>
-#include <cgm/directory.h>
-#include <cgm/switch.h>
-#include <cgm/hub-iommu.h>
-#include <cgm/sys-agent.h>
+
+
+
+
+
 #include <cgm/mshr.h>
+*/
 
 int cgmmem_check_config = 0;
 

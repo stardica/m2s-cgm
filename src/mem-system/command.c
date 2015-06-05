@@ -16,6 +16,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <m2s.h>
+
+#if CGM
+
+#else
+
 #include <assert.h>
 
 #include <lib/esim/esim.h>
@@ -786,3 +792,4 @@ void mem_system_end_command_handler(int event, void *data)
 	free(command_line);
 	str_token_list_free(token_list);
 }
+#endif

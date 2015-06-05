@@ -16,6 +16,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+#include <m2s.h>
+
+#if CGM
+
+#else
 #include <assert.h>
 
 #include <lib/esim/trace.h>
@@ -124,7 +130,7 @@ static void cache_update_waylist(struct cache_set_t *set, struct cache_block_t *
  */
 
 
-struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy)
+struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum m2s_cache_policy_t policy)
 {
 	struct cache_t *cache;
 	struct cache_block_t *block;
@@ -302,3 +308,5 @@ void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag)
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
 }
+
+#endif

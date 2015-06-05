@@ -16,6 +16,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <m2s.h>
+#if CGM
+#else
+
 #include <assert.h>
 
 #include <lib/esim/esim.h>
@@ -2796,3 +2800,4 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 	abort();
 }
+#endif

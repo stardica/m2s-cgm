@@ -6,11 +6,18 @@
  */
 
 
+#include <cgm/mshr.h>
+
+
+/*
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
-#include <cgm/mshr.h>
+
+#include <cgm/cgm.h>
+#include <cgm/cache.h>
 #include <cgm/protocol.h>
+*/
 
 struct cgm_packet_t *miss_status_packet_copy(struct cgm_packet_t *message_packet_old, int set, int tag, unsigned int offset, int src_id){
 

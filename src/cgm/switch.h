@@ -8,10 +8,34 @@
 #ifndef SWITCH_H_
 #define SWITCH_H_
 
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include <assert.h>
+
+
+#include <lib/util/list.h>
+#include <lib/util/string.h>
+#include <lib/util/debug.h>
+
+#include <arch/si/timing/gpu.h>
+#include <arch/x86/timing/cpu.h>
+
+#include <cgm/cgm.h>
+#include <cgm/tasking.h>
+
+#include <cgm/hub-iommu.h>
+#include <cgm/packet.h>
+#include <cgm/cache.h>
+#include <cgm/sys-agent.h>
+
+/*
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+
 
 #include <lib/util/list.h>
 
@@ -20,6 +44,7 @@
 
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
+*/
 
 
 //star todo add some sophistication with the scheduler and routing algorithms.

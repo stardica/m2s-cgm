@@ -5,6 +5,11 @@
  *      Author: stardica
  */
 
+
+#include <cgm/directory.h>
+
+
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +20,7 @@
 #include <arch/x86/timing/cpu.h>
 
 #include <lib/util/list.h>
+*/
 
 //globals
 unsigned int dir_mode = 0; //1 = soc mode 0 equals system agent mode

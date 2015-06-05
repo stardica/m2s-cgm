@@ -5,16 +5,44 @@
  *      Author: stardica
  */
 
-
 #ifndef CACHE_H_
 #define CACHE_H_
 
+
+
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/string.h>
+#include <lib/util/misc.h>
+
+#include <arch/si/timing/gpu.h>
+#include <arch/x86/timing/cpu.h>
+
 #include <cgm/cgm.h>
+#include <cgm/switch.h>
+#include <cgm/hub-iommu.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
-#include <cgm/mshr.h>
+#include <cgm/protocol.h>
 
+
+
+/*
+//#include <cgm/cgm.h>
+#include <cgm/packet.h>
+#include <cgm/protocol.h>
+
+#include <cgm/mshr.h>
 #include <lib/util/string.h>
+#include <cgm/tasking.h>
+*/
 
 
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
@@ -25,8 +53,8 @@ extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
-enum cache_type_enum
-{
+enum cache_type_enum{
+
 	l1_i_cache_t,
 	l1_d_cache_t,
 	l2_cache_t,
@@ -36,8 +64,19 @@ enum cache_type_enum
 	gpu_l2_cache_t
 };
 
-enum cache_waylist_enum
-{
+/*enum cache_block_state_t{
+
+	cache_block_invalid = 0,
+	cache_block_noncoherent,
+	cache_block_modified,
+	cache_block_owned,
+	cache_block_exclusive,
+	cache_block_shared,
+	cache_block_null
+};*/
+
+enum cache_waylist_enum{
+
 	cache_waylist_head,
 	cache_waylist_tail
 };
@@ -48,16 +87,6 @@ enum cache_policy_t{
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random
-};
-
-enum cache_block_state_t{
-
-	cache_block_invalid = 0,
-	cache_block_noncoherent,
-	cache_block_modified,
-	cache_block_owned,
-	cache_block_exclusive,
-	cache_block_shared
 };
 
 struct cache_block_t{
@@ -85,7 +114,6 @@ struct cache_set_t{
 	unsigned int *state;
 
 };
-
 
 struct cache_t{
 
@@ -163,9 +191,6 @@ extern int l3_inf;
 extern int gpu_l1_inf;
 extern int gpu_l2_inf;
 
-//extern int gpu_l2_qty;
-//int mem_miss;
-
 //CPU caches
 extern struct cache_t *l1_i_caches;
 extern struct cache_t *l1_d_caches;
@@ -215,7 +240,6 @@ void cache_create_tasks(void);
 void cache_dump_stats(void);
 
 //tasks
-
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
@@ -225,38 +249,20 @@ void gpu_v_cache_ctrl(void);
 void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
 
-
-//cache functions
+//protocol functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
-void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
 
 int cgm_l3_cache_map(int *set);
-
-void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
-int cgm_gpu_cache_map(int cache_id);
-int get_ort_status(struct cache_t *cache);
-
-
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
+int cgm_gpu_cache_map(int cache_id);
 
 int get_ort_status(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_clear(struct cache_t *cache, int entry);
 void ort_dump(struct cache_t *cache);
 
-//borrowed from m2s mem-system and tweaked a bit
+//cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
@@ -267,8 +273,6 @@ int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
 
-
-//void cpu_l1_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
-/*int cgm_l2_cache_map(int src_id);*/
+#include <cgm/protocol.h>
 
 #endif /*CACHE_H_*/

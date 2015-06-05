@@ -7,14 +7,35 @@
 #ifndef MEMCTRL_H_
 #define MEMCTRL_H_
 
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <lib/util/list.h>
+
+#include <cgm/cgm.h>
+#include <cgm/sys-agent.h>
+#include <cgm/tasking.h>
+#include <cgm/packet.h>
+#include <cgm/cache.h>
+
+
+//#include <DRAMSim/DRAMSim.h>
+//#include <dramsim/DRAMSim.h>
+
+
+/*
 #include <lib/util/list.h>
 
 #include <cgm/tasking.h>
+*/
 
 #define DRAM_DELAY(DRAM_latency) (etime.count + ((long long) DRAM_latency * 2))
 
 
-extern struct mem_ctrl_t{
+struct mem_ctrl_t{
 
 	//Physical Characteristics
 	char *name;

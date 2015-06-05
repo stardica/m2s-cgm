@@ -9,8 +9,15 @@
 #define DIRECTORY_H_
 
 #include <math.h>
-#include <cgm/tasking.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <lib/util/list.h>
+
+#include <arch/x86/timing/cpu.h>
+
+#include <cgm/tasking.h>
 
 
 struct directory_entry_t{

@@ -8,18 +8,17 @@
 #ifndef PACKET_H_
 #define PACKET_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
-//#include <cgm/cgm.h>
+/*
 #include <cgm/protocol.h>
+#include <cgm/cache.h>
+*/
 
-#include <lib/util/linked-list.h>
-#include <lib/util/list.h>
+/*#include <lib/util/linked-list.h>
 
-extern struct cgm_packet_t{
+struct cgm_packet_t{
 
 	char *name;
+
 	enum cgm_access_kind_t access_type;
 	enum cgm_access_kind_t l1_access_type;
 	enum cgm_access_kind_t cpu_access_type;
@@ -37,6 +36,9 @@ extern struct cgm_packet_t{
 	unsigned int offset;
 	int coalesced;
 
+	//for protocol messages
+	enum cache_block_state_t cache_block_state;
+
 	//for routing
 	char *src_name;
 	int src_id;
@@ -48,7 +50,6 @@ extern struct cgm_packet_t{
 	int *witness_ptr;
 	void *data;
 };
-
 
 extern struct cgm_packet_status_t{
 
@@ -62,9 +63,10 @@ extern struct cgm_packet_status_t{
 	//for reverse routing
 };
 
+struct cgm_packet_status_t;
 
 //star todo create functions to load/access the packet as needed by the various memory system elements.
 struct cgm_packet_t *packet_create(void);
-struct cgm_packet_status_t *status_packet_create(void);
+struct cgm_packet_status_t *status_packet_create(void);*/
 
 #endif /* PACKET_H_ */

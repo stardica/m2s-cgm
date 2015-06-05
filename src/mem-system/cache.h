@@ -24,25 +24,25 @@
 extern struct str_map_t cache_policy_map;
 extern struct str_map_t cache_block_state_map;
 
-enum cache_policy_t
+enum m2s_cache_policy_t
 {
-	cache_policy_invalid = 0,
-	cache_policy_lru,
-	cache_policy_fifo,
-	cache_policy_random
+	m2s_cache_policy_invalid = 0,
+	m2s_cache_policy_lru,
+	m2s_cache_policy_fifo,
+	m2s_cache_policy_random
 };
 
-enum cache_block_state_t
+enum m2s_cache_block_state_t
 {
-	cache_block_invalid = 0,
-	cache_block_noncoherent,
-	cache_block_modified,
-	cache_block_owned,
-	cache_block_exclusive,
-	cache_block_shared
+	m2s_cache_block_invalid = 0,
+	m2s_cache_block_noncoherent,
+	m2s_cache_block_modified,
+	m2s_cache_block_owned,
+	m2s_cache_block_exclusive,
+	m2s_cache_block_shared
 };
 
-struct cache_block_t
+struct m2s_cache_block_t
 {
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
@@ -52,10 +52,10 @@ struct cache_block_t
 	int way;
 	int prefetched;
 
-	enum cache_block_state_t state;
+	enum m2s_cache_block_state_t state;
 };
 
-struct cache_set_t
+struct m2s_cache_set_t
 {
 	struct cache_block_t *way_head;
 	struct cache_block_t *way_tail;
@@ -63,14 +63,14 @@ struct cache_set_t
 };
 
 
-struct cache_t
+struct m2s_cache_t
 {
 	char *name;
 
 	unsigned int num_sets;
 	unsigned int block_size;
 	unsigned int assoc;
-	enum cache_policy_t policy;
+	enum m2s_cache_policy_t policy;
 
 	struct cache_set_t *sets;
 	unsigned int block_mask;
@@ -80,7 +80,7 @@ struct cache_t
 };
 
 
-struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy);
+struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum m2s_cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
 void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);

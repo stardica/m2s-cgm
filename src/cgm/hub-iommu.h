@@ -8,9 +8,25 @@
 #ifndef __IOMMU_H__
 #define __IOMMU_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <arch/si/timing/gpu.h>
+
+#include <lib/util/list.h>
+#include <lib/util/string.h>
+#include <lib/util/debug.h>
+
+#include <cgm/cgm.h>
+#include <cgm/tasking.h>
+#include <cgm/switch.h>
+#include <cgm/packet.h>
+
+/*
 #include <lib/util/list.h>
 
 #include <cgm/tasking.h>
+*/
 
 
 enum queue_name

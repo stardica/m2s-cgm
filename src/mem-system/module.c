@@ -1,5 +1,6 @@
 /*
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+
+*  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,6 +16,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+
+#include <m2s.h>
+
+#if CGM
+#else
 
 #include <assert.h>
 
@@ -729,3 +736,4 @@ void mod_client_info_free(struct mod_t *mod, struct mod_client_info_t *client_in
 {
 	repos_free_object(mod->client_info_repos, client_info);
 }
+#endif

@@ -21,8 +21,8 @@
 
 #include <mem-image/memory.h>
 
-#include <cgm/cache.h>
-#include <cgm/tasking.h>
+#include <cgm/cgm.h>
+//#include <cgm/tasking.h>
 
 
 

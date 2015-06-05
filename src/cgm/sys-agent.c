@@ -5,6 +5,10 @@
  *      Author: stardica
  */
 
+
+#include <cgm/sys-agent.h>
+
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +24,7 @@
 #include <cgm/packet.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
+*/
 
 
 struct system_agent_t *system_agent;

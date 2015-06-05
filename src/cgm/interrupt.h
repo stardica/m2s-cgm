@@ -9,12 +9,21 @@
 #define __INTERRUPT_H__
 
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+//#include <cgm/cgm.h>
 #include <cgm/tasking.h>
 
+
+#include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/uop.h>
 #include <lib/util/list.h>
+#include <lib/util/debug.h>
 
 
-extern enum interrupt_type_t
+enum interrupt_type_t
 {
 	non_interrupt = 0,
 	system_interrupt,

@@ -5,38 +5,10 @@
  *      Author: stardica
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <m2s.h>
-
-#include <lib/util/debug.h>
-#include <lib/util/list.h>
-#include <lib/util/linked-list.h>
-#include <lib/util/misc.h>
-
-#include <arch/x86/timing/core.h>
-#include <arch/x86/timing/thread.h>
-#include <arch/x86/timing/uop.h>
-#include <arch/si/timing/gpu.h>
-#include <arch/si/timing/vector-mem-unit.h>
-#include <arch/si/timing/scalar-unit.h>
-#include <arch/si/timing/lds-unit.h>
-#include <arch/si/timing/compute-unit.h>
 
 #include <cgm/cgm.h>
-#include <cgm/cache.h>
-#include <cgm/directory.h>
-#include <cgm/mem-ctrl.h>
-#include <cgm/configure.h>
-#include <cgm/sys-agent.h>
-#include <cgm/ini-parse.h>
-#include <cgm/tasking.h>
-#include <cgm/interrupt.h>
-#include <cgm/packet.h>
-#include <cgm/switch.h>
-#include <cgm/protocol.h>
+
+
 
 
 long long access_id = 0;
@@ -369,6 +341,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->name = strdup(buff);
+	new_packet->cache_block_state = cache_block_null;
 
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)

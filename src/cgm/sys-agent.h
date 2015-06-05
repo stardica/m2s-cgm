@@ -9,9 +9,27 @@
 #ifndef SYSAGENT_H_
 #define SYSAGENT_H_
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <lib/util/list.h>
+#include <lib/util/string.h>
+
+#include <cgm/cgm.h>
+#include <cgm/mem-ctrl.h>
+#include <cgm/tasking.h>
+#include <cgm/cache.h>
+#include <cgm/packet.h>
+#include <cgm/switch.h>
+#include <cgm/protocol.h>
+
+/*
 #include <lib/util/list.h>
 
 #include <cgm/tasking.h>
+*/
 
 enum cgm_io_kind_t {
 	cgm_io_memctrl = 0,
