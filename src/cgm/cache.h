@@ -11,6 +11,7 @@
 
 
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,25 +26,26 @@
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
-#include <cgm/cgm.h>
+#include <cgm/misc.h>
+#include <cgm/tasking.h>
+#include <cgm/packet.h>
+
+/*star todo fix this somehow. We shouldn't need to be included before all of
+the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
+enum cache_block_state_t{
+
+	cache_block_invalid = 0,
+	cache_block_noncoherent,
+	cache_block_modified,
+	cache_block_owned,
+	cache_block_exclusive,
+	cache_block_shared,
+	cache_block_null
+};
+
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
-#include <cgm/tasking.h>
-#include <cgm/packet.h>
-#include <cgm/protocol.h>
-
-
-
-/*
-//#include <cgm/cgm.h>
-#include <cgm/packet.h>
-#include <cgm/protocol.h>
-
-#include <cgm/mshr.h>
-#include <lib/util/string.h>
-#include <cgm/tasking.h>
-*/
-
+#include <cgm/cgm.h>
 
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
 
@@ -63,8 +65,8 @@ enum cache_type_enum{
 	gpu_v_cache_t,
 	gpu_l2_cache_t
 };
-
-/*enum cache_block_state_t{
+/*
+enum cache_block_state_t{
 
 	cache_block_invalid = 0,
 	cache_block_noncoherent,
@@ -272,7 +274,5 @@ int cgm_cache_replace_block(struct cache_t *cache, int set);
 //void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
-
-#include <cgm/protocol.h>
 
 #endif /*CACHE_H_*/

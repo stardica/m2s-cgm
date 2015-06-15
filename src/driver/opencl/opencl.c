@@ -39,7 +39,6 @@
 #include <cgm/interrupt.h>
 
 
-
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
 

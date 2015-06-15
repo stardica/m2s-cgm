@@ -19,8 +19,6 @@
 
 #include <m2s.h>
 
-#if CGM
-#else
 
 #include <assert.h>
 
@@ -437,4 +435,3 @@ void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
 		}
 	}
 }
-#endif

@@ -18,9 +18,6 @@
 
 #include <m2s.h>
 
-#if CGM
-
-#else
 
 #include <assert.h>
 
@@ -201,8 +198,7 @@ static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 }
 
 
-static void mem_system_command_get_set_way(struct list_t *token_list, char *command_line, 
-	struct mod_t *mod, int *set_ptr, int *way_ptr)
+static void mem_system_command_get_set_way(struct list_t *token_list, char *command_line, struct mod_t *mod, int *set_ptr, int *way_ptr)
 {
 	int set;
 	int way;
@@ -792,4 +788,3 @@ void mem_system_end_command_handler(int event, void *data)
 	free(command_line);
 	str_token_list_free(token_list);
 }
-#endif

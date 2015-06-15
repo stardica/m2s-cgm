@@ -18,8 +18,6 @@
 
 #include <m2s.h>
 
-#if CGM
-#else
 
 #include <stdio.h>
 #include <arch/common/arch.h>
@@ -491,7 +489,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	char *policy_str;
 
-	enum m2s_cache_policy_t policy;
+	enum cache_policy_t policy;
 
 	int mshr_size;
 	int num_ports;
@@ -537,7 +535,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* Checks */
 	policy = str_map_string_case(&cache_policy_map, policy_str);
-	if (policy == m2s_cache_policy_invalid)
+	if (policy == cache_policy_invalid)
 		fatal("%s: cache %s: %s: invalid block replacement policy.\n%s", mem_config_file_name, mod_name, policy_str, mem_err_config_note);
 	if (num_sets < 1 || (num_sets & (num_sets - 1)))
 		fatal("%s: cache %s: number of sets must be a power of two greater than 1.\n%s", mem_config_file_name, mod_name, mem_err_config_note);
@@ -658,7 +656,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 	mod->high_net_node = net_node;
 
 	/* Create cache and directory */
-	mod->cache = m2s_cache_create(mod->name, dir_size / dir_assoc, block_size, dir_assoc, m2s_cache_policy_lru);
+	mod->cache = m2s_cache_create(mod->name, dir_size / dir_assoc, block_size, dir_assoc, cache_policy_lru);
 
 	/* Return */
 	return mod;
@@ -1462,4 +1460,3 @@ void mem_config_read(void)
 	/* Dump configuration to trace file */
 	mem_config_trace();
 }
-#endif

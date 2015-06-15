@@ -19,8 +19,6 @@
 
 #include <m2s.h>
 
-#if CGM
-#else
 
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
@@ -31,7 +29,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <network/network.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 #include <mem-system/cache.h>
 #include <mem-system/config.h>
@@ -264,7 +262,7 @@ void mem_system_dump_report(void)
 {
 	struct net_t *net;
 	struct mod_t *mod;
-	struct cache_t *cache;
+	struct m2s_cache_t *cache;
 
 	FILE *f;
 
@@ -407,5 +405,3 @@ struct net_t *mem_system_get_net(char *net_name)
 	/* Not found */
 	return NULL;
 }
-
-#endif

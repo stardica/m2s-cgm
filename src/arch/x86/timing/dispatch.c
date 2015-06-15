@@ -30,7 +30,7 @@
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/trace-cache.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,

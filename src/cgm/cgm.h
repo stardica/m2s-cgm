@@ -22,7 +22,7 @@
 
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
-#include <arch/x86/timing/uop.h>
+
 #include <arch/x86/timing/cpu.h>
 #include <arch/si/timing/gpu.h>
 #include <arch/si/timing/vector-mem-unit.h>
@@ -116,6 +116,8 @@ extern char *cgm_stats_output_path;
 #define STOP 	CLOSE_FILES;\
 				getchar()
 
+extern unsigned long Current_Cycle;
+
 //#define CLOSE (fclose(cgm_debug))
 
 //global access ids
@@ -130,8 +132,7 @@ extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 
 
-
-//function prototypes
+//set up related
 void cgm_init(void);
 void cgm_configure(void);
 void cgm_create_tasks(void);
@@ -139,7 +140,7 @@ void cgm_mem_run(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 
-//caches
+//cache access realted
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr);
 int cgm_can_issue_access(X86Thread *self, unsigned int addr);
 int cgm_in_flight_access(long long id);
@@ -148,10 +149,13 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
+int remove_from_global(long long id);
 
 //interrupts
-void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop);
+//#include <arch/x86/timing/uop.h>
+/*void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop);*/
 
-int remove_from_global(long long id);
+//debugging and stats related
+void PrintCycle(int skip);
 
 #endif /* CGM_H_ */

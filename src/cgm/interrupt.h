@@ -13,9 +13,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-//#include <cgm/cgm.h>
+#include <cgm/cgm.h>
+#include <cgm/misc.h>
 #include <cgm/tasking.h>
-#include <arch/x86/timing/uop.h>
+
 #include <arch/x86/timing/cpu.h>
 #include <lib/util/list.h>
 #include <lib/util/debug.h>
@@ -28,6 +29,8 @@ enum interrupt_type_t
 	opencl_interrupt,
 	interrupt_count
 };
+
+#include <arch/x86/timing/uop.h>
 
 //save some of the data from the eulator for future use in issue
 struct interrupt_t{
@@ -62,6 +65,7 @@ extern eventcount volatile *interrupt;
 
 
 //interupts
+void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop);
 void interrupt_init(void);
 void interrupt_create(void);
 void interrupt_create_tasks(void);

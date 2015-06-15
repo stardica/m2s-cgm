@@ -20,9 +20,6 @@
 
 #include <m2s.h>
 
-#if CGM
-#else
-
 #include <assert.h>
 
 #include <lib/esim/esim.h>
@@ -39,7 +36,7 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/mod-stack.h>
 #include <mem-system/nmoesi-protocol.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 
 /* String map for access type */
@@ -242,8 +239,8 @@ int mod_can_access(struct mod_t *mod, unsigned int addr)
  * The function returns TRUE on hit, FALSE on miss. */
 int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_ptr, int *tag_ptr, int *state_ptr)
 {
-	struct cache_t *cache = mod->cache;
-	struct cache_block_t *blk;
+	struct m2s_cache_t *cache = mod->cache;
+	struct m2s_cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 
 	int set;
@@ -736,4 +733,3 @@ void mod_client_info_free(struct mod_t *mod, struct mod_client_info_t *client_in
 {
 	repos_free_object(mod->client_info_repos, client_info);
 }
-#endif

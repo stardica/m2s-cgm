@@ -54,7 +54,7 @@
 
 #include <mem-image/memory.h>
 #include <mem-image/mmu.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 #if GPU
 #include <arch/si/asm/asm.h>

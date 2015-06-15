@@ -31,7 +31,7 @@
 #include <mem-image/memory.h>
 #include <mem-image/spec-mem.h>
 #include <mem-image/mmu.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/file-desc.h>
@@ -98,7 +98,7 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	self->file_desc_table = x86_file_desc_table_create();
 
 	//star >> added this
-	PrintContext(self);
+	//PrintContext(self);
 
 }
 

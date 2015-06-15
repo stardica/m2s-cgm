@@ -139,7 +139,7 @@ struct mod_t
 	int waiting_list_max;
 
 	/* Cache structure */
-	struct cache_t *cache;
+	struct m2s_cache_t *cache;
 
 	/* Low and high memory modules */
 	struct linked_list_t *high_mod_list;

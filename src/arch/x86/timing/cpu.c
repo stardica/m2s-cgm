@@ -51,7 +51,7 @@
 #include <arch/x86/timing/writeback.h>
 
 //CGM releated
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 #include <cgm/tasking.h>
 
 

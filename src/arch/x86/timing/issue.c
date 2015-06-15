@@ -26,7 +26,7 @@
 #include <cgm/cgm.h>
 #include <mem-system/module.h>
 
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/event-queue.h>

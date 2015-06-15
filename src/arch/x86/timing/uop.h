@@ -24,7 +24,8 @@
 #include <arch/x86/emu/uinst.h>
 #include <lib/util/class.h>
 
-//#include <cgm/interrupt.h>
+//#include <cgm/misc.h>
+#include <cgm/interrupt.h>
 
 
 /*

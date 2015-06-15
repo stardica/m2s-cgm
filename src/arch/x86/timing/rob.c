@@ -20,7 +20,7 @@
 
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/rob.h>

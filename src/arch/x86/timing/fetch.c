@@ -30,7 +30,7 @@
 
 #include <mem-system/module.h>
 
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 #include <arch/x86/timing/bpred.h>
 #include <arch/x86/timing/core.h>

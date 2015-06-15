@@ -85,6 +85,38 @@ struct interrupt_t *interrupt_service_routine_create(void){
 	return isr;
 }
 
+void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
+
+	//star todo
+	//create the memory system accesses
+	//check if we can access both i and d caches.
+	//fetch and data caches need to be accessed.
+
+	X86Core *core = self->core;
+	//struct x86_uop_t *interrupt_uop;
+	int id = core->id;
+	int num_cores = x86_cpu_num_cores;
+
+	struct interrupt_t *isr = interrupt_service_routine_create();
+
+	isr->uop = uop;
+	isr->core_id = id;
+	isr->thread = self;
+
+	//put the uop on the interrupt list
+	list_enqueue(interrupt_list, isr);
+
+	//set the flag for the right core
+	interrupt_cores[id]++;
+	assert(id < num_cores);
+
+	//advance the ISR
+	advance(interrupt);
+
+	return;
+}
+
+
 void interrupt_service_request(void){
 
 	long long step = 1;

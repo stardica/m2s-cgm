@@ -17,8 +17,7 @@
  */
 
 #include <m2s.h>
-#if CGM
-#else
+
 
 #include <assert.h>
 
@@ -30,7 +29,7 @@
 #include <lib/util/string.h>
 #include <network/network.h>
 #include <network/node.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 #include <mem-system/cache.h>
 #include <mem-system/directory.h>
@@ -2800,4 +2799,3 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 	abort();
 }
-#endif

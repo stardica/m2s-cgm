@@ -11,25 +11,14 @@
 
 #include <lib/util/linked-list.h>
 
+#include <cgm/misc.h>
 #include <cgm/cgm.h>
 #include <cgm/cache.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
 
-
 #define MESI
-
-enum cache_block_state_t{
-
-	cache_block_invalid = 0,
-	cache_block_noncoherent,
-	cache_block_modified,
-	cache_block_owned,
-	cache_block_exclusive,
-	cache_block_shared,
-	cache_block_null
-};
 
 enum cgm_access_kind_t {
 	cgm_access_invalid = 0,

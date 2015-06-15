@@ -25,11 +25,6 @@
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
 
-/*
-#include <lib/util/list.h>
-
-#include <cgm/tasking.h>
-*/
 
 enum cgm_io_kind_t {
 	cgm_io_memctrl = 0,

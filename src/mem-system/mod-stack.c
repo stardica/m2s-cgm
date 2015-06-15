@@ -19,8 +19,6 @@
 
 #include <m2s.h>
 
-#if CGM
-#else
 
 #include <assert.h>
 
@@ -185,5 +183,3 @@ struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state)
 
 	return ret;
 }
-
-#endif

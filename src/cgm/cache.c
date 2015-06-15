@@ -9,18 +9,6 @@
 #include <cgm/cache.h>
 
 
-
-/*
-#include <cgm/packet.h>
-
-#include <cgm/sys-agent.h>
-#include <cgm/protocol.h>
-#include <cgm/mshr.h>
-
-*/
-
-//#include <instrumentation/stats.h>
-
 struct str_map_t cgm_cache_block_state_map =
 { 	7, 	{
 		{ "I", cache_block_invalid},

@@ -34,7 +34,7 @@
 #include <arch/x86/timing/sched.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/trace-cache.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 
 static char *err_commit_stall =

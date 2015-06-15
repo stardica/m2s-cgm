@@ -51,7 +51,12 @@ struct si_compute_unit_t *si_compute_unit_create()
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LDS[%d]", compute_unit->id);
+
+#if CGM
+#else
+
 	compute_unit->lds_module = mod_create(buf, mod_kind_local_memory, si_gpu_lds_num_ports, si_gpu_lds_block_size, si_gpu_lds_latency);
+#endif
 
 	/* Hardware structures */
 	compute_unit->num_wavefront_pools = si_gpu_num_wavefront_pools;

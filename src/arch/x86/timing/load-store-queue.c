@@ -25,7 +25,7 @@
 #include <arch/x86/timing/load-store-queue.h>
 #include <arch/x86/timing/uop.h>
 #include <arch/x86/timing/thread.h>
-#include <instrumentation/stats.h>
+//#include <instrumentation/stats.h>
 
 
 char *x86_lsq_kind_map[] = { "Shared", "Private" };

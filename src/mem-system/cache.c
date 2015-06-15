@@ -19,9 +19,6 @@
 
 #include <m2s.h>
 
-#if CGM
-
-#else
 #include <assert.h>
 
 #include <lib/esim/trace.h>
@@ -72,7 +69,7 @@ enum cache_waylist_enum
 	cache_waylist_tail
 };
 
-static void cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where)
+static void cache_update_waylist(struct m2s_cache_set_t *set, struct m2s_cache_block_t *blk, enum cache_waylist_enum where)
 {
 	if (!blk->way_prev && !blk->way_next)
 	{
@@ -130,14 +127,14 @@ static void cache_update_waylist(struct cache_set_t *set, struct cache_block_t *
  */
 
 
-struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum m2s_cache_policy_t policy)
+struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int block_size, unsigned int assoc, enum cache_policy_t policy)
 {
-	struct cache_t *cache;
-	struct cache_block_t *block;
+	struct m2s_cache_t *cache;
+	struct m2s_cache_block_t *block;
 	unsigned int set, way;
 
 	/* Initialize */
-	cache = xcalloc(1, sizeof(struct cache_t));
+	cache = xcalloc(1, sizeof(struct m2s_cache_t));
 	cache->name = xstrdup(name);
 	cache->num_sets = num_sets;
 	cache->block_size = block_size;
@@ -152,11 +149,11 @@ struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int
 	cache->block_mask = block_size - 1;
 	
 	/* Initialize array of sets */
-	cache->sets = xcalloc(num_sets, sizeof(struct cache_set_t));
+	cache->sets = xcalloc(num_sets, sizeof(struct m2s_cache_set_t));
 	for (set = 0; set < num_sets; set++)
 	{
 		/* Initialize array of blocks */
-		cache->sets[set].blocks = xcalloc(assoc, sizeof(struct cache_block_t));
+		cache->sets[set].blocks = xcalloc(assoc, sizeof(struct m2s_cache_block_t));
 		cache->sets[set].way_head = &cache->sets[set].blocks[0];
 		cache->sets[set].way_tail = &cache->sets[set].blocks[assoc - 1];
 		for (way = 0; way < assoc; way++)
@@ -173,7 +170,7 @@ struct cache_t *m2s_cache_create(char *name, unsigned int num_sets, unsigned int
 }
 
 
-void cache_free(struct cache_t *cache)
+void cache_free(struct m2s_cache_t *cache)
 {
 	unsigned int set;
 
@@ -188,7 +185,7 @@ void cache_free(struct cache_t *cache)
 
 
 /* Return {set, tag, offset} for a given address */
-void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
+void cache_decode_address(struct m2s_cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
 	PTR_ASSIGN(set_ptr, (addr >> cache->log_block_size) % cache->num_sets);
 	PTR_ASSIGN(tag_ptr, addr & ~cache->block_mask);
@@ -199,7 +196,7 @@ void cache_decode_address(struct cache_t *cache, unsigned int addr, int *set_ptr
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
-int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
+int cache_find_block(struct m2s_cache_t *cache, unsigned int addr, int *set_ptr, int *way_ptr, int *state_ptr){
 
 
 	int set, tag, way;
@@ -227,7 +224,7 @@ int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int
 /* Set the tag and state of a block.
  * If replacement policy is FIFO, update linked list in case a new
  * block is brought to cache, i.e., a new tag is set. */
-void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state)
+void cache_set_block(struct m2s_cache_t *cache, int set, int way, int tag, int state)
 {
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -241,7 +238,7 @@ void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state
 }
 
 
-void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr)
+void cache_get_block(struct m2s_cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr)
 {
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -252,7 +249,7 @@ void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int 
 
 /* Update LRU counters, i.e., rearrange linked list in case
  * replacement policy is LRU. */
-void cache_access_block(struct cache_t *cache, int set, int way)
+void cache_access_block(struct m2s_cache_t *cache, int set, int way)
 {
 	int move_to_head;
 	
@@ -270,7 +267,7 @@ void cache_access_block(struct cache_t *cache, int set, int way)
 
 /* Return the way of the block to be replaced in a specific set,
  * depending on the replacement policy */
-int cache_replace_block(struct cache_t *cache, int set)
+int cache_replace_block(struct m2s_cache_t *cache, int set)
 {
 	//struct cache_block_t *block;
 
@@ -300,13 +297,11 @@ int cache_replace_block(struct cache_t *cache, int set)
 }
 
 
-void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag)
+void cache_set_transient_tag(struct m2s_cache_t *cache, int set, int way, int tag)
 {
-	struct cache_block_t *block;
+	struct m2s_cache_block_t *block;
 
 	/* Set transient tag */
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
 }
-
-#endif

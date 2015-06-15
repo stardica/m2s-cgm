@@ -16,9 +16,9 @@ long long access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
-//file for debugging and stats
+unsigned long Current_Cycle = 0;
 
-
+//files for debugging and stats;
 FILE *CPU_cache_debug_file;
 int CPU_cache_debug = 0;
 
@@ -175,7 +175,7 @@ void cpu_gpu_run(void){
 	return;
 }
 
-void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
+/*void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 	//star todo
 	//create the memory system accesses
@@ -204,7 +204,7 @@ void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 	advance(interrupt);
 
 	return;
-}
+}*/
 
 
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
@@ -584,4 +584,16 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	}
 
 	return;
+}
+
+void PrintCycle(int skip){
+
+	if((Current_Cycle % skip) == 0)
+	{
+		printf("---Cycles %lu---\n", Current_Cycle);
+		fflush(stdout);
+	}
+
+	return;
+
 }
