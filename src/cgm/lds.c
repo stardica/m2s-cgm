@@ -47,7 +47,8 @@ void gpu_lds_unit_ctrl(void){
 		{//then the packet is from the L2 cache
 
 			//LDS is close to the CU so delay a couple cycles for now
-			P_PAUSE(etime.count + gpu_lds_units[my_pid].latency);
+			//P_PAUSE(etime.count + gpu_lds_units[my_pid].latency);
+			P_PAUSE(2);
 
 			//clear the gpu uop witness_ptr
 			(*message_packet->witness_ptr)++;

@@ -6,6 +6,10 @@
  */
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <cgm/cgm.h>
 
 
@@ -372,6 +376,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
 
+
+
+
 	X86Thread *thread;
 	thread = self;
 	char buff[100];
@@ -456,6 +463,8 @@ int remove_from_global(long long id){
 }
 
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+
+
 
 	struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
 	struct cgm_packet_t *new_packet = packet_create();
@@ -543,8 +552,9 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	return;
 }
 
-void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
+#include <stdio.h>
 
+void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
 	struct si_lds_t *lds_ptr = lds;
 	struct cgm_packet_t *new_packet = packet_create();
@@ -564,13 +574,21 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
+	//testing
 
-	//Add to the target L1 I Cache Rx Queue
+
+
+
+	//Add to the LDS queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = lds_ptr->compute_unit->id;
 		assert( id < num_cus);
+
+		/*printf("here\n");
+		fflush(stdout);
+		getchar();*/
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);

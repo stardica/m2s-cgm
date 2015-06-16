@@ -159,7 +159,6 @@ void si_lds_mem(struct si_lds_t *lds)
 	int list_index = 0;
 
 	list_entries = list_count(lds->read_buffer);
-	
 
 	/* Sanity check the read buffer */
 	assert(list_entries <= si_gpu_lds_read_buffer_size);
@@ -216,6 +215,8 @@ void si_lds_mem(struct si_lds_t *lds)
 			for (j = 0; j < work_item_uop->lds_access_count; j++)
 			{
 
+
+
 #if CGM
 				if (work_item->lds_access_type[j] == 1){access_type = cgm_access_load;}
 				else if (work_item->lds_access_type[j] == 2){access_type = cgm_access_store;}
@@ -229,6 +230,11 @@ void si_lds_mem(struct si_lds_t *lds)
 
 				uop->lds_witness--;
 #if CGM
+
+				/*printf("made it here\n");
+				fflush(stdout);*/
+
+
 				cgm_lds_access(lds, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
 #else
 				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);

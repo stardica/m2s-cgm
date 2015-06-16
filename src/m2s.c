@@ -1646,7 +1646,6 @@ int main(int argc, char **argv)
 	m2s_load_programs(argc, argv);
 
 
-
 	//run ends here if CGM is running.
 	//sim_send contains all of the "done" functions.
 #if CGM

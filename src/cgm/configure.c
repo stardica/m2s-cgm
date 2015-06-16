@@ -1751,18 +1751,18 @@ int cache_finish_create(){
 
 
 		//LDS caches
-		/*gpu_lds_units[i].id = i;
-		gpu_lds_units[i].log_block_size = LOG2(gpu_lds_units[i].block_size);
-		gpu_lds_units[i].log_set_size = LOG2(gpu_lds_units[i].num_sets);
-		gpu_lds_units[i].block_mask = gpu_lds_units[i].block_size - 1;
-		gpu_lds_units[i].set_mask = gpu_lds_units[i].num_sets - 1;
-		gpu_lds_units[i].hits = 0;
-		gpu_lds_units[i].invalid_hits = 0;
-		gpu_lds_units[i].misses = 0;
+		gpu_lds_units[i].id = i;
+		//gpu_lds_units[i].log_block_size = LOG2(gpu_lds_units[i].block_size);
+		//gpu_lds_units[i].log_set_size = LOG2(gpu_lds_units[i].num_sets);
+		//gpu_lds_units[i].block_mask = gpu_lds_units[i].block_size - 1;
+		//gpu_lds_units[i].set_mask = gpu_lds_units[i].num_sets - 1;
+		//gpu_lds_units[i].hits = 0;
+		//gpu_lds_units[i].invalid_hits = 0;
+		//gpu_lds_units[i].misses = 0;
 		//gpu_v_caches[i].fetches = 0;
 		gpu_lds_units[i].Rx_queue_top = list_create();
-		gpu_lds_units[i].Rx_queue_bottom = list_create();
-		gpu_lds_units[i].mshr = list_create();
+		//gpu_lds_units[i].Rx_queue_bottom = list_create();
+		//gpu_lds_units[i].mshr = list_create();
 
 		//set cache name
 		memset (buff,'\0' , 100);
@@ -1774,14 +1774,13 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_top", i);
 		gpu_lds_units[i].Rx_queue_top->name = strdup(buff);
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_bottom", i);
-		gpu_lds_units[i].Rx_queue_bottom->name = strdup(buff);
+		//memset (buff,'\0' , 100);
+		//snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_bottom", i);
+		//gpu_lds_units[i].Rx_queue_bottom->name = strdup(buff);
 
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "gpu_lds_units[%d].mshr", i);
-		gpu_lds_units[i].mshr->name = strdup(buff);*/
-
+		//memset (buff,'\0' , 100);
+		//snprintf(buff, 100, "gpu_lds_units[%d].mshr", i);
+		//gpu_lds_units[i].mshr->name = strdup(buff);
 
 		//Initialize array of sets
 		gpu_v_caches[i].sets = calloc(gpu_v_caches[i].num_sets, sizeof(struct cache_set_t));
@@ -1936,6 +1935,8 @@ int cache_finish_create(){
 			}
 		}
 	}
+
+
 
 	return 0;
 }
