@@ -194,6 +194,8 @@ void interrupt_service_request(void){
 				}
 				else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 				{
+					//printf(" sys interrupt %d\n", uop->interrupt );
+
 					lat = 1000;
 				}
 				else //everything else

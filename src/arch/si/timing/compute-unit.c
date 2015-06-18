@@ -214,7 +214,11 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	free(compute_unit->wavefront_pools);
 	free(compute_unit->fetch_buffers);
 	free(compute_unit->work_groups);  /* List of mapped work-groups */
+
+#if CGM
+#else
 	mod_free(compute_unit->lds_module);
+#endif
 	free(compute_unit);
 }
 
