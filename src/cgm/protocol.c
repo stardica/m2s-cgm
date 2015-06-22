@@ -1195,7 +1195,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	}
 	else
 	{
-		//fatal("l1_d_cache_access_load(): retry miss\n");
+		fatal("l1_d_cache_access_load(): retry miss\n");
 
 	}
 	return;

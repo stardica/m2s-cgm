@@ -117,5 +117,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+//implements a MOESI protocol.
+
 
 #endif /*PROTOCOL_H_*/

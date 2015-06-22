@@ -400,6 +400,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->name = strdup(buff);
 
 
+
+
 	//////////////testing
 	//put back on the core event queue to end memory system access.
 	//linked_list_add(event_queue, event_queue_item);

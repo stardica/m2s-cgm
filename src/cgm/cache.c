@@ -317,6 +317,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if the ort is full we can't process a CPU request
 	because misses will overrun the table.*/
 
+	//assert(ort_status <= cache->mshr_size);
+
 	if(ort_status == cache->mshr_size)
 	{
 		//printf("%s cache ort full\n", cache->name);
@@ -332,7 +334,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		there isn't another message to process so stall*/
 		else
 		{
-			printf("cache_get_message null packet\n");
+
+			//printf("cache_get_message cache %s null packet\n", cache->name);
 			new_message = NULL;
 		}
 
@@ -422,7 +425,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 int get_ort_status(struct cache_t *cache){
 
-	int status = -1;
+	//int status = 0;
 	int i = 0;
 
 	// checks the ort to find an empty row
@@ -431,12 +434,14 @@ int get_ort_status(struct cache_t *cache){
 		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
 		{
 			//hit in the ORT table
-			status = i;
 			break;
 		}
+
+
 	}
 
-	return status;
+	//status = i;
+	return i;
 }
 
 int ort_search(struct cache_t *cache, int tag, int set){
@@ -471,6 +476,9 @@ void ort_dump(struct cache_t *cache){
 
 	for (i = 0; i <  cache->mshr_size; i++)
 	{
+
+
+
 		printf("ort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
 	}
 
@@ -833,7 +841,9 @@ void l1_i_cache_ctrl(void){
 
 		//wait here until there is a job to do
 		await(&l1_i_cache[my_pid], step);
-		step++;
+
+		//printf("i cache")
+
 
 		//try to process a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
@@ -842,11 +852,15 @@ void l1_i_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
-			future_advance(&l1_i_cache[my_pid], etime.count + 2);
-
+			P_PAUSE(1);
+			//future_advance(&l1_i_cache[my_pid], etime.count + 2);
+			//advance(&l1_i_cache[my_pid]);
 		}
 		else
 		{
+
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
@@ -863,7 +877,11 @@ void l1_i_cache_ctrl(void){
 				{
 					//we have to wait because the L2 in queue is full
 					//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
-					future_advance(&l1_i_cache[my_pid], etime.count + 2);
+
+					step--;
+				P_PAUSE(1);
+					//future_advance(&l1_i_cache[my_pid], etime.count + 2);
+					//advance(&l1_i_cache[my_pid]);
 				}
 			}
 			else if (access_type == cgm_access_puts)
@@ -916,6 +934,7 @@ void l1_d_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
 
+
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall.
@@ -936,6 +955,9 @@ void l1_d_cache_ctrl(void){
 			{
 				if(cache_can_access_top(&l2_caches[my_pid]))
 				{
+
+					//printf("ort status load %d\n", get_ort_status(&l1_d_caches[my_pid]));
+
 					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 					cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
 				}
@@ -952,6 +974,8 @@ void l1_d_cache_ctrl(void){
 				//printf("l2 cache queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 				if(cache_can_access_top(&l2_caches[my_pid]))
 				{
+
+					//printf("ort status store %d\n", get_ort_status(&l1_d_caches[my_pid]));
 					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 					cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
 				}

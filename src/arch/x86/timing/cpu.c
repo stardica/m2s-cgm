@@ -997,6 +997,7 @@ int X86CpuRun(Timing *self){
 
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Emu *emu = cpu->emu;
+	int i = 0;
 
 	/* Stop if no context is running */
 	if (emu->finished_list_count >= emu->context_list_count)
@@ -1023,6 +1024,14 @@ int X86CpuRun(Timing *self){
 	P_PAUSE(1);
 	self->cycle = P_TIME;
 	Current_Cycle++;
+
+	/*for(i = 0; i < 2; i++ )
+	{
+		printf("l1 d cache %d ort status %d cycle %llu\n", i, get_ort_status(&l1_d_caches[i]), P_TIME);
+	}
+
+	i = 0;*/
+
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

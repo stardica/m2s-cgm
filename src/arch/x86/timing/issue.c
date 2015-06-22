@@ -88,6 +88,8 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
+		//pritnf("issue cycle %llu");
+
 		cgm_issue_lspq_access(self, cgm_access_store, store->phy_addr, core->event_queue, store);
 
 #else
