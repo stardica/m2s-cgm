@@ -1025,13 +1025,10 @@ int X86CpuRun(Timing *self){
 	self->cycle = P_TIME;
 	Current_Cycle++;
 
-	/*for(i = 0; i < 2; i++ )
-	{
-		printf("l1 d cache %d ort status %d cycle %llu\n", i, get_ort_status(&l1_d_caches[i]), P_TIME);
-	}
-
-	i = 0;*/
-
+	//located in cgm.h/c
+	fetches = 0;
+	loads = 0;
+	stores = 0;
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */
@@ -1041,6 +1038,11 @@ int X86CpuRun(Timing *self){
 	/* Process host threads generating events */
 	X86EmuProcessEvents(emu);
 
+	if(fetches > 0 || loads > 0 || stores > 0)
+	{
+		CGM_DEBUG(load_store_log_file,"cycle %llu fetches %d loads %d stores %d\n", P_TIME, fetches, loads, stores);
+		//STOP;
+	}
 
 	/* Still simulating */
 	return TRUE;

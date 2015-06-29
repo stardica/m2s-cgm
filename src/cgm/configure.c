@@ -288,9 +288,14 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 		protocol_debug = atoi(value);
 	}
 
-	if(MATCH("Debug", "MSHR_Debug"))
+	if(MATCH("Debug", "ORT_Debug"))
 	{
-		mshr_debug = atoi(value);
+		ort_debug = atoi(value);
+	}
+
+	if(MATCH("Debug", "Load_Store_Debug"))
+	{
+		load_store_debug = atoi(value);
 	}
 
 	if(MATCH("Debug", "Path"))
@@ -367,6 +372,22 @@ int debug_finish_create(void){
 		sprintf(buff, "%s", cgm_debug_output_path);
 		sprintf(buff + strlen(buff), "/mshr_debug.out");
 		mshr_debug_file = fopen (buff, "w+");
+	}
+
+	if(ort_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/ort_debug.out");
+		ort_debug_file = fopen (buff, "w+");
+	}
+
+	if(load_store_debug ==1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_debug_output_path);
+		sprintf(buff + strlen(buff), "/load_store_debug.out");
+		load_store_log_file = fopen (buff, "w+");
 	}
 
 	return 1;
@@ -446,6 +467,21 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Debug", "L3_INF"))
 	{
 		l3_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "L1_MISS"))
+	{
+		l1_miss = atoi(value);
+	}
+
+	if(MATCH("Debug", "L2_MISS"))
+	{
+		l2_miss = atoi(value);
+	}
+
+	if(MATCH("Debug", "L3_MISS"))
+	{
+		l3_miss = atoi(value);
 	}
 
 	if(MATCH("Debug", "GPU_L1_INF"))

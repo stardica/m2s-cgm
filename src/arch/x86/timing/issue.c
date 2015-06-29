@@ -90,6 +90,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* Issue store */
 		//pritnf("issue cycle %llu");
 
+		stores++;
 		cgm_issue_lspq_access(self, cgm_access_store, store->phy_addr, core->event_queue, store);
 
 #else
@@ -185,6 +186,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 #if CGM
 
 		/* Access memory system */
+		loads++;
 		cgm_issue_lspq_access(self, cgm_access_load, load->phy_addr, core->event_queue, load);
 
 #else

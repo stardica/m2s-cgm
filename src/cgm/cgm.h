@@ -52,6 +52,7 @@
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
+#define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
 
 
 //config file
@@ -82,8 +83,14 @@ extern int protocol_debug;
 extern FILE *mshr_debug_file;
 extern int mshr_debug;
 
+extern FILE *ort_debug_file;
+extern int ort_debug;
+
 extern FILE *cgm_stats_file;
 extern int cgm_stats;
+
+extern FILE *load_store_log_file;
+extern int load_store_debug;
 
 extern char *cgm_debug_output_path;
 extern char *cgm_stats_output_path;
@@ -99,7 +106,9 @@ extern char *cgm_stats_output_path;
 								else if (sysagent_debug == 1 && file == sysagent_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid sysagent_debug file specified");}}\
 								else if (memctrl_debug == 1 && file == memctrl_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid memctrl_debug file specified");}}\
 								else if (protocol_debug == 1 && file == protocol_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid protocol_debug file specified");}}\
-								else if (mshr_debug == 1 && file == mshr_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
+								else if (mshr_debug == 1 && file == mshr_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}\
+								else if (ort_debug == 1 && file == ort_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid ort_debug file specified");}}\
+								else if (load_store_debug == 1 && file == load_store_log_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
 
 #define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
 
@@ -111,25 +120,24 @@ extern char *cgm_stats_output_path;
 					if(memctrl_debug == 1){CGM_DEBUG(memctrl_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (memctrl_debug_file);}\
 					if(protocol_debug == 1){CGM_DEBUG(protocol_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (protocol_debug_file);}\
 					if(mshr_debug == 1){CGM_DEBUG(mshr_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (mshr_debug_file);}\
+					if(ort_debug == 1){CGM_DEBUG(ort_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (ort_debug_file);}\
+					if(load_store_debug == 1){CGM_DEBUG(load_store_log_file,"simulation end cycle %llu\n", P_TIME);fclose (load_store_log_file);}\
 					if(cgm_stats == 1){fclose (cgm_stats_file);}
 
 #define STOP 	CLOSE_FILES;\
-				getchar()
-
-extern unsigned long Current_Cycle;
-
-//#define CLOSE (fclose(cgm_debug))
-
-//global access ids
-//extern long long fetch_access_id;
-//extern long long lspq_access_id;
+				exit(0);
 
 //global access record
 extern struct list_t *cgm_access_record;
 
+extern unsigned long Current_Cycle;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
+
+extern int fetches;
+extern int loads;
+extern int stores;
 
 
 //set up related

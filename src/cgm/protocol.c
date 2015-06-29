@@ -118,6 +118,14 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
 	}
+	else if(l1_miss)
+	{
+		if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+		}
+
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -323,6 +331,13 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
 	}
+	else if(l1_miss)
+	{
+		if(cache->cache_type == l1_d_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+		}
+	}
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -396,8 +411,6 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 		//entry was not found
 		if(i == cache->mshr_size)
 		{
-
-
 
 			//get an empty row
 			for (i = 0; i <  cache->mshr_size; i++)
@@ -531,6 +544,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
+	}
+	else if(l2_miss || l3_miss)
+	{
+		fatal("l2 and l3 caches set to miss");
 	}
 	//////testing
 

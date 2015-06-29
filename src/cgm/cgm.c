@@ -47,8 +47,14 @@ int protocol_debug = 0;
 FILE *mshr_debug_file;
 int mshr_debug;
 
+FILE *ort_debug_file;
+int ort_debug = 0;
+
 FILE *cgm_stats_file;
 int cgm_stats = 0;
+
+FILE *load_store_log_file;
+int load_store_debug = 0;
 
 char *cgm_debug_output_path = "";
 char *cgm_stats_output_path = "";
@@ -57,6 +63,9 @@ char *cgm_stats_output_path = "";
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 
+int fetches = 0;
+int loads = 0;
+int stores = 0;
 
 void cgm_init(void){
 
@@ -376,9 +385,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
 
-
-
-
 	X86Thread *thread;
 	thread = self;
 	char buff[100];
@@ -398,9 +404,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
-
-
-
 
 	//////////////testing
 	//put back on the core event queue to end memory system access.

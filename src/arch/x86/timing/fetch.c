@@ -442,6 +442,7 @@ static void X86ThreadFetch(X86Thread *self)
 		//right now it points to the mem_ctrl fetch request queue.
 		//self->fetch_access = mod_access(self->mem_ctrl_ptr->fetch_request_queue, mod_access_load, phy_addr, NULL, NULL, NULL, NULL);
 		//long long mod_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
+		fetches++;
 		self->fetch_access = cgm_fetch_access(self, phy_addr);
 		self->btb_reads++;
 
@@ -544,9 +545,7 @@ static void X86CoreFetch(X86Core *self)
 
 	switch (x86_cpu_fetch_kind)
 	{
-
 		//star pulled out some of these options for clarity.
-
 		/*case x86_cpu_fetch_kind_shared:
 		{
 

@@ -190,6 +190,9 @@ extern int QueueSize;
 extern int l1_inf;
 extern int l2_inf;
 extern int l3_inf;
+extern int l1_miss;
+extern int l2_miss;
+extern int l3_miss;
 extern int gpu_l1_inf;
 extern int gpu_l2_inf;
 

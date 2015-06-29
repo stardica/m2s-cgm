@@ -36,6 +36,9 @@ int QueueSize;
 int l1_inf = 0;
 int l2_inf = 0;
 int l3_inf = 0;
+int l1_miss = 0;
+int l2_miss = 0;
+int l3_miss = 0;
 int gpu_l1_inf = 0;
 int gpu_l2_inf = 0;
 
@@ -836,14 +839,12 @@ void l1_i_cache_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
+
 	while(1)
 	{
 
 		//wait here until there is a job to do
 		await(&l1_i_cache[my_pid], step);
-
-		//printf("i cache")
-
 
 		//try to process a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
@@ -851,14 +852,13 @@ void l1_i_cache_ctrl(void){
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
+
 			P_PAUSE(1);
 			//future_advance(&l1_i_cache[my_pid], etime.count + 2);
 			//advance(&l1_i_cache[my_pid]);
 		}
 		else
 		{
-
 			step++;
 
 			access_type = message_packet->access_type;
@@ -879,7 +879,7 @@ void l1_i_cache_ctrl(void){
 					//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
 
 					step--;
-				P_PAUSE(1);
+					P_PAUSE(1);
 					//future_advance(&l1_i_cache[my_pid], etime.count + 2);
 					//advance(&l1_i_cache[my_pid]);
 				}
@@ -901,9 +901,7 @@ void l1_i_cache_ctrl(void){
 			}
 		}
 
-
 		//could potentially do some work here...
-
 
 	}
 
