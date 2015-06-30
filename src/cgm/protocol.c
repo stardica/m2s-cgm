@@ -128,20 +128,17 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 
 	}
 
-	/*else if(l1_i_miss)
+	if(l1_i_miss && cache->cache_type == l1_i_cache_t)
 	{
-		if(cache->cache_type == l1_i_cache_t)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
-		}
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
 	}
-	else if(l1_d_miss)
+
+	if(l1_d_miss && cache->cache_type == l1_d_cache_t)
 	{
-		if(cache->cache_type == l1_d_cache_t)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
-		}
-	}*/
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -565,19 +562,15 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 
 	//////testing
-	if(l2_inf)
+	if(l2_inf && cache->cache_type == l2_cache_t)
 	{
-		if(cache->cache_type == l2_cache_t) // cache->cache_type == l3_cache_t)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-		}
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	}
-	else if(l3_inf)
+	else if(l3_inf && cache->cache_type == l3_cache_t)
 	{
-		if(cache->cache_type == l3_cache_t)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-		}
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	}
 	else if(l2_miss || l3_miss)
 	{

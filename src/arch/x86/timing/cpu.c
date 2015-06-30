@@ -1042,6 +1042,7 @@ int X86CpuRun(Timing *self){
 	if(fetches > 0 || loads > 0 || stores > 0)
 	{
 		CGM_DEBUG(load_store_log_file,"cycle %llu fetches %d loads %d stores %d\n", P_TIME, fetches, loads, stores);
+		//PRINT("fetches %d cycle %llu\n", fetches, P_TIME);
 	}
 
 	/* Still simulating */

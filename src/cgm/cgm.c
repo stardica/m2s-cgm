@@ -226,9 +226,8 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-	int i = 0;
-	//int j = 0;
-
+	/*int i = 0;
+	int j = 0;
 
 	//check if mshr/ort queue is full
 	for (i = 0; i < thread->i_cache_ptr[thread->core->id].mshr_size; i++)
@@ -240,14 +239,10 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 		}
 	}
 
-	/*printf("ort size %d\n", thread->i_cache_ptr[thread->core->id].mshr_size);
-	getchar();*/
-
 	if(i == thread->i_cache_ptr[thread->core->id].mshr_size)
 	{
 		return 0;
-	}
-
+	}*/
 
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))

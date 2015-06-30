@@ -313,45 +313,41 @@ void cache_create_tasks(void){
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	struct cgm_packet_t *new_message;
-	int ort_status = -1;
 
-	//check the ORT status
-	ort_status = get_ort_status(cache);
+	//get various cache statuses
+	int ort_status = get_ort_status(cache);
 	int retry_queue_size = list_count(cache->retry_queue);
+	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
+
+	assert(ort_status <= cache->mshr_size);
 
 	/*if the ort is full we can't process a CPU request
 	because misses will overrun the table.*/
 
-	//assert(ort_status <= cache->mshr_size);
 
-	if(ort_status == cache->mshr_size)
+	//pull from the retry queue if we have accesses waiting...
+	if(ort_status == cache->mshr_size && retry_queue_size > 0)
 	{
-		//printf("%s cache ort full\n", cache->name);
-		//getchar();
+		new_message = list_get(cache->retry_queue, 0);
+		cache->last_queue = cache->retry_queue;
 
-		//try to pull from the retry queue
-		if(retry_queue_size > 0)
-		{
-			new_message = list_get(cache->retry_queue, 0);
-			cache->last_queue = cache->retry_queue;
-		}
-		/*we can't process the CPU request and
-		there isn't another message to process so stall*/
-		else
-		{
-
-			//printf("cache_get_message cache %s null packet\n", cache->name);
-			new_message = NULL;
-		}
-
+		assert(new_message);
 	}
-	else if(ort_status < cache->mshr_size)
+	else if (ort_status == cache->mshr_size && bottom_queue_size > 0)
+	{
+		new_message = list_get(cache->Rx_queue_bottom, 0);
+		cache->last_queue = cache->Rx_queue_bottom;
+
+		assert(new_message);
+	}
+	else if(ort_status < cache->mshr_size) //ORT is not full, we can process CPU requests and lower level cache replies.
 	{
 		//try to pull from the retry queue first.
 		if(retry_queue_size > 0)
 		{
 			new_message = list_get(cache->retry_queue, 0);
 			cache->last_queue = cache->retry_queue;
+			assert(new_message);
 		}
 		else
 		{
@@ -398,14 +394,15 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 				}
 			}
 		}
-
-		//printf("%llu\n", new_message->access_id);
-		//assert(new_message != NULL);
 	}
 	else
 	{
-		fatal("cache_get_message() ort row out of bounds %d\n", ort_status);
+		//ORT is full and there are no retry or bottom queue messages so stall
+		return NULL;
 	}
+
+	//if we made it here we better have a message.
+	assert(new_message);
 
 	//debugging
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
@@ -422,9 +419,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	{
 		fatal("cache_get_message(): bad cache type\n");
 	}
-
-	//shouldn't be exiting without a message
-	//assert(new_message != NULL);
 	return new_message;
 }
 
@@ -434,17 +428,16 @@ int get_ort_status(struct cache_t *cache){
 	int i = 0;
 
 	// checks the ort to find an empty row
-	for (i = 0; i <  cache->mshr_size; i++)
+	for (i = 0; i < cache->mshr_size; i++)
 	{
 		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
 		{
 			//hit in the ORT table
 			break;
 		}
-
-
 	}
 
+	//PRINT("%s get_ort_status %d cycle %llu\n", cache->name, i, P_TIME);
 	//status = i;
 	return i;
 }
@@ -851,12 +844,16 @@ void l1_i_cache_ctrl(void){
 		//try to process a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
 
+		//PRINT("l1_i_cache ort size = %d cycle %llu\n", get_ort_status(&(l1_i_caches[my_pid])), P_TIME);
+
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall
-			PRINT("l1_i_cache null packet cycle %llu\n", P_TIME);
+			//PRINT("l1_i_cache null packet bottom queue size %d cycle %llu\n", list_count(l1_i_caches[my_pid].Rx_queue_bottom), P_TIME);
+
 			P_PAUSE(1);
-			//future_advance(&l1_i_cache[my_pid], etime.count + 2);
+			//getchar();
+			//future_advance(&l1_i_cache[my_pid], etime.count + 8);
 		}
 		else
 		{
@@ -932,7 +929,7 @@ void l1_d_cache_ctrl(void){
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			PRINT("l1_d_cache null packet cycle %llu\n", P_TIME);
+			//PRINT("l1_d_cache null packet cycle %llu\n", P_TIME);
 			P_PAUSE(1);
 			//future_advance(&l1_d_cache[my_pid], etime.count + 2);
 		}
@@ -1013,7 +1010,6 @@ void l2_cache_ctrl(void){
 	{
 		/*wait here until there is a job to do.*/
 		await(&l2_cache[my_pid], step);
-		step++;
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
@@ -1021,32 +1017,34 @@ void l2_cache_ctrl(void){
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			//printf("%s stalling cycle %llu\n", l2_caches[my_pid].name, P_TIME);
-			future_advance(&l2_cache[my_pid], etime.count + 2);
+			PRINT("l2_cache null packet cycle %llu\n", P_TIME);
+			P_PAUSE(1);
+			//future_advance(&l2_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 			if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
 			{
-
 				if(switch_can_access(switches[my_pid].north_queue))
 				{
 					cpu_cache_access_get(&l2_caches[my_pid], message_packet);
 				}
 				else
 				{
-					//we have to wait because the L2 in queue is full
-					future_advance(&l2_cache[my_pid], etime.count + 2);
+					//we have to wait because the switch in queue is full
+					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l2_cache[my_pid], etime.count + 2);
 				}
-
-
 			}
 			else if (access_type == cgm_access_getx)
 			{
-
 
 			}
 			else if(access_type == cgm_access_puts)
