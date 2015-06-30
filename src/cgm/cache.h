@@ -29,6 +29,7 @@
 #include <cgm/misc.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
+//#include <cgm/cgm.h>
 
 /*star todo fix this somehow. We shouldn't need to be included before all of
 the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
@@ -187,10 +188,12 @@ struct cache_t{
 //global variables.
 //star todo bring this into the cache struct
 extern int QueueSize;
-extern int l1_inf;
+extern int l1_i_inf;
+extern int l1_d_inf;
 extern int l2_inf;
 extern int l3_inf;
-extern int l1_miss;
+extern int l1_i_miss;
+extern int l1_d_miss;
 extern int l2_miss;
 extern int l3_miss;
 extern int gpu_l1_inf;

@@ -1038,10 +1038,10 @@ int X86CpuRun(Timing *self){
 	/* Process host threads generating events */
 	X86EmuProcessEvents(emu);
 
+	//added to test number of fetches, loads, and stores per cycle.
 	if(fetches > 0 || loads > 0 || stores > 0)
 	{
 		CGM_DEBUG(load_store_log_file,"cycle %llu fetches %d loads %d stores %d\n", P_TIME, fetches, loads, stores);
-		//STOP;
 	}
 
 	/* Still simulating */

@@ -454,9 +454,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		QueueSize = atoi(value);
 	}
 
-	if(MATCH("Debug", "L1_INF"))
+	if(MATCH("Debug", "MEM_SYSTEM_OFF"))
 	{
-		l1_inf = atoi(value);
+		mem_system_off = atoi(value);
+	}
+
+	if(MATCH("Debug", "L1_I_INF"))
+	{
+		l1_i_inf = atoi(value);
+	}
+
+	if(MATCH("Debug", "L1_D_INF"))
+	{
+		l1_d_inf = atoi(value);
 	}
 
 	if(MATCH("Debug", "L2_INF"))
@@ -469,9 +479,14 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		l3_inf = atoi(value);
 	}
 
-	if(MATCH("Debug", "L1_MISS"))
+	if(MATCH("Debug", "L1_I_MISS"))
 	{
-		l1_miss = atoi(value);
+		l1_i_miss = atoi(value);
+	}
+
+	if(MATCH("Debug", "L1_D_MISS"))
+	{
+		l1_d_miss = atoi(value);
 	}
 
 	if(MATCH("Debug", "L2_MISS"))

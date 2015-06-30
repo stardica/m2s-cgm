@@ -110,22 +110,38 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
+
+	//get the block and the state of the block and charge cycles
+
+
 	//////testing
-	if(l1_inf)
+	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
 	{
-		if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-		}
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 	}
-	else if(l1_miss)
+
+	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
 	{
-		if(cache->cache_type == l1_d_cache_t || cache->cache_type == l1_i_cache_t)
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+
+	}
+
+	/*else if(l1_i_miss)
+	{
+		if(cache->cache_type == l1_i_cache_t)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
 		}
-
 	}
+	else if(l1_d_miss)
+	{
+		if(cache->cache_type == l1_d_cache_t)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+		}
+	}*/
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -141,7 +157,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	if(cache_status == 1 && *state_ptr != 0)
 	{
 		assert(*state_ptr != cache_block_invalid);
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit\n", cache->name, access_id, P_TIME);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
 
 		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
 		{
@@ -156,6 +172,8 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 				//remove packet from cache queue, global queue, and simulator memory
 				list_remove(cache->last_queue, message_packet);
 				remove_from_global(access_id);
+
+				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, access_id, P_TIME);
 			}
 			//CPU L1 D cache
 			if(message_packet->access_type == cgm_access_load)
@@ -170,7 +188,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			fatal("cpu_l1_cache_access_load(): incorrect block state set");
 		}
 
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
+
 	}
 	//Cache miss or cache block is invalid
 	else if(cache_status == 0 || *state_ptr == 0)
@@ -322,22 +340,35 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->set = set;
 	message_packet->offset = offset;
 
-
 	//////testing
-	if(l1_inf)
+
+	//get the block and the state of the block and charge cycles
+	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
 	{
-		if(cache->cache_type == l1_d_cache_t)
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	}
+
+	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+	}
+
+	/*else if(l1_i_miss)
+	{
+		if(cache->cache_type == l1_i_cache_t)
 		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
 		}
 	}
-	else if(l1_miss)
+	else if(l1_d_miss)
 	{
 		if(cache->cache_type == l1_d_cache_t)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
 		}
-	}
+	}*/
 	//////testing
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
@@ -346,7 +377,6 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	//P_PAUSE(cache->latency);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)// && *state_ptr != cache_block_shared)
@@ -355,6 +385,8 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 		//block is valid
 
 		assert(*state_ptr != cache_block_invalid);
+
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
 
 		//star todo this is wrong
 		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
@@ -372,13 +404,15 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 			list_remove(cache->last_queue, message_packet);
 			linked_list_add(message_packet->event_queue, message_packet->data);
+
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, access_id, P_TIME);
 		}
 		else
 		{
 			fatal("cpu_l1_cache_access_store(): incorrect block state set");
 		}
 
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
+
 	}
 
 	//Cache Miss!
@@ -596,7 +630,6 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 					//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 					advance(&l1_i_cache[cache->id]);
-
 				}
 				else if (message_packet->access_type == cgm_access_gets_d)
 				{

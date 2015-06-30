@@ -138,6 +138,7 @@ extern eventcount volatile *sim_finish;
 extern int fetches;
 extern int loads;
 extern int stores;
+extern int mem_system_off;
 
 
 //set up related

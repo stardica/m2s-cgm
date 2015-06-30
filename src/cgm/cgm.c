@@ -66,6 +66,7 @@ eventcount volatile *sim_finish;
 int fetches = 0;
 int loads = 0;
 int stores = 0;
+extern int mem_system_off = 0;
 
 void cgm_init(void){
 
@@ -356,6 +357,16 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->name = strdup(buff);
 	new_packet->cache_block_state = cache_block_null;
 
+	//this can remove the memory system for testing purposes
+	if(mem_system_off == 1 )
+	{
+
+		list_dequeue(cgm_access_record);
+		free(new_packet_status);
+		free(new_packet);
+		return access_id;
+	}
+
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
@@ -372,12 +383,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	{
 		fatal("cgm_fetch_access() unsupported access type\n");
 	}
-
-	//star leave this for testing.
-	//printf("dequeue\n");
-	//list_dequeue(cgm_access_record);
-	//free(new_packet);
-	//free(new_packet_status);
 
 	return access_id;
 }
@@ -406,11 +411,14 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->name = strdup(buff);
 
 	//////////////testing
-	//put back on the core event queue to end memory system access.
-	//linked_list_add(event_queue, event_queue_item);
-	//free(new_packet);
-	///printf("last item event_queue_item %llu\n", P_TIME);
-	//return;
+	if(mem_system_off == 2)
+	{
+
+		//put back on the core event queue to end memory system access.
+		linked_list_add(event_queue, event_queue_item);
+		free(new_packet);
+		return;
+	}
 	//////////////testing
 
 	//For memory system load store request

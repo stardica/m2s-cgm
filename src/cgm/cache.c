@@ -33,10 +33,12 @@ struct str_map_t cgm_cache_policy_map =
 
 
 int QueueSize;
-int l1_inf = 0;
+int l1_i_inf = 0;
+int l1_d_inf = 0;
 int l2_inf = 0;
 int l3_inf = 0;
-int l1_miss = 0;
+int l1_i_miss = 0;
+int l1_d_miss = 0;
 int l2_miss = 0;
 int l3_miss = 0;
 int gpu_l1_inf = 0;
@@ -851,11 +853,10 @@ void l1_i_cache_ctrl(void){
 
 		if (message_packet == NULL)
 		{
-			//the cache state is preventing the cache from working this cycle stall.
-
+			//the cache state is preventing the cache from working this cycle stall
+			PRINT("l1_i_cache null packet cycle %llu\n", P_TIME);
 			P_PAUSE(1);
 			//future_advance(&l1_i_cache[my_pid], etime.count + 2);
-			//advance(&l1_i_cache[my_pid]);
 		}
 		else
 		{
@@ -870,18 +871,15 @@ void l1_i_cache_ctrl(void){
 				if the in queue of the L2 cache has an open slot*/
 				if(cache_can_access_top(&l2_caches[my_pid]))
 				{
-					//printf("entered i cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 					cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 				}
 				else
 				{
 					//we have to wait because the L2 in queue is full
-					//printf("%s stalling cycle %llu\n", l1_i_caches[my_pid].name, P_TIME);
-
+					PRINT("l1_i_cache can't run load cycle %llu\n", P_TIME);
 					step--;
 					P_PAUSE(1);
 					//future_advance(&l1_i_cache[my_pid], etime.count + 2);
-					//advance(&l1_i_cache[my_pid]);
 				}
 			}
 			else if (access_type == cgm_access_puts)
@@ -927,62 +925,54 @@ void l1_d_cache_ctrl(void){
 	{
 		//wait here until there is a job to do.
 		await(&l1_d_cache[my_pid], step);
-		step++;
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
 
-
 		if (message_packet == NULL)
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			//printf("%s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
-			future_advance(&l1_d_cache[my_pid], etime.count + 2);
-
+			PRINT("l1_d_cache null packet cycle %llu\n", P_TIME);
+			P_PAUSE(1);
+			//future_advance(&l1_d_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
+			step++;
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			//probe the address for set, tag, and offset.
-			//cgm_cache_probe_address(&(l1_d_caches[my_pid]), addr, set_ptr, tag_ptr, offset_ptr);
-
 			if (access_type == cgm_access_load)
 			{
+				/*message is from the CPU, only fetch
+				if the in queue of the L2 cache has an open slot*/
 				if(cache_can_access_top(&l2_caches[my_pid]))
 				{
-
-					//printf("ort status load %d\n", get_ort_status(&l1_d_caches[my_pid]));
-
-					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 					cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
 				}
 				else
 				{
 					//we have to wait because the L2 in queue is full
-					//printf("%s load stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
-					future_advance(&l1_d_cache[my_pid], etime.count + 2);
+					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
 				}
 			}
 			else if (access_type == cgm_access_store)
 			{
-
-				//printf("l2 cache queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 				if(cache_can_access_top(&l2_caches[my_pid]))
 				{
-
-					//printf("ort status store %d\n", get_ort_status(&l1_d_caches[my_pid]));
-					//printf("entered d cache l2 queue size %d\n", list_count(l2_caches[my_pid].Rx_queue_top));
 					cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
 				}
 				else
 				{
 					//we have to wait because the L2 in queue is full
-					//printf("%s store stalling access_id %llu cycle %llu l2 cache queue size %d\n", l1_d_caches[my_pid].name, access_id, P_TIME, list_count(l2_caches[my_pid].Rx_queue_top));
-					//getchar();
-					future_advance(&l1_d_cache[my_pid], etime.count + 2);
+					PRINT("l1_d_cache can't run store cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
 				}
 			}
 			else if (access_type == cgm_access_puts)
