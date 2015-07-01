@@ -1,3 +1,112 @@
+
+if()
+				{
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
+				}
+
+
+				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+				{
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+				}
+
+if()
+				{
+				}
+				else
+				{
+					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+				}
+
+	if()
+				{
+				}
+				else
+				{
+					printf("stalling\n");
+					future_advance(&gpu_s_cache[my_pid], etime.count + 2);
+				}
+
+
+/*if()
+				{
+				}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					//printf("running here\n");
+					future_advance(&l3_cache[my_pid], etime.count + 2);
+				}*/
+
+	
+	/*if()
+				{
+				}
+				else
+				{
+					//we have to wait because the switch in queue is full
+					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l2_cache[my_pid], etime.count + 2);
+				}*/
+	
+	/*if(cache_can_access_top(&l2_caches[my_pid]))
+				{*/
+				/*}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					PRINT("l1_d_cache can't run store cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
+				}*/
+	
+	
+		/*message is from the CPU, only fetch
+				if the in queue of the L2 cache has an open slot*/
+				/*if(cache_can_access_top(&l2_caches[my_pid]))
+				{*/
+				/*}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
+				}*/
+	
+	
+	//PRINT("l1_d_cache null packet cycle %llu\n", P_TIME);
+			//PRINT("l1_d_cache stall this cycle %llu\n", P_TIME);
+			
+	
+	
+		/*message is from the CPU, only fetch
+				if the in queue of the L2 cache has an open slot*/
+				/*if(cache_can_access_top(&l2_caches[my_pid]))
+				{*/
+				/*}
+				else
+				{
+					//we have to wait because the L2 in queue is full
+					PRINT("l1_i_cache can't run load cycle %llu\n", P_TIME);
+					step--;
+					P_PAUSE(1);
+					//future_advance(&l1_i_cache[my_pid], etime.count + 2);
+				}*/
+	
 	
 	/*void gpu_l2_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 

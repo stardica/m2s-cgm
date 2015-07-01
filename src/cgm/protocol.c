@@ -713,7 +713,6 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		if(cache->cache_type == l2_cache_t)
 		{
-
 			//miss so check ORT status
 			i = ort_search(cache, tag, set);
 
@@ -790,11 +789,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			}
 			else
 			{
-
 				fatal("cpu_l1_cache_access_store(): %s i outside of bounds\n", cache->name);
 			}
-
-
 		}
 		else if(cache->cache_type == l3_cache_t)
 		{
@@ -869,14 +865,12 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 				fatal("cpu_cache_access_get): %s i outside of bounds\n", cache->name);
 			}*/
-
 		}
 		else
 		{
 			fatal("cpu_cache_access_get(): miss bad cache type access_id %llu cycle %llu type %s \n",
 					access_id, P_TIME, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
-
 	}
 	return;
 }

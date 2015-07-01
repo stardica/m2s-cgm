@@ -275,8 +275,6 @@ void switch_ctrl(void){
 		//if we made it here we should have a packet.
 		message_packet = get_from_queue(&switches[my_pid]);
 
-
-
 		assert(message_packet);
 
 		//send the packet to it's destination OR on to the next hop

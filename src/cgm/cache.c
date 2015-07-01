@@ -324,7 +324,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if the ort is full we can't process a CPU request
 	because misses will overrun the table.*/
 
-
 	//pull from the retry queue if we have accesses waiting...
 	if(ort_status == cache->mshr_size && retry_queue_size > 0)
 	{
@@ -333,6 +332,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 		assert(new_message);
 	}
+	//pull from the bottom queue if the retry queue is empty...
 	else if (ort_status == cache->mshr_size && bottom_queue_size > 0)
 	{
 		new_message = list_get(cache->Rx_queue_bottom, 0);
@@ -340,7 +340,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 		assert(new_message);
 	}
-	else if(ort_status < cache->mshr_size) //ORT is not full, we can process CPU requests and lower level cache replies.
+	//ORT is not full, we can process CPU requests and lower level cache replies in a round robin fashion.
+	else if(ort_status < cache->mshr_size)
 	{
 		//try to pull from the retry queue first.
 		if(retry_queue_size > 0)
@@ -841,19 +842,16 @@ void l1_i_cache_ctrl(void){
 		//wait here until there is a job to do
 		await(&l1_i_cache[my_pid], step);
 
-		//try to process a message from one of the input queues.
+		//try to pull a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
 
 		//PRINT("l1_i_cache ort size = %d cycle %llu\n", get_ort_status(&(l1_i_caches[my_pid])), P_TIME);
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]))
 		{
 			//the cache state is preventing the cache from working this cycle stall
 			//PRINT("l1_i_cache null packet bottom queue size %d cycle %llu\n", list_count(l1_i_caches[my_pid].Rx_queue_bottom), P_TIME);
-
 			P_PAUSE(1);
-			//getchar();
-			//future_advance(&l1_i_cache[my_pid], etime.count + 8);
 		}
 		else
 		{
@@ -864,20 +862,7 @@ void l1_i_cache_ctrl(void){
 
 			if (access_type == cgm_access_fetch)
 			{
-				/*message is from the CPU, only fetch
-				if the in queue of the L2 cache has an open slot*/
-				if(cache_can_access_top(&l2_caches[my_pid]))
-				{
-					cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					//we have to wait because the L2 in queue is full
-					PRINT("l1_i_cache can't run load cycle %llu\n", P_TIME);
-					step--;
-					P_PAUSE(1);
-					//future_advance(&l1_i_cache[my_pid], etime.count + 2);
-				}
+				cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
@@ -895,11 +880,8 @@ void l1_i_cache_ctrl(void){
 						l1_i_caches[my_pid].name, access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
-
 		//could potentially do some work here...
-
 	}
-
 	/* should never get here*/
 	fatal("l1_i_cache_ctrl task is broken\n");
 	return;
@@ -926,10 +908,9 @@ void l1_d_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			//PRINT("l1_d_cache null packet cycle %llu\n", P_TIME);
 			P_PAUSE(1);
 			//future_advance(&l1_d_cache[my_pid], etime.count + 2);
 		}
@@ -942,35 +923,11 @@ void l1_d_cache_ctrl(void){
 
 			if (access_type == cgm_access_load)
 			{
-				/*message is from the CPU, only fetch
-				if the in queue of the L2 cache has an open slot*/
-				if(cache_can_access_top(&l2_caches[my_pid]))
-				{
-					cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					//we have to wait because the L2 in queue is full
-					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
-					step--;
-					P_PAUSE(1);
-					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
-				}
+				cpu_l1_cache_access_load(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_store)
 			{
-				if(cache_can_access_top(&l2_caches[my_pid]))
-				{
-					cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					//we have to wait because the L2 in queue is full
-					PRINT("l1_d_cache can't run store cycle %llu\n", P_TIME);
-					step--;
-					P_PAUSE(1);
-					//future_advance(&l1_d_cache[my_pid], etime.count + 2);
-				}
+				cpu_l1_cache_access_store(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
@@ -1014,7 +971,7 @@ void l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !switch_can_access(switches[my_pid].north_queue))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			PRINT("l2_cache null packet cycle %llu\n", P_TIME);
@@ -1030,18 +987,7 @@ void l2_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets_i || access_type == cgm_access_gets_d)
 			{
-				if(switch_can_access(switches[my_pid].north_queue))
-				{
-					cpu_cache_access_get(&l2_caches[my_pid], message_packet);
-				}
-				else
-				{
-					//we have to wait because the switch in queue is full
-					PRINT("l1_d_cache can't run load cycle %llu\n", P_TIME);
-					step--;
-					P_PAUSE(1);
-					//future_advance(&l2_cache[my_pid], etime.count + 2);
-				}
+				cpu_cache_access_get(&l2_caches[my_pid], message_packet);
 			}
 			else if (access_type == cgm_access_getx)
 			{
@@ -1087,35 +1033,25 @@ void l3_cache_ctrl(void){
 	{
 		/*wait here until there is a job to do.*/
 		await(&l3_cache[my_pid], step);
-		step++;
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !switch_can_access(switches[my_pid].south_queue))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
-			future_advance(&l3_cache[my_pid], etime.count + 2);
+			P_PAUSE(1);
 		}
 		else
 		{
-			assert(message_packet != NULL);
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 			if (access_type == cgm_access_gets)
 			{
-				if(switch_can_access(switches[my_pid].south_queue))
-				{
-					cpu_cache_access_get(&l3_caches[my_pid], message_packet);
-				}
-				else
-				{
-					//we have to wait because the L2 in queue is full
-					//printf("running here\n");
-					future_advance(&l3_cache[my_pid], etime.count + 2);
-				}
+				cpu_cache_access_get(&l3_caches[my_pid], message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
@@ -1132,7 +1068,6 @@ void l3_cache_ctrl(void){
 			}
 		}
 	}
-
 	/* should never get here*/
 	fatal("l3_cache_ctrl task is broken\n");
 	return;
@@ -1155,33 +1090,25 @@ void gpu_s_cache_ctrl(void){
 	{
 		//wait here until there is a job to do
 		await(&gpu_s_cache[my_pid], step);
-		step++;
 
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
-			printf("stalling\n");
-			future_advance(&gpu_s_cache[my_pid], etime.count + 2);
+			P_PAUSE(1);
+			//future_advance(&gpu_s_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-
 			if (access_type == cgm_access_load_s)
 			{
-				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
-				{
-					gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					printf("stalling\n");
-					future_advance(&gpu_s_cache[my_pid], etime.count + 2);
-				}
+				gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
@@ -1230,50 +1157,33 @@ void gpu_v_cache_ctrl(void){
 		//wait here until there is a job to do.
 		//In any given cycle I might have to service 1 to N number of caches
 		await(&gpu_v_cache[my_pid], step);
-		step++;
+
 
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
-			printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
-			future_advance(&gpu_v_cache[my_pid], etime.count + 2);
+			P_PAUSE(1);
+			//printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
+			//future_advance(&gpu_v_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-
 			if(access_type == cgm_access_load_v)
 			{
-				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
-				{
-					gpu_l1_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
-					//gpu_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
-					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
-				}
-
+				gpu_l1_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
+				//gpu_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
 			{
-
-				if(cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
-				{
-					gpu_l1_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
-					//gpu_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
-					future_advance(&gpu_v_cache[my_pid], etime.count + 2);
-				}
-
+				gpu_l1_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
+				//gpu_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_retry)
 			{
@@ -1325,36 +1235,29 @@ void gpu_l2_cache_ctrl(void){
 
 		/*wait here until there is a job to do.*/
 		await(&gpu_l2_cache[my_pid], step);
-		step++;
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
 
-		if (message_packet == NULL)
+		if (message_packet == NULL || !hub_iommu_can_access(hub_iommu->Rx_queue_top[my_pid]))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+			/*printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
 			printf("stalling\n");
-			future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
+			future_advance(&gpu_l2_cache[my_pid], etime.count + 2);*/
+			P_PAUSE(1);
 		}
 		else
 		{
+			step++;
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
 			{
-
-				if(hub_iommu_can_access(hub_iommu->Rx_queue_top[my_pid]))
-				{
-					gpu_cache_access_get(&gpu_l2_caches[my_pid], message_packet);
-					//gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
-				}
-				else
-				{
-					printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
-					future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
-				}
+				gpu_cache_access_get(&gpu_l2_caches[my_pid], message_packet);
+				//gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if (access_type == cgm_access_retry)
 			{
