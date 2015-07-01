@@ -221,7 +221,7 @@ void interrupt_service_request(void){
 		}
 
 		//the interrupt is complete we can free it now. list_dequeue free's the element.
-		//free(isr);
+		free(isr);
 		lat = 0;
 	}
 

@@ -56,6 +56,36 @@ struct cgm_packet_t *packet_create(void){
 	return new_packet;
 }
 
+void packet_destroy(struct cgm_packet_t *packet){
+
+	if(packet->name)
+	{
+		free(packet->name);
+	}
+
+	if(packet->l2_cache_name)
+	{
+		free(packet->l2_cache_name);
+	}
+
+	if(packet->src_name)
+	{
+		free(packet->src_name);
+	}
+
+	if(packet->dest_name)
+	{
+		free(packet->dest_name);
+	}
+
+	if(packet)
+	{
+		free(packet);
+	}
+
+	return;
+}
+
 struct cgm_packet_status_t *status_packet_create(void){
 
 	struct cgm_packet_status_t *new_packet;
@@ -63,6 +93,13 @@ struct cgm_packet_status_t *status_packet_create(void){
 	new_packet = (void *) calloc(1, sizeof(struct cgm_packet_status_t));
 
 	return new_packet;
+}
+
+void status_packet_destroy(struct cgm_packet_status_t *status_packet){
+
+	free(status_packet);
+
+	return;
 }
 
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
@@ -167,16 +204,21 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 				assert(*state_ptr != cache_block_modified || *state_ptr != cache_block_exclusive || *state_ptr != cache_block_noncoherent);
 
 				//remove packet from cache queue, global queue, and simulator memory
-				list_remove(cache->last_queue, message_packet);
+				message_packet = list_remove(cache->last_queue, message_packet);
+
 				remove_from_global(access_id);
+
+				packet_destroy(message_packet);
 
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, access_id, P_TIME);
 			}
 			//CPU L1 D cache
 			if(message_packet->access_type == cgm_access_load)
 			{
-				list_remove(cache->last_queue, message_packet);
+				message_packet = list_remove(cache->last_queue, message_packet);
 				linked_list_add(message_packet->event_queue, message_packet->data);
+
+				packet_destroy(message_packet);
 			}
 
 		}
@@ -399,8 +441,10 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//here we would write the data into the block if we had the correct access.
 
-			list_remove(cache->last_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
 			linked_list_add(message_packet->event_queue, message_packet->data);
+
+			packet_destroy(message_packet);
 
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, access_id, P_TIME);
 		}
@@ -1092,7 +1136,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			//send to correct l1 cache and change access type
 			if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
 			{
 				//CPU L1 I cache
@@ -1103,7 +1146,11 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//remove packet from cache retry queue and global queue
 					P_PAUSE(cache->latency);
 
-					list_remove(cache->last_queue, message_packet); /*check here */
+					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+
+					free(message_packet);
+
+
 					remove_from_global(access_id);
 
 					//retry coalesced packets.
@@ -1111,12 +1158,14 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 				}
 				//CPU L1 D cache
-				if(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
+				else if(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 				{
 					P_PAUSE(cache->latency);
 
-					list_remove(cache->last_queue, message_packet); /*check here */
+					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
 					linked_list_add(message_packet->event_queue, message_packet->data);
+
+					free(message_packet);
 
 					//retry coalesced packets.
 					cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);

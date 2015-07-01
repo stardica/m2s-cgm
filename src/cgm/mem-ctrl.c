@@ -100,37 +100,33 @@ void memctrl_ctrl(void){
 	{
 		//printf("mem_ctrl\n");
 		await(mem_ctrl_ec, step);
-		step++;
 
-		//star todo connect up DRAMsim here.
-		message_packet = list_dequeue(mem_ctrl->Rx_queue_top);
-		assert(message_packet);
-
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
-		addr = message_packet->address;
-
-		CGM_DEBUG(memctrl_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
-		mem_ctrl->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
-
-		P_PAUSE(mem_ctrl->DRAM_latency);
-
-		while(!sys_agent_can_access_bottom())
+		if(!sys_agent_can_access_bottom())
 		{
 			P_PAUSE(1);
 		}
-		//future_advance(system_agent_ec, DRAM_DELAY(mem_ctrl->DRAM_latency));
+		else
+		{
+			step++;
 
+			//star todo connect up DRAMsim here.
+			message_packet = list_dequeue(mem_ctrl->Rx_queue_top);
+			assert(message_packet);
 
-		message_packet->access_type = cgm_access_puts;
-		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
-		advance(system_agent_ec);
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+			addr = message_packet->address;
 
+			CGM_DEBUG(memctrl_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+					mem_ctrl->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
-		//future_advance(system_agent_ec, etime.count + 100);
-		/*printf("time = %llu \n", etime.count);
-		printf("DRAM_DELAY(mem_ctrl->DRAM_latency) = %llu \n", DRAM_DELAY(mem_ctrl->DRAM_latency));
-		getchar();*/
+			P_PAUSE(mem_ctrl->DRAM_latency);
+
+			message_packet->access_type = cgm_access_puts;
+			list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+			advance(system_agent_ec);
+
+		}
 
 		/*STOP;*/
 	}

@@ -353,12 +353,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->cache_block_state = cache_block_null;
 
 	//this can remove the memory system for testing purposes
-	if(mem_system_off == 1 )
+	if(mem_system_off == 1 || mem_system_off == 3)
 	{
 
 		list_dequeue(cgm_access_record);
-		free(new_packet_status);
-		free(new_packet);
+		status_packet_destroy(new_packet_status);
+		packet_destroy(new_packet);
 		return access_id;
 	}
 
@@ -406,12 +406,12 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->name = strdup(buff);
 
 	//////////////testing
-	if(mem_system_off == 2)
+	if(mem_system_off == 2 || mem_system_off == 3)
 	{
 
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);
-		free(new_packet);
+		packet_destroy(new_packet);
 		return;
 	}
 	//////////////testing
@@ -460,7 +460,7 @@ int remove_from_global(long long id){
 		else if(packet->access_id == id)
 		{
 			list_remove_at(cgm_access_record, i);
-			//free(packet);
+			status_packet_destroy(packet);
 
 			// this leaves the access in the list, but slows down the simulation a lot.
 			//packet->in_flight = 0;
@@ -493,7 +493,11 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->name = strdup(buff);
 
 	//leave for debugging purposes
-	//(*witness_ptr)++;
+	if(mem_system_off == 3)
+	{
+		(*witness_ptr)++;
+		free(new_packet);
+	}
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
@@ -537,7 +541,11 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->name = strdup(buff);
 
 	//leave for debugging purposes
-	//(*witness_ptr)++;
+	if(mem_system_off == 3)
+	{
+		(*witness_ptr)++;
+		free(new_packet);
+	}
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_s)
@@ -582,10 +590,12 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
-	//testing
-
-
-
+	//leave for debugging purposes
+	if(mem_system_off == 3)
+	{
+		(*witness_ptr)++;
+		free(new_packet);
+	}
 
 	//Add to the LDS queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
@@ -593,10 +603,6 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 		//get the core ID number should be <= number of cores
 		id = lds_ptr->compute_unit->id;
 		assert( id < num_cus);
-
-		/*printf("here\n");
-		fflush(stdout);
-		getchar();*/
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(lds_ptr->compute_unit->gpu_lds_unit_ptr[id].Rx_queue_top, new_packet);

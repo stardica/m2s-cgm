@@ -164,7 +164,6 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
-	P_PAUSE(system_agent->latency);
 
 	if(access_type == cgm_access_gets)
 	{
@@ -172,6 +171,8 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		{
 			P_PAUSE(1);
 		}
+
+		P_PAUSE(system_agent->latency);
 
 		list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
@@ -196,6 +197,8 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		{
 			P_PAUSE(1);
 		}
+
+		P_PAUSE(system_agent->latency);
 
 		//success
 		list_remove(system_agent->last_queue, message_packet);
@@ -238,7 +241,6 @@ void sys_agent_ctrl(void){
 
 	set_id((unsigned int)my_pid);
 
-
 	while(1)
 	{
 		await(system_agent_ec, step);
@@ -267,9 +269,6 @@ void sys_agent_ctrl(void){
 			fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 		}
-
-		/*printf("system agent end\n");
-		STOP;*/
 
 	}
 
