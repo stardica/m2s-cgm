@@ -266,6 +266,7 @@ int cache_can_access_bottom(struct cache_t *cache);
 int cgm_gpu_cache_map(int cache_id);
 
 int get_ort_status(struct cache_t *cache);
+int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_clear(struct cache_t *cache, int entry);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);

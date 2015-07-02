@@ -307,25 +307,24 @@ void cache_create_tasks(void){
 	return;
 }
 
-
-
-
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	struct cgm_packet_t *new_message;
 
 	//get various cache statuses
 	int ort_status = get_ort_status(cache);
+	int ort_coalesce_size = list_count(cache->ort_list);
 	int retry_queue_size = list_count(cache->retry_queue);
 	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
 
 	assert(ort_status <= cache->mshr_size);
+	assert(ort_coalesce_size <= (cache->max_coal + 1));
 
-	/*if the ort is full we can't process a CPU request
+	/*if the ort or the coalescer are full we can't process a CPU request
 	because a miss will overrun the table.*/
 
 	//pull from the retry queue if we have accesses waiting...
-	if(ort_status == cache->mshr_size && retry_queue_size > 0)
+	if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
 	{
 		new_message = list_get(cache->retry_queue, 0);
 		cache->last_queue = cache->retry_queue;
@@ -333,7 +332,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		assert(new_message);
 	}
 	//pull from the bottom queue if the retry queue is empty...
-	else if (ort_status == cache->mshr_size && bottom_queue_size > 0)
+	else if ((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && bottom_queue_size > 0)
 	{
 		new_message = list_get(cache->Rx_queue_bottom, 0);
 		cache->last_queue = cache->Rx_queue_bottom;
@@ -341,7 +340,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		assert(new_message);
 	}
 	//ORT is not full, we can process CPU requests and lower level cache replies in a round robin fashion.
-	else if(ort_status < cache->mshr_size)
+	else if(ort_status < cache->mshr_size && ort_coalesce_size <= cache->max_coal)
 	{
 		//try to pull from the retry queue first.
 		if(retry_queue_size > 0)
@@ -437,6 +436,32 @@ int get_ort_status(struct cache_t *cache){
 		}
 	}
 	return i;
+}
+
+int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set){
+
+	int i = 0;
+	int size = 0;
+	struct cgm_packet_t *ort_packet;
+
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->tag == tag && ort_packet->set == set)
+		{
+			ort_packet = list_remove_at(cache->ort_list, i);
+			ort_packet->access_type = cgm_access_retry;
+			list_enqueue(cache->retry_queue, ort_packet);
+			advance(cache->ec_ptr);
+
+			//this may cause problems the intent is to run one coalesced packet per iteration of the retry state.
+			size ++;
+		}
+	}
+
+	return size;
 }
 
 int ort_search(struct cache_t *cache, int tag, int set){
