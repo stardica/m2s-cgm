@@ -2373,7 +2373,7 @@ int sys_agent_finish_create(void){
 
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value){
 
-	int Ports = 0;
+	//int Ports = 0;
 	int WireLatency = 0;
 	int DRAMLatency = 0;
 	int Latency = 0;
@@ -2413,6 +2413,12 @@ int mem_ctrl_finish_create(void){
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl.Rx_queue_top");
 	mem_ctrl->Rx_queue_top->name = strdup(buff);
+
+	mem_ctrl->Tx_queue = list_create();
+
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl.Tx_queue");
+	mem_ctrl->Tx_queue->name = strdup(buff);
 
 	mem_ctrl->system_agent_queue = system_agent->Rx_queue_bottom;
 

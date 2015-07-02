@@ -861,7 +861,6 @@ void l1_i_cache_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
-
 	while(1)
 	{
 
@@ -870,8 +869,6 @@ void l1_i_cache_ctrl(void){
 
 		//try to pull a message from one of the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
-
-		//PRINT("l1_i_cache ort size = %d cycle %llu\n", get_ort_status(&(l1_i_caches[my_pid])), P_TIME);
 
 		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]))
 		{

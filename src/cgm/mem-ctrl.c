@@ -31,9 +31,11 @@
 //structure declarations
 struct mem_ctrl_t *mem_ctrl;
 eventcount volatile *mem_ctrl_ec;
+eventcount volatile *mem_ctrl_io_ec;
 task *mem_ctrl_task;
+task *mem_ctrl_io_task;
 int mem_ctrl_pid = 0;
-
+int mem_ctrl_io_pid = 0;
 
 void memctrl_init(void){
 
@@ -58,15 +60,26 @@ void memctrl_create_tasks(void){
 	mem_ctrl_ec = (void *) calloc(1, sizeof(eventcount));
 
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "mem_ctrl");
+	snprintf(buff, 100, "mem_ctrl_ec");
 	mem_ctrl_ec = new_eventcount(strdup(buff));
 
+	mem_ctrl_io_ec = (void *) calloc(1, sizeof(eventcount));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl_io_ec");
+	mem_ctrl_io_ec = new_eventcount(strdup(buff));
 
 	mem_ctrl_task = (void *) calloc(1, sizeof(task));
 
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "mem_ctrl");
+	snprintf(buff, 100, "mem_ctrl_task");
 	mem_ctrl_task = create_task(memctrl_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+	mem_ctrl_io_task = (void *) calloc(1, sizeof(task));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl_io");
+	mem_ctrl_io_task = create_task(memctrl_ctrl_io, DEFAULT_STACK_SIZE, strdup(buff));
 
 	return;
 }
@@ -82,6 +95,41 @@ int memctrl_can_access(void){
 	//we can access the system agent
 	return 1;
 }
+
+void memctrl_ctrl_io(void){
+
+	int my_pid = mem_ctrl_io_pid;
+	long long step = 1;
+
+	struct cgm_packet_t *message_packet;
+	//long long access_id = 0;
+	int msg_packet_size = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+
+		await(mem_ctrl_io_ec, step);
+		step++;
+
+		message_packet = list_dequeue(mem_ctrl->Tx_queue);
+		assert(message_packet);
+
+		msg_packet_size = message_packet->size;
+
+		while(msg_packet_size > 0)
+		{
+			P_PAUSE(1);
+			msg_packet_size -- ;
+		}
+
+		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+		advance(system_agent_ec);
+	}
+	return;
+}
+
 
 //do some work.
 void memctrl_ctrl(void){
@@ -122,14 +170,15 @@ void memctrl_ctrl(void){
 
 			P_PAUSE(mem_ctrl->DRAM_latency);
 
-			message_packet->access_type = cgm_access_puts;
+			/*message_packet->access_type = cgm_access_puts;
 			list_enqueue(mem_ctrl->system_agent_queue, message_packet);
-			advance(system_agent_ec);
+			advance(system_agent_ec);*/
 
+			message_packet->access_type = cgm_access_puts;
+			message_packet->size = 4;
+			list_enqueue(mem_ctrl->Tx_queue, message_packet);
+			advance(mem_ctrl_io_ec);
 		}
-
-		/*STOP;*/
 	}
-
 	return;
 }

@@ -68,6 +68,7 @@ struct cgm_packet_t{
 	int tag;
 	unsigned int offset;
 	int coalesced;
+	int size;
 
 	//for protocol messages
 	enum cache_block_state_t cache_block_state;
