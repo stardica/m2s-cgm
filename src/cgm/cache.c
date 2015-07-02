@@ -322,7 +322,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	assert(ort_status <= cache->mshr_size);
 
 	/*if the ort is full we can't process a CPU request
-	because misses will overrun the table.*/
+	because a miss will overrun the table.*/
 
 	//pull from the retry queue if we have accesses waiting...
 	if(ort_status == cache->mshr_size && retry_queue_size > 0)
@@ -425,7 +425,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 int get_ort_status(struct cache_t *cache){
 
-	//int status = 0;
 	int i = 0;
 
 	// checks the ort to find an empty row
@@ -437,9 +436,6 @@ int get_ort_status(struct cache_t *cache){
 			break;
 		}
 	}
-
-	//PRINT("%s get_ort_status %d cycle %llu\n", cache->name, i, P_TIME);
-	//status = i;
 	return i;
 }
 
@@ -468,6 +464,15 @@ void ort_clear(struct cache_t *cache, int entry){
 	return;
 }
 
+void ort_set(struct cache_t *cache, int entry, int tag, int set){
+
+	cache->ort[entry][0] = tag;
+	cache->ort[entry][1] = set;
+	cache->ort[entry][2] = 1;
+
+	return;
+}
+
 
 void ort_dump(struct cache_t *cache){
 
@@ -475,12 +480,8 @@ void ort_dump(struct cache_t *cache){
 
 	for (i = 0; i <  cache->mshr_size; i++)
 	{
-
-
-
 		printf("ort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
 	}
-
 	return;
 }
 

@@ -1,3 +1,305 @@
+//block is returned so find it in the ORT
+	/*for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		{
+			//hit in the ORT table
+			break;
+		}
+	}
+
+	if(i >= cache->mshr_size)
+	{
+		//if we didn't find it there is a problem;
+		printf("gpu_cache_access_put() crashing %s access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+		printf("src %s dest %s\n", message_packet->src_name, message_packet->dest_name);
+		fflush(stdout);
+		assert(i < cache->mshr_size);
+		assert(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1);
+	}
+
+	//clear the ORT now
+	cache->ort[i][0] = -1;
+	cache->ort[i][1] = -1;
+	cache->ort[i][2] = -1;*/
+
+//miss so check ORT status
+			/*for (i = 0; i <  cache->mshr_size; i++)
+			{
+				if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+				{
+					//hit in the ORT table
+					break;
+				}
+			}*/
+
+
+			/*if(i == cache->mshr_size)
+			{*/
+				//get an empty row
+				/*for (i = 0; i <  cache->mshr_size; i++)
+				{
+					if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+					{
+						//found empty row
+						break;
+					}
+				}
+
+				//sanity check the table row
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+
+				//insert into table
+				cache->ort[i][0] = tag;
+				cache->ort[i][1] = set;
+				cache->ort[i][2] = 1;*/
+
+/*}
+			else if (i >= 0 && i < cache->mshr_size)
+			{
+				//entry found in ORT so coalesce access
+				assert(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1);
+
+				CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n",
+						cache->name, access_id, P_TIME);
+
+				list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->ort_list, message_packet);
+			}
+			else
+			{
+				fatal("gpu_cache_access_get(): %s ort row outside of bounds\n", cache->name);
+			}*/
+
+/*//get an empty row
+			for (i = 0; i <  cache->mshr_size; i++)
+			{
+				if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+				{
+					//found empty row
+					break;
+				}
+			}
+
+			//sanity check the table row
+			//printf("i = %d\n", i);
+			if(i >= cache->mshr_size)
+			{
+
+				fatal("gpu_l1_cache_access_store(): mshr full access_id %llu cycle %llu", access_id, P_TIME);
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+			}
+
+			//insert into table
+			cache->ort[i][0] = tag;
+			cache->ort[i][1] = set;
+			cache->ort[i][2] = 1;*/
+
+			/*while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
+			{
+				printf("%s stalled cycle %llu \n", cache->name, P_TIME);
+				P_PAUSE(1);
+			}*/
+
+for (i = 0; i <  cache->mshr_size; i++)
+		{
+			if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+			{
+				//hit in the ORT table
+				break;
+			}
+		}
+
+//miss so check ORT status
+		/*for (i = 0; i <  cache->mshr_size; i++)
+		{
+			if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+			{
+				//hit in the ORT table
+				break;
+			}
+		}*/
+		
+		
+		/*for (i = 0; i <  cache->mshr_size; i++)
+			{
+				if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+				{
+					//found empty row
+					break;
+				}
+			}
+
+			//sanity check the table row
+			assert(i < cache->mshr_size);
+			assert(cache->ort[i][0] == -1);
+			assert(cache->ort[i][1] == -1);
+			assert(cache->ort[i][2] == -1);
+
+			//insert into table
+			cache->ort[i][0] = tag;
+			cache->ort[i][1] = set;
+			cache->ort[i][2] = 1;*/
+
+			//forward message_packet
+			/*while(!cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(cache->id)]))
+			{
+				printf("%s stalled cycle %llu \n", cache->name, P_TIME);
+
+				P_PAUSE(1);
+			}*/
+
+
+//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+
+			/*}
+			else if (i >= 0 && i < cache->mshr_size)
+			{
+
+				printf("%s entered here coal cycle %llu\n", cache->name, P_TIME);
+				fflush(stdout);
+
+
+				//entry found in ORT so coalesce access
+				assert(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1);
+
+				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n",
+						cache->name, access_id, P_TIME);
+
+				list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->ort_list, message_packet);
+			}
+			else
+			{
+
+				fatal("cpu_cache_access_get): %s i outside of bounds\n", cache->name);
+			}*/
+
+			//sanity check the table row
+			/*if(i >= cache->mshr_size)
+			{
+				printf("%s crashing ort is full\n", cache->name);
+
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+			}
+
+			//insert into table
+			cache->ort[i][0] = tag;
+			cache->ort[i][1] = set;
+			cache->ort[i][2] = 1;*/
+
+			/*while(!switch_can_access(switches[cache->id].south_queue))
+			{
+				//printf("stall\n");
+				P_PAUSE(1);
+			}*/
+
+
+//sanity check the table row
+				/*if(i >= cache->mshr_size)
+				{
+					printf("%s crashing ort is full here i = %d\n", cache->name, i);
+					ort_dump(cache);
+					assert(i < cache->mshr_size);
+					assert(cache->ort[i][0] == -1);
+					assert(cache->ort[i][1] == -1);
+					assert(cache->ort[i][2] == -1);
+				}
+
+				//insert into table
+				cache->ort[i][0] = tag;
+				cache->ort[i][1] = set;
+				cache->ort[i][2] = 1;*/
+
+				/*while(!switch_can_access(switches[cache->id].north_queue))
+				{
+					//printf("stall\n");
+					P_PAUSE(1);
+				}*/
+
+
+/*if(i >= cache->mshr_size)
+	{
+		//if we didn't find it there is a problem;
+		printf("cpu_cache_access_put() crashing %s access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+		printf("src %s dest %s\n", message_packet->src_name, message_packet->dest_name);
+		fflush(stdout);
+		assert(i < cache->mshr_size);
+		assert(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1);
+	}*/
+
+//i = get_ort_status(cache);
+
+			//sanity check the table row
+			/*if(i >= cache->mshr_size)
+			{
+				advance(cache->ec_ptr);
+				return;
+				printf ("i = %d\n", i);
+				printf("%s crashing ort is full access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+				ort_dump(cache);
+				STOP;
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+			}*/
+
+
+			//insert into table
+			/*cache->ort[i][0] = tag;
+			cache->ort[i][1] = set;
+			cache->ort[i][2] = 1;*/
+
+/*for (i = 0; i <  cache->mshr_size; i++)
+		{
+			if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+			{
+				//hit in the ORT table
+				break;
+			}
+		}*/
+
+/*for (i = 0; i <  cache->mshr_size; i++)
+			{
+				if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+				{
+					//found empty row
+					break;
+				}
+			}
+
+			//sanity check the table row
+			if(i >= cache->mshr_size)
+			{
+				printf("%s crashing ort is full access_id %llu cycle %llu\n", cache->name, access_id, P_TIME);
+				ort_dump(cache);
+				assert(i < cache->mshr_size);
+				assert(cache->ort[i][0] == -1);
+				assert(cache->ort[i][1] == -1);
+				assert(cache->ort[i][2] == -1);
+			}
+
+
+			//insert into table
+			cache->ort[i][0] = tag;
+			cache->ort[i][1] = set;
+			cache->ort[i][2] = 1;*/
+
+			/*while(!cache_can_access_top(&l2_caches[cache->id]))
+			{
+				//printf("stall\n");
+				P_PAUSE(1);
+			}*/
 
 if()
 				{

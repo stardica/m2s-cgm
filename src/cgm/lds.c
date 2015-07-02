@@ -52,7 +52,8 @@ void gpu_lds_unit_ctrl(void){
 
 			//clear the gpu uop witness_ptr
 			(*message_packet->witness_ptr)++;
-			list_remove(gpu_lds_units[my_pid].Rx_queue_top, message_packet);
+			message_packet = list_remove(gpu_lds_units[my_pid].Rx_queue_top, message_packet);
+			packet_destroy(message_packet);
 		}
 		else
 		{

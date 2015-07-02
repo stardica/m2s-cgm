@@ -268,6 +268,7 @@ int cgm_gpu_cache_map(int cache_id);
 int get_ort_status(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_clear(struct cache_t *cache, int entry);
+void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_dump(struct cache_t *cache);
 
 //cache functions
