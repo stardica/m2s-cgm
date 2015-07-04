@@ -102,26 +102,27 @@ void memctrl_ctrl_io(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	//long long access_id = 0;
-	int msg_packet_size = 0;
+	long long access_id = 0;
+	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
-
 		await(mem_ctrl_io_ec, step);
 		step++;
 
 		message_packet = list_dequeue(mem_ctrl->Tx_queue);
 		assert(message_packet);
 
-		msg_packet_size = message_packet->size;
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/mem_ctrl->bus_width);
 
-		while(msg_packet_size > 0)
+		while(transfer_time > 0)
 		{
 			P_PAUSE(1);
-			msg_packet_size -- ;
+			transfer_time--;
+			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
 		}
 
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
@@ -129,7 +130,6 @@ void memctrl_ctrl_io(void){
 	}
 	return;
 }
-
 
 //do some work.
 void memctrl_ctrl(void){
@@ -151,6 +151,7 @@ void memctrl_ctrl(void){
 
 		if(!sys_agent_can_access_bottom())
 		{
+			printf("MC stalling up\n");
 			P_PAUSE(1);
 		}
 		else
@@ -175,7 +176,7 @@ void memctrl_ctrl(void){
 			advance(system_agent_ec);*/
 
 			message_packet->access_type = cgm_access_puts;
-			message_packet->size = 4;
+			message_packet->size = l3_caches[0].block_size;
 			list_enqueue(mem_ctrl->Tx_queue, message_packet);
 			advance(mem_ctrl_io_ec);
 		}

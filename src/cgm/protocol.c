@@ -739,6 +739,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			P_PAUSE(cache->latency);
 
+			message_packet->size = 0;
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");

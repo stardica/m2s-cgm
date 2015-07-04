@@ -49,6 +49,8 @@ struct mem_ctrl_t{
 	//ptr to system agent Rx queue
 	struct list_t *system_agent_queue;
 
+	//bus
+	int bus_width;
 };
 
 //global structures

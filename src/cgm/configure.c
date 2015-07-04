@@ -2311,6 +2311,8 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 	int Ports = 0;
 	int WireLatency = 0;
 	int Latency = 0;
+	int Down_Bus_width = 0;
+	int Up_Bus_width = 0;
 
 
 	if(MATCH("SysAgent", "Ports"))
@@ -2332,6 +2334,27 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 		system_agent->latency = Latency;
 	}
 
+	if(MATCH("Bus", "MC-SA"))
+	{
+		Down_Bus_width = atoi(value);
+		system_agent->down_bus_width = Down_Bus_width;
+
+		if(system_agent->down_bus_width == 0)
+		{
+			fatal("mem_ctrl_config(): mem_ctrl down bus width is out of bounds\n");
+		}
+	}
+
+	if(MATCH("Bus", "Switches"))
+	{
+		Up_Bus_width = atoi(value);
+		system_agent->up_bus_width = Up_Bus_width;
+
+		if(system_agent->up_bus_width == 0)
+		{
+			fatal("mem_ctrl_config(): mem_ctrl up bus width is out of bounds\n");
+		}
+	}
 
 	return 0;
 }
@@ -2362,6 +2385,16 @@ int sys_agent_finish_create(void){
 	snprintf(buff, 100, "system_agent.Rx_queue_bottom");
 	system_agent->Rx_queue_bottom->name = strdup(buff);
 
+	system_agent->Tx_queue_top = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent.Tx_queue_top");
+	system_agent->Tx_queue_top->name = strdup(buff);
+
+	system_agent->Tx_queue_bottom = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent.Tx_queue_bottom");
+	system_agent->Tx_queue_bottom->name = strdup(buff);
+
 	//point to switch queue.
 	system_agent->switch_queue = switches[system_agent->switch_id].south_queue;
 
@@ -2377,6 +2410,7 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	int WireLatency = 0;
 	int DRAMLatency = 0;
 	int Latency = 0;
+	int Bus_width = 0;
 
 	if(MATCH("MemCtrl", "Latency"))
 	{
@@ -2396,6 +2430,16 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 		mem_ctrl->DRAM_latency = DRAMLatency;
 	}
 
+	if(MATCH("Bus", "MC-SA"))
+	{
+		Bus_width = atoi(value);
+		mem_ctrl->bus_width = Bus_width;
+
+		if(mem_ctrl->bus_width == 0)
+		{
+			fatal("mem_ctrl_config(): mem_ctrl bus width is out of bounds\n");
+		}
+	}
 	return 0;
 }
 

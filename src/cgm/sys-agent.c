@@ -30,9 +30,17 @@
 struct system_agent_t *system_agent;
 
 int system_agent_pid = 0;
+int system_agent_io_up_pid = 0;
+int system_agent_io_down_pid = 0;
 
 eventcount volatile *system_agent_ec;
 task *system_agent_task;
+
+eventcount volatile *system_agent_io_down_ec;
+task *system_agent_io_down_task;
+
+eventcount volatile *system_agent_io_up_ec;
+task *system_agent_io_up_task;
 
 
 void sys_agent_init(void){
@@ -54,18 +62,44 @@ void sys_agent_create_tasks(void){
 
 	char buff[100];
 
+	//CTRL
 	system_agent_ec = (void *) calloc(1, sizeof(eventcount));
 
 	memset(buff,'\0' , 100);
-	snprintf(buff, 100, "system_agent");
+	snprintf(buff, 100, "system_agent_ec");
 	system_agent_ec = new_eventcount(strdup(buff));
-
 
 	system_agent_task = (void *) calloc(1, sizeof(task));
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "system_agent_ctrl");
 	system_agent_task = create_task(sys_agent_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+
+	//IO
+	system_agent_io_up_ec = (void *) calloc(1, sizeof(eventcount));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent_io_up");
+	system_agent_io_up_ec = new_eventcount(strdup(buff));
+
+	system_agent_io_down_ec = (void *) calloc(1, sizeof(eventcount));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent_io_down");
+	system_agent_io_down_ec = new_eventcount(strdup(buff));
+
+	system_agent_io_up_task = (void *) calloc(1, sizeof(task));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent_io_down_task");
+	system_agent_io_up_task = create_task(sys_agent_ctrl_io_up, DEFAULT_STACK_SIZE, strdup(buff));
+
+	system_agent_io_down_task = (void *) calloc(1, sizeof(task));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "system_agent_io_down_task");
+	system_agent_io_down_task = create_task(sys_agent_ctrl_io_down, DEFAULT_STACK_SIZE, strdup(buff));
 
 	return;
 }
@@ -169,15 +203,17 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	{
 		while(!memctrl_can_access())
 		{
+			//stalling
+			printf("SA stalling down\n");
 			P_PAUSE(1);
 		}
 
 		P_PAUSE(system_agent->latency);
 
 		list_remove(system_agent->last_queue, message_packet);
-		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
-		//future_advance(mem_ctrl_ec, WIRE_DELAY(mem_ctrl->wire_latency));
-		advance(mem_ctrl_ec);
+		//list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
+		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
+		advance(system_agent_io_down_ec);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
@@ -195,6 +231,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		while(!switch_can_access(system_agent->switch_queue))
 		{
+			printf("SA stalling up\n");
 			P_PAUSE(1);
 		}
 
@@ -202,10 +239,12 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		//success
 		list_remove(system_agent->last_queue, message_packet);
-		list_enqueue(system_agent->switch_queue, message_packet);
+		//list_enqueue(system_agent->switch_queue, message_packet);
+		list_enqueue(system_agent->Tx_queue_top, message_packet);
 
 		//future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
-		advance(&switches_ec[system_agent->switch_id]);
+		//advance(&switches_ec[system_agent->switch_id]);
+		advance(system_agent_io_up_ec);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
@@ -224,6 +263,76 @@ void sys_dir_lookup(struct cgm_packet_t *message_packet){
 void sys_mem_access(struct cgm_packet_t *message_packet){
 
 
+	return;
+}
+
+
+void sys_agent_ctrl_io_up(void){
+
+	int my_pid = system_agent_io_up_pid;
+	long long step = 1;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(system_agent_io_up_ec, step);
+		step++;
+
+		message_packet = list_dequeue(system_agent->Tx_queue_top);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/system_agent->up_bus_width);
+
+		while(transfer_time > 0)
+		{
+			P_PAUSE(1);
+			transfer_time--;
+			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
+		}
+
+		list_enqueue(system_agent->switch_queue, message_packet);
+		advance(&switches_ec[system_agent->switch_id]);
+	}
+	return;
+}
+
+void sys_agent_ctrl_io_down(void){
+
+	int my_pid = system_agent_io_down_pid;
+	long long step = 1;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(system_agent_io_down_ec, step);
+		step++;
+
+		message_packet = list_dequeue(system_agent->Tx_queue_bottom);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/system_agent->down_bus_width);
+
+		while(transfer_time > 0)
+		{
+			P_PAUSE(1);
+			transfer_time--;
+		}
+
+		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
+		advance(mem_ctrl_ec);
+	}
 	return;
 }
 
@@ -269,9 +378,7 @@ void sys_agent_ctrl(void){
 			fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 		}
-
 	}
-
 	fatal("sys_agent_ctrl task is broken\n");
 	return;
 }
