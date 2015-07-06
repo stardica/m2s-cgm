@@ -75,7 +75,8 @@ int l3_up_io_pid = 0;
 int l3_down_io_pid = 0;
 int gpu_v_io_pid = 0;
 int gpu_s_io_pid = 0;
-int gpu_l2_io_pid = 0;
+int gpu_l2_down_io_pid = 0;
+int gpu_l2_up_io_pid = 0;
 int gpu_lds_io_pid = 0;
 
 
@@ -1626,11 +1627,113 @@ void gpu_v_cache_down_io_ctrl(void){
 }
 void gpu_l2_cache_up_io_ctrl(void){
 
+	int my_pid = gpu_l2_up_io_pid++;
+	long long step = 1;
 
+	/*int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;*/
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(gpu_l2_caches[my_pid].cache_io_up_ec, step);
+		step++;
+
+		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_top);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		//star todo fix this we need a top and bottom bus_width
+		transfer_time = (message_packet->size/gpu_v_caches[my_pid].bus_width);
+
+		P_PAUSE(transfer_time);
+
+		//printf("L2 -> L1 access_id %llu cycle %llu\n", access_id, P_TIME);
+
+		//drop into the correct l1 cache queue.
+		if(message_packet->gpu_access_type == cgm_access_load_s)
+		{
+			list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+			advance(&gpu_s_cache[message_packet->gpu_cache_id]);
+		}
+		else if(message_packet->gpu_access_type == cgm_access_load_v ||
+						message_packet->gpu_access_type == cgm_access_store_v ||
+						message_packet->gpu_access_type == cgm_access_nc_store)
+		{
+			list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+			advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+		}
+		else
+		{
+			fatal("gpu_l2_cache_up_io_ctrl(): bad gpu access type\n");// str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		}
+
+	}
+
+	return;
+
+
+/*	list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+	advance(&gpu_s_cache[message_packet->gpu_cache_id]);*/
 
 }
 
 void gpu_l2_cache_down_io_ctrl(void){
 
+	int my_pid = gpu_l2_down_io_pid++;
+	long long step = 1;
 
+	/*int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;*/
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(gpu_l2_caches[my_pid].cache_io_down_ec, step);
+		step++;
+
+		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		//star todo fix this we need a top and bottom bus_width
+		transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
+
+		P_PAUSE(transfer_time);
+
+		/*printf("l2 -> SA\n");*/
+
+		list_enqueue(hub_iommu->Rx_queue_top[my_pid], message_packet);
+		advance(hub_iommu_ec);
+
+		//drop into the correct l1 cache queue.
+		/*if(message_packet->gpu_access_type == cgm_access_load_s)
+		{
+			list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+			advance(&gpu_s_cache[message_packet->gpu_cache_id]);
+		}
+		else if(message_packet->gpu_access_type == cgm_access_load_v ||
+						message_packet->gpu_access_type == cgm_access_store_v ||
+						message_packet->gpu_access_type == cgm_access_nc_store)
+		{
+			list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+			advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+		}
+		else
+		{
+			fatal("gpu_l2_cache_up_io_ctrl(): bad gpu access type\n");// str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		}*/
+
+	}
+	return;
 }

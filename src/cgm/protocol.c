@@ -1588,11 +1588,13 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//P_PAUSE(gpu_s_caches[message_packet->gpu_cache_id].wire_latency);
 
 					message_packet->access_type = cgm_access_puts;
-					list_remove(cache->last_queue, message_packet);
-					list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+					message_packet = list_remove(cache->last_queue, message_packet);
 
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
+					//list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+					//advance(&gpu_s_cache[message_packet->gpu_cache_id]);
 					//future_advance(&gpu_s_cache[message_packet->gpu_cache_id], WIRE_DELAY(gpu_s_caches[message_packet->gpu_cache_id].wire_latency));
-					advance(&gpu_s_cache[message_packet->gpu_cache_id]);
 
 				}
 				else if (message_packet->access_type == cgm_access_gets_v)
@@ -1613,10 +1615,12 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//P_PAUSE(gpu_v_caches[message_packet->gpu_cache_id].wire_latency);
 
 					message_packet->access_type = cgm_access_puts;
-					list_remove(cache->last_queue, message_packet);
-					list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+					message_packet = list_remove(cache->last_queue, message_packet);
+					//list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
 					//future_advance(&gpu_v_cache[message_packet->gpu_cache_id], WIRE_DELAY(gpu_v_caches[message_packet->gpu_cache_id].wire_latency));
-					advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+					//advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
 
 					/*CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Hit SEND %s to %s\n",
 							access_id, P_TIME, cache->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), l1_i_caches[cache->id].name);*/
@@ -1674,12 +1678,13 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
-			list_remove(cache->last_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(hub_iommu->Rx_queue_top[cache->id], message_packet);
+			//list_enqueue(hub_iommu->Rx_queue_top[cache->id], message_packet);
 			//list_enqueue(switches[cache->id].north_queue, message_packet);
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s send %s\n",
 					cache->name, access_id, P_TIME, cache->name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -1691,7 +1696,8 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			//advance the L2 cache adding some wire delay time.
 			//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
-			advance(hub_iommu_ec);
+			//advance(hub_iommu_ec);
+			advance(cache->cache_io_down_ec);
 
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss mshr status %d\n", cache->name, access_id, P_TIME, row);
 
@@ -1919,11 +1925,15 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						//P_PAUSE(gpu_s_caches[message_packet->gpu_cache_id].wire_latency);
 
 						message_packet->access_type = cgm_access_puts;
-						list_remove(cache->last_queue, message_packet);
-						list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+						message_packet = list_remove(cache->last_queue, message_packet);
+
+						//list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+						//advance(&gpu_s_cache[message_packet->gpu_cache_id]);
+						list_enqueue(cache->Tx_queue_top, message_packet);
+						advance(cache->cache_io_up_ec);
 
 						//future_advance(&gpu_s_cache[cache->id], WIRE_DELAY(gpu_s_caches[cache->id].wire_latency));
-						advance(&gpu_s_cache[message_packet->gpu_cache_id]);
+
 
 						//retry coalesced packets.
 						//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
@@ -1946,11 +1956,15 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 							list_count(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom));
 
 					message_packet->access_type = cgm_access_puts;
-					list_remove(cache->last_queue, message_packet);
-					list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+					message_packet = list_remove(cache->last_queue, message_packet);
+
+					//list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
 
 					//future_advance(&gpu_v_cache[cache->id], WIRE_DELAY(gpu_v_caches[cache->id].wire_latency));
-					advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+					//advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
 
 					//retry coalesced packets.
 					//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
