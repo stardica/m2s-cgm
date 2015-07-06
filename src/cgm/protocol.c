@@ -279,7 +279,8 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
+			//star here
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2_cache[%d] as %s\n",
 					cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
@@ -287,7 +288,10 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 
 			//advance the L2 cache adding some wire delay time.
 			//future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
-			advance(&l2_cache[cache->id]);
+
+			//list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
+			//advance(&l2_cache[cache->id]);
+			advance(cache->cache_io_down_ec);
 
 		}
 		else if (i >= 0 && i < cache->mshr_size)
@@ -443,17 +447,20 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
 
-			list_remove(cache->last_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-			list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
+
+			//list_enqueue(l2_caches[cache->id].Rx_queue_top, message_packet);
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
 					cache->name, access_id, P_TIME, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			CGM_DEBUG(protocol_debug_file, "%s Access_id %llu cycle %llu %s miss SEND %s %s\n",
 					cache->name, access_id, P_TIME, cache->name, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 			//advance the L2 cache adding some wire delay time.
-			advance(&l2_cache[cache->id]);
+			//advance(&l2_cache[cache->id]);
+			advance(cache->cache_io_down_ec);
 		}
 		else if (i >= 0 && i < cache->mshr_size)
 		{
@@ -573,11 +580,12 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					message_packet->access_type = cgm_access_puts;
 					message_packet->cache_block_state = *state_ptr;
 
-					list_remove(cache->last_queue, message_packet);
-					list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
-
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
+					//list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
+					//advance(&l1_i_cache[cache->id]);
 					//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
-					advance(&l1_i_cache[cache->id]);
 				}
 				else if (message_packet->access_type == cgm_access_gets_d)
 				{
@@ -596,11 +604,12 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					message_packet->access_type = cgm_access_puts;
 					message_packet->cache_block_state = *state_ptr;
 
-					list_remove(cache->last_queue, message_packet);
-					list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
-
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
+					//list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
+					//advance(&l1_d_cache[cache->id]);
 					//future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
-					advance(&l1_d_cache[cache->id]);
 				}
 				else
 				{
@@ -634,14 +643,19 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
-				list_remove(cache->last_queue, message_packet);
+				message_packet = list_remove(cache->last_queue, message_packet);
+
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 						cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-				list_enqueue(switches[cache->id].south_queue, message_packet);
-				advance(&switches_ec[cache->id]);
+				//list_enqueue(switches[cache->id].south_queue, message_packet);
+				//advance(&switches_ec[cache->id]);
 				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+
+				list_enqueue(cache->Tx_queue_top, message_packet);
+				advance(cache->cache_io_up_ec);
 				//done
+
 			}
 			else
 			{
@@ -694,11 +708,13 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				message_packet->dest_name = l3_caches[l3_map].name;
 				message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
-				list_remove(cache->last_queue, message_packet);
+				message_packet = list_remove(cache->last_queue, message_packet);
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 						cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-				list_enqueue(switches[cache->id].north_queue, message_packet);
+				//list_enqueue(switches[cache->id].north_queue, message_packet);
+
+				list_enqueue(cache->Tx_queue_bottom, message_packet);
 
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] send %s\n",
 						cache->name, access_id, P_TIME, l3_map, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -707,8 +723,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 						access_id, P_TIME, cache->name, l3_caches[l3_map].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 				//advance the L2 cache adding some wire delay time.
-				advance(&switches_ec[cache->id]);
+				//advance(&switches_ec[cache->id]);
 				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
+
+				advance(cache->cache_io_down_ec);
 
 			}
 			else if (i >= 0 && i < cache->mshr_size)
@@ -746,8 +764,10 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
 			//success
-			list_remove(cache->last_queue, message_packet);
-			list_enqueue(switches[cache->id].south_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
+
+			//list_enqueue(switches[cache->id].south_queue, message_packet);
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l3_cache[%d] as %s\n",
 					cache->name, access_id, P_TIME, cache->id, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
@@ -755,7 +775,8 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Miss SEND %s %s\n",
 				access_id, P_TIME, cache->name, system_agent->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-			advance(&switches_ec[cache->id]);
+			//advance(&switches_ec[cache->id]);
+			advance(cache->cache_io_down_ec);
 
 		}
 		else
@@ -1024,10 +1045,14 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						P_PAUSE(cache->latency);
 
 						message_packet->access_type = cgm_access_puts;
-						list_remove(cache->last_queue, message_packet); /*check here */
-						list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
 
-						advance(&l1_i_cache[cache->id]);
+						message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+
+						list_enqueue(cache->Tx_queue_top, message_packet);
+						advance(cache->cache_io_up_ec);
+
+						//list_enqueue(l1_i_caches[cache->id].Rx_queue_bottom, message_packet);
+						//advance(&l1_i_cache[cache->id]);
 						//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 
 						//retry coalesced packets.
@@ -1050,11 +1075,14 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 							cache->name, access_id, P_TIME, l1_d_caches[cache->id].Rx_queue_bottom->name, list_count(l1_d_caches[cache->id].Rx_queue_bottom));
 
 					message_packet->access_type = cgm_access_puts;
-					list_remove(cache->last_queue, message_packet); /*check here */
-					list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
 
-					advance(&l1_d_cache[cache->id]);
+					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+					//list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
+					//advance(&l1_d_cache[cache->id]);
 					//future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
+
+					list_enqueue(cache->Tx_queue_top, message_packet);
+					advance(cache->cache_io_up_ec);
 
 					//retry coalesced packets.
 					cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
@@ -1266,11 +1294,12 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			P_PAUSE(cache->latency);
 			//P_PAUSE(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].wire_latency);
 
-			list_remove(cache->last_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top, message_packet);
+			//list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top, message_packet);
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
 					cache->name, access_id, P_TIME, gpu_l2_caches[cgm_gpu_cache_map(cache->id)].name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
@@ -1279,7 +1308,8 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 
 			//advance the L2 cache adding some wire delay time.
 			//future_advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)], WIRE_DELAY(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].wire_latency));
-			advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)]);
+			//advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)]);
+			advance(cache->cache_io_down_ec);
 
 		}
 		else if (i >= 0 && i < cache->mshr_size)
@@ -1431,11 +1461,12 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			/*change the access type for the coherence protocol and drop into the L2's queue
 			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
 
-			list_remove(cache->last_queue, message_packet);
+			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
-			list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top, message_packet);
+			//list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].Rx_queue_top, message_packet);
+			list_enqueue(cache->Tx_queue_bottom, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
 					cache->name, access_id, P_TIME, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			CGM_DEBUG(protocol_debug_file, "%s Access_id %llu cycle %llu %s miss SEND %s %s\n",
@@ -1444,7 +1475,8 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			//advance the L2 cache adding some wire delay time.
 			//future_advance(&l2_cache[cache->id], WIRE_DELAY(l2_caches[cache->id].wire_latency));
 
-			advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)]);
+			//advance(&gpu_l2_cache[cgm_gpu_cache_map(cache->id)]);
+			advance(cache->cache_io_down_ec);
 		}
 		else if (i >= 0 && i < cache->mshr_size)
 		{

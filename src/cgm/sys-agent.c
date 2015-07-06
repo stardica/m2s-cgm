@@ -201,12 +201,12 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 	if(access_type == cgm_access_gets)
 	{
-		while(!memctrl_can_access())
+		/*while(!memctrl_can_access())
 		{
 			//stalling
 			printf("SA stalling down\n");
 			P_PAUSE(1);
-		}
+		}*/
 
 		P_PAUSE(system_agent->latency);
 
@@ -229,11 +229,11 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		message_packet->src_name = system_agent->name;
 		message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
 
-		while(!switch_can_access(system_agent->switch_queue))
+		/*while(!switch_can_access(system_agent->switch_queue))
 		{
 			printf("SA stalling up\n");
 			P_PAUSE(1);
-		}
+		}*/
 
 		P_PAUSE(system_agent->latency);
 
@@ -248,7 +248,6 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
-
 	}
 
 	return;
@@ -289,12 +288,14 @@ void sys_agent_ctrl_io_up(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/system_agent->up_bus_width);
 
-		while(transfer_time > 0)
-		{
-			P_PAUSE(1);
-			transfer_time--;
-			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
-		}
+		P_PAUSE(transfer_time);
+
+		/*while(transfer_time > 0)
+		{*/
+			//P_PAUSE(1);
+			//transfer_time--;
+			//printf("Access_id %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
+		/*}*/
 
 		list_enqueue(system_agent->switch_queue, message_packet);
 		advance(&switches_ec[system_agent->switch_id]);
@@ -324,11 +325,14 @@ void sys_agent_ctrl_io_down(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/system_agent->down_bus_width);
 
-		while(transfer_time > 0)
+		P_PAUSE(transfer_time);
+
+		/*while(transfer_time > 0)
 		{
 			P_PAUSE(1);
 			transfer_time--;
-		}
+			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
+		}*/
 
 		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
 		advance(mem_ctrl_ec);
@@ -353,32 +357,41 @@ void sys_agent_ctrl(void){
 	while(1)
 	{
 		await(system_agent_ec, step);
-		step++;
 
-		//if we are here there should be a message in the queue
-		message_packet = sysagent_get_message();
-		assert(message_packet);
-
-		access_type = message_packet->access_type;
-		access_id = message_packet->access_id;
-		//addr = message_packet->address;
-
-		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-				system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
-
-
-		//star todo this is where we will receive our other directory coherence messages
-		//for now lets just patch it up.
-		if(access_type == cgm_access_gets || access_type == cgm_access_puts)
+		if(!memctrl_can_access() || !switch_can_access(system_agent->switch_queue))
 		{
-			system_agent_route(message_packet);
+			//printf("SA stalling down\n");
+			P_PAUSE(1);
 		}
 		else
 		{
-			fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
-					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			step++;
+
+			//if we are here there should be a message in the queue
+			message_packet = sysagent_get_message();
+			assert(message_packet);
+
+			access_type = message_packet->access_type;
+			access_id = message_packet->access_id;
+			//addr = message_packet->address;
+
+			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+					system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
+
+			//star todo this is where we will receive our other directory coherence messages
+			//for now lets just patch it up.
+			if(access_type == cgm_access_gets || access_type == cgm_access_puts)
+			{
+				system_agent_route(message_packet);
+			}
+			else
+			{
+				fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
+						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			}
 		}
 	}
+
 	fatal("sys_agent_ctrl task is broken\n");
 	return;
 }

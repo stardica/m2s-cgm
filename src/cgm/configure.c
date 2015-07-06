@@ -443,6 +443,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int DirectoryLatency = 0;
 	int WireLatency = 0;
 	int maxcoal = 0;
+	int Bus_width = 0;
 
 	////////////////////////
 	//MISC Settings
@@ -605,6 +606,20 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Bus", "CPUL2-CPUL1"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_d_caches[i].bus_width = Bus_width;
+		}
+
+		if(l1_d_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): d cache bus width is out of bounds %d\n", Bus_width);
+		}
+	}
+
 
 	////////////////////////
 	//l1_i_caches
@@ -698,6 +713,20 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].num_ports = Ports;
+		}
+	}
+
+	if(MATCH("Bus", "CPUL2-CPUL1"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l1_i_caches[i].bus_width = Bus_width;
+		}
+
+		if(l1_i_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): i cache bus width is out of bounds %d\n", Bus_width);
 		}
 	}
 
@@ -797,6 +826,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Bus", "Switches"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l2_caches[i].bus_width = Bus_width;
+		}
+
+		if(l2_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): l2 cache bus width is out of bounds %d\n", Bus_width);
+		}
+	}
 
 	////////////////////////
 	//l3_caches
@@ -923,6 +965,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Bus", "Switches"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].bus_width = Bus_width;
+		}
+
+		if(l3_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): l3 cache bus width is out of bounds %d\n", Bus_width);
+		}
+	}
 
 
 	////////////
@@ -1016,6 +1071,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Bus", "GPUL2-GPUL1"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_s_caches[i].bus_width = Bus_width;
+		}
+
+		if(gpu_s_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): s cache bus width is out of bounds %d\n", Bus_width);
+		}
+	}
 
 	////////////////////////
 	//gpu_v_caches
@@ -1103,6 +1171,19 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Bus", "GPUL2-GPUL1"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_v_caches[i].bus_width = Bus_width;
+		}
+
+		if(gpu_v_caches[i].bus_width == 0)
+		{
+			fatal("cache_read_config(): v cache bus width is out of bounds %d\n", Bus_width);
+		}
+	}
 
 
 	////////////////////////
@@ -1196,6 +1277,22 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		{
 			gpu_l2_caches[i].wire_latency = WireLatency;
 		}
+	}
+
+	if(MATCH("Bus", "Switches"))
+	{
+		Bus_width = atoi(value);
+		for (i = 0; i < gpu_group_cache_num; i++)
+		{
+			gpu_l2_caches[i].bus_width = Bus_width;
+
+			if(gpu_l2_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): gpu l2 cache bus width is out of bounds %d\n", gpu_l2_caches[i].bus_width);
+			}
+		}
+
+
 	}
 
 	return 0;
@@ -1296,6 +1393,40 @@ int cache_finish_create(){
 			}
 		}
 
+		/*l1_i_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_top", i);
+		l1_i_caches[i].Tx_queue_top->name = strdup(buff);*/
+
+		l1_i_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_bottom", i);
+		l1_i_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		/*l1_i_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
+		l1_i_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l1_i_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		l1_i_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		/*l1_i_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
+		l1_i_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l1_i_caches[i].cache_io_up_tasks = create_task(l1_i_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		l1_i_caches[i].cache_io_down_tasks = create_task(l1_i_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 		/////////////
 		//L1 D Cache
 		/////////////
@@ -1380,6 +1511,41 @@ int cache_finish_create(){
 				l1_d_caches[i].ort[j][k] = -1;
 			}
 		}
+
+		/*l1_i_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_top", i);
+		l1_i_caches[i].Tx_queue_top->name = strdup(buff);*/
+
+		l1_d_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Tx_queue_bottom", i);
+		l1_d_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		/*l1_i_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
+		l1_d_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l1_i_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		l1_d_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		/*l1_i_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
+		l1_d_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l1_i_caches[i].cache_io_up_tasks = create_task(l1_i_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		l1_d_caches[i].cache_io_down_tasks = create_task(l1_d_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 
 		/////////////
 		//L2 Cache
@@ -1466,6 +1632,39 @@ int cache_finish_create(){
 			}
 		}
 
+		l2_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].Tx_queue_top", i);
+		l2_caches[i].Tx_queue_top->name = strdup(buff);
+
+		l2_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].Tx_queue_bottom", i);
+		l2_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		l2_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
+		l2_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l2_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		l2_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		l2_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));
+		l2_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l2_caches[i].cache_io_up_tasks = create_task(l2_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		l2_caches[i].cache_io_down_tasks = create_task(l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 
 		/////////////
@@ -1550,6 +1749,41 @@ int cache_finish_create(){
 				l3_caches[i].ort[j][k] = -1;
 			}
 		}
+
+		l3_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
+		l3_caches[i].Tx_queue_top->name = strdup(buff);
+
+		l3_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Tx_queue_bottom", i);
+		l3_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
+		l3_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l3_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		l3_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		l3_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));
+		l3_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l3_caches[i].cache_io_up_tasks = create_task(l3_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		l3_caches[i].cache_io_down_tasks = create_task(l3_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 
 
 		//Initialize array of sets
@@ -1718,6 +1952,40 @@ int cache_finish_create(){
 			}
 		}
 
+		/*l3_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
+		l3_caches[i].Tx_queue_top->name = strdup(buff);*/
+
+		gpu_s_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].Tx_queue_bottom", i);
+		gpu_s_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		/*l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
+		gpu_s_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l3_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		gpu_s_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		/*l3_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
+		gpu_s_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l3_caches[i].cache_io_up_tasks = create_task(l3_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		gpu_s_caches[i].cache_io_down_tasks = create_task(gpu_s_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 		/////////////
 		//GPU V Cache
 		/////////////
@@ -1799,6 +2067,40 @@ int cache_finish_create(){
 				gpu_v_caches[i].ort[j][k] = -1;
 			}
 		}
+
+		/*l3_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
+		l3_caches[i].Tx_queue_top->name = strdup(buff);*/
+
+		gpu_v_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].Tx_queue_bottom", i);
+		gpu_v_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		/*l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
+		gpu_v_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		l3_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		gpu_v_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		/*l3_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
+		gpu_v_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		/*memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		l3_caches[i].cache_io_up_tasks = create_task(l3_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		gpu_v_caches[i].cache_io_down_tasks = create_task(gpu_v_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 
 		//LDS caches
@@ -1969,6 +2271,40 @@ int cache_finish_create(){
 			}
 		}
 
+		gpu_l2_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].Tx_queue_top", i);
+		gpu_l2_caches[i].Tx_queue_top->name = strdup(buff);
+
+		gpu_l2_caches[i].Tx_queue_bottom = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].Tx_queue_bottom", i);
+		gpu_l2_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//io ctrl
+		gpu_l2_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
+		gpu_l2_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_ec");
+		gpu_l2_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_ec");
+		gpu_l2_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
+
+		//io tasks
+		gpu_l2_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));
+		gpu_l2_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_up_task");
+		gpu_l2_caches[i].cache_io_up_tasks = create_task(gpu_l2_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "cache_io_down_task");
+		gpu_l2_caches[i].cache_io_down_tasks = create_task(gpu_l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < gpu_l2_caches[i].num_sets; set++)
 		{
@@ -1986,8 +2322,6 @@ int cache_finish_create(){
 			}
 		}
 	}
-
-
 
 	return 0;
 }
@@ -2105,6 +2439,7 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int i = 0;
 	int WireLatency = 0;
 	int Latency = 0;
+	int Bus_width = 0;
 
 	//star todo fix this
 	int extras = 1;
@@ -2137,6 +2472,21 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		for (i = 0; i < (num_cores + extras); i++)
 		{
 			switches[i].latency = Latency;
+		}
+	}
+
+	if(MATCH("Bus", "Switches"))
+	{
+		Bus_width = atoi(value);
+
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			switches[i].bus_width = Bus_width;
+
+			if(switches[i].bus_width == 0)
+			{
+				fatal("switch_read_config(): switch bus width is out of bounds\n");
+			}
 		}
 	}
 
@@ -2176,6 +2526,7 @@ int switch_finish_create(void){
 			snprintf(buff, 100, "switch[%d]", i);
 			switches[i].name = strdup(buff);
 
+			//Rx queues
 			switches[i].north_queue = list_create();
 			switches[i].east_queue = list_create();
 			switches[i].south_queue = list_create();
@@ -2197,13 +2548,34 @@ int switch_finish_create(void){
 			snprintf(buff, 100, "switch[%d].west_queue", i);
 			switches[i].west_queue->name = strdup(buff);
 
+			//Tx queues
+			switches[i].Tx_north_queue = list_create();
+			switches[i].Tx_east_queue = list_create();
+			switches[i].Tx_south_queue = list_create();
+			switches[i].Tx_west_queue = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].Tx_north_queue", i);
+			switches[i].Tx_north_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].Tx_east_queue", i);
+			switches[i].Tx_east_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].Tx_south_queue", i);
+			switches[i].Tx_south_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].Tx_west_queue", i);
+			switches[i].Tx_west_queue->name = strdup(buff);
+
+
 			//init the queue pointer
 			switches[i].queue = west_queue;
 
 			//init the switche's network node number
-
 			//star todo fix this (we shouldn't need to specifiy this).
-
 			//for now manually set the last switch to node 13
 			//if you don't you can't change the number of cores from 4
 			if(i == num_cores)
@@ -2215,9 +2587,52 @@ int switch_finish_create(void){
 				switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
 			}
 
-
-
 			median ++;//= switches[i].switch_node_number;
+
+			//io event counts
+			switches[i].switches_north_io_ec = (void *) calloc((1), sizeof(eventcount));
+			switches[i].switches_east_io_ec = (void *) calloc((1), sizeof(eventcount));
+			switches[i].switches_south_io_ec = (void *) calloc((1), sizeof(eventcount));
+			switches[i].switches_west_io_ec = (void *) calloc((1), sizeof(eventcount));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_north_io_ec");
+			switches[i].switches_north_io_ec = new_eventcount(strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_east_io_ec");
+			switches[i].switches_east_io_ec = new_eventcount(strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_south_io_ec");
+			switches[i].switches_south_io_ec = new_eventcount(strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_west_io_ec");
+			switches[i].switches_west_io_ec = new_eventcount(strdup(buff));
+
+			//io tasks
+			switches[i].switches_north_io_tasks = (void *) calloc((1), sizeof(task));
+			switches[i].switches_east_io_tasks = (void *) calloc((1), sizeof(task));
+			switches[i].switches_south_io_tasks = (void *) calloc((1), sizeof(task));
+			switches[i].switches_west_io_tasks = (void *) calloc((1), sizeof(task));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_north_io_task");
+			switches[i].switches_north_io_tasks = create_task(switch_north_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_east_io_task");
+			switches[i].switches_east_io_tasks = create_task(switch_east_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_south_io_task");
+			switches[i].switches_south_io_tasks = create_task(switch_south_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+			memset(buff,'\0' , 100);
+			snprintf(buff, 100, "switch_west_io_task");
+			switches[i].switches_west_io_tasks = create_task(switch_west_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
 		}
 
 		//init the median node number on all switches
@@ -2252,10 +2667,7 @@ int switch_finish_create(void){
 				switches[i].next_east = switches[0].west_queue;
 				switches[i].next_east_id = 0;
 			}
-
-			//printf("switch %d next east queue name %s, next west queue name %s\n", i, switches[i].next_east->name, switches[i].next_west->name);
 		}
-		//getchar();
 	}
 	else if(switches[0].port_num == 6)
 	{

@@ -138,6 +138,7 @@ struct cache_t{
 	enum cache_policy_t policy;
 	int policy_type;
 	int slice_type;
+	int bus_width;
 
 	//cache data
 	struct cache_set_t *sets;
@@ -162,6 +163,15 @@ struct cache_t{
 	struct list_t *next_queue;
 	struct list_t *last_queue;
 	struct list_t *retry_queue;
+	struct list_t *Tx_queue_top;
+	struct list_t *Tx_queue_bottom;
+
+	//io ctrl
+	eventcount volatile *cache_io_up_ec;
+	task *cache_io_up_tasks;
+
+	eventcount volatile *cache_io_down_ec;
+	task *cache_io_down_tasks;
 
 	//physical characteristics
 	unsigned int latency;
@@ -221,6 +231,17 @@ extern int gpu_s_pid;
 extern int gpu_l2_pid;
 extern int gpu_lds_pid;
 
+extern int l1_i_io_pid;
+extern int l1_d_io_pid;
+extern int l2_up_io_pid;
+extern int l2_down_io_pid;
+extern int l3_up_io_pid;
+extern int l3_down_io_pid;
+extern int gpu_v_io_pid;
+extern int gpu_s_io_pid;
+extern int gpu_l2_io_pid;
+extern int gpu_lds_io_pid;
+
 //event counts
 extern eventcount volatile *l1_i_cache;
 extern eventcount volatile *l1_d_cache;
@@ -256,6 +277,23 @@ void gpu_s_cache_ctrl(void);
 void gpu_v_cache_ctrl(void);
 void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
+
+/*void l1_i_cache_up_io_ctrl(void);*/
+void l1_i_cache_down_io_ctrl(void);
+/*void l1_d_cache_up_io_ctrl(void);*/
+void l1_d_cache_down_io_ctrl(void);
+void l2_cache_up_io_ctrl(void);
+void l2_cache_down_io_ctrl(void);
+void l3_cache_up_io_ctrl(void);
+void l3_cache_down_io_ctrl(void);
+
+/*void l1_i_cache_up_io_ctrl(void);*/
+void gpu_s_cache_down_io_ctrl(void);
+/*void l1_d_cache_up_io_ctrl(void);*/
+void gpu_v_cache_down_io_ctrl(void);
+void gpu_l2_cache_up_io_ctrl(void);
+void gpu_l2_cache_down_io_ctrl(void);
+
 
 //protocol functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);

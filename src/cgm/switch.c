@@ -14,9 +14,16 @@
 struct switch_t *switches;
 eventcount volatile *switches_ec;
 task *switches_tasks;
-
 int switch_pid = 0;
 
+int switch_north_io_pid = 0;
+int switch_east_io_pid = 0;
+int switch_south_io_pid = 0;
+int switch_west_io_pid = 0;
+
+/*eventcount volatile *switches_io_ec;
+task *switches_io_tasks;
+int switch_io_pid = 0;*/
 
 /*int *ring_adj_mat[node_number][node_number] =
 {
@@ -227,6 +234,8 @@ void switch_create_tasks(void){
 		switches_tasks[i] = *(create_task(switch_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
+	//event counts and tasks for io ctrl are over in configure.
+
 	return;
 }
 
@@ -312,7 +321,7 @@ void switch_ctrl(void){
 					//check the dest queue, if it is busy try another packet
 					if(!cache_can_access_bottom(&l2_caches[my_pid]))
 					{
-						printf("entered switch\n");
+						//printf("entered switch\n");
 						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
 					else
@@ -324,10 +333,12 @@ void switch_ctrl(void){
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the cache's queue
-						list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
-
-						advance(&l2_cache[my_pid]);
+						//list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 						//future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+						//advance(&l2_cache[my_pid]);
+
+						list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
+						advance(switches[my_pid].switches_north_io_ec);
 
 						//done with this access
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
@@ -355,10 +366,13 @@ void switch_ctrl(void){
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the hub's bottom queue
-						list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
-
-						advance(hub_iommu_ec);
+						//list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+						//advance(hub_iommu_ec);
 						//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
+
+						list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
+						advance(switches[my_pid].switches_north_io_ec);
+
 						//done with this access
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
@@ -378,6 +392,10 @@ void switch_ctrl(void){
 						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
 						P_PAUSE(1);
 					}*/
+
+
+					//star todo fix this, the divert is down in IO ctrl now.
+
 
 					//divert to correct input queue based on access type
 					if(message_packet->access_type == cgm_access_gets)
@@ -409,9 +427,13 @@ void switch_ctrl(void){
 
 							//old code
 							//drop the packet into the cache's queue
-							list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-							advance(&l3_cache[my_pid]);
+							//list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+							//advance(&l3_cache[my_pid]);
 							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+
+							list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
+							advance(switches[my_pid].switches_south_io_ec);
+
 							//done with this access
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
@@ -444,8 +466,12 @@ void switch_ctrl(void){
 
 							//old code
 							//drop the packet into the cache's queue
-							list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
-							advance(&l3_cache[my_pid]);
+							//list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+							//advance(&l3_cache[my_pid]);
+
+							list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
+							advance(switches[my_pid].switches_south_io_ec);
+
 							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
 							//done with this access
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
@@ -476,9 +502,12 @@ void switch_ctrl(void){
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the sys agent queue
-						list_enqueue(system_agent->Rx_queue_top, message_packet);
+						//list_enqueue(system_agent->Rx_queue_top, message_packet);
+						//advance(system_agent_ec);
 
-						advance(system_agent_ec);
+						list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
+						advance(switches[my_pid].switches_south_io_ec);
+
 						//future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
 						//done with this access
 
@@ -544,10 +573,12 @@ void switch_ctrl(void){
 							remove_from_queue(&switches[my_pid], message_packet);
 
 							//drop the packet into the next switche's queue
-							list_enqueue(switches[my_pid].next_east, message_packet);
-
-							advance(&switches_ec[switches[my_pid].next_east_id]);
+							//list_enqueue(switches[my_pid].next_east, message_packet);
+							//advance(&switches_ec[switches[my_pid].next_east_id]);
 							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+							list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
+							advance(switches[my_pid].switches_east_io_ec);
 
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
@@ -576,10 +607,12 @@ void switch_ctrl(void){
 							remove_from_queue(&switches[my_pid], message_packet);
 
 							//drop the packet into the next switche's queue
-							list_enqueue(switches[my_pid].next_west, message_packet);
-
-							advance(&switches_ec[switches[my_pid].next_west_id]);
+							//list_enqueue(switches[my_pid].next_west, message_packet);
+							//advance(&switches_ec[switches[my_pid].next_west_id]);
 							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+							list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
+							advance(switches[my_pid].switches_west_io_ec);
 
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
@@ -614,10 +647,12 @@ void switch_ctrl(void){
 							remove_from_queue(&switches[my_pid], message_packet);
 
 							//drop the packet into the next switche's queue
-							list_enqueue(switches[my_pid].next_west, message_packet);
-
-							advance(&switches_ec[switches[my_pid].next_west_id]);
+							//list_enqueue(switches[my_pid].next_west, message_packet);
+							//advance(&switches_ec[switches[my_pid].next_west_id]);
 							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+							list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
+							advance(switches[my_pid].switches_west_io_ec);
 
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
@@ -646,10 +681,12 @@ void switch_ctrl(void){
 							remove_from_queue(&switches[my_pid], message_packet);
 
 							//drop the packet into the next switche's queue
-							list_enqueue(switches[my_pid].next_east, message_packet);
-
-							advance(&switches_ec[switches[my_pid].next_east_id]);
+							//list_enqueue(switches[my_pid].next_east, message_packet);
+							//advance(&switches_ec[switches[my_pid].next_east_id]);
 							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+							list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
+							advance(switches[my_pid].switches_east_io_ec);
 
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
@@ -683,10 +720,12 @@ void switch_ctrl(void){
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
-						list_enqueue(switches[my_pid].next_west, message_packet);
-
-						advance(&switches_ec[switches[my_pid].next_west_id]);
+						//list_enqueue(switches[my_pid].next_west, message_packet);
+						//advance(&switches_ec[switches[my_pid].next_west_id]);
 						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
+
+						list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
+						advance(switches[my_pid].switches_west_io_ec);
 
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
@@ -715,10 +754,12 @@ void switch_ctrl(void){
 						remove_from_queue(&switches[my_pid], message_packet);
 
 						//drop the packet into the next switche's queue
-						list_enqueue(switches[my_pid].next_east, message_packet);
-
-						advance(&switches_ec[switches[my_pid].next_east_id]);
+						//list_enqueue(switches[my_pid].next_east, message_packet);
+						//advance(&switches_ec[switches[my_pid].next_east_id]);
 						//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
+
+						list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
+						advance(switches[my_pid].switches_east_io_ec);
 
 						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 					}
@@ -906,4 +947,183 @@ enum port_name get_next_queue_rb(enum port_name queue){
 	}
 
 	return next_queue;
+}
+
+void switch_north_io_ctrl(void){
+
+	int my_pid = switch_north_io_pid++;
+	long long step = 1;
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(switches[my_pid].switches_north_io_ec, step);
+		step++;
+
+		message_packet = list_dequeue(switches[my_pid].Tx_north_queue);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/switches[my_pid].bus_width);
+
+		//printf("switch in north IO ctrl tx time %d cycle %llu\n", transfer_time, P_TIME);
+		P_PAUSE(transfer_time);
+
+		if(my_pid < num_cores)
+		{
+			list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+			advance(&l2_cache[my_pid]);
+		}
+		else if(my_pid >= num_cores)
+		{
+			list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+			advance(hub_iommu_ec);
+		}
+		else
+		{
+			fatal("switch_north_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
+		}
+	}
+
+	return;
+}
+
+void switch_east_io_ctrl(void){
+
+	int my_pid = switch_east_io_pid++;
+	long long step = 1;
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(switches[my_pid].switches_east_io_ec, step);
+		step++;
+
+		message_packet = list_dequeue(switches[my_pid].Tx_east_queue);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/switches[my_pid].bus_width);
+
+		P_PAUSE(transfer_time);
+
+		//drop into next east queue.
+		list_enqueue(switches[my_pid].next_east, message_packet);
+		advance(&switches_ec[switches[my_pid].next_east_id]);
+	}
+
+	return;
+}
+
+void switch_west_io_ctrl(void){
+
+	int my_pid = switch_west_io_pid++;
+	long long step = 1;
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(switches[my_pid].switches_west_io_ec, step);
+		step++;
+
+		message_packet = list_dequeue(switches[my_pid].Tx_west_queue);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/switches[my_pid].bus_width);
+
+		P_PAUSE(transfer_time);
+
+		//drop into next east queue.
+		list_enqueue(switches[my_pid].next_west, message_packet);
+		advance(&switches_ec[switches[my_pid].next_west_id]);
+	}
+
+	return;
+
+}
+
+void switch_south_io_ctrl(void){
+
+	int my_pid = switch_south_io_pid++;
+	long long step = 1;
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *message_packet;
+	long long access_id = 0;
+	int transfer_time = 0;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		await(switches[my_pid].switches_south_io_ec, step);
+		step++;
+
+		message_packet = list_dequeue(switches[my_pid].Tx_south_queue);
+		assert(message_packet);
+
+		access_id = message_packet->access_id;
+		transfer_time = (message_packet->size/switches[my_pid].bus_width);
+
+		P_PAUSE(transfer_time);
+
+		/*printf("in south IO ctrl tx time %d\n", transfer_time);
+		getchar();*/
+
+		//L3 caches
+		if(my_pid < num_cores)
+		{
+			//put the message in the right queue.
+			if(message_packet->access_type == cgm_access_gets)
+			{
+				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+			}
+			if(message_packet->access_type == cgm_access_puts)
+			{
+				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+			}
+
+			advance(&l3_cache[my_pid]);
+		}
+		//Sys Agent
+		else if(my_pid >= num_cores)
+		{
+			list_enqueue(system_agent->Rx_queue_top, message_packet);
+			advance(system_agent_ec);
+		}
+		else
+		{
+			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
+		}
+
+	}
+
+	return;
 }

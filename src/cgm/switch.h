@@ -176,13 +176,12 @@ enum arbitrate{
 
 struct switch_t{
 
-	//parts
-	//cache queues
 	char *name;
 	int switch_node_number;
 	float switch_median_node;
 	int port_num;
 	int latency;
+	int bus_width;
 
 	/*int num_routes;
 	struct route_t *my_routes;*/
@@ -193,17 +192,34 @@ struct switch_t{
 
 	//for switches with 4 ports
 	struct list_t *north_queue;
+	struct list_t *Tx_north_queue;
 	//struct list_t *north_queue_lane1;
 	//struct list_t *north_queue_lane2;
 	struct list_t *east_queue;
+	struct list_t *Tx_east_queue;
 	//struct list_t *east_queue_lane1;
 	//struct list_t *east_queue_lane2;
 	struct list_t *south_queue;
+	struct list_t *Tx_south_queue;
 	//struct list_t *south_queue_lane1;
 	//struct list_t *south_queue_lane2;
 	struct list_t *west_queue;
+	struct list_t *Tx_west_queue;
 	//struct list_t *west_queue_lane1;
 	//struct list_t *west_queue_lane2;
+
+	//io ctrl
+	eventcount volatile *switches_north_io_ec;
+	task *switches_north_io_tasks;
+
+	eventcount volatile *switches_east_io_ec;
+	task *switches_east_io_tasks;
+
+	eventcount volatile *switches_south_io_ec;
+	task *switches_south_io_tasks;
+
+	eventcount volatile *switches_west_io_ec;
+	task *switches_west_io_tasks;
 
 	//for switches with 6 ports
 	//struct list_t *forward_queue_lane1;
@@ -219,7 +235,6 @@ struct switch_t{
 	struct list_t *next_west;
 
 	struct list_t *current_queue;
-
 	//struct list_t *next_forward;
 	//struct list_t *next_back;
 
@@ -234,17 +249,29 @@ extern struct str_map_t l2_strn_map;
 extern struct str_map_t gpu_l1_strn_map;
 extern struct str_map_t gpu_l2_strn_map;
 
-
 extern struct switch_t *switches;
 extern eventcount volatile *switches_ec;
 extern task *switches_tasks;
 extern int switch_pid;
+
+extern int switch_north_io_pid;
+extern int switch_east_io_pid;
+extern int switch_south_io_pid;
+extern int switch_west_io_pid;
+
+/*extern eventcount volatile *switches_io_ec;
+extern task *switches_io_tasks;
+extern int switch_io_pid;*/
 
 //function prototypes
 void switch_init(void);
 void switch_create(void);
 void switch_create_tasks(void);
 void switch_ctrl(void);
+void switch_north_io_ctrl(void);
+void switch_east_io_ctrl(void);
+void switch_west_io_ctrl(void);
+void switch_south_io_ctrl(void);
 
 float switch_get_distance(int dest_node, int src_node);
 int switch_can_access(struct list_t *queue);

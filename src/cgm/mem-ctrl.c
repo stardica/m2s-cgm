@@ -118,12 +118,14 @@ void memctrl_ctrl_io(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/mem_ctrl->bus_width);
 
-		while(transfer_time > 0)
+		P_PAUSE(transfer_time);
+
+		/*while(transfer_time > 0)
 		{
 			P_PAUSE(1);
 			transfer_time--;
 			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
-		}
+		}*/
 
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 		advance(system_agent_ec);
