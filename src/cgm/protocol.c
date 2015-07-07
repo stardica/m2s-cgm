@@ -92,6 +92,7 @@ struct cgm_packet_status_t *status_packet_create(void){
 
 	new_packet = (void *) calloc(1, sizeof(struct cgm_packet_status_t));
 
+
 	return new_packet;
 }
 
@@ -255,7 +256,6 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			fatal("cpu_l1_cache_access_load(): invalid CPU l1 cache access type access_id %llu cycle %llu", access_id, P_TIME);
 		}
 
-
 		//miss so check ORT status
 		i = ort_search(cache, tag, set);
 
@@ -394,7 +394,7 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			cache->hits++;
 
 			//star todo change this to work as a message sent to the directory
-			//also need to send invalidataions out.
+			//also need to send invalidations out.
 			/*if(*state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared)
 			{
 				cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_modified);
@@ -2020,7 +2020,6 @@ void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr
 			//this may cause problems the intent is to run one coalesced packet per iteration of the retry state.
 			return;
 		}
-
 	}
 	//no coalesced packets remaining.
 	return;

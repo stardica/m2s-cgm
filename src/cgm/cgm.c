@@ -547,7 +547,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		free(new_packet);
 	}
 
-	//Add to the target L1 Cache Rx Queue
+	//Add to the target cache Rx queue
 	if(access_kind == cgm_access_load_s)
 	{
 		//get the core ID number should be <= number of cores

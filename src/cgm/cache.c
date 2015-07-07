@@ -611,11 +611,11 @@ int cgm_gpu_cache_map(int cache_id){
 
 int cache_can_access_top(struct cache_t *cache){
 
-	int i = 0;
-	int j = 0;
+	/*int i = 0;
+	int j = 0;*/
 
 	//check if mshr/ort queue is full
-	for (i = 0; i < cache->mshr_size; i++)
+	/*for (i = 0; i < cache->mshr_size; i++)
 	{
 		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
 		{
@@ -627,7 +627,7 @@ int cache_can_access_top(struct cache_t *cache){
 	if(i >= cache->mshr_size -1)
 	{
 		return 0;
-	}
+	}*/
 
 
 	//check if in queue is full
@@ -899,6 +899,9 @@ void l1_i_cache_ctrl(void){
 			{
 				cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 			}
+
+
+
 			else if (access_type == cgm_access_puts)
 			{
 				//message from L2
@@ -1143,6 +1146,7 @@ void gpu_s_cache_ctrl(void){
 
 			if (access_type == cgm_access_load_s)
 			{
+				//gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
 				gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)

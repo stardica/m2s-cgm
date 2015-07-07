@@ -15,9 +15,6 @@
 #include <cgm/tasking.h>
 
 
-
-
-
 #include <cgm/mshr.h>
 */
 
@@ -612,14 +609,13 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_d_caches[i].bus_width = Bus_width;
-		}
 
-		if(l1_d_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): d cache bus width is out of bounds %d\n", Bus_width);
+			if(l1_d_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): d cache bus width is out of bounds %d\n", l1_d_caches[i].bus_width);
+			}
 		}
 	}
-
 
 	////////////////////////
 	//l1_i_caches
@@ -722,15 +718,13 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].bus_width = Bus_width;
-		}
 
-		if(l1_i_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): i cache bus width is out of bounds %d\n", Bus_width);
+			if(l1_i_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): i cache bus width is out of bounds %d\n", l1_i_caches[i].bus_width);
+			}
 		}
 	}
-
-
 
 	////////////////////////
 	//l2_caches
@@ -832,11 +826,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cores; i++)
 		{
 			l2_caches[i].bus_width = Bus_width;
-		}
 
-		if(l2_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): l2 cache bus width is out of bounds %d\n", Bus_width);
+			if(l2_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): l2 cache bus width is out of bounds %d\n", l2_caches[i].bus_width);
+			}
 		}
 	}
 
@@ -968,14 +962,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Bus", "Switches"))
 	{
 		Bus_width = atoi(value);
+
 		for (i = 0; i < num_cores; i++)
 		{
 			l3_caches[i].bus_width = Bus_width;
-		}
 
-		if(l3_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): l3 cache bus width is out of bounds %d\n", Bus_width);
+			if(l3_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): l3 cache bus width is out of bounds %d\n",l3_caches[i].bus_width);
+			}
 		}
 	}
 

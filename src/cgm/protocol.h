@@ -88,13 +88,10 @@ struct cgm_packet_t{
 struct cgm_packet_status_t{
 
 	//used for global memory list
-
 	enum cgm_access_kind_t access_type;
 	unsigned int address;
 	long long access_id;
 	int in_flight;
-
-	//for reverse routing
 };
 
 /*struct cgm_packet_status_t;*/
@@ -105,22 +102,23 @@ void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
 
-
 //implements a MESI protocol.
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
 
-void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-//implements a MOESI protocol.
 
+void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
+
+//star todo implement a MOESI protocol.
 
 #endif /*PROTOCOL_H_*/
