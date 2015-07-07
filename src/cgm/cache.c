@@ -1376,6 +1376,7 @@ void l1_d_cache_down_io_ctrl(void){
 		assert(message_packet);
 
 		access_id = message_packet->access_id;
+
 		transfer_time = (message_packet->size/l1_d_caches[my_pid].bus_width);
 
 		P_PAUSE(transfer_time);

@@ -29,7 +29,7 @@
 */
 
 
-enum queue_name
+enum Rx_queue_name
 {
 	Rx_queue_top_0 = 0,
 	Rx_queue_top_1,
@@ -40,10 +40,25 @@ enum queue_name
 	Rx_queue_top_6,
 	Rx_queue_top_7,
 	Rx_queue_bottom,
-	queue_num
+	Rx_queue_num
 };
 
-extern struct str_map_t queue_strn_map;
+enum Tx_queue_name
+{
+	Tx_queue_top_0 = 0,
+	Tx_queue_top_1,
+	Tx_queue_top_2,
+	Tx_queue_top_3,
+	Tx_queue_top_4,
+	Tx_queue_top_5,
+	Tx_queue_top_6,
+	Tx_queue_top_7,
+	Tx_queue_bottom,
+	Tx_queue_num
+};
+
+extern struct str_map_t Rx_queue_strn_map;
+extern struct str_map_t Tx_queue_strn_map;
 
 struct hub_iommu_t{
 
@@ -51,6 +66,7 @@ struct hub_iommu_t{
 	unsigned int wire_latency;
 	unsigned int gpu_l2_num;
 	int latency;
+	int bus_width;
 
 	struct list_t *switch_queue;
 	int switch_id;
@@ -60,18 +76,34 @@ struct hub_iommu_t{
 	struct list_t *next_queue;
 	struct list_t *last_queue;
 
+	struct list_t **Tx_queue_top;
+	struct list_t *Tx_queue_bottom;
+
+	//io ctrl
+	eventcount volatile **hub_iommu_io_up_ec;
+	task **hub_iommu_io_up_tasks;
+	eventcount volatile *hub_iommu_io_down_ec;
+	task *hub_iommu_io_down_tasks;
+
 	//star todo add something here for the GPU virtual to physical address translation.
 };
 
 extern struct hub_iommu_t *hub_iommu;
 extern eventcount volatile *hub_iommu_ec;
 extern task *hub_iommu_tasks;
+
 extern int hub_iommu_pid;
+extern int hub_iommu_io_up_pid;
+extern int hub_iommu_io_down_pid;
 
 void hub_iommu_init(void);
 void hub_iommu_create(void);
 void hub_iommu_create_tasks(void);
 void hub_iommu_ctrl(void);
+
+void hub_iommu_io_up_ctrl(void);
+void hub_iommu_io_down_ctrl(void);
+
 
 struct cgm_packet_t *hub_iommu_get_from_queue(void);
 void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);

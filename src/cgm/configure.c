@@ -2500,6 +2500,16 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		hub_iommu->latency = atoi(value);
 	}
 
+	if(MATCH("Bus", "Switches"))
+	{
+		hub_iommu->bus_width = atoi(value);
+
+		if(hub_iommu->bus_width == 0)
+		{
+			fatal("switch_read_config(): switch bus width is out of bounds\n");
+		}
+	}
+
 	return 0;
 }
 
@@ -2682,7 +2692,6 @@ int switch_finish_create(void){
 	//GPU hub-iommu
 	////////////
 
-
 	//configure the gpu hub-iommu here (its pretty much a big switch).
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "hub_iommu");
@@ -2690,30 +2699,70 @@ int switch_finish_create(void){
 
 	hub_iommu->gpu_l2_num = gpu_group_cache_num;
 
-	//create one in queue for each gpu l2 caches
+	//create one Rx and Tx queue for each gpu l2 caches
 	hub_iommu->Rx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
+	hub_iommu->Tx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
 
 	for(i = 0; i < gpu_group_cache_num; i ++)
 	{
 		hub_iommu->Rx_queue_top[i] = list_create();
-
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "hub_iommu.Rx_queue_top[%d]", i);
 		hub_iommu->Rx_queue_top[i]->name = strdup(buff);
+
+		hub_iommu->Tx_queue_top[i] = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "hub_iommu.Tx_queue_top[%d]", i);
+		hub_iommu->Tx_queue_top[i]->name = strdup(buff);
+
 	}
 
-	//create the bottom queue
+	//create the bottom Rx and Tx queues
 	hub_iommu->Rx_queue_bottom = list_create();
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "hub_iommu.Rx_queue_bottom");
 	hub_iommu->Rx_queue_bottom->name = strdup(buff);
+
+	hub_iommu->Tx_queue_bottom = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "hub_iommu.Tx_queue_bottom");
+	hub_iommu->Tx_queue_bottom->name = strdup(buff);
+
+	//create io ctrl tasks
+	hub_iommu->hub_iommu_io_up_ec = (void *) calloc(gpu_group_cache_num, sizeof(eventcount));
+	hub_iommu->hub_iommu_io_up_tasks = (void *) calloc(gpu_group_cache_num, sizeof(task));
+
+	//top Tx ctrl
+	for(i = 0; i < gpu_group_cache_num; i ++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "hub_iommu_io_up_ec_%d", i);
+		hub_iommu->hub_iommu_io_up_ec[i] = new_eventcount(strdup(buff));
+
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "hub_iommu_io_up_task_%d", i);
+		hub_iommu->hub_iommu_io_up_tasks[i] = create_task(hub_iommu_io_up_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+	}
+
+	//bottom Tx ctrl
+	hub_iommu->hub_iommu_io_down_ec = (void *) calloc((1), sizeof(eventcount));
+	hub_iommu->hub_iommu_io_down_tasks = (void *) calloc((1), sizeof(task));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "hub_iommu_io_down_ec");
+	hub_iommu->hub_iommu_io_down_ec = new_eventcount(strdup(buff));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "hub_iommu_io_down_task");
+	hub_iommu->hub_iommu_io_down_tasks = create_task(hub_iommu_io_down_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 	//set a pointer to the next queue
 	hub_iommu->next_queue = hub_iommu->Rx_queue_top[0];
 
 	//connect to switch queue
 	hub_iommu->switch_id = (num_cores + extras - 1);
-	hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
+	//hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
+	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
 
 	return 0;
 }
