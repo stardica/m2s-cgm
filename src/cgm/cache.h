@@ -310,7 +310,10 @@ void ort_clear(struct cache_t *cache, int entry);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_dump(struct cache_t *cache);
 
-//cache functions
+//cache cntrl functions
+//int cache_block_get_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);
+
+//lower level cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);

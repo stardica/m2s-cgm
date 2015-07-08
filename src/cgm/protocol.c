@@ -152,7 +152,6 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 
 	//get the block and the state of the block and charge cycles
 
-
 	//////testing
 	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
 	{

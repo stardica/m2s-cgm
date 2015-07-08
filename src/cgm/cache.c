@@ -870,6 +870,12 @@ void l1_i_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
+	int cache_block_hit;
+	int cache_block_state;
+
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
@@ -895,12 +901,18 @@ void l1_i_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+			///////////protocol v2
+
+			//get the status of the cache block
+			//cache_block_get_status(&(l1_i_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+
+			///////////protocol v2
+
 			if (access_type == cgm_access_fetch)
 			{
 				cpu_l1_cache_access_load(&(l1_i_caches[my_pid]), message_packet);
 			}
-
-
 
 			else if (access_type == cgm_access_puts)
 			{
