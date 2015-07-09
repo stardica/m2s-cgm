@@ -817,18 +817,34 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	access_id = message_packet->access_id;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	//cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//block is returned so find it in the ORT
 	//clear the entry from the ort
-	row = ort_search(cache, tag, set);
+
+	//printf("access_id %llu recieved cycle %llu as %s\n", message_packet->access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
+	//printf("access_id %llu COAL %d tag %d set %d offset %d l1_way %d cycle %llu\n",message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, message_packet->l1_victim_way, P_TIME);
+	//getchar();
+
+	row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(row < cache->mshr_size);
 	ort_clear(cache, row);
 
+	//printf("access_id %llu cleared from ORT %d cycle %llu as %s\n", message_packet->access_id, row, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+	/*cgm_cache_get_block(cache, set, way, NULL, state_ptr);*/
+
+	//cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+	/*printf("CFB way = %d\n", *way_ptr);*/
+	//getchar();
+	cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
+
+	//cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
+
 	/*find a victim*/
-	if(cache->cache_type == l1_i_cache_t)
+	/*if(cache->cache_type == l1_i_cache_t)
 	{
 		//Evict, get the LRU
 		*(way_ptr) = cgm_cache_replace_block(cache, set);
@@ -847,7 +863,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 			fatal("cpu_cache_access_put(): i cache invalid block state\n");
 		}
 
-		/*CGM_DEBUG(CPU_cache_debug_file, " %s put tag %d set %d\n", cache->name, tag, set);
+		CGM_DEBUG(CPU_cache_debug_file, " %s put tag %d set %d\n", cache->name, tag, set);
 		CGM_DEBUG(CPU_cache_debug_file, "Before\n");
 		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[0].tag = tag; %d\n", cache->sets[set].blocks[0].tag);
 		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[0].state = state; %d\n", cache->sets[set].blocks[0].state);
@@ -858,7 +874,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[0].tag = tag; %d\n", cache->sets[set].blocks[0].tag);
 		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[0].state = state; %d\n", cache->sets[set].blocks[0].state);
 		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[1].tag = tag; %d\n", cache->sets[set].blocks[1].tag);
-		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[1].state = state; %d\n", cache->sets[set].blocks[1].state);*/
+		CGM_DEBUG(CPU_cache_debug_file, "cache->sets[set].blocks[1].state = state; %d\n", cache->sets[set].blocks[1].state);
 
 	}
 	else if(cache->cache_type == l1_d_cache_t)
@@ -934,13 +950,15 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 		{
 			fatal("cpu_cache_access_put(): i cache invalid block state\n");
 		}
-	}
+	}*/
 
 	//set retry
-	message_packet->access_type = cgm_access_retry;
-	list_remove(cache->last_queue, message_packet);
-	list_enqueue(cache->retry_queue, message_packet);
 
+	//printf("access_id %llu COAL %d tag %d set %d offset %d cycle %llu\n", message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, P_TIME);
+
+	message_packet->access_type = cgm_access_retry;
+	message_packet = list_remove(cache->last_queue, message_packet);
+	list_enqueue(cache->retry_queue, message_packet);
 	advance(cache->ec_ptr);
 
 	return;
@@ -974,13 +992,23 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	cache->retries++;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
+	//cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 		cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//look it up.
+	*tag_ptr = message_packet->tag;
+	*set_ptr = message_packet->set;
+	*offset_ptr = message_packet->offset;
+	/**way_ptr = message_packet->l1_victim_way;*/
+	/**way_ptr = 1;*/
+
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
+
+	//printf("access_id %llu retry cache status %d way %d way %d state %d cycle %llu as %s\n",
+			//message_packet->access_id, cache_status, *way_ptr, message_packet->l1_victim_way, *state_ptr, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+	//printf("access_id %llu COAL %d tag %d set %d offset %d cycle %llu\n", message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, P_TIME);
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
@@ -1003,12 +1031,12 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//remove packet from cache retry queue and global queue
 					P_PAUSE(cache->latency);
 
+					//printf("access_id %llu cleared cycle %llu as %s\n",
+							//message_packet->access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
 					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
 					free(message_packet);
 					remove_from_global(access_id);
-
-					//retry coalesced packets.
-					cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 
 				}
 				//CPU L1 D cache
@@ -1132,15 +1160,24 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				//retry coalesced packets.
 				//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 			}
+			else
+			{
+
+				fatal("problem\n");
+			}
+
+			//retry coalesced packets.
+			cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
+
 		}
 		else
 		{
-			fatal("l1_d_cache_access_load(): incorrect block state set");
+			fatal("cpu_cache_access_retry(): incorrect block state set");
 		}
 	}
 	else
 	{
-		fatal("l1_d_cache_access_load(): retry miss\n");
+		fatal("cpu_cache_access_retry(): %s access_id %llu retry miss\n", cache->name, access_id);
 	}
 	return;
 }

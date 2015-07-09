@@ -303,15 +303,14 @@ int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
 int cgm_gpu_cache_map(int cache_id);
 
-int get_ort_status(struct cache_t *cache);
-int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
-int ort_search(struct cache_t *cache, int tag, int set);
-void ort_clear(struct cache_t *cache, int entry);
-void ort_set(struct cache_t *cache, int entry, int tag, int set);
-void ort_dump(struct cache_t *cache);
 
 //cache cntrl functions
-//int cache_block_get_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);
+void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);
+void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*void set_victim(struct cache_t *cache);*/
 
 //lower level cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -322,6 +321,14 @@ void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 //void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
+
+//lower level ORT status
+int get_ort_status(struct cache_t *cache);
+int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
+int ort_search(struct cache_t *cache, int tag, int set);
+void ort_clear(struct cache_t *cache, int entry);
+void ort_set(struct cache_t *cache, int entry, int tag, int set);
+void ort_dump(struct cache_t *cache);
 
 
 #endif /*CACHE_H_*/

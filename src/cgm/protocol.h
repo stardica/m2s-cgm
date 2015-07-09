@@ -70,6 +70,10 @@ struct cgm_packet_t{
 	int coalesced;
 	int size;
 
+	int l1_victim_way;
+	int l2_victim_way;
+	int l3_victim_way;
+
 	//for protocol messages
 	enum cache_block_state_t cache_block_state;
 
