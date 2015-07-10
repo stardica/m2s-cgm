@@ -10,8 +10,6 @@
 
 
 
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -192,6 +190,7 @@ struct cache_t{
 	long long retries;
 	long long coalesces;
 	long long mshr_entires;
+	long long stalls;
 
 };
 
@@ -298,9 +297,11 @@ void gpu_l2_cache_down_io_ctrl(void);
 //protocol functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
 
-int cgm_l3_cache_map(int *set);
+int cgm_l3_cache_map(int set);
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
+int cache_can_access_Tx_bottom(struct cache_t *cache);
+int cache_can_access_Tx_top(struct cache_t *cache);
 int cgm_gpu_cache_map(int cache_id);
 
 
@@ -309,7 +310,10 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 /*void set_victim(struct cache_t *cache);*/
 
 //lower level cache functions
@@ -326,7 +330,7 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 int get_ort_status(struct cache_t *cache);
 int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
 int ort_search(struct cache_t *cache, int tag, int set);
-void ort_clear(struct cache_t *cache, int entry);
+void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_dump(struct cache_t *cache);
 

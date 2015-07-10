@@ -58,30 +58,11 @@ struct cgm_packet_t *packet_create(void){
 
 void packet_destroy(struct cgm_packet_t *packet){
 
-	if(packet->name)
-	{
-		free(packet->name);
-	}
-
-	if(packet->l2_cache_name)
-	{
-		free(packet->l2_cache_name);
-	}
-
-	if(packet->src_name)
-	{
-		free(packet->src_name);
-	}
-
-	if(packet->dest_name)
-	{
-		free(packet->dest_name);
-	}
-
-	if(packet)
-	{
-		free(packet);
-	}
+	free(packet->name);
+	free(packet->l2_cache_name);
+	free(packet->src_name);
+	free(packet->dest_name);
+	free(packet);
 
 	return;
 }
@@ -637,9 +618,9 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				message_packet->access_type = cgm_access_puts;
 				message_packet->cache_block_state = *state_ptr;
 
-				message_packet->dest_name = message_packet->src_name;
+				message_packet->dest_name = strdup(message_packet->src_name);
 				message_packet->dest_id = message_packet->src_id;
-				message_packet->src_name = cache->name;
+				message_packet->src_name = strdup(cache->name);
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -829,9 +810,9 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//printf("access_id %llu COAL %d tag %d set %d offset %d l1_way %d cycle %llu\n",message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, message_packet->l1_victim_way, P_TIME);
 	//getchar();
 
-	row = ort_search(cache, message_packet->tag, message_packet->set);
+	/*row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(row < cache->mshr_size);
-	ort_clear(cache, row);
+	ort_clear(cache, row);*/
 
 	//printf("access_id %llu cleared from ORT %d cycle %llu as %s\n", message_packet->access_id, row, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 	/*cgm_cache_get_block(cache, set, way, NULL, state_ptr);*/
@@ -839,6 +820,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	/*printf("CFB way = %d\n", *way_ptr);*/
 	//getchar();
+
 	cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
 
 	//cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
@@ -957,6 +939,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//printf("access_id %llu COAL %d tag %d set %d offset %d cycle %llu\n", message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, P_TIME);
 
 	message_packet->access_type = cgm_access_retry;
+
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
 	advance(cache->ec_ptr);
@@ -2030,6 +2013,9 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 	return;
 }
+
+
+
 
 void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr){
 
