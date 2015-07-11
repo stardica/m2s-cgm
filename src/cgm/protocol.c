@@ -59,10 +59,11 @@ struct cgm_packet_t *packet_create(void){
 void packet_destroy(struct cgm_packet_t *packet){
 
 	free(packet->name);
-	free(packet->l2_cache_name);
-	free(packet->src_name);
-	free(packet->dest_name);
 	free(packet);
+	//dont' need to free these because we never malloc anything.
+	//free(packet->l2_cache_name);
+	//free(packet->src_name);
+	//free(packet->dest_name);
 
 	return;
 }
@@ -598,11 +599,11 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				}
 
 			}
+
 			else if(cache->cache_type == l3_cache_t)
 			{
 				//This is a hit in the L3 cache, send up to L2 cache
 				//while the next level of cache's in queue is full stall
-				//star todo possible deadlock situation if both the l2 and core are trying to fill a full queue
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
 					printf("l3 cache up stall\n");
@@ -618,9 +619,9 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 				message_packet->access_type = cgm_access_puts;
 				message_packet->cache_block_state = *state_ptr;
 
-				message_packet->dest_name = strdup(message_packet->src_name);
+				message_packet->dest_name = message_packet->src_name; //strdup(message_packet->src_name);
 				message_packet->dest_id = message_packet->src_id;
-				message_packet->src_name = strdup(cache->name);
+				message_packet->src_name = cache->name; //strdup(cache->name);
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -1109,8 +1110,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				//Send up to L2 cache
 				while(!switch_can_access(switches[cache->id].south_queue))
 				{
-					//printf("stall\n");
-					//getchar();
 					P_PAUSE(1);
 				}
 
@@ -1125,11 +1124,15 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 				message_packet->access_type = cgm_access_puts;
 
+
 				/*int l2_map = cgm_l2_cache_map(message_packet->l2_cache_id);*/
 				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
 				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+
+
 
 				list_remove(cache->last_queue, message_packet);
 				CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -1138,10 +1141,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				list_enqueue(switches[cache->id].south_queue, message_packet);
 
 				advance(&switches_ec[cache->id]);
-				//future_advance(&switches_ec[cache->id], WIRE_DELAY(switches[cache->id].wire_latency));
-
-				//retry coalesced packets.
-				//cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 			}
 			else
 			{
