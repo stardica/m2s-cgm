@@ -1772,7 +1772,7 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//clear the entry from the ort
 	row = ort_search(cache, tag, set);
 	assert(row < cache->mshr_size);
-	ort_clear(cache, row);
+	ort_clear(cache, message_packet);
 
 	if(cache->cache_type == gpu_s_cache_t)
 	{
