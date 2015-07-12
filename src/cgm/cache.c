@@ -2334,6 +2334,7 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		else
 		{
 			//dir is clear so write the block (drop the block).
+			cgm_cache_clear_dir(cache, message_packet->set, victim);
 			cgm_cache_set_dir(cache, message_packet->set, victim, message_packet->l2_cache_id);
 			cgm_cache_set_block(cache, message_packet->set, victim, message_packet->tag, cache_block_shared);
 		}
@@ -2381,6 +2382,14 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	}
 
 	//no coalesced packets remaining.
+	return;
+}
+
+void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
+
+
+	cache->sets[set].blocks[way].directory_entry.entry = NULL;
+
 	return;
 }
 

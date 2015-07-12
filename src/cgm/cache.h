@@ -320,6 +320,7 @@ void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
+void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 /*void set_victim(struct cache_t *cache);*/
 
