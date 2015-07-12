@@ -44,7 +44,7 @@ enum cgm_access_kind_t {
 	cgm_access_puto_shared, //equest for writeback of cache block in owned state but other sharers of the block exist.
 	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 	cgm_access_retry,
-	cgm_access_retry_i,
+	cgm_access_retry_i,//not used
 	num_access_types
 };
 
@@ -67,9 +67,11 @@ struct cgm_packet_t{
 	int set;
 	int tag;
 	unsigned int offset;
-	int coalesced;
 	int size;
+	int coalesced;
+	int evicted;
 
+	//for evict
 	int l1_victim_way;
 	int l2_victim_way;
 	int l3_victim_way;

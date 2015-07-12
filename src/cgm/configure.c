@@ -1353,22 +1353,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d].retry_queue", i);
 		l1_i_caches[i].retry_queue->name = strdup(buff);
 
-		/*l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d]", i, j);
-			l1_i_caches[i].mshrs[j].name = strdup(buff);
-
-			l1_i_caches[i].mshrs[j].entires = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
-			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(l1_i_caches[i].mshrs[j]));
-		}*/
-
 		l1_i_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].ort_list", i);
@@ -1389,36 +1373,26 @@ int cache_finish_create(){
 			}
 		}
 
-		/*l1_i_caches[i].Tx_queue_top = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_top", i);
-		l1_i_caches[i].Tx_queue_top->name = strdup(buff);*/
-
+		//Tx queue
 		l1_i_caches[i].Tx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_bottom", i);
 		l1_i_caches[i].Tx_queue_bottom->name = strdup(buff);
 
+		//WB
+		l1_i_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].write_back_buffer", i);
+		l1_i_caches[i].write_back_buffer->name = strdup(buff);
+
 		//io ctrl
-		/*l1_i_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
 		l1_i_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_ec");
-		l1_i_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_ec");
 		l1_i_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
 
 		//io tasks
-		/*l1_i_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
 		l1_i_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_task");
-		l1_i_caches[i].cache_io_up_tasks = create_task(l1_i_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l1_i_caches[i].cache_io_down_tasks = create_task(l1_i_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
@@ -1473,22 +1447,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_d_caches[%d].retry_queue", i);
 		l1_d_caches[i].retry_queue->name = strdup(buff);
 
-		/*l1_d_caches[i].mshrs = (void *) calloc(l1_d_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < l1_d_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d]", i, j);
-			l1_d_caches[i].mshrs[j].name = strdup(buff);
-
-			l1_d_caches[i].mshrs[j].entires = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l1_d_caches[%d].mshr[%d].entires", i, j);
-			l1_d_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(l1_d_caches[i].mshrs[j]));
-		}*/
-
 		l1_d_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].ort_list", i);
@@ -1509,36 +1467,26 @@ int cache_finish_create(){
 			}
 		}
 
-		/*l1_i_caches[i].Tx_queue_top = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_top", i);
-		l1_i_caches[i].Tx_queue_top->name = strdup(buff);*/
-
+		//Tx queue
 		l1_d_caches[i].Tx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Tx_queue_bottom", i);
 		l1_d_caches[i].Tx_queue_bottom->name = strdup(buff);
 
+		//WB
+		l1_d_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].write_back_buffer", i);
+		l1_d_caches[i].write_back_buffer->name = strdup(buff);
+
 		//io ctrl
-		/*l1_i_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
 		l1_d_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_ec");
-		l1_i_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_ec");
 		l1_d_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
 
 		//io tasks
-		/*l1_i_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
 		l1_d_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_task");
-		l1_i_caches[i].cache_io_up_tasks = create_task(l1_i_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l1_d_caches[i].cache_io_down_tasks = create_task(l1_d_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
@@ -1594,22 +1542,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l2_caches[%d].retry_queue", i);
 		l2_caches[i].retry_queue->name = strdup(buff);
 
-		/*l2_caches[i].mshrs = (void *) calloc(l2_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < l2_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l2_caches[%d].mshr[%d]", i, j);
-			l2_caches[i].mshrs[j].name = strdup(buff);
-
-			l2_caches[i].mshrs[j].entires = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l2_caches[%d].mshr[%d].entires", i, j);
-			l2_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(l2_caches[i].mshrs[j]));
-		}*/
-
 		l2_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l2_caches[%d].ort_list", i);
@@ -1630,6 +1562,7 @@ int cache_finish_create(){
 			}
 		}
 
+		//Tx queues
 		l2_caches[i].Tx_queue_top = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l2_caches[%d].Tx_queue_top", i);
@@ -1639,6 +1572,12 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l2_caches[%d].Tx_queue_bottom", i);
 		l2_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//WB
+		l2_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].write_back_buffer", i);
+		l2_caches[i].write_back_buffer->name = strdup(buff);
 
 		//io ctrl
 		l2_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
@@ -1713,22 +1652,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l3_caches[%d].retry_queue", i);
 		l3_caches[i].retry_queue->name = strdup(buff);
 
-		/*l3_caches[i].mshrs = (void *) calloc(l3_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < l3_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l3_caches[%d].mshr[%d]", i, j);
-			l3_caches[i].mshrs[j].name = strdup(buff);
-
-			l3_caches[i].mshrs[j].entires = list_create();
-
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "l3_caches[%d].mshr[%d].entires", i, j);
-			l3_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(l3_caches[i].mshrs[j]));
-		}*/
-
 		l3_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].ort_list", i);
@@ -1749,6 +1672,7 @@ int cache_finish_create(){
 			}
 		}
 
+		//Tx queues
 		l3_caches[i].Tx_queue_top = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
@@ -1758,6 +1682,12 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].Tx_queue_bottom", i);
 		l3_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//WB
+		l3_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].write_back_buffer", i);
+		l3_caches[i].write_back_buffer->name = strdup(buff);
 
 		//io ctrl
 		l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
@@ -1782,7 +1712,6 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l3_caches[i].cache_io_down_tasks = create_task(l3_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
-
 
 
 		//Initialize array of sets
@@ -2330,12 +2259,6 @@ int cache_finish_create(){
 
 int directory_read_config(void* user, const char* section, const char* name, const char* value){
 
-
-	if(MATCH("Directory", "MemSize"))
-	{
-		dir_mem_image_size = atoll(value);//4GB;
-	}
-
 	if(MATCH("Directory", "BlockSize"))
 	{
 		dir_block_size = atoi(value);
@@ -2346,11 +2269,15 @@ int directory_read_config(void* user, const char* section, const char* name, con
 		dir_mode = atoi(value);
 	}
 
-	if(MATCH("Directory", "VectorSize"))
+	/*if(MATCH("Directory", "MemSize"))
+	{
+		dir_mem_image_size = atoll(value);//4GB;
+	}*/
+
+	/*if(MATCH("Directory", "VectorSize"))
 	{
 		dir_vector_size = atoi(value);
-	}
-
+	}*/
 
 	return 0;
 }

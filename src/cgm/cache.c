@@ -745,6 +745,17 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
+	return;
+}
+
+void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way){
+
+	assert(set >= 0 && set < cache->num_sets);
+	assert(way >= 0 && way < cache->assoc);
+
+	cache->sets[set].blocks[way].data_type = type;
+
+	return;
 }
 
 /* Return the way of the block to be replaced in a specific set,
@@ -912,7 +923,8 @@ void l1_i_cache_ctrl(void){
 		//peak at a message from the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
 
-		//star todo fix this, these should be related to the message type.
+		/*star todo fix this, these should be related to the message type.
+		This can be done more efficiently than a caret blanch stall */
 		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]) || !cache_can_access_Tx_bottom(&(l1_i_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall
@@ -1274,15 +1286,21 @@ void l2_cache_ctrl(void){
 							int l3_map;
 							l3_map = cgm_l3_cache_map(message_packet->set);
 							message_packet->l2_cache_id = l2_caches[my_pid].id;
-							message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id); //strdup(str_map_value(&l2_strn_map, l2_caches[my_pid].id));
+							message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
 
-							message_packet->src_name = l2_caches[my_pid].name; //strdup(l2_caches[my_pid].name);
+							message_packet->src_name = l2_caches[my_pid].name;
 							message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
-							message_packet->dest_name = l3_caches[l3_map].name; //strdup(l3_caches[l3_map].name);
+							message_packet->dest_name = l3_caches[l3_map].name;
 							message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 							//find victim
 							message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
+
+							//set the data type bit
+							int type;
+							type = message_packet->l1_access_type == cgm_access_gets_i ? 1 : 0;
+							assert(type == 0 || type == 1);
+							cgm_cache_set_block_type(&(l2_caches[my_pid]), type, message_packet->set, message_packet->l2_victim_way);
 
 							if(message_packet->coalesced == 1)
 								continue;
@@ -1390,6 +1408,9 @@ void l3_cache_ctrl(void){
 
 						case cache_block_shared:
 
+							//update directory
+							cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way, message_packet->l2_cache_id);
+
 							// update message packet status
 							message_packet->access_type = cgm_access_puts;
 							message_packet->cache_block_state = *cache_block_state_ptr;
@@ -1425,6 +1446,9 @@ void l3_cache_ctrl(void){
 							//check ORT for coalesce
 							cache_check_ORT(&(l3_caches[my_pid]), message_packet);
 
+							//find victim again because LRU has been updated on hits.
+							message_packet->l3_victim_way = cgm_cache_replace_block(&(l3_caches[my_pid]), message_packet->set);
+
 							//add some routing/status data to the packet
 							message_packet->size = 0;
 							message_packet->access_type = cgm_access_gets;
@@ -1433,9 +1457,6 @@ void l3_cache_ctrl(void){
 							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
 							message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 							message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
-
-							//find victim
-							message_packet->l3_victim_way = cgm_cache_replace_block(&(l3_caches[my_pid]), message_packet->set);
 
 							//charge delay
 							P_PAUSE(l3_caches[my_pid].latency);
@@ -1460,6 +1481,7 @@ void l3_cache_ctrl(void){
 
 				//set the block and retry the access in the cache.
 				cache_put_block(&(l3_caches[my_pid]), message_packet);
+
 			}
 			else
 			{
@@ -2118,7 +2140,6 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->set = set;
 	message_packet->offset = offset;
 
-
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
@@ -2166,6 +2187,9 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//get the block and the state of the block
 	*(cache_block_hit_ptr) = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+	//store the way
+	message_packet->l3_victim_way = way;
 
 	//update way list for LRU if block is present.
 	if(*(cache_block_hit_ptr) == 1)
@@ -2276,8 +2300,9 @@ void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message
 
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-
 	int victim;
+	int type;
+	int dirty;
 
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
 	{
@@ -2294,7 +2319,31 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	assert(victim >=0);
 
-	cgm_cache_set_block(cache, message_packet->set, victim, message_packet->tag, cache_block_shared);
+	//check if directory entry is dirty or clean for victim
+	if(cache->cache_type == l3_cache_t)
+	{
+		dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, victim);
+
+		assert(dirty == 1 || dirty == 0);
+
+		//star todo write back somehow
+		if(dirty)
+		{
+			fatal("should not be here yet\n");
+		}
+		else
+		{
+			//dir is clear so write the block (drop the block).
+			cgm_cache_set_dir(cache, message_packet->set, victim, message_packet->l2_cache_id);
+			cgm_cache_set_block(cache, message_packet->set, victim, message_packet->tag, cache_block_shared);
+		}
+
+	}
+	else
+	{
+		//write the block
+		cgm_cache_set_block(cache, message_packet->set, victim, message_packet->tag, cache_block_shared);
+	}
 
 	//set retry state
 	message_packet->access_type = cgm_access_retry;
@@ -2335,5 +2384,44 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	return;
 }
 
+void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id){
+
+	int num_cores = x86_cpu_num_cores;
+
+	assert(set >= 0 && set < cache->num_sets);
+	assert(way >= 0 && way < cache->assoc);
+	assert(l2_cache_id > (-1) && l2_cache_id < num_cores);
+
+	if(l2_cache_id == 0)
+	{
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p0 = 1;
+	}
+	else if(l2_cache_id == 1)
+	{
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p1 = 1;
+	}
+	else if(l2_cache_id == 2)
+	{
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p2 = 1;
+	}
+	else if(l2_cache_id == 3)
+	{
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p3 = 1;
+	}
+	else
+	{
+		fatal("cgm_cache_set_dir(): current dir implementation supports up to 4 cores.\n");
+	}
+
+	return;
+}
+
+int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way){
+
+	int dirty;
 
 
+
+
+	return dirty;
+}

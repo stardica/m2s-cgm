@@ -1,6 +1,21 @@
 
 
 
+/*l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
+		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
+		{
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d]", i, j);
+			l1_i_caches[i].mshrs[j].name = strdup(buff);
+
+			l1_i_caches[i].mshrs[j].entires = list_create();
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "l1_i_caches[%d].mshr[%d].entires", i, j);
+			l1_i_caches[i].mshrs[j].entires->name = strdup(buff);
+
+			mshr_clear(&(l1_i_caches[i].mshrs[j]));
+		}*/
 
 /*else if (access_type == cgm_access_retry)
 			{

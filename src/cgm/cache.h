@@ -42,6 +42,7 @@ enum cache_block_state_t{
 	cache_block_null
 };
 
+#include <cgm/directory.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/cgm.h>
@@ -64,8 +65,7 @@ enum cache_type_enum{
 	gpu_v_cache_t,
 	gpu_l2_cache_t
 };
-/*
-enum cache_block_state_t{
+/*enum cache_block_state_t{
 
 	cache_block_invalid = 0,
 	cache_block_noncoherent,
@@ -96,11 +96,16 @@ struct cache_block_t{
 	struct cache_block_t *way_prev;
 
 	int tag;
+	int set;
 	int transient_tag;
 	int way;
 	int prefetched;
 
 	enum cache_block_state_t state;
+
+	//each block has it's own directory (unsigned char)
+	union directory_t directory_entry;
+	int data_type;
 };
 
 struct cache_set_t{
@@ -154,7 +159,6 @@ struct cache_t{
 	struct list_t *ort_list;
 	int max_coal;
 
-
 	//cache queues
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
@@ -163,6 +167,7 @@ struct cache_t{
 	struct list_t *retry_queue;
 	struct list_t *Tx_queue_top;
 	struct list_t *Tx_queue_bottom;
+	struct list_t *write_back_buffer;
 
 	//io ctrl
 	eventcount volatile *cache_io_up_ec;
@@ -314,12 +319,15 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
+void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
+int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 /*void set_victim(struct cache_t *cache);*/
 
 //lower level cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
+void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
