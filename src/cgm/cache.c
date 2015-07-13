@@ -1150,13 +1150,13 @@ void l1_d_cache_ctrl(void){
 							//check ORT for coalesce
 							cache_check_ORT(&(l1_d_caches[my_pid]), message_packet);
 
+							if(message_packet->coalesced == 1)
+								continue;
+
 							//add some routing/status data to the packet
 							message_packet->cpu_access_type = cgm_access_load;
 							message_packet->access_type = cgm_access_gets_d;
 							message_packet->l1_access_type = cgm_access_gets_d;
-
-							if(message_packet->coalesced == 1)
-								continue;
 
 							//find victim
 							message_packet->l1_victim_way = cgm_cache_replace_block(&(l1_d_caches[my_pid]), message_packet->set);
