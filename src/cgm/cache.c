@@ -1009,7 +1009,7 @@ void l1_i_cache_ctrl(void){
 								continue;
 
 							//add some routing/status data to the packet
-							message_packet->cpu_access_type = cgm_access_fetch;
+							//message_packet->cpu_access_type = cgm_access_fetch;
 							message_packet->access_type = cgm_access_gets_i;
 							message_packet->l1_access_type = cgm_access_gets_i;
 
@@ -1110,7 +1110,7 @@ void l1_d_cache_ctrl(void){
 					switch(*cache_block_state_ptr)
 					{
 						case cache_block_invalid:
-							fatal("l1_d_cache_ctrl(): Invalid block state on hit\n");
+							fatal("l1_d_cache_ctrl(): Invalid block state on load hit %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));
 							break;
 
 						case cache_block_exclusive:
@@ -1154,9 +1154,9 @@ void l1_d_cache_ctrl(void){
 								continue;
 
 							//add some routing/status data to the packet
-							message_packet->cpu_access_type = cgm_access_load;
-							message_packet->access_type = cgm_access_gets_d;
-							message_packet->l1_access_type = cgm_access_gets_d;
+							//message_packet->cpu_access_type = cgm_access_load;
+							message_packet->access_type = cgm_access_getx;
+							message_packet->l1_access_type = cgm_access_getx;
 
 							//find victim
 							message_packet->l1_victim_way = cgm_cache_replace_block(&(l1_d_caches[my_pid]), message_packet->set);
@@ -1195,7 +1195,7 @@ void l1_d_cache_ctrl(void){
 					{
 						case cache_block_shared:
 						case cache_block_invalid:
-							fatal("l1_d_cache_ctrl(): Invalid block state on hit\n");
+							fatal("l1_d_cache_ctrl(): Invalid block state on store hit %s \n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));
 							break;
 
 						case cache_block_exclusive:
@@ -1235,7 +1235,7 @@ void l1_d_cache_ctrl(void){
 							cache_check_ORT(&(l1_d_caches[my_pid]), message_packet);
 
 							//add some routing/status data to the packet
-							message_packet->cpu_access_type = cgm_access_load;
+							//message_packet->cpu_access_type = cgm_access_store;
 							message_packet->access_type = cgm_access_gets_d;
 							message_packet->l1_access_type = cgm_access_gets_d;
 
@@ -2498,7 +2498,14 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		cgm_cache_set_block(cache, message_packet->set, victim, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
-		message_packet->access_type = cgm_access_retry;
+		if( message_packet->cpu_access_type == cgm_access_load)
+		{
+			message_packet->access_type = cgm_access_load_retry;
+		}
+		else
+		{
+			message_packet->access_type = cgm_access_store_retry;
+		}
 	}
 
 	message_packet = list_remove(cache->last_queue, message_packet);
