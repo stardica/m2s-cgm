@@ -38,12 +38,17 @@ enum cgm_access_kind_t {
 	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
 	cgm_access_inv,  //invalidation request
+	cgm_access_mc_get,	//request sent to system agent/memory controller
+	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_putx, //request for writeback of cache block exclusive data.
 	cgm_access_puts, //request for writeback of cache block in shared state.
 	cgm_access_puto, //request for writeback of cache block in owned state.
 	cgm_access_puto_shared, //equest for writeback of cache block in owned state but other sharers of the block exist.
 	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 	cgm_access_retry,
+	cgm_access_fetch_retry,
+	cgm_access_load_retry,
+	cgm_access_store_retry,
 	cgm_access_retry_i,//not used
 	num_access_types
 };

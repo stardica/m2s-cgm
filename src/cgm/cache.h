@@ -272,7 +272,7 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 
-//tasks
+//cache tasks
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
@@ -282,35 +282,29 @@ void gpu_v_cache_ctrl(void);
 void gpu_l2_cache_ctrl(void);
 void gpu_lds_unit_ctrl(void);
 
-/*void l1_i_cache_up_io_ctrl(void);*/
+//cpu
 void l1_i_cache_down_io_ctrl(void);
-/*void l1_d_cache_up_io_ctrl(void);*/
 void l1_d_cache_down_io_ctrl(void);
 void l2_cache_up_io_ctrl(void);
 void l2_cache_down_io_ctrl(void);
 void l3_cache_up_io_ctrl(void);
 void l3_cache_down_io_ctrl(void);
 
-/*void l1_i_cache_up_io_ctrl(void);*/
+//gpu
 void gpu_s_cache_down_io_ctrl(void);
-/*void l1_d_cache_up_io_ctrl(void);*/
 void gpu_v_cache_down_io_ctrl(void);
 void gpu_l2_cache_up_io_ctrl(void);
 void gpu_l2_cache_down_io_ctrl(void);
 
 
-//protocol functions
+////cache cntrl functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
-
 int cgm_l3_cache_map(int set);
 int cache_can_access_top(struct cache_t *cache);
 int cache_can_access_bottom(struct cache_t *cache);
 int cache_can_access_Tx_bottom(struct cache_t *cache);
 int cache_can_access_Tx_top(struct cache_t *cache);
 int cgm_gpu_cache_map(int cache_id);
-
-
-//cache cntrl functions
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -322,20 +316,21 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
-/*void set_victim(struct cache_t *cache);*/
+
 
 //lower level cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
+int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 //void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 
-//lower level ORT status
+//lower level ORT functions
 int get_ort_status(struct cache_t *cache);
 int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
 int ort_search(struct cache_t *cache, int tag, int set);

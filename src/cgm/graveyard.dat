@@ -1,6 +1,143 @@
+//drop the packet into the sys agent queue
+						//list_enqueue(system_agent->Rx_queue_top, message_packet);
+						//advance(system_agent_ec);
+
+/*while(!cache_can_access_bottom(&l2_caches[my_pid]))
+					{
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);//the L2 cache queue is full try again next cycle
+						P_PAUSE(1);
+					}*/
+
+//drop the packet into the cache's queue
+						//list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+						//future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));
+						//advance(&l2_cache[my_pid]);
+
+//drop the packet into the hub's bottom queue
+						//list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+						//advance(hub_iommu_ec);
+						//future_advance(hub_iommu_ec, WIRE_DELAY(hub_iommu->wire_latency));
+
+/*while(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
+					{
+						//the hub-iommu cache queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
+
+/*while(!cache_can_access_top(&l3_caches[my_pid]))
+					{
+						//the L2 cache queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
+					
+					
+
+//message_packet->access_type = cgm_access_puts;
+
+							/////////test code
+							/*message_packet->access_type = cgm_access_puts;
+							message_packet->dest_name = message_packet->src_name;
+							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+							message_packet->src_name = l3_caches[0].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
+							list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+							future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+							/////////test code
+
+							//old code
+							//drop the packet into the cache's queue
+							//list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+							//advance(&l3_cache[my_pid]);
+							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
+
+/*while(!switch_can_access(switches[my_pid].next_east))
+					{
+						//the switch queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
 
 
+/*while(!switch_can_access(switches[my_pid].next_west))
+					{
+						//the switch queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
 
+
+/*while(!switch_can_access(switches[my_pid].next_east))
+						{
+							//the switch queue is full try again next cycle
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+							P_PAUSE(1);
+						}*/
+
+/*while(!switch_can_access(switches[my_pid].next_west))
+						{
+							//the switch queue is full try again next cycle
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+							P_PAUSE(1);
+						}*/
+
+/*while(!switch_can_access(switches[my_pid].next_west))
+						{
+							//the switch queue is full try again next cycle
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+							P_PAUSE(1);
+						}*/
+
+/*while(!switch_can_access(switches[my_pid].next_east))
+						{
+							//the switch queue is full try again next cycle
+							printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+							P_PAUSE(1);
+						}*/
+
+/*//get the distance from this switch to the destination (left to right)
+					if(dest_node % 3 == 0 && src_node % 3 == 0)
+					{
+						//L2 to L2
+						distance = (dest_node - src_node)/3;
+					}
+					else if(dest_node % 3 != 0 && src_node % 3 == 0)
+					{
+						//L2 to L3/SA || L3 to L2 (works for both ways)
+						distance = (dest_node - (src_node + 2))/3;
+					}
+					else
+					{
+						//L3 to L3/SA
+						distance = (dest_node - src_node)/3;
+					}*/
+
+
+/*while(!sys_agent_can_access_top())
+					{
+						//the sys agent queue is full try again next cycle
+						printf("%s stalled access_id %llu cycle %llu\n", switches[my_pid].name, access_id, P_TIME);
+						P_PAUSE(1);
+					}*/
+
+							//message_packet->access_type = cgm_access_puts;
+
+							/////////test code
+							/*message_packet->access_type = cgm_access_puts;
+							message_packet->dest_name = message_packet->src_name;
+							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+							message_packet->src_name = l3_caches[0].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[0].name);
+							list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+							future_advance(&l2_cache[my_pid], WIRE_DELAY(l2_caches[my_pid].wire_latency));*/
+							/////////test code
+
+							//old code
+							//drop the packet into the cache's queue
+							//list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+							//advance(&l3_cache[my_pid]);
+							
 /*l1_i_caches[i].mshrs = (void *) calloc(l1_i_caches[i].mshr_size, sizeof(struct mshr_t));
 		for(j = 0; j < l1_i_caches[i].mshr_size; j++)
 		{

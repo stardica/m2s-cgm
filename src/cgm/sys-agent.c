@@ -199,7 +199,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
 
-	if(access_type == cgm_access_gets)
+	if(access_type == cgm_access_mc_get)
 	{
 		/*while(!memctrl_can_access())
 		{
@@ -219,11 +219,11 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
 
 	}
-	else if(access_type == cgm_access_puts)
+	else if(access_type == cgm_access_mc_put)
 	{
 
 		//set the dest and sources
-		message_packet->access_type = cgm_access_puts;
+		//message_packet->access_type = cgm_access_put;
 		message_packet->dest_id = message_packet->src_id;
 		message_packet->dest_name = message_packet->src_name;
 		message_packet->src_name = system_agent->name;
@@ -350,7 +350,7 @@ void sys_agent_ctrl(void){
 
 	long long access_id = 0;
 	enum cgm_access_kind_t access_type;
-	//unsigned int addr;
+	unsigned int addr;
 
 	set_id((unsigned int)my_pid);
 
@@ -371,24 +371,26 @@ void sys_agent_ctrl(void){
 			message_packet = sysagent_get_message();
 			assert(message_packet);
 
-			access_type = message_packet->access_type;
+			//access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
-			//addr = message_packet->address;
+			addr = message_packet->address;
 
 			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
 					system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
 
+
 			//star todo this is where we will receive our other directory coherence messages
 			//for now lets just patch it up.
-			if(access_type == cgm_access_gets || access_type == cgm_access_puts)
-			{
-				system_agent_route(message_packet);
-			}
+			/*if(access_type == cgm_access_gets || access_type == cgm_access_puts)
+			{*/
+
+			system_agent_route(message_packet);
+			/*}
 			else
 			{
 				fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-			}
+			}*/
 		}
 	}
 

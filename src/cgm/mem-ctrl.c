@@ -164,7 +164,7 @@ void memctrl_ctrl(void){
 			message_packet = list_dequeue(mem_ctrl->Rx_queue_top);
 			assert(message_packet);
 
-			access_type = message_packet->access_type;
+			//access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 			addr = message_packet->address;
 
@@ -177,7 +177,7 @@ void memctrl_ctrl(void){
 			list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 			advance(system_agent_ec);*/
 
-			message_packet->access_type = cgm_access_puts;
+			message_packet->access_type = cgm_access_mc_put;
 			message_packet->size = l3_caches[0].block_size;
 			list_enqueue(mem_ctrl->Tx_queue, message_packet);
 			advance(mem_ctrl_io_ec);
