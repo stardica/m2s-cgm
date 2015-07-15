@@ -38,6 +38,7 @@ enum cgm_access_kind_t {
 	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
 	cgm_access_inv,  //invalidation request
+	cgm_access_upgrade,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_putx, //request for writeback of cache block exclusive data.

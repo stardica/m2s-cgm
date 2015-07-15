@@ -35,6 +35,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_gets_v", cgm_access_gets_v},
 		{"cgm_access_getx", cgm_access_getx},
 		{"cgm_access_inv", cgm_access_inv},
+		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_mc_get", cgm_access_mc_get},
 		{"cgm_access_mc_put", cgm_access_mc_put},
 		{"cgm_access_putx", cgm_access_putx},

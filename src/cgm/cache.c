@@ -1120,7 +1120,6 @@ void l1_d_cache_ctrl(void){
 						case cache_block_noncoherent:
 
 							/*printf("d cache load block state %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
-
 							if(access_type == cgm_access_load_retry)
 							{
 								P_PAUSE(l1_d_caches[my_pid].latency);
@@ -1205,6 +1204,11 @@ void l1_d_cache_ctrl(void){
 
 							/*printf("d cache store block state %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
 
+							if(*cache_block_state_ptr == cache_block_exclusive)
+							{
+								cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->l1_victim_way, cache_block_modified);
+							}
+
 							if(access_type == cgm_access_store_retry)
 							{
 								P_PAUSE(l1_d_caches[my_pid].latency);
@@ -1229,6 +1233,10 @@ void l1_d_cache_ctrl(void){
 							break;
 
 						case cache_block_shared:
+
+							//star todo need upgrade here
+
+							break;
 						case cache_block_invalid:
 
 							//check ORT for coalesce
@@ -1419,6 +1427,14 @@ void l2_cache_ctrl(void){
 					//enter retry state.
 					cache_coalesed_retry(&(l2_caches[my_pid]), message_packet->tag, message_packet->set);
 				}
+			}
+			else if(access_type == cgm_access_getx)
+			{
+
+			}
+			else if(access_type == cgm_access_upgrade)
+			{
+
 			}
 			else if(access_type == cgm_access_puts)
 			{
@@ -2611,4 +2627,11 @@ int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way){
 
 	assert(dirty == 1 || dirty == 0);
 	return dirty;
+}
+
+void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cache_block_state_t state){
+
+	cache->sets[set].blocks[way].state = state;
+
+	return;
 }
