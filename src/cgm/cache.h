@@ -39,6 +39,7 @@ enum cache_block_state_t{
 	cache_block_owned,
 	cache_block_exclusive,
 	cache_block_shared,
+	cache_block_transient,
 	cache_block_null
 };
 
@@ -102,6 +103,7 @@ struct cache_block_t{
 	int prefetched;
 
 	enum cache_block_state_t state;
+	enum cache_block_state_t transient_state;
 
 	//each block has it's own directory (unsigned char)
 	union directory_t directory_entry;
@@ -159,12 +161,14 @@ struct cache_t{
 	//cache queues
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
-	struct list_t *next_queue;
-	struct list_t *last_queue;
-	struct list_t *retry_queue;
 	struct list_t *Tx_queue_top;
 	struct list_t *Tx_queue_bottom;
+	struct list_t *Coherance_Tx_queue;
+	struct list_t *Coherance_Rx_queue;
+	struct list_t *retry_queue;
 	struct list_t *write_back_buffer;
+	struct list_t *next_queue;
+	struct list_t *last_queue;
 
 	//io ctrl
 	eventcount volatile *cache_io_up_ec;
@@ -313,6 +317,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cache_block_state_t t_state);
 
 
 //lower level cache functions
@@ -338,3 +343,4 @@ void ort_dump(struct cache_t *cache);
 
 
 #endif /*CACHE_H_*/
+

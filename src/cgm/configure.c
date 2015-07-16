@@ -1385,6 +1385,17 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d].write_back_buffer", i);
 		l1_i_caches[i].write_back_buffer->name = strdup(buff);
 
+		//coherance queues
+		l1_i_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Coherance_Rx_queue", i);
+		l1_i_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		l1_i_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Coherance_Tx_queue", i);
+		l1_i_caches[i].Coherance_Tx_queue->name = strdup(buff);
+
 		//io ctrl
 		l1_i_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
 		memset(buff,'\0' , 100);
@@ -1472,6 +1483,17 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_d_caches[%d].Tx_queue_bottom", i);
 		l1_d_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//coherance queues
+		l1_d_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Coherance_Rx_queue", i);
+		l1_d_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		l1_d_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Coherance_Tx_queue", i);
+		l1_d_caches[i].Coherance_Tx_queue->name = strdup(buff);
 
 		//WB
 		l1_d_caches[i].write_back_buffer = list_create();
@@ -1573,6 +1595,17 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l2_caches[%d].Tx_queue_bottom", i);
 		l2_caches[i].Tx_queue_bottom->name = strdup(buff);
 
+		//coherance queues
+		l2_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].Coherance_Rx_queue", i);
+		l2_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		l2_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l2_caches[%d].Coherance_Tx_queue", i);
+		l2_caches[i].Coherance_Tx_queue->name = strdup(buff);
+
 		//WB
 		l2_caches[i].write_back_buffer = list_create();
 		memset (buff,'\0' , 100);
@@ -1602,6 +1635,8 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l2_caches[i].cache_io_down_tasks = create_task(l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+
 
 
 		/////////////
@@ -1682,6 +1717,17 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].Tx_queue_bottom", i);
 		l3_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//coherance queues
+		l3_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Coherance_Rx_queue", i);
+		l3_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		l3_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].Coherance_Tx_queue", i);
+		l3_caches[i].Coherance_Tx_queue->name = strdup(buff);
 
 		//WB
 		l3_caches[i].write_back_buffer = list_create();

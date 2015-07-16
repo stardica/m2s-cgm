@@ -2635,3 +2635,10 @@ void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cac
 
 	return;
 }
+
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cache_block_state_t t_state){
+
+	cache->sets[set].blocks[way].transient_state = t_state;
+
+	return;
+}
