@@ -318,6 +318,7 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cache_block_state_t t_state);
+enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 
 
 //lower level cache functions
@@ -327,6 +328,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cache_block_state_t state);
+enum cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);

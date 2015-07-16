@@ -72,6 +72,7 @@ struct cgm_packet_t{
 	unsigned int address;
 	int set;
 	int tag;
+	int way;
 	unsigned int offset;
 	int size;
 	int coalesced;
