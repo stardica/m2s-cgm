@@ -36,6 +36,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_getx", cgm_access_getx},
 		{"cgm_access_inv", cgm_access_inv},
 		{"cgm_access_upgrade", cgm_access_upgrade},
+		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
 		{"cgm_access_mc_get", cgm_access_mc_get},
 		{"cgm_access_mc_put", cgm_access_mc_put},
 		{"cgm_access_putx", cgm_access_putx},
@@ -47,6 +48,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_fetch_retry", cgm_access_fetch_retry},
 		{"cgm_access_load_retry", cgm_access_load_retry},
 		{"cgm_access_store_retry", cgm_access_store_retry},
+		{"cgm_access_write_back", cgm_access_write_back},
 		{"cgm_access_retry_i" ,cgm_access_retry_i},
 		{"num_access_types", num_access_types}
 		}
@@ -70,6 +72,25 @@ void packet_destroy(struct cgm_packet_t *packet){
 	//free(packet->l2_cache_name);
 	//free(packet->src_name);
 	//free(packet->dest_name);
+
+	return;
+}
+
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int row, int way){
+
+	unsigned int address;
+	unsigned int tag;
+	unsigned int set;
+	unsigned int set_mask;
+
+	write_back_packet->access_type = cgm_access_write_back;
+	write_back_packet->write_back = 1;
+	//write_back_packet->set = set;
+	//write_back_packet->tag = cache->sets[set].blocks[way].tag;
+	write_back_packet->size = cache->block_size;
+
+
+	write_back_packet->address = address;
 
 	return;
 }

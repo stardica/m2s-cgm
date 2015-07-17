@@ -39,6 +39,7 @@ enum cgm_access_kind_t {
 	cgm_access_getx, //get exclusive (or get with intent to write)
 	cgm_access_inv,  //invalidation request
 	cgm_access_upgrade,
+	cgm_access_upgrade_ack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_putx, //request for writeback of cache block exclusive data.
@@ -50,6 +51,7 @@ enum cgm_access_kind_t {
 	cgm_access_fetch_retry,
 	cgm_access_load_retry,
 	cgm_access_store_retry,
+	cgm_access_write_back,
 	cgm_access_retry_i,//not used
 	num_access_types
 };
@@ -58,16 +60,17 @@ struct cgm_packet_t{
 
 	char *name;
 
+	//star todo these can be clean up just
 	enum cgm_access_kind_t access_type;
 	enum cgm_access_kind_t l1_access_type;
 	enum cgm_access_kind_t cpu_access_type;
 	enum cgm_access_kind_t gpu_access_type;
 
 	int gpu_cache_id;
-
 	char *l2_cache_name;
 	int l2_cache_id;
 
+	//access data
 	long long access_id;
 	unsigned int address;
 	int set;
@@ -76,9 +79,10 @@ struct cgm_packet_t{
 	unsigned int offset;
 	int size;
 	int coalesced;
-	int evicted;
 
 	//for evict
+	int write_back;
+
 	int l1_victim_way;
 	int l2_victim_way;
 	int l3_victim_way;
@@ -114,6 +118,7 @@ struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag);
 
 //implements a MESI protocol.
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);

@@ -324,6 +324,7 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 //lower level cache functions
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
+int cgm_cache_get_way(struct cache_t *cache, int tag, int set);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);

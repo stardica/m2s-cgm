@@ -351,6 +351,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->address = addr;
 	new_packet->name = strdup(buff);
 	new_packet->cache_block_state = cache_block_null;
+
 	new_packet->cpu_access_type = cgm_access_fetch;
 
 
@@ -406,6 +407,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
+
 	new_packet->cpu_access_type = access_kind;
 
 	//////////////testing
