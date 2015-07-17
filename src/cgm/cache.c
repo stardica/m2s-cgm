@@ -1229,17 +1229,18 @@ void l1_d_cache_ctrl(void){
 							break;
 
 						case cache_block_shared:
-							//star todo need upgrade here
 
-							printf("id %llu cycle %llu block state %s\n", access_id, P_TIME, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
-
-
+							//printf("id %llu cycle %llu block state %s\n", access_id, P_TIME, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
+							assert(message_packet->access_type != cgm_access_store_retry);
 
 							//check ORT for coalesce
 							cache_check_ORT(&(l1_d_caches[my_pid]), message_packet);
 
 							if(message_packet->coalesced == 1)
+							{
+								printf("coal id %llu\n", access_id);
 								continue;
+							}
 
 							message_packet->access_type = cgm_access_upgrade;
 							//message_packet->l1_access_type = cgm_access_upgrade;
@@ -1259,19 +1260,21 @@ void l1_d_cache_ctrl(void){
 						case cache_block_modified:
 						case cache_block_noncoherent:
 
-							printf("id %llu cycle %llu block state %s\n", access_id, P_TIME, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
-
 							//set modified if current block state is exclusive
 							if(*cache_block_state_ptr == cache_block_exclusive)
 							{
 								cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_modified);
+								//printf("size of wb queue %d\n", list_count(l1_d_caches[my_pid].write_back_buffer));
 							}
 
-							if(access_type == cgm_access_store_retry)
+							if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 							{
 								P_PAUSE(l1_d_caches[my_pid].latency);
 							}
 
+
+							printf("id %llu cycle %llu completing\n", access_id, P_TIME);
+									//"block state %s\n", access_id, P_TIME, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
 							cache_l1_d_return(&(l1_d_caches[my_pid]),message_packet);
 							break;
 					}
@@ -1291,9 +1294,6 @@ void l1_d_cache_ctrl(void){
 							fatal("l1_i_cache_ctrl(): Invalid block state on miss\n");
 							break;
 
-
-
-							break;
 						case cache_block_invalid:
 
 							//check ORT for coalesce
@@ -1323,6 +1323,8 @@ void l1_d_cache_ctrl(void){
 				if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
+					printf("id %llu cycle %llu block state %s\n", access_id, P_TIME, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
+
 					cache_coalesed_retry(&(l1_d_caches[my_pid]), message_packet->tag, message_packet->set);
 				}
 			}
@@ -1362,13 +1364,12 @@ void l1_d_cache_ctrl(void){
 				assert(*cache_block_hit_ptr == 1);
 				assert(*cache_block_state_ptr == cache_block_shared);
 
-				//set the state to exclusive and set retry
+				//set the state to exclusive
 				cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_exclusive);
 
+				//enter the retry state
 				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
-
 				assert(message_packet->access_type == cgm_access_store_retry);
-
 				message_packet = list_remove(l1_d_caches[my_pid].last_queue, message_packet);
 				list_enqueue(l1_d_caches[my_pid].retry_queue, message_packet);
 
@@ -1729,6 +1730,7 @@ void l2_cache_ctrl(void){
 				//received upgrade request from L1
 				//star todo push this functionality to the L3 cache.
 
+				P_PAUSE(l2_caches[my_pid].latency);
 
 				//assert(message_packet->l1_access_type == cgm_access_upgrade);
 
@@ -2639,7 +2641,7 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
-		else if(message_packet->cpu_access_type == cgm_access_store)
+		else if(message_packet->cpu_access_type == cgm_access_store )
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 		}
