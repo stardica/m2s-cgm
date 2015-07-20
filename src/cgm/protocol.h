@@ -100,6 +100,10 @@ struct cgm_packet_t{
 	struct linked_list_t *event_queue;
 	int *witness_ptr;
 	void *data;
+
+	//stats
+	long long start_cycle;
+	long long end_cycle;
 };
 
 struct cgm_packet_status_t{

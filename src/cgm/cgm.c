@@ -141,6 +141,25 @@ void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats---\n");
 
+	/*printf("l1_i_cache retry queue size %d\n", list_count(l1_i_caches[0].retry_queue));
+	printf("l1_i_cache Rx_top queue size %d\n", list_count(l1_i_caches[0].Rx_queue_top));
+	printf("l1_i_cache Rx_bottom queue size %d\n", list_count(l1_i_caches[0].Rx_queue_bottom));
+
+	printf("l1_d_cache retry queue size %d\n", list_count(l1_d_caches[0].retry_queue));
+	printf("l1_d_cache Rx_top queue size %d\n", list_count(l1_d_caches[0].Rx_queue_top));
+	printf("l1_d_cache Rx_bottom queue size %d\n", list_count(l1_d_caches[0].Rx_queue_bottom));
+
+	printf("l2_cache retry queue size %d\n", list_count(l2_caches[0].retry_queue));
+	printf("l2_cache Rx_top queue size %d\n", list_count(l2_caches[0].Rx_queue_top));
+	printf("l2_cache Rx_bottom queue size %d\n", list_count(l2_caches[0].Rx_queue_bottom));
+
+	struct cgm_packet_t *mp = list_get(l1_d_caches[0].retry_queue, 0);
+	printf("rt access_id %llu\n", mp->access_id);
+	mp = list_get(l1_d_caches[0].Rx_queue_top, 0);
+	printf("top access_id %llu\n", mp->access_id);
+
+	STOP;*/
+
 	cache_dump_stats();
 
 	CLOSE_FILES;
@@ -156,10 +175,6 @@ void cgm_mem_run(void){
 
 	await(sim_finish, 1);
 	//dump stats on exit.
-
-	/*star todo fix this, this last thread needs to advance to the end,
-	but it seems there are still come outstanding threads running in the last few cycles.*/
-	//P_PAUSE(4);
 
 	return;
 }
@@ -352,6 +367,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->name = strdup(buff);
 	new_packet->cache_block_state = cache_block_null;
 
+	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = cgm_access_fetch;
 
 
@@ -408,6 +424,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
+	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
 	//////////////testing
