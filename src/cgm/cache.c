@@ -339,7 +339,15 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
 	//pull from the retry queue if we have accesses waiting...
-	if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
+	//pull from the coherence queue if there is a message waiting.
+	if(coherence_queue_size > 0)
+	{
+		new_message = list_get(cache->Coherance_Rx_queue, 0);
+		cache->last_queue = cache->Coherance_Rx_queue;
+		assert(new_message);
+	}
+
+	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
 	{
 		new_message = list_get(cache->retry_queue, 0);
 		cache->last_queue = cache->retry_queue;
@@ -366,13 +374,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
 	}
-	//pull from the coherence queue if there is a message waiting.
-	else if(coherence_queue_size > 0)
-	{
-		new_message = list_get(cache->Coherance_Rx_queue, 0);
-		cache->last_queue = cache->Coherance_Rx_queue;
-		assert(new_message);
-	}
+
 	//ORT is not full, we can process CPU requests and lower level cache replies in a round robin fashion.
 	else if(ort_status < cache->mshr_size && ort_coalesce_size <= cache->max_coal)
 	{
@@ -1152,6 +1154,7 @@ void l1_d_cache_ctrl(void){
 					switch(*cache_block_state_ptr)
 					{
 						case cache_block_invalid:
+						case cache_block_transient:
 							fatal("l1_d_cache_ctrl(): Invalid block state on load hit %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));
 							break;
 
@@ -1209,7 +1212,7 @@ void l1_d_cache_ctrl(void){
 							message_packet->access_type = cgm_access_gets_d;
 							message_packet->l1_access_type = cgm_access_gets_d;
 
-							//find victim
+							//find victim and set the transient state
 							message_packet->l1_victim_way = cgm_cache_replace_block(&(l1_d_caches[my_pid]), message_packet->set);
 
 							//charge delay
@@ -1223,15 +1226,8 @@ void l1_d_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
-
 				//get the status of the cache block
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				/*if(message_packet->set == 61 && message_packet->tag == 1)
-				{
-					printf("access id %llu tag %d set %d as %s cycle %llu\n",
-							message_packet->access_id, message_packet->tag, message_packet->set, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-				}*/
 
 				//hit
 				if(*cache_block_hit_ptr && *cache_block_state_ptr != cache_block_invalid)
@@ -1266,6 +1262,9 @@ void l1_d_cache_ctrl(void){
 								continue;
 								/*printf("store (share) access_id %llu set %d tag %d as %s coalesced cycle %llu\n",
 									message_packet->access_id, message_packet->set, message_packet->tag, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
+
+							//set block transient state
+							cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_transient);
 
 							message_packet->access_type = cgm_access_upgrade;
 
@@ -1347,11 +1346,34 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_puts || access_type == cgm_access_putx)
 			{
-				//find the access in the ORT table and clear it.
-				ort_clear(&(l1_d_caches[my_pid]), message_packet);
+				enum cache_block_state_t victim_trainsient_state;
 
-				//set the block and retry the access in the cache.
-				cache_put_block(&(l1_d_caches[my_pid]), message_packet);
+				//check the transient state of the victim
+				//if the state is set, an earlier access is bringing the block
+				//if it is not set the victim is clear to evict
+				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				victim_trainsient_state = cgm_cache_get_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->l1_victim_way);
+
+				//if the block is in the transient state there are stores waiting to write to the block.
+				if(victim_trainsient_state == cache_block_transient)
+				{
+					//the victim is locked, either wait or choose another victim.
+
+					//try again we will pull the coherence message eventually.
+					//printf("looping cache block %d\n", victim_trainsient_state);
+					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+					step--;
+					P_PAUSE(1);
+				}
+				else
+				{
+					//find the access in the ORT table and clear it.
+					ort_clear(&(l1_d_caches[my_pid]), message_packet);
+
+					//set the block and retry the access in the cache.
+					cache_put_block(&(l1_d_caches[my_pid]), message_packet);
+				}
 			}
 			else if (access_type == cgm_access_write_back)
 			{
@@ -1370,12 +1392,27 @@ void l1_d_cache_ctrl(void){
 				//printf("l1 D upgrade ack access_id % llu cycle %llu\n", message_packet->access_id, P_TIME);
 				//printf("id %llu cache block state %s\n", message_packet->access_id, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
 
+
 				//we have permission to upgrade our set block state and retry access
 				//get the status of the cache block
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				//find the access in the ORT table and clear it.
 				ort_clear(&(l1_d_caches[my_pid]), message_packet);
+
+				//eviction happens 5 times on 32x32 MM.
+
+				//if the block is no longer here on upgrade_ack, the block was evicted and maybe in the WB we can treat this as a miss...
+				if(*cache_block_hit_ptr != 1)
+				{
+					printf("evicted\n");
+					printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+				}
+				else if(*cache_block_state_ptr != cache_block_shared)
+				{
+					printf("not shared\n");
+
+				}
 
 				//star todo fix this sometimes the cache block is not in the correct state.
 				//block should be present and in shared state.
@@ -1386,8 +1423,9 @@ void l1_d_cache_ctrl(void){
 						|| *cache_block_state_ptr == cache_block_modified
 						|| *cache_block_state_ptr == cache_block_invalid);*/
 
-				//set the state to exclusive
+				//set the state to exclusive and clear the transient state
 				cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_exclusive);
+				cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_null);
 
 				//enter the retry state
 				//printf("set %d tag %d coal %d access_id %llu cycle %llu\n",message_packet->set, message_packet->tag, message_packet->coalesced, message_packet->access_id, P_TIME);
@@ -2658,11 +2696,10 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 
 		if(message_packet->cpu_access_type == cgm_access_load)
 		{	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 		}
 		else if(message_packet->cpu_access_type == cgm_access_store)
 		{
@@ -3027,6 +3064,15 @@ void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way
 	cache->sets[set].blocks[way].transient_state = t_state;
 
 	return;
+}
+
+enum cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way){
+
+	enum cache_block_state_t t_state;
+
+	t_state = cache->sets[set].blocks[way].transient_state;
+
+	return t_state;
 }
 
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state){

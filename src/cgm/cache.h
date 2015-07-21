@@ -318,6 +318,7 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cache_block_state_t t_state);
+enum cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 
 
