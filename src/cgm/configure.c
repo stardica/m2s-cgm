@@ -1072,11 +1072,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_s_caches[i].bus_width = Bus_width;
-		}
 
-		if(gpu_s_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): s cache bus width is out of bounds %d\n", Bus_width);
+			if(gpu_s_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): s cache bus width is out of bounds %d cache bus width %d \n", Bus_width, gpu_s_caches[i].bus_width);
+			}
+
 		}
 	}
 
@@ -1172,11 +1173,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_v_caches[i].bus_width = Bus_width;
-		}
 
-		if(gpu_v_caches[i].bus_width == 0)
-		{
-			fatal("cache_read_config(): v cache bus width is out of bounds %d\n", Bus_width);
+			if(gpu_v_caches[i].bus_width == 0)
+			{
+				fatal("cache_read_config(): v cache bus width is out of bounds %d\n", Bus_width);
+			}
 		}
 	}
 
@@ -1286,8 +1287,6 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 				fatal("cache_read_config(): gpu l2 cache bus width is out of bounds %d\n", gpu_l2_caches[i].bus_width);
 			}
 		}
-
-
 	}
 
 	return 0;

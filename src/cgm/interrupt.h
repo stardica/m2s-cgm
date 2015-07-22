@@ -70,6 +70,7 @@ void interrupt_init(void);
 void interrupt_create(void);
 void interrupt_create_tasks(void);
 struct interrupt_t *interrupt_service_routine_create(void);
+void interrupt_service_routine_destroy(struct interrupt_t *isr);
 
 void interrupt_service_request(void);
 

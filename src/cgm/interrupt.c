@@ -85,6 +85,13 @@ struct interrupt_t *interrupt_service_routine_create(void){
 	return isr;
 }
 
+void interrupt_service_routine_destroy(struct interrupt_t *isr){
+
+	free(isr);
+
+	return;
+}
+
 void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 	//star todo
@@ -108,7 +115,7 @@ void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop){
 
 	//set the flag for the right core
 	interrupt_cores[id]++;
-	assert(id < num_cores);
+	assert(id >= 0 && id < num_cores);
 
 	//advance the ISR
 	advance(interrupt);
@@ -141,11 +148,6 @@ void interrupt_service_request(void){
 
 		while (id < num_cores)
 		{
-
-
-			//printf("running interrupt\n");
-			//getchar();
-
 			if(interrupt_cores[id] > 0)
 			{
 
@@ -153,11 +155,15 @@ void interrupt_service_request(void){
 				interrupt_cores[id]--;
 
 
+
 				isr = list_dequeue(interrupt_list);
 				assert(isr);
 
 				uop = isr->uop;
 				core = isr->thread->core;
+
+				assert(uop);
+				assert(core);
 
 				//star todo advance the memory system with ISR related accesses.
 				if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt) //an OpenCL related syscall occurred
@@ -174,7 +180,6 @@ void interrupt_service_request(void){
 					}
 					else if(uop->interrupt == 4) //GPU memcpy
 					{
-
 						//if we make it here we should have these fields
 						assert(uop->int_src_ptr);
 						//assert(uop->int_dest_ptr);
@@ -182,49 +187,34 @@ void interrupt_service_request(void){
 
 						//printf("interrupt memcpy size %d src 0x%08X dest 0x%08X\n", uop->int_size, uop->int_src_ptr, uop->int_dest_ptr);
 						lat = 1000;
-						//getchar();
-
 					}
-
 					else //others we don't care about
 					{
 						lat = 1000;
 					}
-
 				}
 				else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 				{
 					//printf(" sys interrupt %d\n", uop->interrupt );
-
 					lat = 1000;
 				}
 				else //everything else
 				{
 					//this is what m2s originally had for all system interrupts
 					lat = 1000;
-
 				}
-
-				/////////testing
-				//lat = 2;
-				/////////testing
 
 				//set when the interrupt should complete
 				uop = linked_list_find(core->event_queue, uop);
 				uop->when = P_TIME + lat;
-				//uop->when = etime.count + 2;
 				lat = 0;
 
+				//the interrupt is complete we can free it now. list_dequeue free's the element.
+				interrupt_service_routine_destroy(isr);
 			}
-
-			id++; //go to the next lds unit
+			id++; //go to the next core
 		}
-
-		//the interrupt is complete we can free it now. list_dequeue free's the element.
-		free(isr);
-		lat = 0;
 	}
-
 	/* should never get here*/
 	fatal("interrupt_service_request task is broken\n");
 	return;
