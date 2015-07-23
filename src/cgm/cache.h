@@ -108,6 +108,9 @@ struct cache_block_t{
 	//each block has it's own directory (unsigned char)
 	union directory_t directory_entry;
 	int data_type;
+
+	//for error checking
+	long long transient_access_id;
 };
 
 struct cache_set_t{
@@ -317,8 +320,9 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
-void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cache_block_state_t t_state);
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cache_block_state_t t_state);
 enum cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
+long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 
 
