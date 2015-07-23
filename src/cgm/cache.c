@@ -1941,7 +1941,7 @@ void l3_cache_ctrl(void){
 							//block may be in dirty state.
 
 							//L2 error checking
-							assert(message_packet->cache_block_state == cache_block_invalid);
+							//assert(message_packet->cache_block_state == cache_block_invalid || message_packet->cache_block_state == cache_block_shared);
 
 							//update directory
 							cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way, message_packet->l2_cache_id);
@@ -1960,6 +1960,14 @@ void l3_cache_ctrl(void){
 							P_PAUSE(l3_caches[my_pid].latency);
 
 							cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
+
+							//check if the packet has coalesced accesses.
+							if(access_type == cgm_access_fetch_retry || access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+							{
+								//enter retry state.
+								cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
+							}
+
 							break;
 					}
 				}
@@ -1981,7 +1989,6 @@ void l3_cache_ctrl(void){
 						case cache_block_shared:
 
 
-
 							//check ORT for coalesce
 							cache_check_ORT(&(l3_caches[my_pid]), message_packet);
 
@@ -2000,8 +2007,6 @@ void l3_cache_ctrl(void){
 							message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 							message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
-
-
 							//charge delay
 							P_PAUSE(l3_caches[my_pid].latency);
 
@@ -2010,14 +2015,6 @@ void l3_cache_ctrl(void){
 							break;
 					}
 				}
-
-				//check if the packet has coalesced accesses.
-				if(access_type == cgm_access_retry)
-				{
-					//enter retry state.
-					cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
-				}
-
 			}
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
@@ -2940,7 +2937,7 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		{
 			fatal("should not be here yet\n");
 		}
-		else if (dirty == 0) // block is clean and shared.
+		else if (dirty == 0) //block is clean and shared.
 		{
 			//dir is clear so write the block (drop the block).
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
@@ -2949,7 +2946,7 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		}
 
 		//set retry state
-		message_packet->access_type = cgm_access_retry;
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
 	}
 	else if(cache->cache_type == l2_cache_t)
 	{
