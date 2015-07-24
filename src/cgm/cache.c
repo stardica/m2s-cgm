@@ -10,24 +10,25 @@
 
 
 struct str_map_t cgm_cache_block_state_map =
-{ 	7, 	{
+{ 	cache_block_state_num, 	{
 		{ "I", cache_block_invalid},
 		{ "N", cache_block_noncoherent },
 		{ "M", cache_block_modified },
 		{ "O", cache_block_owned },
 		{ "E", cache_block_exclusive },
 		{ "S", cache_block_shared },
+		{ "T", cache_block_transient },
 		{ "!", cache_block_null },
 		}
 };
 
 
 struct str_map_t cgm_cache_policy_map =
-{
-	3, 	{
+{ cache_policy_num, 	{
+		{ "INV", cache_policy_invalid },
 		{ "LRU", cache_policy_lru },
 		{ "FIFO", cache_policy_fifo },
-		{ "Random", cache_policy_random }
+		{ "Random", cache_policy_random },
 		}
 };
 
@@ -1397,46 +1398,29 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{
-				//printf("l1 D upgrade ack access_id % llu cycle %llu\n", message_packet->access_id, P_TIME);
-				//printf("id %llu cache block state %s\n", message_packet->access_id, str_map_value(&cache_block_state_map, *cache_block_state_ptr));
-
-
 				//we have permission to upgrade our set block state and retry access
+
 				//get the status of the cache block
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				//find the access in the ORT table and clear it.
 				ort_clear(&(l1_d_caches[my_pid]), message_packet);
 
-				//eviction happens 5 times on 32x32 MM.
-
-				//if the block is no longer here on upgrade_ack, the block was evicted and maybe in the WB we can treat this as a miss...
-				if(*cache_block_hit_ptr != 1)
+				/*if the block is no longer here on upgrade_ack,
+				the block was evicted and maybe in the WB we can treat this as a miss.
+				This means the trasient state is broken.*/
+				if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cache_block_shared)
 				{
-					printf("evicted\n");
-					printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+					//printf("evicted\n");
+					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+					fatal("access_id %llu evicted or not shared as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 				}
-				else if(*cache_block_state_ptr != cache_block_shared)
-				{
-					printf("not shared\n");
-
-				}
-
-				//star todo fix this sometimes the cache block is not in the correct state.
-				//block should be present and in shared state.
-				//assert(*cache_block_hit_ptr == 1);
-				//assert(*cache_block_state_ptr == cache_block_shared);
-
-						/*|| *cache_block_state_ptr == cache_block_exclusive
-						|| *cache_block_state_ptr == cache_block_modified
-						|| *cache_block_state_ptr == cache_block_invalid);*/
 
 				//set the state to exclusive and clear the transient state
 				cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cache_block_exclusive);
 				cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, NULL, cache_block_null);
 
 				//enter the retry state
-				//printf("set %d tag %d coal %d access_id %llu cycle %llu\n",message_packet->set, message_packet->tag, message_packet->coalesced, message_packet->access_id, P_TIME);
 				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
 				assert(message_packet->access_type == cgm_access_store_retry);
 				assert(message_packet->coalesced != 1);
@@ -1731,12 +1715,12 @@ void l2_cache_ctrl(void){
 
 						case cache_block_shared:
 
-							printf("l2 GetX hit shared\n");
-							STOP;
+							//printf("l2 GetX hit shared\n");
+							/*STOP;*/
 
 							assert(message_packet->access_type != cgm_access_store_retry);
 
-							//for load-store condition
+							//for potential coalesced load-store condition
 							if(message_packet->coalesced == 1)
 							{
 								message_packet->coalesced = 0;
@@ -1873,13 +1857,41 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_upgrade)
 			{
 				//received upgrade request from L1
-				//star todo have a meesage go to the L3
+
+				//check my own cache to see if I have the block and if it is in the exclusive state.
+				//if I have the block and it is in the exclusive state grant the upgrade
+				//if I have the block and it is in the shared state forward upgrade to L3
+				//if I don't have the block inclusion is broken...
+
+				//get the status of the cache block
+				/*cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				P_PAUSE(l2_caches[my_pid].latency);
 
-				message_packet->access_type = cgm_access_upgrade_ack;
+				if(*cache_block_hit_ptr == cache_block_exclusive)
+				{
+					//grant the upgrade...
+					message_packet->access_type = cgm_access_upgrade_ack;
+					cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
+				}
+				else if(*cache_block_hit_ptr == cache_block_shared)
+				{
+					//I have the block but need it upgraded as well.
 
-				cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
+				}
+				else
+				{
+					fatal("L2 upgrade invalid cache block state as %s\n", str_map_value(&cache_block_state_map, *cache_block_hit_ptr));
+				/*}*/
+
+				//run again
+				//step--;
+
+				P_PAUSE(l2_caches[my_pid].latency);
+
+				//grant the upgrade...
+					message_packet->access_type = cgm_access_upgrade_ack;
+					cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
 
 			}
 			else if (access_type == cgm_access_upgrade_ack)
@@ -1887,14 +1899,76 @@ void l2_cache_ctrl(void){
 				//ack from L3
 				P_PAUSE(l2_caches[my_pid].latency);
 
-			}
-			else if(access_type == cgm_access_puts || access_type == cgm_access_putx)
-			{
+				//we have permission to upgrade our set block state and retry access
+
+				//get the status of the cache block
+				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
 				//find the access in the ORT table and clear it.
 				ort_clear(&(l2_caches[my_pid]), message_packet);
 
-				//set the block and retry the access in the cache.
-				cache_put_block(&(l2_caches[my_pid]), message_packet);
+				/*if the block is no longer here on upgrade_ack,
+				the block was evicted and maybe in the WB we can treat this as a miss.
+				This means the trasient state is broken.*/
+				if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cache_block_shared)
+				{
+					//printf("evicted\n");
+					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+					fatal("access_id %llu evicted or not shared as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+				}
+
+				//set the state to exclusive and clear the transient state
+				cgm_cache_set_block_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, cache_block_exclusive);
+				cgm_cache_set_block_transient_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, (int) NULL, cache_block_null);
+
+				//enter the retry state
+				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+				assert(message_packet->access_type == cgm_access_store_retry);
+				assert(message_packet->coalesced != 1);
+
+				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+				list_enqueue(l2_caches[my_pid].retry_queue, message_packet);
+
+				//run again
+				step--;
+			}
+			else if(access_type == cgm_access_puts || access_type == cgm_access_putx)
+			{
+				enum cache_block_state_t victim_trainsient_state;
+				long long t_state_id;
+
+				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				victim_trainsient_state = cgm_cache_get_block_transient_state(&(l2_caches[my_pid]), message_packet->set, message_packet->l1_victim_way);
+
+				if(victim_trainsient_state == cache_block_transient)
+				{
+					//the victim is locked, either wait or choose another victim.
+					t_state_id = cgm_cache_get_block_transient_state_id(&(l1_d_caches[my_pid]), message_packet->set, message_packet->l1_victim_way);
+
+					//check for write before read condition.
+					if(message_packet->access_id >= t_state_id)
+					{
+						//star todo i don't know if this is an actual problem or not
+						printf("t_state_id %llu message_packet id %llu as %s\n", t_state_id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+						assert(message_packet->access_id >= t_state_id);
+					}
+
+					//try again we will pull the coherence message eventually.
+					//printf("looping cache block %d\n", victim_trainsient_state);
+					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+					step--;
+					P_PAUSE(1);
+				}
+				else
+				{
+					//find the access in the ORT table and clear it.
+					ort_clear(&(l2_caches[my_pid]), message_packet);
+
+					//set the block and retry the access in the cache.
+					cache_put_block(&(l2_caches[my_pid]), message_packet);
+				}
+
 			}
 			else if(access_type == cgm_access_write_back)
 			{
@@ -2206,8 +2280,7 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_upgrade)
 			{
 				//star todo this needs to check state of directory and respond accordingly.
-
-				//printf("L3 upgrade\n");
+				/*printf("L3 upgrade request\n");*/
 
 				P_PAUSE(l3_caches[my_pid].latency);
 
@@ -2997,11 +3070,11 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	if(l3_inf && cache->cache_type == l3_cache_t)
 	{
-		if(message_packet->cpu_access_type == cgm_access_fetch )
+		if(message_packet->cpu_access_type == cgm_access_fetch || message_packet->cpu_access_type == cgm_access_load)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
-		else if(message_packet->cpu_access_type == cgm_access_store || message_packet->cpu_access_type == cgm_access_load)
+		else if(message_packet->cpu_access_type == cgm_access_store )
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 		}

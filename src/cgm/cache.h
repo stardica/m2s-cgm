@@ -40,7 +40,8 @@ enum cache_block_state_t{
 	cache_block_exclusive,
 	cache_block_shared,
 	cache_block_transient,
-	cache_block_null
+	cache_block_null,
+	cache_block_state_num
 };
 
 #include <cgm/directory.h>
@@ -88,7 +89,8 @@ enum cache_policy_t{
 	cache_policy_invalid = 0,
 	cache_policy_lru,
 	cache_policy_fifo,
-	cache_policy_random
+	cache_policy_random,
+	cache_policy_num
 };
 
 struct cache_block_t{
