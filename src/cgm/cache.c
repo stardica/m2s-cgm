@@ -583,6 +583,8 @@ int cgm_l3_cache_map(int set){
 	int num_cores = x86_cpu_num_cores;
 	int map = -1;
 
+	assert(l3_caches[0].slice_type == 1);
+
 	int map_type = l3_caches[0].slice_type;
 
 	//stripe
@@ -1008,10 +1010,10 @@ void l1_i_cache_ctrl(void){
 						case cache_block_noncoherent:
 						case cache_block_modified:
 						case cache_block_owned:
-						case cache_block_exclusive:
 							fatal("l1_i_cache_ctrl(): Invalid block state on hit\n");
 							break;
 
+						case cache_block_exclusive:
 						case cache_block_shared:
 
 							//printf("fetch id %llu set %d tag %d complete cycle %llu\n", message_packet->access_id, message_packet->tag, message_packet->set, P_TIME);
@@ -1138,12 +1140,6 @@ void l1_d_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-				/*if(message_packet->set == 61 && message_packet->tag == 1)
-				{
-					printf("access id %llu tag %d set %d as %s cycle %llu\n",
-							message_packet->access_id, message_packet->tag, message_packet->set, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-				}*/
-
 				//hit
 				if(*cache_block_hit_ptr && *cache_block_state_ptr != cache_block_invalid)
 				{
@@ -1196,6 +1192,8 @@ void l1_d_cache_ctrl(void){
 							break;
 
 						case cache_block_invalid:
+
+							//printf("load miss\n");
 
 							//check ORT for coalesce
 							cache_check_ORT(&(l1_d_caches[my_pid]), message_packet);
@@ -1523,10 +1521,10 @@ void l2_cache_ctrl(void){
 						case cache_block_noncoherent:
 						case cache_block_modified:
 						case cache_block_owned:
-						case cache_block_exclusive:
 							fatal("l2_cache_ctrl(): Invalid block state on fetch hit\n");
 							break;
 
+						case cache_block_exclusive:
 						case cache_block_shared:
 
 							P_PAUSE(l2_caches[my_pid].latency);
@@ -1562,7 +1560,7 @@ void l2_cache_ctrl(void){
 						case cache_block_owned:
 						case cache_block_exclusive:
 						case cache_block_shared:
-							fatal("l2_cache_ctrl(): Invalid block state on miss\n");
+							fatal("l2_cache_ctrl(): Invalid block state on fetch miss\n");
 							break;
 
 						case cache_block_invalid:
@@ -1623,7 +1621,7 @@ void l2_cache_ctrl(void){
 
 						case cache_block_noncoherent:
 						case cache_block_invalid:
-							fatal("l2_cache_ctrl(): Invalid block state on load store hit\n");
+							fatal("l2_cache_ctrl(): Invalid block state on load hit\n");
 							break;
 
 						case cache_block_modified:
@@ -1666,7 +1664,7 @@ void l2_cache_ctrl(void){
 						case cache_block_owned:
 						case cache_block_exclusive:
 						case cache_block_shared:
-							fatal("l2_cache_ctrl(): Invalid block state on miss\n");
+							fatal("l2_cache_ctrl(): Invalid block state on load miss\n");
 							break;
 
 						case cache_block_invalid:
@@ -1716,6 +1714,8 @@ void l2_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+				//printf("l2 GetX access\n");
+
 				//hit
 				if(*cache_block_hit_ptr && *cache_block_state_ptr != cache_block_invalid)
 				{
@@ -1726,16 +1726,59 @@ void l2_cache_ctrl(void){
 					{
 						case cache_block_invalid:
 						case cache_block_modified:
-							fatal("l2_cache_ctrl(): Invalid block state on load store hit\n");
+							fatal("l2_cache_ctrl(): Invalid block state on store hit\n");
 							break;
+
+						case cache_block_shared:
+
+							printf("l2 GetX hit shared\n");
+							STOP;
+
+							assert(message_packet->access_type != cgm_access_store_retry);
+
+							//for load-store condition
+							if(message_packet->coalesced == 1)
+							{
+								message_packet->coalesced = 0;
+							}
+
+							//check ORT for coalesce
+							cache_check_ORT(&(l2_caches[my_pid]), message_packet);
+
+							if(message_packet->coalesced == 1)
+								continue;
+
+							//set block transient state
+							cgm_cache_set_block_transient_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, message_packet->access_id, cache_block_transient);
+
+							//set type and route message
+							message_packet->access_type = cgm_access_upgrade;
+
+							int l3_map;
+							l3_map = cgm_l3_cache_map(message_packet->set);
+							message_packet->l2_cache_id = l2_caches[my_pid].id;
+							message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
+
+							message_packet->src_name = l2_caches[my_pid].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+							message_packet->dest_name = l3_caches[l3_map].name;
+							message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+							//charge delay
+							P_PAUSE(l2_caches[my_pid].latency);
+
+							//transmit upgrade request to L3
+							cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
+								break;
 
 						case cache_block_noncoherent:
 						case cache_block_owned:
 						case cache_block_exclusive:
+
 							P_PAUSE(l2_caches[my_pid].latency);
 
 							//error check, what was L1 D cache block state?
-							assert(message_packet->cache_block_state == cache_block_invalid);
+							//assert(message_packet->cache_block_state == cache_block_invalid);
 
 							//set message status and size
 							message_packet->access_type = cgm_access_putx;
@@ -1760,17 +1803,29 @@ void l2_cache_ctrl(void){
 				{
 					l2_caches[my_pid].misses++;
 
+					/*printf("l2 GetX access miss\n");
+					STOP;*/
+
+					assert(*cache_block_state_ptr == cache_block_invalid);
+
 					switch(*cache_block_state_ptr)
 					{
+						default:
+							fatal("L3 bad cache block state\n");
+							break;
+
 						case cache_block_noncoherent:
 						case cache_block_modified:
 						case cache_block_owned:
 						case cache_block_exclusive:
-							fatal("l2_cache_ctrl(): Invalid block state on miss\n");
+						case cache_block_shared:
+							fatal("l2_cache_ctrl(): Invalid block state on store miss\n");
 							break;
 
 						case cache_block_invalid:
-						case cache_block_shared:
+
+							//check L1 block state
+							assert(message_packet->cache_block_state == cache_block_invalid);
 
 							//check ORT for coalesce
 							cache_check_ORT(&(l2_caches[my_pid]), message_packet);
@@ -1778,9 +1833,21 @@ void l2_cache_ctrl(void){
 							if(message_packet->coalesced == 1)
 								continue;
 
-							//add some routing/status data to the packet
+							//find victim
+							message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
+
+							//set the data type bit in the block
+							int type;
+							type = message_packet->cpu_access_type == cgm_access_fetch ? 1 : 0;
+							cgm_cache_set_block_type(&(l2_caches[my_pid]), type, message_packet->set, message_packet->l2_victim_way);
+
+							//set access type
 							message_packet->access_type = cgm_access_getx;
 
+							//set L2 block state
+							message_packet->cache_block_state = *cache_block_state_ptr;
+
+							//set routing to the packet
 							int l3_map;
 							l3_map = cgm_l3_cache_map(message_packet->set);
 							message_packet->l2_cache_id = l2_caches[my_pid].id;
@@ -1791,37 +1858,34 @@ void l2_cache_ctrl(void){
 							message_packet->dest_name = l3_caches[l3_map].name;
 							message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
-							//find victim
-							message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
-
-							//set the data type bit
-							int type;
-							type = message_packet->l1_access_type == cgm_access_gets_i ? 1 : 0;
-							cgm_cache_set_block_type(&(l2_caches[my_pid]), type, message_packet->set, message_packet->l2_victim_way);
-
 							//charge delay
 							P_PAUSE(l2_caches[my_pid].latency);
 
 							//transmit to L3
 							cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
+
+							//printf("L2 transmitting GetX as %s cycle %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 							break;
+
 					}
 				}
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
 				//received upgrade request from L1
-				//star todo push this functionality to the L3 cache.
-
-				//printf("l2 upgrade access_id % llu cycle %llu\n", message_packet->access_id, P_TIME);
+				//star todo have a meesage go to the L3
 
 				P_PAUSE(l2_caches[my_pid].latency);
-
-				//assert(message_packet->l1_access_type == cgm_access_upgrade);
 
 				message_packet->access_type = cgm_access_upgrade_ack;
 
 				cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
+
+			}
+			else if (access_type == cgm_access_upgrade_ack)
+			{
+				//ack from L3
+				P_PAUSE(l2_caches[my_pid].latency);
 
 			}
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx)
@@ -1909,6 +1973,9 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
+			/*printf("Received %s cycle %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			getchar();*/
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
@@ -1938,7 +2005,7 @@ void l3_cache_ctrl(void){
 						case cache_block_shared:
 						case cache_block_exclusive:
 
-							//block may be in dirty state.
+							//star todo block may be in dirty state, need to manipulate as required.
 
 							//L2 error checking
 							//assert(message_packet->cache_block_state == cache_block_invalid || message_packet->cache_block_state == cache_block_shared);
@@ -1958,6 +2025,8 @@ void l3_cache_ctrl(void){
 							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
 
 							P_PAUSE(l3_caches[my_pid].latency);
+
+							//printf("Sending %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 							cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
 
@@ -1987,7 +2056,6 @@ void l3_cache_ctrl(void){
 
 						case cache_block_invalid:
 						case cache_block_shared:
-
 
 							//check ORT for coalesce
 							cache_check_ORT(&(l3_caches[my_pid]), message_packet);
@@ -2019,6 +2087,128 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
 
+				//get the status of the cache block
+				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				//printf("l3 GetX access\n");
+
+				//hit
+				if(*cache_block_hit_ptr && *cache_block_state_ptr != cache_block_invalid)
+				{
+					//stats;
+					l3_caches[my_pid].hits++;
+
+					//check the directory dirty bit status
+					dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way);
+
+					switch(*cache_block_state_ptr)
+					{
+						case cache_block_invalid:
+						case cache_block_noncoherent:
+						case cache_block_modified:
+						case cache_block_owned:
+							fatal("l3_cache_ctrl(): Invalid block state on hit\n");
+							break;
+
+						case cache_block_shared:
+						case cache_block_exclusive:
+
+							//star todo block may be in dirty state, need to manipulate as required.
+
+							//L2 error checking
+							//assert(message_packet->cache_block_state == cache_block_invalid || message_packet->cache_block_state == cache_block_shared);
+
+							//update directory
+							cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way, message_packet->l2_cache_id);
+
+							// update message packet status
+							message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+							message_packet->access_type = cgm_access_putx;
+							message_packet->cache_block_state = *cache_block_state_ptr;
+							/*printf("l3 block type %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
+
+							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+							message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+							message_packet->src_name = l3_caches[my_pid].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
+
+							P_PAUSE(l3_caches[my_pid].latency);
+
+							//printf("Sending %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+
+							cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
+
+							//check if the packet has coalesced accesses.
+							if(access_type == cgm_access_fetch_retry || access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+							{
+								//enter retry state.
+								cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
+							}
+
+							break;
+					}
+				}
+				//miss
+				else if(*cache_block_hit_ptr || *cache_block_state_ptr == cache_block_invalid)
+				{
+					l3_caches[my_pid].misses++;
+
+					switch(*cache_block_state_ptr)
+					{
+						case cache_block_noncoherent:
+						case cache_block_modified:
+						case cache_block_owned:
+						case cache_block_exclusive:
+							fatal("l3_cache_ctrl(): Invalid block state on miss\n");
+							break;
+
+						case cache_block_invalid:
+						case cache_block_shared:
+
+							//check ORT for coalesce
+							cache_check_ORT(&(l3_caches[my_pid]), message_packet);
+
+							if(message_packet->coalesced == 1)
+								continue;
+
+							//find victim again because LRU has been updated on hits.
+							message_packet->l3_victim_way = cgm_cache_replace_block(&(l3_caches[my_pid]), message_packet->set);
+
+							//add some routing/status data to the packet
+							message_packet->access_type = cgm_access_mc_get;
+							message_packet->cache_block_state = cache_block_exclusive;
+
+							message_packet->src_name = l3_caches[my_pid].name;
+							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
+							message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
+							message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
+
+							//charge delay
+							P_PAUSE(l3_caches[my_pid].latency);
+
+							//transmit to L3
+							cache_put_io_down_queue(&(l3_caches[my_pid]), message_packet);
+							break;
+					}
+				}
+			}
+			else if(access_type == cgm_access_upgrade)
+			{
+				//star todo this needs to check state of directory and respond accordingly.
+
+				//printf("L3 upgrade\n");
+
+				P_PAUSE(l3_caches[my_pid].latency);
+
+				message_packet->access_type = cgm_access_upgrade_ack;
+
+				//set route etc
+				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+				message_packet->src_name = l3_caches[my_pid].name;
+				message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
+
+				cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
 
 			}
 			else if (access_type == cgm_access_mc_put)
@@ -2515,8 +2705,6 @@ void l3_cache_down_io_ctrl(void){
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].south_queue, message_packet);
 		advance(&switches_ec[my_pid]);
-
-		/*printf("l3 -> SA\n");*/
 	}
 	return;
 }
@@ -2758,15 +2946,14 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	}
 
 
-
 	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
-		/*if(message_packet->cpu_access_type == cgm_access_load)
+		if(message_packet->cpu_access_type == cgm_access_load)
 		{	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
-		}*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		}
 		if(message_packet->cpu_access_type == cgm_access_store)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
@@ -2794,14 +2981,15 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 	}
 
-
 	if(l3_inf && cache->cache_type == l3_cache_t)
 	{
-		if(message_packet->cpu_access_type == cgm_access_fetch || message_packet->cpu_access_type == cgm_access_load)
+		assert(message_packet->cpu_access_type == cgm_access_fetch || message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store);
+
+		if(message_packet->cpu_access_type == cgm_access_fetch)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
-		else if(message_packet->cpu_access_type == cgm_access_store)
+		else if(message_packet->cpu_access_type == cgm_access_store || message_packet->cpu_access_type == cgm_access_load)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 		}

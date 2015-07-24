@@ -87,6 +87,9 @@ struct interrupt_t *interrupt_service_routine_create(void){
 
 void interrupt_service_routine_destroy(struct interrupt_t *isr){
 
+	isr->thread = NULL;
+	isr->uop = NULL;
+
 	free(isr);
 
 	return;

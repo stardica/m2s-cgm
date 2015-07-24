@@ -367,7 +367,8 @@ void switch_ctrl(void){
 					//star todo fix this, the divert is down in IO ctrl now.
 
 					//divert to correct input queue based on access type
-					if(message_packet->access_type == cgm_access_gets)
+					if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
+					|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_upgrade)
 					{
 
 						if(!cache_can_access_top(&l3_caches[my_pid]))
@@ -843,14 +844,21 @@ void switch_north_io_ctrl(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
-		//printf("switch in north IO ctrl tx time %d cycle %llu\n", transfer_time, P_TIME);
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
+
+
 		P_PAUSE(transfer_time);
 
+		//L2 switches
 		if(my_pid < num_cores)
 		{
 			list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 			advance(&l2_cache[my_pid]);
 		}
+		//hub-iommu
 		else if(my_pid >= num_cores)
 		{
 			list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
@@ -890,6 +898,11 @@ void switch_east_io_ctrl(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
+
 		P_PAUSE(transfer_time);
 
 		//drop into next east queue.
@@ -924,6 +937,11 @@ void switch_west_io_ctrl(void){
 
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
+
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
 
 		P_PAUSE(transfer_time);
 
@@ -961,16 +979,19 @@ void switch_south_io_ctrl(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
-		P_PAUSE(transfer_time);
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
 
-		/*printf("in south IO ctrl tx time %d\n", transfer_time);
-		getchar();*/
+		P_PAUSE(transfer_time);
 
 		//L3 caches
 		if(my_pid < num_cores)
 		{
 			//put the message in the right queue.
-			if(message_packet->access_type == cgm_access_gets)
+			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
+					|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_upgrade)
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
