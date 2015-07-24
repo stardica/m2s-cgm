@@ -583,7 +583,7 @@ int cgm_l3_cache_map(int set){
 	int num_cores = x86_cpu_num_cores;
 	int map = -1;
 
-	assert(l3_caches[0].slice_type == 1);
+	/*assert(l3_caches[0].slice_type == 1);*/
 
 	int map_type = l3_caches[0].slice_type;
 
@@ -1973,9 +1973,6 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("Received %s cycle %llu\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-			getchar();*/
-
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
@@ -2068,7 +2065,19 @@ void l3_cache_ctrl(void){
 
 							//add some routing/status data to the packet
 							message_packet->access_type = cgm_access_mc_get;
-							message_packet->cache_block_state = cache_block_shared;
+
+							//message_packet->cache_block_state = cache_block_shared;
+
+							////////////testing
+							if(message_packet->cpu_access_type == cgm_access_fetch)
+							{
+								message_packet->cache_block_state = cache_block_shared;
+							}
+							else
+							{
+								message_packet->cache_block_state = cache_block_exclusive;
+							}
+							////////////testing
 
 							message_packet->src_name = l3_caches[my_pid].name;
 							message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
@@ -2090,7 +2099,7 @@ void l3_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-				//printf("l3 GetX access\n");
+				/*printf("L3 Getx\n");*/
 
 				//hit
 				if(*cache_block_hit_ptr && *cache_block_state_ptr != cache_block_invalid)
@@ -2125,6 +2134,8 @@ void l3_cache_ctrl(void){
 							message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 							message_packet->access_type = cgm_access_putx;
 							message_packet->cache_block_state = *cache_block_state_ptr;
+
+							//message_packet->cache_block_state = *cache_block_state_ptr;
 							/*printf("l3 block type %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
 
 							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
@@ -2213,6 +2224,9 @@ void l3_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
+
+				/*printf("l3 cache %d mc_put\n", my_pid);*/
+
 				//find the access in the ORT table and clear it.
 				ort_clear(&(l3_caches[my_pid]), message_packet);
 
@@ -2952,12 +2966,12 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 		if(message_packet->cpu_access_type == cgm_access_load)
 		{	//cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
-		}
-		if(message_packet->cpu_access_type == cgm_access_store)
-		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
 		}
+		/*if(message_packet->cpu_access_type == cgm_access_store)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_exclusive);
+		}*/
 	}
 
 	if(l1_d_miss && cache->cache_type == l1_d_cache_t)
@@ -2983,9 +2997,7 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	if(l3_inf && cache->cache_type == l3_cache_t)
 	{
-		assert(message_packet->cpu_access_type == cgm_access_fetch || message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store);
-
-		if(message_packet->cpu_access_type == cgm_access_fetch)
+		if(message_packet->cpu_access_type == cgm_access_fetch )
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
 		}
@@ -3025,6 +3037,8 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	message_packet = list_remove(cache->last_queue, message_packet);
 	remove_from_global(message_packet->access_id);
 
+	/*printf("access_id %llu cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/
+
 	packet_destroy(message_packet);
 	return;
 }
@@ -3038,8 +3052,7 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	message_packet = list_remove(cache->last_queue, message_packet);
 	linked_list_add(message_packet->event_queue, message_packet->data);
 
-	/*long long cycles = message_packet->end_cycle - message_packet->start_cycle;
-	printf("id %llu lasted cycles %llu\n", message_packet->access_id, cycles);*/
+	/*printf("access_id %llu cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/
 
 	packet_destroy(message_packet);
 	return;
@@ -3118,20 +3131,20 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	if(cache->cache_type == l3_cache_t)
 	{
 		//check if directory entry is dirty or clean for victim
-		dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->l3_victim_way);
+		//dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->l3_victim_way);
 
 		//star todo write back somehow
-		if(dirty == 1) //the block is dirty, we must write it back
+		/*if(dirty == 1) //the block is dirty, we must write it back
 		{
 			fatal("should not be here yet\n");
 		}
 		else if (dirty == 0) //block is clean and shared.
-		{
+		{*/
 			//dir is clear so write the block (drop the block).
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
 			cgm_cache_set_block(cache, message_packet->set, message_packet->l3_victim_way, message_packet->tag, message_packet->cache_block_state);
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->l3_victim_way, message_packet->l2_cache_id);
-		}
+		/*}*/
 
 		//set retry state
 		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);

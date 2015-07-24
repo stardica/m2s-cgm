@@ -118,6 +118,11 @@ void memctrl_ctrl_io(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/mem_ctrl->bus_width);
 
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
+
 		P_PAUSE(transfer_time);
 
 		/*while(transfer_time > 0)

@@ -198,6 +198,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
+	/*printf("routing\n");*/
 
 	if(access_type == cgm_access_mc_get)
 	{
@@ -288,14 +289,12 @@ void sys_agent_ctrl_io_up(void){
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/system_agent->up_bus_width);
 
-		P_PAUSE(transfer_time);
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
 
-		/*while(transfer_time > 0)
-		{*/
-			//P_PAUSE(1);
-			//transfer_time--;
-			//printf("Access_id %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
-		/*}*/
+		P_PAUSE(transfer_time);
 
 		list_enqueue(system_agent->switch_queue, message_packet);
 		advance(&switches_ec[system_agent->switch_id]);
@@ -324,6 +323,11 @@ void sys_agent_ctrl_io_down(void){
 
 		access_id = message_packet->access_id;
 		transfer_time = (message_packet->size/system_agent->down_bus_width);
+
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
 
 		P_PAUSE(transfer_time);
 
@@ -381,16 +385,7 @@ void sys_agent_ctrl(void){
 
 			//star todo this is where we will receive our other directory coherence messages
 			//for now lets just patch it up.
-			/*if(access_type == cgm_access_gets || access_type == cgm_access_puts)
-			{*/
-
 			system_agent_route(message_packet);
-			/*}
-			else
-			{
-				fatal("sys_agent_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
-						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-			}*/
 		}
 	}
 
