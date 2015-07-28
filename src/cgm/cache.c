@@ -1059,8 +1059,8 @@ void l1_i_cache_ctrl(void){
 
 							//add some routing/status data to the packet
 							//message_packet->cpu_access_type = cgm_access_fetch;
-							message_packet->access_type = cgm_access_gets_i;
-							message_packet->l1_access_type = cgm_access_gets_i;
+							message_packet->access_type = cgm_access_gets;
+							message_packet->l1_access_type = cgm_access_gets;
 
 							//find victim
 							message_packet->l1_victim_way = cgm_cache_replace_block(&(l1_i_caches[my_pid]), message_packet->set);
@@ -1207,10 +1207,10 @@ void l1_d_cache_ctrl(void){
 										message_packet->access_id, message_packet->set, message_packet->tag, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
 							//add some routing/status data to the packet
-							message_packet->access_type = cgm_access_gets_d;
-							message_packet->l1_access_type = cgm_access_gets_d;
+							message_packet->access_type = cgm_access_get;
+							message_packet->l1_access_type = cgm_access_get;
 
-							//find victim and set the transient state
+							//find victim
 							message_packet->l1_victim_way = cgm_cache_replace_block(&(l1_d_caches[my_pid]), message_packet->set);
 
 							//charge delay
@@ -1489,7 +1489,7 @@ void l2_cache_ctrl(void){
 
 			//printf("%s request access type %s cycle %llu\n", l2_caches[my_pid].name, str_map_value(&cgm_mem_access_strn_map, access_type), P_TIME);
 
-			if(access_type == cgm_access_gets_i || access_type == cgm_access_fetch_retry)
+			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
 				//get the status of the cache block
 				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1574,9 +1574,9 @@ void l2_cache_ctrl(void){
 							message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
 
 							//set the data type bit
-							int type;
+							/*int type;
 							type = message_packet->l1_access_type == cgm_access_gets_i ? 1 : 0;
-							cgm_cache_set_block_type(&(l2_caches[my_pid]), type, message_packet->set, message_packet->l2_victim_way);
+							cgm_cache_set_block_type(&(l2_caches[my_pid]), type, message_packet->set, message_packet->l2_victim_way);*/
 
 							//charge delay
 							P_PAUSE(l2_caches[my_pid].latency);
@@ -1587,7 +1587,7 @@ void l2_cache_ctrl(void){
 					}
 				}
 			}
-			else if(access_type == cgm_access_gets_d || access_type == cgm_access_load_retry)
+			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
 
 				//get the status of the cache block
@@ -1985,9 +1985,15 @@ void l2_cache_ctrl(void){
 
 				//assert(way < l2_caches[my_pid].assoc);
 
-				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
-				assert(message_packet->write_back == 1);
-				packet_destroy(message_packet);
+				P_PAUSE(l2_caches[my_pid].latency);
+
+				//send the write back to the L2 cache.
+				cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
+
+				/*write backs are internally scheduled so decrement the counter
+				figure out a way to do this better..
+				perhaps have the cache advance itself when the evict results in a write back buffer entry.*/
+				step--;
 			}
 			else
 			{
@@ -2088,6 +2094,7 @@ void l3_cache_ctrl(void){
 							// update message packet status
 							message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 							message_packet->access_type = cgm_access_puts;
+
 							message_packet->cache_block_state = *cache_block_state_ptr;
 							assert(message_packet->cache_block_state == cache_block_shared);
 							/*printf("l3 block type %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
@@ -2291,6 +2298,17 @@ void l3_cache_ctrl(void){
 
 				cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
 
+			}
+			else if(access_type == cgm_access_write_back)
+			{
+				//star todo finish this up.
+				P_PAUSE(l3_caches[my_pid].latency);
+
+				printf("l3 wb\n");
+
+				message_packet = list_remove(l3_caches[my_pid].last_queue, message_packet);
+				assert(message_packet->write_back == 1);
+				packet_destroy(message_packet);
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
@@ -2590,7 +2608,7 @@ void l1_d_cache_down_io_ctrl(void){
 		P_PAUSE(transfer_time);
 
 		//drop into the next correct virtual lane/queue.
-		if(message_packet->access_type == cgm_access_gets_d || message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_write_back)
+		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_write_back)
 		{
 			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 			advance(&l2_cache[my_pid]);
@@ -3240,7 +3258,7 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	else if(cache->cache_type == l2_cache_t)
 	{
 		//get the block type bit from the victim
-		type = cgm_cache_get_block_type(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag);
+		/*type = cgm_cache_get_block_type(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag);
 
 		if(type == 1) //instruction cache data
 		{
@@ -3258,13 +3276,36 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, message_packet->cache_block_state);
 			assert(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store);
 			message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		}*/
+
+		victim_state = cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way);
+
+		/*first if the block is modified it is dirty and needs to be written back
+		move a copy of the block to the write back buffer*/
+		if (victim_state == cache_block_modified)
+		{
+			//move the block to the WB buffer
+			struct cgm_packet_t *write_back_packet = packet_create();
+
+			//star todo remember to set l2 cache id in WB packet
+			init_write_back_packet(cache, write_back_packet, message_packet->set, message_packet->l2_victim_way);
+
+			list_enqueue(cache->write_back_buffer, write_back_packet);
 		}
+
+		//the block can be silently dropped if it is not modified.
+		cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, message_packet->cache_block_state);
+
+		//set retry state
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+
 	}
 	else if(cache->cache_type == l1_d_cache_t)
 	{
 		victim_state = cgm_cache_get_block_state(cache, message_packet->set, message_packet->l1_victim_way);
 
-		//first if the block is modified it is dirty and needs to be written back
+		/*first if the block is modified it is dirty and needs to be written back
+		move a copy of the block to the write back buffer*/
 		if (victim_state == cache_block_modified) //|| (victim_state == cache_block_owned)
 		{
 			//move the block to the WB buffer

@@ -30,7 +30,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_prefetch", cgm_access_prefetch},
 		{"cgm_access_gets", cgm_access_gets},
 		{"cgm_access_gets_i", cgm_access_gets_i},
-		{"cgm_access_gets_d", cgm_access_gets_d},
+		{"cgm_access_get", cgm_access_get},
 		{"cgm_access_gets_s", cgm_access_gets_s},
 		{"cgm_access_gets_v", cgm_access_gets_v},
 		{"cgm_access_getx", cgm_access_getx},
@@ -256,8 +256,8 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 		else if(message_packet->access_type == cgm_access_load)
 		{
 			message_packet->cpu_access_type = cgm_access_load;
-			message_packet->access_type = cgm_access_gets_d;
-			message_packet->l1_access_type = cgm_access_gets_d;
+			message_packet->access_type = cgm_access_get;
+			message_packet->l1_access_type = cgm_access_get;
 		}
 		else
 		{
@@ -433,8 +433,8 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 		//only the D$ stores
 		message_packet->cpu_access_type = cgm_access_store;
-		message_packet->access_type = cgm_access_gets_d;
-		message_packet->l1_access_type = cgm_access_gets_d;
+		message_packet->access_type = cgm_access_get;
+		message_packet->l1_access_type = cgm_access_get;
 
 		//miss so check ORT status
 		i = ort_search(cache, tag, set);
@@ -595,7 +595,7 @@ void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//advance(&l1_i_cache[cache->id]);
 					//future_advance(&l1_i_cache[cache->id], WIRE_DELAY(l1_i_caches[cache->id].wire_latency));
 				}
-				else if (message_packet->access_type == cgm_access_gets_d)
+				else if (message_packet->access_type == cgm_access_get)
 				{
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
@@ -1097,7 +1097,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 						cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
 
 				}
-				else if (message_packet->l1_access_type == cgm_access_gets_d)
+				else if (message_packet->l1_access_type == cgm_access_get)
 				{
 					//while the next level of cache's in queue is full stall
 					while(!cache_can_access_bottom(&l1_d_caches[cache->id]))
