@@ -1,20 +1,21 @@
-/*
- * protocol.c
+
+
+/* protocol.c
  *
  *  Created on: Apr 6, 2015
- *      Author: stardica
- */
+ *      Author: stardica*/
+
 
 
 #include <cgm/protocol.h>
 
-/*
+
 #include <cgm/cgm.h>
 #include <cgm/protocol.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
-*/
+
 
 struct str_map_t cgm_mem_access_strn_map =
 { 	num_access_types, 	{
@@ -111,6 +112,7 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet){
 
 	return;
 }
+/*
 
 void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -165,26 +167,26 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
 	}
 
 	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_shared);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
 
 	}
 
 	if(l1_i_miss && cache->cache_type == l1_i_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
 	}
 
 	if(l1_d_miss && cache->cache_type == l1_d_cache_t)
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_invalid);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
 	}
 	//////testing
 
@@ -200,10 +202,10 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)
 	{
-		assert(*state_ptr != cache_block_invalid);
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cache_block_state_map, *state_ptr));
+		assert(*state_ptr != cgm_cache_block_invalid);
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu hit state %s\n", cache->name, access_id, P_TIME, str_map_value(&cgm_cache_block_state_map, *state_ptr));
 
-		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
+		if(*state_ptr == cgm_cache_block_modified || *state_ptr == cgm_cache_block_exclusive || *state_ptr == cgm_cache_block_shared || *state_ptr == cgm_cache_block_noncoherent)
 		{
 			cache->hits++;
 
@@ -211,7 +213,7 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			if(message_packet->access_type == cgm_access_fetch)
 			{
 				//should only ever be shared for i caches.
-				assert(*state_ptr != cache_block_modified || *state_ptr != cache_block_exclusive || *state_ptr != cache_block_noncoherent);
+				assert(*state_ptr != cgm_cache_block_modified || *state_ptr != cgm_cache_block_exclusive || *state_ptr != cgm_cache_block_noncoherent);
 
 				//remove packet from cache queue, global queue, and simulator memory
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -281,8 +283,8 @@ void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 			list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 					cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
@@ -403,10 +405,10 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//star todo change this to work as a message sent to the directory
 			//also need to send invalidations out.
-			/*if(*state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared)
+			if(*state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared)
 			{
 				cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_modified);
-			}*/
+			}
 
 			//here we would write the data into the block if we had the correct access.
 
@@ -452,8 +454,8 @@ void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
 				cache->name, access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -838,23 +840,23 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//printf("access_id %llu COAL %d tag %d set %d offset %d l1_way %d cycle %llu\n",message_packet->access_id, message_packet->coalesced, message_packet->tag, message_packet->set, message_packet->offset, message_packet->l1_victim_way, P_TIME);
 	//getchar();
 
-	/*row = ort_search(cache, message_packet->tag, message_packet->set);
+	row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(row < cache->mshr_size);
-	ort_clear(cache, row);*/
+	ort_clear(cache, row);
 
 	//printf("access_id %llu cleared from ORT %d cycle %llu as %s\n", message_packet->access_id, row, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-	/*cgm_cache_get_block(cache, set, way, NULL, state_ptr);*/
+	cgm_cache_get_block(cache, set, way, NULL, state_ptr);
 
 	//cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
-	/*printf("CFB way = %d\n", *way_ptr);*/
+	printf("CFB way = %d\n", *way_ptr);
 	//getchar();
 
 	cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
 
 	//cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cache_block_shared);
 
-	/*find a victim*/
-	/*if(cache->cache_type == l1_i_cache_t)
+	//find a victim
+	if(cache->cache_type == l1_i_cache_t)
 	{
 		//Evict, get the LRU
 		*(way_ptr) = cgm_cache_replace_block(cache, set);
@@ -960,7 +962,7 @@ void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 		{
 			fatal("cpu_cache_access_put(): i cache invalid block state\n");
 		}
-	}*/
+	}
 
 	//set retry
 
@@ -1012,8 +1014,8 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	*tag_ptr = message_packet->tag;
 	*set_ptr = message_packet->set;
 	*offset_ptr = message_packet->offset;
-	/**way_ptr = message_packet->l1_victim_way;*/
-	/**way_ptr = 1;*/
+	*way_ptr = message_packet->l1_victim_way;
+	*way_ptr = 1;
 
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 
@@ -1029,7 +1031,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 		if(*state_ptr == cache_block_modified || *state_ptr == cache_block_exclusive || *state_ptr == cache_block_shared || *state_ptr == cache_block_noncoherent)
 		{
 
-			//list_remove(cache->retry_queue, message_packet); /*check here */
+			//list_remove(cache->retry_queue, message_packet); /*check here
 			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
 				cache->name, access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
 
@@ -1045,7 +1047,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 					//printf("access_id %llu cleared cycle %llu as %s\n",
 							//message_packet->access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+					message_packet = list_remove(cache->last_queue, message_packet); check here
 					free(message_packet);
 					remove_from_global(access_id);
 
@@ -1055,7 +1057,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				{
 					P_PAUSE(cache->latency);
 
-					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+					message_packet = list_remove(cache->last_queue, message_packet); check here
 					linked_list_add(message_packet->event_queue, message_packet->data);
 					free(message_packet);
 
@@ -1084,7 +1086,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 						message_packet->access_type = cgm_access_puts;
 
-						message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+						message_packet = list_remove(cache->last_queue, message_packet); check here
 
 						list_enqueue(cache->Tx_queue_top, message_packet);
 						advance(cache->cache_io_up_ec);
@@ -1114,7 +1116,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 					message_packet->access_type = cgm_access_puts;
 
-					message_packet = list_remove(cache->last_queue, message_packet); /*check here */
+					message_packet = list_remove(cache->last_queue, message_packet); check here
 					//list_enqueue(l1_d_caches[cache->id].Rx_queue_bottom, message_packet);
 					//advance(&l1_d_cache[cache->id]);
 					//future_advance(&l1_d_cache[cache->id], WIRE_DELAY(l1_d_caches[cache->id].wire_latency));
@@ -1152,7 +1154,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 				message_packet->access_type = cgm_access_puts;
 
 
-				/*int l2_map = cgm_l2_cache_map(message_packet->l2_cache_id);*/
+				int l2_map = cgm_l2_cache_map(message_packet->l2_cache_id);
 				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
 				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 				message_packet->src_name = cache->name;
@@ -1212,8 +1214,8 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	int *state_ptr = &state;
 
 	int cache_status = 0;
-	/*int mshr_status = -1;
-	int mshr_row = -1;*/
+	int mshr_status = -1;
+	int mshr_row = -1;
 
 	int i = 0;
 	int row = 0;
@@ -1241,11 +1243,11 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	//////testing
 	if(gpu_l1_inf && (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t))
 	{
-		/*if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
-		{*/
+		if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
+		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-		/*}*/
+		}
 	}
 	//////testing
 
@@ -1421,11 +1423,11 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	//////testing
 	if(gpu_l1_inf && cache->cache_type == gpu_v_cache_t)
 	{
-		/*if(cache->cache_type == gpu_v_cache_t)
-		{*/
+		if(cache->cache_type == gpu_v_cache_t)
+		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-		/*}*/
+		}
 	}
 	//////testing
 
@@ -1503,8 +1505,8 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			P_PAUSE(cache->latency);
 			//P_PAUSE(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].wire_latency);
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -1587,11 +1589,11 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//////testing
 	if(gpu_l2_inf && cache->cache_type == gpu_l2_cache_t)
 	{
-		/*if(cache->cache_type == gpu_l2_cache_t)
-		{*/
+		if(cache->cache_type == gpu_l2_cache_t)
+		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cache_block_noncoherent);
-		/*}*/
+		}
 	}
 	//////testing
 
@@ -1667,8 +1669,8 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 					list_enqueue(cache->Tx_queue_top, message_packet);
 					advance(cache->cache_io_up_ec);
 
-					/*CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Hit SEND %s to %s\n",
-							access_id, P_TIME, cache->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), l1_i_caches[cache->id].name);*/
+					CGM_DEBUG(protocol_debug_file, "Access_id %llu cycle %llu %s Hit SEND %s to %s\n",
+							access_id, P_TIME, cache->name, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), l1_i_caches[cache->id].name);
 				}
 				else
 				{
@@ -1760,7 +1762,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*struct cgm_packet_t *ort_packet;*/
+	struct cgm_packet_t *ort_packet;
 	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
 	long long access_id = 0;
@@ -1776,10 +1778,10 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	/*int mshr_row = -1;
+	int mshr_row = -1;
 
 	int i = 0;
-	int adv = 0;*/
+	int adv = 0;
 	int row = 0;
 
 
@@ -2040,6 +2042,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	return;
 }
 
+*/
 
 
 
@@ -2050,8 +2053,8 @@ void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr
 	int tag = *tag_ptr;
 	int set = *set_ptr;
 
-	/*assert(tag != NULL);
-	assert(set != NULL);*/
+	assert(tag != NULL);
+	assert(set != NULL);
 
 	LIST_FOR_EACH(cache->ort_list, i)
 	{

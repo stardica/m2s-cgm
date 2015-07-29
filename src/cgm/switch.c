@@ -368,7 +368,8 @@ void switch_ctrl(void){
 
 					//divert to correct input queue based on access type
 					if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-					|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_upgrade)
+					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
+					|| message_packet->access_type == cgm_access_upgrade)
 					{
 
 						if(!cache_can_access_top(&l3_caches[my_pid]))
@@ -991,8 +992,11 @@ void switch_south_io_ctrl(void){
 		{
 			//put the message in the right queue.
 			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-					|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_upgrade)
+			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
+			|| message_packet->access_type == cgm_access_upgrade)
 			{
+
+				/*printf("L3 moving\n");*/
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
 			if(message_packet->access_type == cgm_access_mc_put) //message_packet->access_type == cgm_access_puts

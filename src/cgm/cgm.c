@@ -365,7 +365,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
 	new_packet->name = strdup(buff);
-	new_packet->cache_block_state = cache_block_null;
+	new_packet->cache_block_state = cgm_cache_block_null;
 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = cgm_access_fetch;
@@ -428,9 +428,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->cpu_access_type = access_kind;
 
 	//////////////testing
-	if(mem_system_off == 2 || mem_system_off == 3)
+	//if(mem_system_off == 2 || mem_system_off == 3)
+	if(new_packet->cpu_access_type == cgm_access_store)
 	{
-
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);
 		packet_destroy(new_packet);

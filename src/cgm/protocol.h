@@ -88,7 +88,7 @@ struct cgm_packet_t{
 	int l3_victim_way;
 
 	//for protocol messages
-	enum cache_block_state_t cache_block_state;
+	enum cgm_cache_block_state_t cache_block_state;
 
 	//for routing
 	char *src_name;
@@ -125,7 +125,7 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet);
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag);
 
 //implements a MESI protocol.
-void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -136,7 +136,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 
 void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);

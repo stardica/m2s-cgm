@@ -363,7 +363,7 @@ void X86CpuReadConfig(void)
 	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
 	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
-	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
+	/*prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);*/
 
 
 	/* Section '[ Pipeline ]' */

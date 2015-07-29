@@ -31,17 +31,17 @@
 
 /*star todo fix this somehow. We shouldn't need to be included before all of
 the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
-enum cache_block_state_t{
+enum cgm_cache_block_state_t{
 
-	cache_block_invalid = 0,
-	cache_block_noncoherent,
-	cache_block_modified,
-	cache_block_owned,
-	cache_block_exclusive,
-	cache_block_shared,
-	cache_block_transient,
-	cache_block_null,
-	cache_block_state_num
+	cgm_cache_block_invalid = 0,
+	cgm_cache_block_noncoherent,
+	cgm_cache_block_modified,
+	cgm_cache_block_owned,
+	cgm_cache_block_exclusive,
+	cgm_cache_block_shared,
+	cgm_cache_block_transient,
+	cgm_cache_block_null,
+	cgm_cache_block_state_num
 };
 
 #include <cgm/directory.h>
@@ -53,8 +53,8 @@ enum cache_block_state_t{
 
 
 //star todo integrate m2s prefetcher
-extern struct str_map_t cache_policy_map;
-extern struct str_map_t cache_block_state_map;
+extern struct str_map_t cgm_cache_policy_map;
+extern struct str_map_t cgm_cache_block_state_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
 enum cache_type_enum{
@@ -67,16 +67,6 @@ enum cache_type_enum{
 	gpu_v_cache_t,
 	gpu_l2_cache_t
 };
-/*enum cache_block_state_t{
-
-	cache_block_invalid = 0,
-	cache_block_noncoherent,
-	cache_block_modified,
-	cache_block_owned,
-	cache_block_exclusive,
-	cache_block_shared,
-	cache_block_null
-};*/
 
 enum cache_waylist_enum{
 
@@ -104,8 +94,8 @@ struct cache_block_t{
 	int way;
 	int prefetched;
 
-	enum cache_block_state_t state;
-	enum cache_block_state_t transient_state;
+	enum cgm_cache_block_state_t state;
+	enum cgm_cache_block_state_t transient_state;
 
 	//each block has it's own directory (unsigned char)
 	union directory_t directory_entry;
@@ -202,6 +192,9 @@ struct cache_t{
 	long long coalesces;
 	long long mshr_entires;
 	long long stalls;
+	unsigned int *fetch_address_history;
+	unsigned int *load_address_history;
+	unsigned int *store_address_history;
 
 };
 
@@ -322,8 +315,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
-void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cache_block_state_t t_state);
-enum cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state);
+enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 
@@ -335,8 +328,8 @@ int cgm_cache_get_way(struct cache_t *cache, int tag, int set);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
-void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cache_block_state_t state);
-enum cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
+void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);
+enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
