@@ -40,6 +40,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
 		{"cgm_access_mc_get", cgm_access_mc_get},
 		{"cgm_access_mc_put", cgm_access_mc_put},
+		{"cgm_access_put_clnx", cgm_access_put_clnx},
 		{"cgm_access_putx", cgm_access_putx},
 		{"cgm_access_puts", cgm_access_puts},
 		{"cgm_access_puto", cgm_access_puto},
@@ -77,20 +78,15 @@ void packet_destroy(struct cgm_packet_t *packet){
 	return;
 }
 
-void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int row, int way){
-
-	unsigned int address;
-	unsigned int tag;
-	unsigned int set;
-	unsigned int set_mask;
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, unsigned int address){
 
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->write_back = 1;
-	//write_back_packet->set = set;
-	//write_back_packet->tag = cache->sets[set].blocks[way].tag;
 	write_back_packet->size = cache->block_size;
+	write_back_packet->set = cache->sets[set].blocks[way].set;
+	write_back_packet->tag = cache->sets[set].blocks[way].tag;
 
-
+	//star todo this is not the right address to use.
 	write_back_packet->address = address;
 
 	return;

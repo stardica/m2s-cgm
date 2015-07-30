@@ -1,3 +1,24 @@
+//get the block type bit from the victim
+		/*type = cgm_cache_get_block_type(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag);
+
+		if(type == 1) //instruction cache data
+		{
+			//write the block
+			cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, message_packet->cache_block_state);
+
+			//set retry state
+			assert(message_packet->cpu_access_type == cgm_access_fetch);
+			message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		}
+		else if(type == 0) //data cache data
+		{
+			//write the block
+			//star todo need detail here.
+			cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, message_packet->cache_block_state);
+			assert(message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store);
+			message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		}*/
+
 //drop the packet into the sys agent queue
 						//list_enqueue(system_agent->Rx_queue_top, message_packet);
 						//advance(system_agent_ec);
