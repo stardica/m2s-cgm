@@ -78,19 +78,40 @@ void packet_destroy(struct cgm_packet_t *packet){
 	return;
 }
 
-void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, unsigned int address){
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way){
 
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->write_back = 1;
 	write_back_packet->size = cache->block_size;
+
+	//reconstruct the address from the set and tag
+	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
+
+	//to make wb buffer snooping easier
 	write_back_packet->set = cache->sets[set].blocks[way].set;
 	write_back_packet->tag = cache->sets[set].blocks[way].tag;
 
-	//star todo this is not the right address to use.
-	write_back_packet->address = address;
-
 	return;
 }
+
+void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way){
+
+	inval_packet->access_type = cgm_access_inv;
+	inval_packet->inval = 1;
+	inval_packet->size = 0;
+
+	/*printf(" set %d way %d\n", set, way);
+	STOP;*/
+
+	//reconstruct the address from the set and tag
+	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
+
+	/*printf("here address 0x%08u\n", inval_packet->address);*/
+
+	//to make wb buffer snooping easier
+	return;
+}
+
 
 struct cgm_packet_status_t *status_packet_create(void){
 

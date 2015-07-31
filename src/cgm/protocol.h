@@ -83,6 +83,7 @@ struct cgm_packet_t{
 
 	//for evict
 	int write_back;
+	int inval;
 
 	int l1_victim_way;
 	int l2_victim_way;
@@ -123,7 +124,8 @@ struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
-void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag, unsigned int address);
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag);
+void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
 //implements a MESI protocol.
 /*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
