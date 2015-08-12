@@ -188,6 +188,7 @@ struct cache_t{
 	long long hits;
 	long long invalid_hits;
 	long long misses;
+	long long upgrade_misses;
 	long long retries;
 	long long coalesces;
 	long long mshr_entires;

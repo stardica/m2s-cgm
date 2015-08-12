@@ -1320,6 +1320,7 @@ int cache_finish_create(){
 		l1_i_caches[i].hits = 0;
 		l1_i_caches[i].invalid_hits = 0;
 		l1_i_caches[i].misses = 0;
+		l1_i_caches[i].upgrade_misses = 0;
 		l1_i_caches[i].fetches = 0;
 		l1_i_caches[i].stalls = 0;
 
@@ -1424,6 +1425,7 @@ int cache_finish_create(){
 		l1_d_caches[i].hits = 0;
 		l1_d_caches[i].invalid_hits = 0;
 		l1_d_caches[i].misses = 0;
+		l1_d_caches[i].upgrade_misses = 0;
 		l1_d_caches[i].loads = 0;
 		l1_d_caches[i].stores = 0;
 		l1_d_caches[i].stalls = 0;
@@ -1530,6 +1532,7 @@ int cache_finish_create(){
 		l2_caches[i].hits = 0;
 		l2_caches[i].invalid_hits = 0;
 		l2_caches[i].misses = 0;
+		l2_caches[i].upgrade_misses = 0;
 		l2_caches[i].loads = 0;
 		l2_caches[i].retries = 0;
 		l2_caches[i].stalls = 0;
@@ -1655,6 +1658,7 @@ int cache_finish_create(){
 		l3_caches[i].hits = 0;
 		l3_caches[i].invalid_hits = 0;
 		l3_caches[i].misses = 0;
+		l3_caches[i].upgrade_misses = 0;
 		l3_caches[i].stalls = 0;
 
 		if(l3_caches[i].policy_type == 1)
