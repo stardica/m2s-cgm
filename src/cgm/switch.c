@@ -850,14 +850,23 @@ void switch_north_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-
 		P_PAUSE(transfer_time);
 
 		//L2 switches
 		if(my_pid < num_cores)
 		{
-			list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
-			advance(&l2_cache[my_pid]);
+
+			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade)
+			{
+				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+				advance(&l2_cache[my_pid]);
+			}
+			else if (message_packet->access_type == cgm_access_upgrade)
+			{
+				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+				advance(&l2_cache[my_pid]);
+			}
 		}
 		//hub-iommu
 		else if(my_pid >= num_cores)

@@ -272,6 +272,10 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 
+
+void run_array(void);
+
+
 //cache tasks
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
