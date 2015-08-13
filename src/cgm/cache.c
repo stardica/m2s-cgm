@@ -1724,6 +1724,8 @@ void l2_cache_ctrl(void){
 
 					case cgm_cache_block_invalid:
 
+						/*printf("l2 get miss\n");*/
+
 						//stats
 						l2_caches[my_pid].misses++;
 
@@ -1769,14 +1771,11 @@ void l2_cache_ctrl(void){
 						cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
 						break;
 
-
 					case cgm_cache_block_modified:
 					case cgm_cache_block_exclusive:
 					case cgm_cache_block_shared:
 
 						P_PAUSE(l2_caches[my_pid].latency);
-
-						//printf("l2 clnx\n");
 
 						//set message size
 						message_packet->size = l1_d_caches[my_pid].block_size; //this can be either L1 I or L1 D cache block size.
@@ -1795,8 +1794,7 @@ void l2_cache_ctrl(void){
 							message_packet->access_type = cgm_access_puts;
 						}
 
-						/*this will send the block up with the same state
-						as the L2 block no mater which protocol message is used.*/
+						/*this will send the block and block state up to the high level cache.*/
 						message_packet->cache_block_state = *cache_block_state_ptr;
 
 						cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
@@ -1947,6 +1945,8 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
+
+				printf("L2 upgrade\n");
 				//received upgrade request from L1
 
 				//check my own cache to see if I have the block and if it is in the exclusive state.
@@ -1977,6 +1977,7 @@ void l2_cache_ctrl(void){
 
 				//run again
 				//step--;
+
 
 				P_PAUSE(l2_caches[my_pid].latency);
 
@@ -2420,7 +2421,7 @@ void l3_cache_ctrl(void){
 
 						P_PAUSE(l3_caches[my_pid].latency);
 
-						printf("access_id %llu L3 hit cycle %llu \n", message_packet->access_id, P_TIME);
+						/*printf("access_id %llu L3 hit cycle %llu \n", message_packet->access_id, P_TIME);*/
 						//getchar();
 
 						cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
@@ -3621,15 +3622,17 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			//set the correct retry type
 			//star todo retry types could be a potential problem.
-			if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
+			/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
 			{
-				ort_packet->access_type = ort_packet->cpu_access_type;
+				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 				//ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 			}
 			else if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 			{
 				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-			}
+			}*/
+
+			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);
