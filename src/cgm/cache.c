@@ -2324,6 +2324,7 @@ void l3_cache_ctrl(void){
 							cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
 						}
 
+
 						break;
 				}
 			}
