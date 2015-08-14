@@ -364,34 +364,31 @@ void switch_ctrl(void){
 				{
 					//make sure we can access the cache
 					//star todo add the ability to do something else if we can access the target cache
-					//star todo fix this, the divert is down in IO ctrl now.
-
-					//divert to correct input queue based on access type
+					/*divert to correct input queue based on access type
 					if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
 					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
 					|| message_packet->access_type == cgm_access_upgrade)
+					{*/
+
+					if(!cache_can_access_top(&l3_caches[my_pid]))
 					{
-
-						if(!cache_can_access_top(&l3_caches[my_pid]))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(l3_caches[my_pid].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
-							advance(switches[my_pid].switches_south_io_ec);
-
-							//done with this access
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
+						future_advance(&switches_ec[my_pid], etime.count + 2);
 					}
-					else if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_mc_put)
+					else
+					{
+						P_PAUSE(l3_caches[my_pid].wire_latency);
+
+						//success, remove packet from the switche's queue
+						remove_from_queue(&switches[my_pid], message_packet);
+
+						list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
+						advance(switches[my_pid].switches_south_io_ec);
+
+						//done with this access
+						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
+					}
+					/*}
+					else if(message_packet->access_type == cgm_access_mc_put)
 					{
 						if(!cache_can_access_bottom(&l3_caches[my_pid]))
 						{
@@ -412,7 +409,7 @@ void switch_ctrl(void){
 							//done with this access
 							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
 						}
-					}
+					}*/
 				}
 				//for the system agent
 				else if(my_pid >= num_cores)
@@ -518,8 +515,6 @@ void switch_ctrl(void){
 					if(distance <= switches[my_pid].switch_median_node)
 					{//go west
 
-
-
 						if(!switch_can_access(switches[my_pid].next_west))
 						{
 							future_advance(&switches_ec[my_pid], etime.count + 2);
@@ -546,8 +541,6 @@ void switch_ctrl(void){
 					}
 					else
 					{//go east
-
-
 
 						if (!switch_can_access(switches[my_pid].next_east))
 						{
@@ -857,7 +850,7 @@ void switch_north_io_ctrl(void){
 		{
 
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade)
+			|| message_packet->access_type == cgm_access_put_clnx) //|| message_packet->access_type == cgm_access_upgrade
 			{
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
@@ -866,6 +859,10 @@ void switch_north_io_ctrl(void){
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);
+			}
+			else
+			{
+				fatal("switch_north_io_ctrl(): bad access type\n");
 			}
 		}
 		//hub-iommu
@@ -1004,15 +1001,12 @@ void switch_south_io_ctrl(void){
 			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
 			|| message_packet->access_type == cgm_access_upgrade)
 			{
-
-				/*printf("L3 moving\n");*/
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
-			if(message_packet->access_type == cgm_access_mc_put) //message_packet->access_type == cgm_access_puts
+			if(message_packet->access_type == cgm_access_mc_put)
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 			}
-
 			advance(&l3_cache[my_pid]);
 		}
 		//Sys Agent
@@ -1025,8 +1019,6 @@ void switch_south_io_ctrl(void){
 		{
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
-
 	}
-
 	return;
 }
