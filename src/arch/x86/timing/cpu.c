@@ -486,6 +486,10 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 		snprintf(name, sizeof name, "c%d", i);
 		X86CoreSetName(core, name);
 		core->id = i;
+
+		//star added this
+		printf("---CPU core %s id %d created---\n", core->name, core->id);
+
 		for (j = 0; j < x86_cpu_num_threads; j++)
 		{
 			thread = core->threads[j];
@@ -493,6 +497,9 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 			X86ThreadSetName(thread, name);
 			thread->id_in_core = j;
 			thread->id_in_cpu = i * x86_cpu_num_threads + j;
+
+			//star added this
+			printf("---CPU core %s id %d thread %s id %d created---\n", core->name, core->id, thread->name, thread->id_in_core);
 		}
 	}
 

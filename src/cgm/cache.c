@@ -870,13 +870,8 @@ void cgm_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	//send eviction notices
 	//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
-
 	if(cache->cache_type == l2_cache_t)
 	{
-
-		/*star do this better....
-		the block could just be empty*/
-
 		struct cgm_packet_t *inval_packet = packet_create();
 
 		init_inval_packet(cache, inval_packet, set, way);
@@ -1509,13 +1504,16 @@ void l1_d_cache_ctrl(void){
 			{
 				//Invalidation request from lower cache
 
-				//printf("running\n");
+				//printf("l1 d inval\n");
 
 				//get the block status
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				//find and invalidate the block
-				cgm_cache_inval_block(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way);
+				if(*cache_block_hit_ptr == 1)
+				{
+					cgm_cache_inval_block(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way);
+				}
 
 				//free the message packet
 				message_packet = list_remove(l1_d_caches[my_pid].last_queue, message_packet);
@@ -1759,7 +1757,7 @@ void l2_cache_ctrl(void){
 						message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
 
 						//Additions start here
-						//cgm_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
+						cgm_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
 						//addtions stop
 
 						//charge delay

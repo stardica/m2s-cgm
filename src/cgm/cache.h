@@ -85,6 +85,7 @@ enum cache_policy_t{
 
 struct cache_block_t{
 
+
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
 

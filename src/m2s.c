@@ -1622,9 +1622,6 @@ int main(int argc, char **argv)
 
 	/* Network and memory system */
 
-
-
-
 	//CGM is the replacement memory system.
 #if CGM
 	cgm_init();
