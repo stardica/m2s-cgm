@@ -846,9 +846,15 @@ void cgm_cache_inval_block(struct cache_t *cache, int set, int way){
 }
 
 
-void cgm_cache_evict_block(struct cache_t *cache, int set, int way){
+void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers){
 
 	enum cgm_cache_block_state_t victim_state;
+	int i = 0, core_id = 0;
+	unsigned char bit_vector;
+	int num_cores = x86_cpu_num_cores;
+	assert(sharers >= 0 && sharers <= num_cores);
+	assert(cache->cache_type == l3_cache_t);
+	assert(cache->share_mask > 0);
 
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
@@ -867,29 +873,75 @@ void cgm_cache_evict_block(struct cache_t *cache, int set, int way){
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
+	//send eviction notices
+	/*star todo account for block sizes
+	for exmaple, if the L3 cache is 64 bytes and L2 is 128 L2 should send two invals*/
+	for(i = 0; i < sharers; i++)
+	{
+		//get the presence bits from the directory
+		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
+		bit_vector = bit_vector & cache->share_mask;
+
+		//for each core that has a copy of the cache block send the inval
+		if((bit_vector & 1) == 1)
+		{
+			struct cgm_packet_t *inval_packet = packet_create();
+
+			init_inval_packet(cache, inval_packet, set, way);
+
+			inval_packet->cpu_access_type = cgm_access_store;
+
+			//update routing
+			inval_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
+			inval_packet->dest_name = str_map_value(&l2_strn_map, inval_packet->dest_id);
+			inval_packet->src_name = cache->name;
+			inval_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+			list_enqueue(cache->Tx_queue_top, inval_packet);
+			advance(cache->cache_io_up_ec);
+		}
+
+		//shift the vector to the next position and continue
+		bit_vector = bit_vector >> 1;
+	}
+
+	return;
+}
+
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
+
+	enum cgm_cache_block_state_t victim_state;
+	assert(cache->cache_type == l2_cache_t);
+
+	//get the victim's state
+	victim_state = cgm_cache_get_block_state(cache, set, way);
+
+	//if dirty data is found
+	if (victim_state == cgm_cache_block_modified)
+	{
+		//move the block to the WB buffer
+		struct cgm_packet_t *write_back_packet = packet_create();
+
+		init_write_back_packet(cache, write_back_packet, set, way);
+
+		list_enqueue(cache->write_back_buffer, write_back_packet);
+	}
+
+	//set the block state to invalid
+	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
 	//send eviction notices
 	//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
-	if(cache->cache_type == l2_cache_t)
-	{
-		struct cgm_packet_t *inval_packet = packet_create();
+	struct cgm_packet_t *inval_packet = packet_create();
 
-		init_inval_packet(cache, inval_packet, set, way);
+	init_inval_packet(cache, inval_packet, set, way);
 
-		inval_packet->cpu_access_type = cgm_access_store;
+	/*star todo fix this, this is only needed for correct routing from L2 to L1 D
+	figure out another way to do this*/
+	inval_packet->cpu_access_type = cgm_access_store;
 
-		list_enqueue(cache->Tx_queue_top, inval_packet);
-		advance(cache->cache_io_up_ec);
-	}
-	else if(cache->cache_type ==  l3_cache_t)
-	{
-
-
-	}
-	else
-	{
-		fatal("cgm_cache_evict_block(): invalid cache type\n");
-	}
+	list_enqueue(cache->Tx_queue_top, inval_packet);
+	advance(cache->cache_io_up_ec);
 
 	return;
 }
@@ -1716,6 +1768,8 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
+				/*printf("L2 GET\n");*/
+
 				//get the status of the cache block
 				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -1758,18 +1812,10 @@ void l2_cache_ctrl(void){
 						// we are bringing a new block so evict the victim and invalidate the L1 copies
 						//find victim
 						message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
-
-						//Additions start here
-						cgm_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
-						//addtions stop
+						cgm_L2_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
 
 						//charge delay
 						P_PAUSE(l2_caches[my_pid].latency);
-
-						/*printf("access_id %llu L2 miss cycle %llu \n", message_packet->access_id, P_TIME);
-						array[(int)message_packet->access_id] = 1;*/
-
-						//getchar();
 
 						//transmit to L3
 						cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
@@ -2043,6 +2089,40 @@ void l2_cache_ctrl(void){
 				//run again
 				step--;
 			}
+			else if (access_type == cgm_access_inv)
+			{
+				//Invalidation request from lower cache
+
+				/*printf("l2 inval\n");*/
+
+				//get the block status
+				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				/*message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+				packet_destroy(message_packet);*/
+
+				//find and invalidate the block
+				/*if the block is missing the it has previously been removed
+				from the L1 D cache as well, so we can ignore*/
+				if(*cache_block_hit_ptr == 0)
+				{
+					//free the message packet
+					message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+					packet_destroy(message_packet);
+				}
+				/*if the block is found in the L2 it may or may not be in the L1 cache
+				we must invalidate here and send an invalidation to the L1 D cache*/
+				else if(*cache_block_hit_ptr == 1)
+				{
+					//get the way of the block
+					message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
+					cgm_L2_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
+
+					message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+					packet_destroy(message_packet);
+				}
+
+			}
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
 				enum cgm_cache_block_state_t victim_trainsient_state;
@@ -2183,6 +2263,7 @@ void l3_cache_ctrl(void){
 	int *cache_block_state_ptr = &cache_block_state;
 
 	int dirty;
+	int sharers;
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -2216,7 +2297,7 @@ void l3_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-				//check the directory dirty bit status
+				//check the directory dirty bit status for sanity check
 				dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
 
 				switch(*cache_block_state_ptr)
@@ -2321,8 +2402,11 @@ void l3_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+				//confer with the directory
 				//check the directory dirty bit status
 				dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
+				//get number of sharers
+				sharers = cgm_cache_get_num_shares(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
 
 				switch(*cache_block_state_ptr)
 				{
@@ -2347,6 +2431,10 @@ void l3_cache_ctrl(void){
 						//find victim again because LRU has been updated on hits.
 						message_packet->l3_victim_way = cgm_cache_replace_block(&(l3_caches[my_pid]), message_packet->set);
 
+						//changes start here
+						cgm_L3_cache_evict_block(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way, sharers);
+
+
 						//add some routing/status data to the packet
 						message_packet->access_type = cgm_access_mc_get;
 
@@ -2354,10 +2442,6 @@ void l3_cache_ctrl(void){
 						message_packet->cache_block_state = cgm_cache_block_shared;
 
 						assert(message_packet->cpu_access_type == cgm_access_load);
-
-						/*int type;
-						type = message_packet->cpu_access_type == cgm_access_fetch ? 1 : 0;
-						cgm_cache_set_block_type(&(l3_caches[my_pid]), type, message_packet->set, message_packet->l3_victim_way);*/
 
 						message_packet->src_name = l3_caches[my_pid].name;
 						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
@@ -2375,15 +2459,13 @@ void l3_cache_ctrl(void){
 					case cgm_cache_block_shared:
 					case cgm_cache_block_exclusive:
 
-						/*printf("L3 load\n");*/
-
 						//stats;
 						l3_caches[my_pid].hits++;
 
 						assert(dirty == 0);
 
 						//update message status
-						/*if(*cache_block_state_ptr == cgm_cache_block_modified)
+						if(*cache_block_state_ptr == cgm_cache_block_modified)
 						{
 							message_packet->access_type = cgm_access_putx;
 						}
@@ -2394,29 +2476,19 @@ void l3_cache_ctrl(void){
 						else if(*cache_block_state_ptr == cgm_cache_block_shared)
 						{
 							message_packet->access_type = cgm_access_puts;
-						}*/
-
-						message_packet->access_type = cgm_access_puts;
+						}
 
 						//get the cache block state
 						message_packet->cache_block_state = *cache_block_state_ptr;
 
 						//testing
 						assert(*cache_block_state_ptr == cgm_cache_block_shared);
-						assert(list_count(l3_caches[my_pid].ort_list) == 0);
 
 						//set the presence bit in the directory for the requesting core.
 						cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 						//set message package size
 						message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
-
-						/*printf("size of block %d\n", message_packet->size);*/
-
-						//message_packet->cache_block_state = cache_block_shared;
-						//assert(message_packet->cache_block_state == cache_block_shared);
-						/*printf("l3 block type %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
-
 
 						//update routing
 						message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
@@ -2429,7 +2501,7 @@ void l3_cache_ctrl(void){
 						cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
 
 						//check if the packet has coalesced accesses.
-						if(access_type == cgm_access_load_retry || message_packet->coalesced == 1) //|| access_type == cgm_access_load_retry
+						if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 						{
 							//enter retry state.
 							cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
@@ -3649,8 +3721,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
 
-
-	cache->sets[set].blocks[way].directory_entry.entry = NULL;
+	cache->sets[set].blocks[way].directory_entry.entry = 0;
 
 	return;
 }
@@ -3695,6 +3766,38 @@ int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way){
 
 	assert(dirty == 1 || dirty == 0);
 	return dirty;
+}
+
+int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
+
+	int sharers = 0;
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+	unsigned char bit_vector;
+
+	/*get the number of shares, mask away everything but the the share bit field
+	and take the log of the vale to get the number of sharers*/
+
+	//testing
+	/*cache->sets[set].blocks[way].directory_entry.entry_bits.p0 = 0;
+	cache->sets[set].blocks[way].directory_entry.entry_bits.p1 = 1;
+	cache->sets[set].blocks[way].directory_entry.entry_bits.p2 = 1;
+	cache->sets[set].blocks[way].directory_entry.entry_bits.p3 = 1;*/
+	//testing
+
+	//star todo this is dynamic, but the simulator only supports up to 4 cores for now.
+	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
+	bit_vector = bit_vector & cache->share_mask;
+
+	for(i = 0; i < num_cores; i ++)
+	{
+		if((bit_vector & 1) == 1)
+			sharers++;
+
+		bit_vector = bit_vector >> 1;
+	}
+
+	return sharers;
 }
 
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state){

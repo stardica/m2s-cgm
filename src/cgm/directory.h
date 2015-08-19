@@ -21,14 +21,14 @@
 
 
 struct directory_entry_t{
-
-	unsigned int pending : 1;
-	unsigned int dirty : 1;
-	unsigned int upgrade : 1;
 	unsigned int p0 : 1;
 	unsigned int p1 : 1;
 	unsigned int p2 : 1;
 	unsigned int p3 : 1;
+	unsigned int dirty : 1;
+	/*unsigned int pending : 1;
+	unsigned int upgrade : 1;*/
+
 };
 
 union directory_t{

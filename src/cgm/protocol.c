@@ -100,15 +100,8 @@ void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 	inval_packet->inval = 1;
 	inval_packet->size = 0;
 
-	/*printf(" set %d way %d\n", set, way);
-	STOP;*/
-
 	//reconstruct the address from the set and tag
 	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
-
-	/*printf("here address 0x%08u\n", inval_packet->address);*/
-
-	//to make wb buffer snooping easier
 	return;
 }
 

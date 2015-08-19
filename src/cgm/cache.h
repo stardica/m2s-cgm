@@ -181,6 +181,7 @@ struct cache_t{
 	//directory bit vectors for coherence
 	unsigned int dir_latency;
 	union directory_t **dir;
+	unsigned int share_mask;
 
 	//statistics
 	long long fetches;
@@ -321,6 +322,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
+int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state);
 enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
@@ -333,7 +335,8 @@ void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_
 unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 int cgm_cache_get_way(struct cache_t *cache, int tag, int set);
-void cgm_cache_evict_block(struct cache_t *cache, int set, int way);
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
+void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
 void cgm_cache_inval_block(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);

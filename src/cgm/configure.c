@@ -135,7 +135,7 @@ int cpu_configure(Timing *self, struct config_t *config){
 
 	if(num_cores <= 0 || num_cores > 4)
 	{
-		fatal("Number of cores must be between 1 - 4\n");
+		fatal("For now, number of cores must be between 1 - 4\n");
 	}
 
 	X86Cpu *cpu = asX86Cpu(self);
@@ -1298,7 +1298,7 @@ int cache_finish_create(){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	struct cache_block_t *block;
-	int i = 0, j = 0, k = 0, set = 0, way = 0;
+	int i = 0, j = 0, k = 0, l = 0, set = 0, way = 0;
 	char buff[100];
 
 	//finish creating the CPU caches
@@ -1661,13 +1661,22 @@ int cache_finish_create(){
 		l3_caches[i].upgrade_misses = 0;
 		l3_caches[i].stalls = 0;
 
+		//build the share_mask
+		for(l = 0; l < num_cores; l ++)
+		{
+			l3_caches[i].share_mask++;
+
+			if(l < (num_cores - 1))
+				l3_caches[i].share_mask = l3_caches[i].share_mask << 1;
+		}
+
 		if(l3_caches[i].policy_type == 1)
 		{
 			l3_caches[i].policy = cache_policy_lru;
 		}
 		else
 		{
-			fatal("Invalid cache policy\n");
+			fatal("Invalid L3 cache policy\n");
 		}
 
 		//pointer to my own event counter

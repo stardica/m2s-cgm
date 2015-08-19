@@ -855,7 +855,7 @@ void switch_north_io_ctrl(void){
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
-			else if (message_packet->access_type == cgm_access_upgrade)
+			else if (message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv)
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);
