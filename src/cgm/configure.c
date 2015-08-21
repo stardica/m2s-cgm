@@ -392,10 +392,14 @@ int debug_finish_create(void){
 
 int stats_read_config(void* user, const char* section, const char* name, const char* value){
 
-	//star todo add debug category for protocol
 	if(MATCH("Stats", "CGM_Stats"))
 	{
 		cgm_stats = atoi(value);
+	}
+
+	if(MATCH("Stats", "MEM_Trace"))
+	{
+		mem_trace = atoi(value);
 	}
 
 	if(MATCH("Stats", "Path"))
@@ -416,6 +420,14 @@ int stats_finish_create(void){
 		sprintf(buff, "%s", cgm_stats_output_path);
 		sprintf(buff + strlen(buff), "/cgm_stats.out");
 		cgm_stats_file = fopen (buff, "w+");
+	}
+
+	if (mem_trace == 1)
+	{
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_stats_output_path);
+		sprintf(buff + strlen(buff), "/mem_trace.out");
+		mem_trace_file = fopen (buff, "w+");
 	}
 
 	return 1;

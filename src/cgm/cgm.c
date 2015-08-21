@@ -53,6 +53,9 @@ int ort_debug = 0;
 FILE *cgm_stats_file;
 int cgm_stats = 0;
 
+FILE *mem_trace_file;
+int mem_trace = 0;
+
 FILE *load_store_log_file;
 int load_store_debug = 0;
 
@@ -141,25 +144,7 @@ void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats---\n");
 
-	/*printf("l1_i_cache retry queue size %d\n", list_count(l1_i_caches[0].retry_queue));
-	printf("l1_i_cache Rx_top queue size %d\n", list_count(l1_i_caches[0].Rx_queue_top));
-	printf("l1_i_cache Rx_bottom queue size %d\n", list_count(l1_i_caches[0].Rx_queue_bottom));
-
-	printf("l1_d_cache retry queue size %d\n", list_count(l1_d_caches[0].retry_queue));
-	printf("l1_d_cache Rx_top queue size %d\n", list_count(l1_d_caches[0].Rx_queue_top));
-	printf("l1_d_cache Rx_bottom queue size %d\n", list_count(l1_d_caches[0].Rx_queue_bottom));
-
-	printf("l2_cache retry queue size %d\n", list_count(l2_caches[0].retry_queue));
-	printf("l2_cache Rx_top queue size %d\n", list_count(l2_caches[0].Rx_queue_top));
-	printf("l2_cache Rx_bottom queue size %d\n", list_count(l2_caches[0].Rx_queue_bottom));
-
-	struct cgm_packet_t *mp = list_get(l1_d_caches[0].retry_queue, 0);
-	printf("rt access_id %llu\n", mp->access_id);
-	mp = list_get(l1_d_caches[0].Rx_queue_top, 0);
-	printf("top access_id %llu\n", mp->access_id);
-
-	STOP;*/
-
+	//star todo, dump stat files here.
 	cache_dump_stats();
 
 	CLOSE_FILES;

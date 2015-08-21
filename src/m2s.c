@@ -1430,8 +1430,6 @@ void m2s_loop(void){
 
 void sim_end(void){
 
-	//printf("etime.count %lld\n", etime.count);
-
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */
 	//if (x86_save_checkpoint_file_name[0])
@@ -1444,13 +1442,11 @@ void sim_end(void){
 		esim_process_all_events();
 
 
-
-
 	//star >> execution is pretty much done here. The remainder is summary output and cleanup.
 
 	/* Dump statistics summary */
 	cgm_dump_summary();
-	m2s_dump_summary(stderr);
+	m2s_dump_summary(stdout);
 
 	fflush(stdout);
 	fflush(stderr);
@@ -1537,7 +1533,7 @@ int main(int argc, char **argv)
 	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
 
 #if CGM
-	//star took out mem debug
+	//star took out mem debug and put ours in
 #else
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
@@ -1575,7 +1571,6 @@ int main(int argc, char **argv)
 	opencl_init();
 	//cuda_init();
 #endif
-
 
 	/* Initialization of libraries */
 	esim_init();
@@ -1642,12 +1637,12 @@ int main(int argc, char **argv)
 	//	X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
 	/* Load programs */
-	//star >> stars the ELF parsing work.
+	//star >> loads the ELF parsing work.
 	m2s_load_programs(argc, argv);
 
 
 	//run ends here if CGM is running.
-	//sim_send contains all of the "done" functions.
+	//sim_send() contains all of the "done" functions.
 #if CGM
 
 	simulate(sim_end);

@@ -89,6 +89,9 @@ extern int ort_debug;
 extern FILE *cgm_stats_file;
 extern int cgm_stats;
 
+extern FILE *mem_trace_file;
+extern int mem_trace;
+
 extern FILE *load_store_log_file;
 extern int load_store_debug;
 
@@ -110,7 +113,8 @@ extern char *cgm_stats_output_path;
 								else if (ort_debug == 1 && file == ort_debug_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid ort_debug file specified");}}\
 								else if (load_store_debug == 1 && file == load_store_log_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_DEBUG(): invalid mshr_debug file specified");}}
 
-#define CGM_STATS(file, ... ) 	if(cgm_stats == 1){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid file specified");}}
+#define CGM_STATS(file, ... ) 	if(cgm_stats == 1 && file == cgm_stats_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid stats file specified");}}\
+								else if (mem_trace == 1 && file == mem_trace_file){if(fprintf(file, __VA_ARGS__) < 0){fatal("CGM_STATS(): invalid mem trace file specified");}}
 
 #define CLOSE_FILES	if(CPU_cache_debug == 1){CGM_DEBUG(CPU_cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (CPU_cache_debug_file);}\
 					if(GPU_cache_debug == 1){CGM_DEBUG(GPU_cache_debug_file,"simulation end cycle %llu\n", P_TIME); fclose (GPU_cache_debug_file);}\
@@ -122,7 +126,8 @@ extern char *cgm_stats_output_path;
 					if(mshr_debug == 1){CGM_DEBUG(mshr_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (mshr_debug_file);}\
 					if(ort_debug == 1){CGM_DEBUG(ort_debug_file,"simulation end cycle %llu\n", P_TIME);fclose (ort_debug_file);}\
 					if(load_store_debug == 1){CGM_DEBUG(load_store_log_file,"simulation end cycle %llu\n", P_TIME);fclose (load_store_log_file);}\
-					if(cgm_stats == 1){fclose (cgm_stats_file);}
+					if(cgm_stats == 1){fclose (cgm_stats_file);}\
+					if(mem_trace == 1){fclose (mem_trace_file);}
 
 #define STOP 	CLOSE_FILES;\
 				exit(0);

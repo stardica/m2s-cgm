@@ -1079,10 +1079,6 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 void cache_dump_stats(void){
 
-
-	/*run_array();*/
-
-
 	int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
 	int i = 0;
@@ -1813,6 +1809,7 @@ void l2_cache_ctrl(void){
 						//find victim
 						message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
 						cgm_L2_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
+
 
 						//charge delay
 						P_PAUSE(l2_caches[my_pid].latency);
@@ -3453,7 +3450,8 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	message_packet = list_remove(cache->last_queue, message_packet);
 	remove_from_global(message_packet->access_id);
 
-	/*printf("access_id %llu cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/
+	//stats
+	CGM_STATS(mem_trace_file, "l1_i_cache_%d total cycles %llu access_id %llu\n", cache->id, (message_packet->end_cycle - message_packet->start_cycle), message_packet->access_id);
 
 	packet_destroy(message_packet);
 	return;
