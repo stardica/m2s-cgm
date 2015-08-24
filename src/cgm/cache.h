@@ -27,7 +27,6 @@
 #include <cgm/misc.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
-//#include <cgm/cgm.h>
 
 /*star todo fix this somehow. We shouldn't need to be included before all of
 the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/

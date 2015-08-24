@@ -938,7 +938,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	/*star todo fix this, this is only needed for correct routing from L2 to L1 D
 	figure out another way to do this*/
-	inval_packet->cpu_access_type = cgm_access_store;
+	inval_packet->cpu_access_type = cgm_access_load;
 
 	list_enqueue(cache->Tx_queue_top, inval_packet);
 	advance(cache->cache_io_up_ec);
@@ -1764,8 +1764,6 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
-				/*printf("L2 GET\n");*/
-
 				//get the status of the cache block
 				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -1809,7 +1807,6 @@ void l2_cache_ctrl(void){
 						//find victim
 						message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
 						cgm_L2_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
-
 
 						//charge delay
 						P_PAUSE(l2_caches[my_pid].latency);
@@ -2452,8 +2449,52 @@ void l3_cache_ctrl(void){
 						cache_put_io_down_queue(&(l3_caches[my_pid]), message_packet);
 						break;
 
-					case cgm_cache_block_modified:
 					case cgm_cache_block_shared:
+
+						//stats;
+						l3_caches[my_pid].hits++;
+
+						assert(dirty == 0);
+
+						//update message status
+						message_packet->access_type = cgm_access_puts;
+
+						//get the cache block state
+						message_packet->cache_block_state = *cache_block_state_ptr;
+
+						//testing
+						assert(*cache_block_state_ptr == cgm_cache_block_shared);
+
+						/*uncomment this when exclusive/modified is working.
+						currently the sim by passes the exclusive stage.*/
+						/*assert(sharers > 1);*/
+
+						//set the presence bit in the directory for the requesting core.
+						cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+						//set message package size
+						message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+						//update routing
+						message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+						message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+						message_packet->src_name = l3_caches[my_pid].name;
+						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
+
+						P_PAUSE(l3_caches[my_pid].latency);
+
+						cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
+
+						//check if the packet has coalesced accesses.
+						if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+						{
+							//enter retry state.
+							cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
+						}
+
+						break;
+
+					case cgm_cache_block_modified:
 					case cgm_cache_block_exclusive:
 
 						//stats;
@@ -2470,16 +2511,12 @@ void l3_cache_ctrl(void){
 						{
 							message_packet->access_type = cgm_access_put_clnx;
 						}
-						else if(*cache_block_state_ptr == cgm_cache_block_shared)
-						{
-							message_packet->access_type = cgm_access_puts;
-						}
 
 						//get the cache block state
 						message_packet->cache_block_state = *cache_block_state_ptr;
 
 						//testing
-						assert(*cache_block_state_ptr == cgm_cache_block_shared);
+						assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
 
 						//set the presence bit in the directory for the requesting core.
 						cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
