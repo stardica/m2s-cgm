@@ -34,6 +34,7 @@ enum cgm_access_kind_t {
 	cgm_access_gets, //get shared
 	cgm_access_gets_i, //get shared specific to i caches
 	cgm_access_get, //get specific to d caches
+	cgm_access_get_fwd,
 	cgm_access_gets_s, //get shared specific to s caches
 	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
@@ -56,6 +57,8 @@ enum cgm_access_kind_t {
 	cgm_access_retry_i,//not used
 	num_access_types
 };
+
+extern struct str_map_t cgm_mem_access_strn_map;
 
 struct cgm_packet_t{
 
