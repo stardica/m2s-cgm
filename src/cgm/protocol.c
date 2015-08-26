@@ -39,6 +39,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_inv", cgm_access_inv},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
+		{"cgm_access_downgrade", cgm_access_downgrade},
+		{"cgm_access_downgrade_ack", cgm_access_downgrade_ack},
 		{"cgm_access_mc_get", cgm_access_mc_get},
 		{"cgm_access_mc_put", cgm_access_mc_put},
 		{"cgm_access_put_clnx", cgm_access_put_clnx},
@@ -92,6 +94,16 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	write_back_packet->set = cache->sets[set].blocks[way].set;
 	write_back_packet->tag = cache->sets[set].blocks[way].tag;
 
+	return;
+}
+
+void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet, int set, unsigned int address){
+
+	reply_packet->access_type = cgm_access_downgrade_ack;
+	reply_packet->downgrade_ack = 1;
+	reply_packet->size = 0;
+	reply_packet->address = address;
+	reply_packet->set = set;
 	return;
 }
 

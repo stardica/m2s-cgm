@@ -100,6 +100,9 @@ task *gpu_v_cache_tasks;
 task *gpu_s_cache_tasks;
 task *gpu_lds_tasks;
 
+long long temp_id = 0;
+
+
 void cache_init(void){
 
 	cache_create();
@@ -1627,6 +1630,7 @@ void l2_cache_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
+	struct cgm_packet_t *reply_packet;
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
@@ -1993,8 +1997,119 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_get_fwd)
 			{
-				printf("L2 get fwd cycle %llu\n", P_TIME);
-				STOP;
+				printf("L2 id %d get fwd received from L2 id %d cycle %llu\n", l2_caches[my_pid].id, message_packet->l2_cache_id, P_TIME);
+				/*STOP;*/
+
+				/*we have received a get_fwd from the home.
+				this is for a block that we have in our core
+				and can forward to the requesting core.
+
+				The block should be here in the exclusive or modified state
+				however it is possible that the block may have been dropped earlier
+
+				if the block is present and exclusive in L1 and L2
+					(1) downgrade L1 to shared.
+					(2) downgrade L2 to shared.
+					(3) fwd block to requesting core.
+					(4) send downgrade_ack to L3 (home node).
+
+				if the block is present and modified (stored) in either L1 or L2
+					(1) downgrade L1 to shared and write back (if modified)
+					(2) merge and downgrade L2 to shared
+					(3) fwd block to requesting core (shared).
+					(4) issue sharing WB to L3
+
+				it is possible for the GET_FWD to miss,
+				his means the block was silently dropped by the owning node
+					(1) send nack to L3 (home)
+					(2) L3 sends reply to GET
+
+				L3 locks the block on transactions, so the send back to L3
+				should be a hit. todo check this last statement for correctness*/
+
+				//star todo adjust for GETX when working the modified states in.
+
+				//get the status of the cache block
+				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+
+				printf("L2 id %d block hit %d as %s\n", l2_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+				//if hit block is in the cache
+				if(*cache_block_hit_ptr == 1)
+				{
+					//a GET_FWD means the block is exclusive in this core, but could also be modified
+					assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
+
+					//star todo add L2 L1 interaction here...
+
+					/////////
+					//GET FWD
+					/////////
+
+					//downgrade the block
+					cgm_cache_set_block(&(l2_caches[my_pid]), message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_shared);
+
+					//set accees type
+					message_packet->access_type = cgm_access_puts;
+
+					//set the block state
+					message_packet->cache_block_state = cgm_cache_block_shared;
+
+					//set message package size
+					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+					//fwd block to requesting core
+					//update routing headers swap dest and src
+					//requesting node
+					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+					//owning node L2
+					message_packet->src_name = l2_caches[my_pid].name;
+					message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+
+
+					///////////////
+					//downgrade_ack
+					///////////////
+
+					//create downgrade_ack
+					reply_packet = packet_create();
+					assert(reply_packet);
+
+					init_reply_packet(&(l2_caches[my_pid]), reply_packet, message_packet->set, message_packet->address);
+
+					//fwd reply (downgrade_ack) to L3
+					l3_map = cgm_l3_cache_map(reply_packet->set);
+					reply_packet->l2_cache_id = l2_caches[my_pid].id;
+					reply_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
+
+					reply_packet->src_name = l2_caches[my_pid].name;
+					reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+					reply_packet->dest_name = l3_caches[l3_map].name;
+					reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+					//charge delay
+					P_PAUSE(l2_caches[my_pid].latency);
+
+					//transmit block to requesting node
+					cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
+
+					//transmit downgrad_ack to L3 (home)
+					list_enqueue(l2_caches[my_pid].Tx_queue_bottom, reply_packet);
+					advance(l2_caches[my_pid].cache_io_down_ec);
+
+					printf("L2 id %d block downgraded and sent puts cycle %llu\n", l2_caches[my_pid].id, P_TIME);
+
+				}
+				/*if the block is found in the L2 it may or may not be in the L1 cache
+				we must invalidate here and send an invalidation to the L1 D cache*/
+				else if(*cache_block_hit_ptr == 0)
+				{
+					fatal("L2 cgm_access_get_fwd miss\n");
+				}
+
 
 			}
 			else if(access_type == cgm_access_upgrade)
@@ -2129,11 +2244,11 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
 
-				/*if(access_type == cgm_access_put_clnx)
+				if(message_packet->access_id == temp_id && temp_id > 0)
 				{
-					printf("L2 put clnx\n");
+					printf("L2 id %d access id %llu puts received\n", l2_caches[my_pid].id, message_packet->access_id);
 					STOP;
-				}*/
+				}
 
 
 				enum cgm_cache_block_state_t victim_trainsient_state;
@@ -2413,12 +2528,12 @@ void l3_cache_ctrl(void){
 				//get the status of the cache block
 				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-				//confer with the directory
+				//get the directory state
 				//check the directory dirty bit status
 				dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
 				//get number of sharers
 				sharers = cgm_cache_get_num_shares(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
-				//check to see is access is from an already owning core
+				//check to see if access is from an already owning core
 				owning_core = cgm_cache_is_owning_core(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 				switch(*cache_block_state_ptr)
@@ -2452,8 +2567,8 @@ void l3_cache_ctrl(void){
 						message_packet->access_type = cgm_access_mc_get;
 
 						//star todo this should be exclusive when Get is fully working
-						/*message_packet->cache_block_state = cgm_cache_block_exclusive;*/
-						message_packet->cache_block_state = cgm_cache_block_shared;
+						message_packet->cache_block_state = cgm_cache_block_exclusive;
+						/*message_packet->cache_block_state = cgm_cache_block_shared;*/
 
 						message_packet->src_name = l3_caches[my_pid].name;
 						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
@@ -2521,7 +2636,7 @@ void l3_cache_ctrl(void){
 						/*on the first GET the block should have been brought in as exclusive.
 						Then it will be a hit on retry with no presence bits set (exclusive).
 						On a subsequent access (by either the requesting core or a different core) the block will be here as exclusive,
-						if the request comes from the original core the block can be sent as exclusive
+						if the request comes from the original core the block can be sent as exclusive again.
 						if the request comes from a different core the block will need to be downgraded to shared before sending to requesting core.
 						Once the block is downgraded to shared it will be in both cores and L3 as shared*/
 
@@ -2539,7 +2654,7 @@ void l3_cache_ctrl(void){
 
 							//testing
 							assert(dirty == 0);
-							assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
+							assert(*cache_block_state_ptr == cgm_cache_block_exclusive);
 
 							//set the presence bit in the directory for the requesting core.
 							cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
@@ -2555,7 +2670,7 @@ void l3_cache_ctrl(void){
 
 							P_PAUSE(l3_caches[my_pid].latency);
 
-							//send it out
+							//send the cache block out
 							cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
 
 							//check if the packet has coalesced accesses.
@@ -2565,14 +2680,22 @@ void l3_cache_ctrl(void){
 								cache_coalesed_retry(&(l3_caches[my_pid]), message_packet->tag, message_packet->set);
 							}
 						}
-						//if it is a new access from another core(s). downgrade the owning core.
+						/*if it is a new access from another core(s).
+						We need to downgrade the owning core.
+						also, the owning core may have the block dirty
+						so we may need to process a sharing writeback*/
 						else if (sharers >= 1)
 						{
+							//testing
 							// in the exclusive state there should only be one core with the cache block
 							assert(sharers == 1);
 
-							/*its possible that the data is dirty in the owning core
-							so forward the GET to the owning core*/
+							//delete later
+							printf("L3 id %d Get fwd sent access id %llu cycle %llu\n", l3_caches[my_pid].id, message_packet->access_id, P_TIME);
+							temp_id = message_packet->access_id;
+							//delete later
+
+							//forward the GET to the owning core*/
 
 							//change the access type
 							message_packet->access_type = cgm_access_get_fwd;
@@ -2581,25 +2704,25 @@ void l3_cache_ctrl(void){
 
 							//don't set the presence bit in the directory for the requesting core (yet).
 
-							//don't change the message package size
+							//don't change the message package size (yet).
 
-							//increment the directory pending bit by the number of sharers. Its exclusive so should only be 1.
+							//set the directory pending bit.
 							cgm_cache_set_dir_pending_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->way, sharers);
 
 							/*update the routing headers.
 							set src as requesting cache and dest as owning cache.
-							We can derive the home (directory) later from the access address.*/
+							We can derive the home (directory) later from the original access address.*/
 
-							//owning node L2
-							//get the id of the owning core
+							//get the id of the owning core L2
 							owning_core = cgm_cache_get_xown_core(&(l3_caches[my_pid]), message_packet->set, message_packet->way);
-							assert(owning_core >= 0 && owning_core <num_cores);
+							assert(owning_core >= 0 && owning_core < num_cores);
+
 							message_packet->dest_name = str_map_value(&l2_strn_map, owning_core);
 							message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
 
 							//requesting node L2
 							message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
-							message_packet->src_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+							message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
 							P_PAUSE(l3_caches[my_pid].latency);
 
@@ -2720,6 +2843,16 @@ void l3_cache_ctrl(void){
 
 						break;
 				}
+			}
+			else if(access_type == cgm_access_downgrade_ack)
+			{
+
+				//downgrade the line to shared and add sharers
+
+
+				printf("L3 id %d downgrade_ack received\n", l3_caches[my_pid].id);
+				P_PAUSE(1000000);
+
 			}
 			else if(access_type == cgm_access_upgrade)
 			{

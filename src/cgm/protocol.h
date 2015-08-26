@@ -41,6 +41,8 @@ enum cgm_access_kind_t {
 	cgm_access_inv,  //invalidation request
 	cgm_access_upgrade,
 	cgm_access_upgrade_ack,
+	cgm_access_downgrade,
+	cgm_access_downgrade_ack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_put_clnx, //put block in exclusive or modified state
@@ -84,9 +86,10 @@ struct cgm_packet_t{
 	int size;
 	int coalesced;
 
-	//for evict
+	//for evict and reply
 	int write_back;
 	int inval;
+	int downgrade_ack;
 
 	int l1_victim_way;
 	int l2_victim_way;
@@ -128,6 +131,7 @@ void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag);
+void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet, int set, unsigned int address);
 void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
 //implements a MESI protocol.

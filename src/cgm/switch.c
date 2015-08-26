@@ -1003,10 +1003,15 @@ void switch_south_io_ctrl(void){
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
-			if(message_packet->access_type == cgm_access_mc_put)
+			else if(message_packet->access_type == cgm_access_mc_put)
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 			}
+			else if (message_packet->access_type == cgm_access_downgrade_ack)
+			{
+				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
+			}
+
 			advance(&l3_cache[my_pid]);
 		}
 		//Sys Agent
