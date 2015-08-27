@@ -862,7 +862,7 @@ void switch_north_io_ctrl(void){
 			}
 			else
 			{
-				fatal("switch_north_io_ctrl(): bad access type\n");
+				fatal("switch_north_io_ctrl(): bad access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
 		}
 		//hub-iommu

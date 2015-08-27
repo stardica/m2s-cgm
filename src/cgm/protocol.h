@@ -86,8 +86,8 @@ struct cgm_packet_t{
 	int size;
 	int coalesced;
 
-	//for evict and reply
-	int write_back;
+	//for evictions and writebacks
+	int flush_pending;
 	int inval;
 	int downgrade_ack;
 

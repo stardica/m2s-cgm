@@ -1,3 +1,50 @@
+/*printf("access_id %llu L2 putting cycle %llu \n", message_packet->access_id, P_TIME);
+		printf("size %d \n", list_count(cache->last_queue));
+
+		//star todo add the wb back in.
+
+		//evict the victim
+		//the block can be dropped if it is not modified.
+
+		//victim_state = cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way);
+
+		first if the block is modified it is dirty and needs to be written back
+		move a copy of the block to the write back buffer
+		if (victim_state == cgm_cache_block_modified)
+		{
+			//move the block to the WB buffer
+			struct cgm_packet_t *write_back_packet = packet_create();
+
+			//star todo remember to set l2 cache id in WB packet
+			init_write_back_packet(cache, write_back_packet, message_packet->set, message_packet->l2_victim_way);
+
+			list_enqueue(cache->write_back_buffer, write_back_packet);
+		}*/
+
+//checks
+		if(message_packet->access_type == cgm_access_put_clnx ||message_packet->access_type == cgm_access_putx)
+		{
+			assert(message_packet->cache_block_state == cgm_cache_block_exclusive || message_packet->cache_block_state == cgm_cache_block_modified);
+		}
+		else if(message_packet->access_type == cgm_access_puts)
+		{
+			assert(message_packet->cache_block_state == cgm_cache_block_shared);
+		}
+
+/*victim_state = cgm_cache_get_block_state(cache, message_packet->set, message_packet->l1_victim_way);
+
+		first if the block is modified it is dirty and needs to be written back
+		move a copy of the block to the write back buffer
+		if (victim_state == cgm_cache_block_modified)
+		{
+			//move the block to the WB buffer
+			struct cgm_packet_t *write_back_packet = packet_create();
+
+			init_write_back_packet(cache, write_back_packet, message_packet->set, message_packet->l1_victim_way);
+
+			list_enqueue(cache->write_back_buffer, write_back_packet);
+		}*/
+
 /*printf("l1_i_cache retry queue size %d\n", list_count(l1_i_caches[0].retry_queue));
 	printf("l1_i_cache Rx_top queue size %d\n", list_count(l1_i_caches[0].Rx_queue_top));
 	printf("l1_i_cache Rx_bottom queue size %d\n", list_count(l1_i_caches[0].Rx_queue_bottom));

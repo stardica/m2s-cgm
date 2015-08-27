@@ -84,7 +84,6 @@ void packet_destroy(struct cgm_packet_t *packet){
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way){
 
 	write_back_packet->access_type = cgm_access_write_back;
-	write_back_packet->write_back = 1;
 	write_back_packet->size = cache->block_size;
 
 	//reconstruct the address from the set and tag

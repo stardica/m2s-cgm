@@ -103,6 +103,7 @@ struct cache_block_t{
 
 	//for error checking
 	long long transient_access_id;
+
 };
 
 struct cache_set_t{
@@ -154,6 +155,8 @@ struct cache_t{
 	int max_coal;
 
 	//cache queues
+	//star todo rewrite all of this queues should be inboxes
+	//buffers are internal buffers
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
 	struct list_t *Tx_queue_top;
@@ -162,6 +165,7 @@ struct cache_t{
 	struct list_t *Coherance_Rx_queue;
 	struct list_t *retry_queue;
 	struct list_t *write_back_buffer;
+	struct list_t *pending_request_buffer;
 	struct list_t *next_queue;
 	struct list_t *last_queue;
 
@@ -321,10 +325,11 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
-void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way, int sharers);
+void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
 int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);
+
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state);
 enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
@@ -337,6 +342,7 @@ void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_
 unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);
 int cgm_cache_get_way(struct cache_t *cache, int tag, int set);
+void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
 void cgm_cache_inval_block(struct cache_t *cache, int set, int way);
