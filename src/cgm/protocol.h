@@ -32,24 +32,25 @@ enum cgm_access_kind_t {
 	cgm_access_load_v,
 	cgm_access_prefetch,
 	cgm_access_gets, //get shared
-	cgm_access_gets_i, //get shared specific to i caches
+	cgm_access_gets_i,
 	cgm_access_get, //get specific to d caches
 	cgm_access_get_fwd,
 	cgm_access_gets_s, //get shared specific to s caches
 	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
 	cgm_access_inv,  //invalidation request
-	cgm_access_upgrade,
+	cgm_access_inv_ack,
+	cgm_access_upgrade, //upgrade request
 	cgm_access_upgrade_ack,
-	cgm_access_downgrade,
+	cgm_access_downgrade, //downgrade request
 	cgm_access_downgrade_ack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_put_clnx, //put block in exclusive or modified state
-	cgm_access_putx, //request for writeback of cache block exclusive data.
-	cgm_access_puts, //request for writeback of cache block in shared state.
-	cgm_access_puto, //request for writeback of cache block in owned state.
-	cgm_access_puto_shared, //equest for writeback of cache block in owned state but other sharers of the block exist.
+	cgm_access_putx, //request for write back of cache block exclusive data.
+	cgm_access_puts, //request for write back of cache block in shared state.
+	cgm_access_puto, //request for write back of cache block in owned state.
+	cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
 	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 	cgm_access_retry,
 	cgm_access_fetch_retry,
@@ -66,7 +67,7 @@ struct cgm_packet_t{
 
 	char *name;
 
-	//star todo these can be clean up just
+	//star todo clean this up when the simulator is done.
 	enum cgm_access_kind_t access_type;
 	enum cgm_access_kind_t l1_access_type;
 	enum cgm_access_kind_t cpu_access_type;
@@ -86,8 +87,9 @@ struct cgm_packet_t{
 	int size;
 	int coalesced;
 
-	//for evictions and writebacks
+	//for evictions, write backs, downgrades
 	int flush_pending;
+	int downgrade_pending;
 	int inval;
 	int downgrade_ack;
 
@@ -130,9 +132,9 @@ struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
-void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag);
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag, int pending, enum cgm_cache_block_state_t cache_block_state);
 void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet, int set, unsigned int address);
-void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
+void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
 //implements a MESI protocol.
 /*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);

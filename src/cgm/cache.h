@@ -345,7 +345,8 @@ int cgm_cache_get_way(struct cache_t *cache, int tag, int set);
 void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
-void cgm_cache_inval_block(struct cache_t *cache, int set, int way);
+/*void cgm_cache_inval_block(struct cache_t *cache, int set, int way);*/
+struct cgm_packet_t *cache_search_wb(struct cache_t *cache,int tag, int set);
 void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
@@ -359,7 +360,7 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 //lower level ORT functions
 int get_ort_status(struct cache_t *cache);
-int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);
+/*int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);*/
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);

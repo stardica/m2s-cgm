@@ -37,6 +37,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_gets_v", cgm_access_gets_v},
 		{"cgm_access_getx", cgm_access_getx},
 		{"cgm_access_inv", cgm_access_inv},
+		{"cgm_access_inv_ack", cgm_access_inv_ack},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
 		{"cgm_access_downgrade", cgm_access_downgrade},
@@ -81,10 +82,11 @@ void packet_destroy(struct cgm_packet_t *packet){
 	return;
 }
 
-void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way){
+void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, int pending, enum cgm_cache_block_state_t victim_state){
 
 	write_back_packet->access_type = cgm_access_write_back;
-	write_back_packet->size = cache->block_size;
+	write_back_packet->flush_pending = pending;
+	write_back_packet->cache_block_state = victim_state;
 
 	//reconstruct the address from the set and tag
 	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
@@ -106,11 +108,11 @@ void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet,
 	return;
 }
 
-void init_inval_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way){
+void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way){
 
 	inval_packet->access_type = cgm_access_inv;
 	inval_packet->inval = 1;
-	inval_packet->size = 0;
+	inval_packet->size = 1;
 
 	//reconstruct the address from the set and tag
 	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
