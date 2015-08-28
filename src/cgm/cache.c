@@ -2179,7 +2179,7 @@ void l2_cache_ctrl(void){
 					//store the get_fwd in the pending request buffer
 					message_packet->downgrade_pending = 1;
 					message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
-					list_enqueue(l2_caches[my_pid].pending_request_buffer);
+					list_enqueue(l2_caches[my_pid].pending_request_buffer, message_packet);
 
 					//flush the L1 cache because the line may be dirty in L1
 
