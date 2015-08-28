@@ -2176,10 +2176,14 @@ void l2_cache_ctrl(void){
 					//a GET_FWD means the block is exclusive in this core, but could also be modified
 					assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
 
+					//store the get_fwd in the pending request buffer
+					message_packet->downgrade_pending = 1;
+					message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+					list_enqueue(l2_caches[my_pid].pending_request_buffer);
+
 					//flush the L1 cache because the line may be dirty in L1
-						//(1) send the L1 a downgrade message
 
-
+					//(1) send the L1 a downgrade message
 
 
 					/////////
@@ -2189,7 +2193,7 @@ void l2_cache_ctrl(void){
 					//downgrade the block
 					cgm_cache_set_block(&(l2_caches[my_pid]), message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_shared);
 
-					//set accees type
+					//set access type
 					message_packet->access_type = cgm_access_puts;
 
 					//set the block state
@@ -2812,8 +2816,8 @@ void l3_cache_ctrl(void){
 						message_packet->access_type = cgm_access_mc_get;
 
 						//star todo this should be exclusive when Get is fully working
-						/*message_packet->cache_block_state = cgm_cache_block_exclusive;*/
-						message_packet->cache_block_state = cgm_cache_block_shared;
+						message_packet->cache_block_state = cgm_cache_block_exclusive;
+						/*message_packet->cache_block_state = cgm_cache_block_shared;*/
 
 						message_packet->src_name = l3_caches[my_pid].name;
 						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
