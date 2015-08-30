@@ -21,7 +21,6 @@
 #include <cgm/mem-ctrl.h>
 #include <cgm/tasking.h>
 #include <cgm/cache.h>
-#include <cgm/packet.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
 

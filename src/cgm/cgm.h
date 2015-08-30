@@ -39,7 +39,6 @@
 #include <cgm/ini-parse.h>
 #include <cgm/tasking.h>
 #include <cgm/interrupt.h>
-#include <cgm/packet.h>
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
 

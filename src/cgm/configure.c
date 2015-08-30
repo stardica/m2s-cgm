@@ -453,6 +453,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int WireLatency = 0;
 	int maxcoal = 0;
 	int Bus_width = 0;
+	char *temp_strn;
 
 	////////////////////////
 	//MISC Settings
@@ -517,6 +518,27 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Debug", "GPU_L2_INF"))
 	{
 		gpu_l2_inf = atoi(value);
+	}
+
+	////////////////////////
+	//Protocol
+	////////////////////////
+	if(MATCH("Protocol", "Protocol_type"))
+	{
+		temp_strn = strdup(value);
+
+		if(strcmp(temp_strn, "MESI") == 0)
+		{
+			cgm_cache_protocol = cgm_protocol_mesi;
+		}
+		else if(strcmp(temp_strn, "MOESI") == 0)
+		{
+			fatal("cache_read_config(): MOSEI protocol not yet supported, check config file\n");
+		}
+		else
+		{
+			fatal("cache_read_config(): invalid protocol, check config file\n");
+		}
 	}
 
 	////////////////////////

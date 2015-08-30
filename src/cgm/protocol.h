@@ -12,13 +12,19 @@
 #include <lib/util/linked-list.h>
 
 #include <cgm/misc.h>
-#include <cgm/cgm.h>
+/*#include <cgm/cgm.h>*/
 #include <cgm/cache.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
 
-#define MESI
+
+enum protocol_kind_t {
+	cgm_protocol_mesi = 0,
+	cgm_protocol_moesi,
+	num_cgm_protocol_types
+};
+
 
 enum cgm_access_kind_t {
 	cgm_access_invalid = 0,
@@ -44,6 +50,7 @@ enum cgm_access_kind_t {
 	cgm_access_upgrade_ack,
 	cgm_access_downgrade, //downgrade request
 	cgm_access_downgrade_ack,
+	cgm_access_downgrade_nack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_put_clnx, //put block in exclusive or modified state
@@ -61,7 +68,10 @@ enum cgm_access_kind_t {
 	num_access_types
 };
 
+extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;
+
+extern enum protocol_kind_t cgm_cache_protocol;
 
 struct cgm_packet_t{
 
@@ -89,9 +99,13 @@ struct cgm_packet_t{
 
 	//for evictions, write backs, downgrades
 	int flush_pending;
+	int downgrade;
 	int downgrade_pending;
-	int inval;
 	int downgrade_ack;
+	int inval;
+	int inval_pending;
+	int inval_ack;
+
 
 	int l1_victim_way;
 	int l2_victim_way;
@@ -127,16 +141,34 @@ struct cgm_packet_status_t{
 
 /*struct cgm_packet_status_t;*/
 
-//star todo create functions to load/access the packet as needed by the various memory system elements.
+//star todo implement a MOESI protocol.
+
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
 void status_packet_destroy(struct cgm_packet_status_t *status_packet);
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag, int pending, enum cgm_cache_block_state_t cache_block_state);
 void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet, int set, unsigned int address);
+void init_downgrade_packet(struct cache_t *cache, struct cgm_packet_t *downgrade_packet, unsigned int address);
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
+////////////////
+/////protocol V2
+////////////////
+
 //implements a MESI protocol.
+void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_i_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
+///////////////
+/////protocl v1
+///////////////
+
 /*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -149,10 +181,6 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
-
-
-void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
-
-//star todo implement a MOESI protocol.
+/*void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);*/
 
 #endif /*PROTOCOL_H_*/

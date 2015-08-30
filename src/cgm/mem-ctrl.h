@@ -18,7 +18,6 @@
 #include <cgm/cgm.h>
 #include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
-#include <cgm/packet.h>
 #include <cgm/cache.h>
 
 

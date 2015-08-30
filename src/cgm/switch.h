@@ -23,11 +23,10 @@
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
-#include <cgm/cgm.h>
+/*#include <cgm/cgm.h>*/
 #include <cgm/tasking.h>
 
 #include <cgm/hub-iommu.h>
-#include <cgm/packet.h>
 #include <cgm/cache.h>
 #include <cgm/sys-agent.h>
 

@@ -20,7 +20,6 @@
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
-#include <cgm/packet.h>
 
 /*
 #include <lib/util/list.h>
