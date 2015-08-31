@@ -126,18 +126,26 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	return;
 }
 
-void init_reply_packet(struct cache_t *cache, struct cgm_packet_t *reply_packet, int set, unsigned int address){
+void init_reply_packet(struct cgm_packet_t *reply_packet, unsigned int address){
 
 	reply_packet->access_type = cgm_access_downgrade_ack;
 	reply_packet->downgrade_ack = 1;
 	reply_packet->size = 0;
 	reply_packet->address = address;
-	reply_packet->set = set;
+	return;
+}
+
+void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address){
+
+	reply_packet->access_type = cgm_access_downgrade_ack;
+	reply_packet->downgrade_ack = 1;
+	reply_packet->size = 0;
+	reply_packet->address = address;
 	return;
 }
 
 
-void init_downgrade_packet(struct cache_t *cache, struct cgm_packet_t *downgrade_packet, unsigned int address){
+void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int address){
 
 	downgrade_packet->access_type = cgm_access_downgrade;
 	downgrade_packet->downgrade = 1;

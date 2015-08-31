@@ -62,7 +62,7 @@ CLASS_BEGIN(Timing, Object)
 	 * functions that must be overridden by children. */
 
 #if CGM
-	//star todo when we are done rename these after completly removing the old mem-system.
+	//star todo when we are done rename these after completely removing the old mem-system.
 	void (*MemConfigDefault)(Timing *self, struct config_t *config);
 
 	//star todo these arn't used yet and may not need to be used.

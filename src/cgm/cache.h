@@ -92,6 +92,7 @@ struct cache_block_t{
 	int transient_tag;
 	int way;
 	int prefetched;
+	int flush_pending;
 
 	enum cgm_cache_block_state_t state;
 	enum cgm_cache_block_state_t transient_state;
@@ -184,6 +185,10 @@ struct cache_t{
 	unsigned int dir_latency;
 	union directory_t **dir;
 	unsigned int share_mask;
+
+	/*cache virtual functions*/
+	void (*run_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 
 	//statistics
 	long long fetches;
@@ -328,9 +333,12 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
 int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);
 
-
 //Write Back Buffer Manipulations
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache,int tag, int set);
+
+//Pending Request Buffer Manipulations
+void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
+struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, unsigned int address);
 
 //block Manipulations
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
@@ -348,6 +356,8 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);
+void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way, int bit);
+int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);

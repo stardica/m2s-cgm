@@ -70,7 +70,7 @@ int sys_agent_finish_create(void);
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value);
 int mem_ctrl_finish_create(void);
 
-
+//functions run by virtual function
 int cpu_configure(Timing *self, struct config_t *config);
 int gpu_configure(Timing *self, struct config_t *config);
 

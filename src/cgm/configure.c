@@ -1452,6 +1452,16 @@ int cache_finish_create(){
 		snprintf(buff, 100, "cache_io_down_task");
 		l1_i_caches[i].cache_io_down_tasks = create_task(l1_i_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_mesi)
+		{
+			l1_i_caches[i].run_fetch = cgm_mesi_fetch;
+		}
+		else
+		{
+			fatal("invalid protocol at i cache init\n");
+		}
+
 		/////////////
 		//L1 D Cache
 		/////////////

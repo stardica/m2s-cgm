@@ -1011,6 +1011,10 @@ void switch_south_io_ctrl(void){
 			{
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}
+			else
+			{
+				fatal("switch_south_io_ctrl(): bad access_type\n");
+			}
 
 			advance(&l3_cache[my_pid]);
 		}

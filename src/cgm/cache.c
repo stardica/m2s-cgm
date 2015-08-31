@@ -499,6 +499,33 @@ struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set){
 	return NULL;
 }
 
+void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	message_packet = list_remove(cache->last_queue, message_packet);
+	list_enqueue(cache->pending_request_buffer, message_packet);
+
+	return;
+}
+
+struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, unsigned int address){
+
+	int i = 0;
+	struct cgm_packet_t *pending_request;
+
+	LIST_FOR_EACH(cache->pending_request_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		pending_request = list_get(cache->pending_request_buffer, i);
+
+		//found block in write back buffer
+		if(pending_request->address == address)
+		{
+			return pending_request;
+		}
+	}
+
+	return NULL;
+}
 
 
 /*int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set){
@@ -920,17 +947,24 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	//send eviction notices and flush the L1 cache
 
-	//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
-	struct cgm_packet_t *flush_packet = packet_create();
+	/*get the block flush_pending_bit
+	if the pending bit is set a flush was previously sent*/
+	if(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0)
+	{
 
-	init_flush_packet(cache, flush_packet, set, way);
+		//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
+		struct cgm_packet_t *flush_packet = packet_create();
 
-	/*star todo fix this, this is only needed for correct routing from L2 to L1 D
-	figure out another way to do this*/
-	flush_packet->cpu_access_type = cgm_access_load;
+		init_flush_packet(cache, flush_packet, set, way);
 
-	list_enqueue(cache->Tx_queue_top, flush_packet);
-	advance(cache->cache_io_up_ec);
+		/*star todo fix this, this is only needed for correct routing from L2 to L1 D
+		figure out another way to do this*/
+		flush_packet->cpu_access_type = cgm_access_load;
+
+		list_enqueue(cache->Tx_queue_top, flush_packet);
+		advance(cache->cache_io_up_ec);
+	}
+
 
 	return;
 }
@@ -1219,14 +1253,22 @@ void l1_i_cache_ctrl(void){
 			if (access_type == cgm_access_fetch || access_type == cgm_access_fetch_retry)
 			{
 				//star todo figure out if we want to go in this direction.
-				if(cgm_cache_protocol == cgm_protocol_mesi)
+
+				//via call back functions
+
+				/*if(cgm_cache_protocol == cgm_protocol_mesi)
 				{
-					cgm_mesi_fetch(&(l1_i_caches[my_pid]), message_packet);
+					//via regualr functions
+					//cgm_mesi_fetch(&(l1_i_caches[my_pid]), message_packet);
 				}
 				else
 				{
 					fatal("l1_i_cache_ctrl(): invalid protocol\n");
-				}
+				}*/
+
+
+				//or via call back functions (runs cgm_mesi_fetch)
+				l1_i_caches[my_pid].run_fetch(&(l1_i_caches[my_pid]), message_packet);
 
 			}
 			else if (access_type == cgm_access_puts)
@@ -1501,11 +1543,13 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_downgrade)
 			{
-
 				//Received downgrade from L2; a block needs to be shared...
+				printf("L1 D id %d received downgrade from L2\n", l1_d_caches[my_pid].id);
 
 				//get the block status
 				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				printf("L1 D id %d block hit %d as %s\n", l1_d_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
 
 				//first check the cache for the block
 				//find and invalidate the block
@@ -1546,6 +1590,8 @@ void l1_d_cache_ctrl(void){
 
 					//invalidate the local block
 					cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_shared);
+
+					printf("L1 D id %d downgraded to shared\n", l1_d_caches[my_pid].id);
 				}
 				//Second check (snoop) the WB buffer
 				else if(*cache_block_hit_ptr == 0)
@@ -1556,6 +1602,8 @@ void l1_d_cache_ctrl(void){
 					//found the block in the wb buffer
 					if(wb_packet)
 					{
+						fatal("l1 d cache downgrade hit in wb buffer check this\n");
+
 						//get the block state
 						message_packet->cache_block_state = wb_packet->cache_block_state;
 
@@ -1581,14 +1629,21 @@ void l1_d_cache_ctrl(void){
 					//block isn't in the cache or WB send downgrade_ack without data (empty reply)
 					else
 					{
+						fatal("l1 d cache downgrade miss in cache and wb buffer check this\n");
+
+
 						message_packet->cache_block_state = cgm_cache_block_invalid;
 						message_packet->size = 1;
-						message_packet->access_type = cgm_access_inv_ack;
+						message_packet->access_type = cgm_access_downgrade_ack;
 					}
 				}
 
+				message_packet->l1_cache_id = l1_d_caches[my_pid].id;
+
 				//reply to the L2 cache
 				cache_put_io_down_queue(&(l1_d_caches[my_pid]), message_packet);
+
+				printf("L1 D id %d downgrade_ack sent to L2 cache id %d\n", l1_d_caches[my_pid].id, my_pid);
 			}
 			else
 			{
@@ -1612,6 +1667,7 @@ void l2_cache_ctrl(void){
 	struct cgm_packet_t *reply_packet;
 	struct cgm_packet_t *wb_packet;
 	struct cgm_packet_t *downgrade_packet;
+	struct cgm_packet_t *pending_request;
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
@@ -1891,69 +1947,116 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//L1 D cache flushed,
+				printf("L2 id %d downgrade_ack received from L1 d cache id %d cycle %llu\n", l2_caches[my_pid].id, message_packet->l1_cache_id, P_TIME);
 
-				//star start here.
-				/*on return of flush fix the following...*/
+				//get the status of the cache block and try to find it in either the cache or wb buffer
+				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+				printf("L2 id %d block hit %d as %s\n", l2_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+				//charge delay
+				P_PAUSE(l2_caches[my_pid].latency);
 
 				/////////
-				//GET FWD
+				//GET_FWD
 				/////////
 
-				//downgrade the block
-				cgm_cache_set_block(&(l2_caches[my_pid]), message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_shared);
+				//Try to forward block to requesting core
 
-				//set access type
-				message_packet->access_type = cgm_access_puts;
+				//block still present in L2 cache
+				if(*cache_block_hit_ptr == 1)
+				{
+					//pull the GET_FWD from the pending request buffer
+					pending_request = cache_search_pending_request_buffer(&(l2_caches[my_pid]), message_packet->address);
 
-				//set the block state
-				message_packet->cache_block_state = cgm_cache_block_shared;
+					/*if not found uh-oh...*/
+					assert(pending_request);
+					/*the address better be the same too...*/
+					assert(pending_request->address == message_packet->address);
 
-				//set message package size
-				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					//downgrade the local block
+					cgm_cache_set_block(&(l2_caches[my_pid]), pending_request->set, pending_request->way, pending_request->tag, cgm_cache_block_shared);
 
-				//fwd block to requesting core
-				//update routing headers swap dest and src
-				//requesting node
-				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					printf("L2 id %d downgraded to shared\n", l1_d_caches[my_pid].id);
 
-				//owning node L2
-				message_packet->src_name = l2_caches[my_pid].name;
-				message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+					//prepare to forward the block
+					//set access type
+					pending_request->access_type = cgm_access_puts;
 
+					//set the block state
+					pending_request->cache_block_state = cgm_cache_block_shared;
+
+					//set message package size
+					pending_request->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
+
+					//fwd block to requesting core
+					//update routing headers swap dest and src
+					//requesting node
+					pending_request->dest_name = str_map_value(&node_strn_map, pending_request->src_id);
+					pending_request->dest_id = str_map_string(&node_strn_map, pending_request->src_name);
+
+					printf("requester name %s and id %d\n", pending_request->src_name, pending_request->l2_cache_id);
+
+
+					//owning node L2
+					pending_request->src_name = l2_caches[my_pid].name;
+					pending_request->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+
+					temp_id = pending_request->access_id;
+
+					//transmit block to requesting node
+					pending_request = list_remove(l2_caches[my_pid].pending_request_buffer, pending_request);
+					list_enqueue(l2_caches[my_pid].Tx_queue_bottom, pending_request);
+					advance(l2_caches[my_pid].cache_io_down_ec);
+
+					printf("L2 id %d shared block forwarded to L2 cache id %d\n", l1_d_caches[my_pid].id, pending_request->l2_cache_id);
+				}
+				//block was evicted while flush was in progress
+				else if(*cache_block_hit_ptr == 0)
+				{
+					//block should be in wb buffer waiting on flush
+					fatal("l2 miss on downgrade ack check this\n");
+				}
 
 				///////////////
 				//downgrade_ack
 				///////////////
 
+				//send the downgrade ack to L3 cache.
+
 				//create downgrade_ack
 				reply_packet = packet_create();
 				assert(reply_packet);
 
-				init_reply_packet(&(l2_caches[my_pid]), reply_packet, message_packet->set, message_packet->address);
+				init_downgrade_ack_packet(reply_packet, message_packet->address);
+
+				//set size
+				reply_packet->size = 1;
+
+				//set requesting core
 
 				//fwd reply (downgrade_ack) to L3
-				l3_map = cgm_l3_cache_map(reply_packet->set);
-				reply_packet->l2_cache_id = l2_caches[my_pid].id;
-				reply_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
+				l3_map = cgm_l3_cache_map(message_packet->set);
+
+				//fakes src as the requester
+				/*reply_packet->l2_cache_id = l2_caches[my_pid].id;*/
+				reply_packet->l2_cache_id = pending_request->l2_cache_id;
+				reply_packet->l2_cache_name = pending_request->src_name;
 
 				reply_packet->src_name = l2_caches[my_pid].name;
 				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
 				reply_packet->dest_name = l3_caches[l3_map].name;
 				reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
-				//charge delay
-				P_PAUSE(l2_caches[my_pid].latency);
-
-				//transmit block to requesting node
-				cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
-
 				//transmit downgrad_ack to L3 (home)
 				list_enqueue(l2_caches[my_pid].Tx_queue_bottom, reply_packet);
 				advance(l2_caches[my_pid].cache_io_down_ec);
 
-				printf("L2 id %d block downgraded and sent puts cycle %llu\n", l2_caches[my_pid].id, P_TIME);
+				//destroy the downgrade message because we don't need it anymore.
+				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+				free(message_packet);
 
+				printf("L2 id %d sent downgrade_ack to L3 id %d cycle %llu\n", l2_caches[my_pid].id, l3_map, P_TIME);
 			}
 			else if(access_type == cgm_access_get_fwd)
 			{
@@ -2010,7 +2113,6 @@ void l2_cache_ctrl(void){
 				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				printf("L2 id %d block hit %d as %s\n", l2_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
-				STOP;
 
 				//if hit block is in the L2 and L1 caches
 				if(*cache_block_hit_ptr == 1)
@@ -2020,16 +2122,18 @@ void l2_cache_ctrl(void){
 
 					//store the get_fwd in the pending request buffer
 					message_packet->downgrade_pending = 1;
-					message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
-					list_enqueue(l2_caches[my_pid].pending_request_buffer, message_packet);
+					cgm_cache_insert_pending_request_buffer(&(l2_caches[my_pid]), message_packet);
+
+					//set the flush_pending bit to 1 in the block
+					cgm_cache_set_block_flush_pending_bit(&(l2_caches[my_pid]), message_packet->set, message_packet->way, 1);
 
 					//flush the L1 cache because the line may be dirty in L1
 					downgrade_packet = packet_create();
-					init_downgrade_packet(&(l2_caches[my_pid]), downgrade_packet, message_packet->address);
+					init_downgrade_packet(downgrade_packet, message_packet->address);
 
 					//send the L1 D cache the downgrade message
 					downgrade_packet->cpu_access_type = cgm_access_load;
-					list_enqueue(l2_caches[my_pid].Tx_queue_top, message_packet);
+					list_enqueue(l2_caches[my_pid].Tx_queue_top, downgrade_packet);
 					advance(l2_caches[my_pid].cache_io_up_ec);
 
 					printf("L2 id %d sends L1 D cache flush\n", l2_caches[my_pid].id);
@@ -2063,7 +2167,7 @@ void l2_cache_ctrl(void){
 
 							//flush the L1 cache because the line may be dirty in L1
 							downgrade_packet = packet_create();
-							init_downgrade_packet(&(l2_caches[my_pid]), downgrade_packet, message_packet->address);
+							init_downgrade_packet(downgrade_packet, message_packet->address);
 
 							//send the L1 D cache the downgrade message
 							downgrade_packet->cpu_access_type = cgm_access_load;
@@ -2268,13 +2372,10 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
-
 				if(message_packet->access_id == temp_id && temp_id > 0)
 				{
 					printf("L2 id %d access id %llu puts received\n", l2_caches[my_pid].id, message_packet->access_id);
-					STOP;
 				}
-
 
 				enum cgm_cache_block_state_t victim_trainsient_state;
 				long long t_state_id;
@@ -2533,8 +2634,8 @@ void l3_cache_ctrl(void){
 						message_packet->access_type = cgm_access_mc_get;
 
 						//star todo this should be exclusive when Get is fully working
-						/*message_packet->cache_block_state = cgm_cache_block_exclusive;*/
-						message_packet->cache_block_state = cgm_cache_block_shared;
+						message_packet->cache_block_state = cgm_cache_block_exclusive;
+						/*message_packet->cache_block_state = cgm_cache_block_shared;*/
 
 						message_packet->src_name = l3_caches[my_pid].name;
 						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
@@ -2814,12 +2915,38 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//downgrade the line to shared and add sharers
+				printf("L3 id %d access downgrade_ack received\n", l3_caches[my_pid].id);
 
+				//get the status of the cache block and try to find it in either the cache or wb buffer
+				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+				printf("L3 id %d block hit %d as %s\n", l3_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
 
+				//block still present in L3 cache
+				if(*cache_block_hit_ptr == 1)
+				{
+					//downgrade the local block
+					cgm_cache_set_block(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_shared);
 
+					//set the new sharer bit in the directory
+					cgm_cache_set_dir(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
+					printf("L3 id %d downgraded to shared and directory updated\n", l3_caches[my_pid].id);
+					STOP;
 
+					//go ahead and destroy the downgrade message because we don't need it anymore.
+					message_packet = list_remove(l3_caches[my_pid].last_queue, message_packet);
+					free(message_packet);
+				}
+				//block was evicted while flush was in progress
+				else if(*cache_block_hit_ptr == 0)
+				{
+					//block should be in wb buffer waiting on flush
+					fatal("l2 miss on downgrade ack check this\n");
+				}
+
+				//charge delay
+				P_PAUSE(l3_caches[my_pid].latency);
 
 
 			}
@@ -3225,7 +3352,8 @@ void l1_d_cache_down_io_ctrl(void){
 			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 			advance(&l2_cache[my_pid]);
 		}
-		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv_ack)
+		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv_ack
+				|| message_packet->access_type == cgm_access_downgrade_ack)
 		{
 			list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 			advance(&l2_cache[my_pid]);
@@ -3284,10 +3412,15 @@ void l2_cache_up_io_ctrl(void){
 				list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l1_d_cache[my_pid]);
 			}
-			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_inv)
+			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_inv
+					|| message_packet->access_type == cgm_access_downgrade)
 			{
 				list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l1_d_cache[my_pid]);
+			}
+			else
+			{
+				fatal("l2_cache_up_io_ctrl(): bad access type\n");
 			}
 		}
 		else
@@ -4101,6 +4234,32 @@ void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm
 	return;
 }
 
+void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way, int bit){
+
+	//bit should be between 0 and 1;
+	assert(bit >= 0 && bit <= 1);
+
+	//set the bit
+	cache->sets[set].blocks[way].flush_pending = bit;
+
+	return;
+
+}
+
+int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way){
+
+	int bit;
+
+	bit = cache->sets[set].blocks[way].flush_pending;
+
+	//bit should be between 0 and 1;
+	assert(bit >= 0 && bit <= 1);
+
+	return bit;
+}
+
+
+
 enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way){
 
 	enum cgm_cache_block_state_t victim_state;
@@ -4171,5 +4330,6 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 
 		return;
 }*/
+
 
 
