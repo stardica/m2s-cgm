@@ -186,9 +186,22 @@ struct cache_t{
 	union directory_t **dir;
 	unsigned int share_mask;
 
-	/*cache virtual functions*/
-	void (*run_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+	//L1 I cache protocol virtual functions
+	void (*l1_i_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_i_puts)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//L1 D cache protocol virtual functions
+	void (*l1_d_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//L2 cache protocol virtual functions
+	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//L3 cache protocol virtual functions
+	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//statistics
 	long long fetches;
@@ -205,7 +218,6 @@ struct cache_t{
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;
 	unsigned int *store_address_history;
-
 };
 
 //global variables.

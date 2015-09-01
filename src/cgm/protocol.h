@@ -155,7 +155,7 @@ void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int a
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
 ////////////////
-/////protocol V2
+/////MESI protocol V2
 ////////////////
 
 //implements a MESI protocol.
@@ -164,11 +164,13 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_i_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 ///////////////
-/////protocl v1
+/////MESI protocol v1
 ///////////////
 
 /*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);

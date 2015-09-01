@@ -456,6 +456,16 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	char *temp_strn;
 
 	////////////////////////
+	//MISC Checks
+	////////////////////////
+
+	if( gpu_group_cache_num % 4 != 0)
+	{
+		fatal("cache_read_config(): invalid number of compute units set for GPU, must be divisible by 4\n");
+	}
+
+
+	////////////////////////
 	//MISC Settings
 	////////////////////////
 
@@ -1046,23 +1056,14 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-	if(MATCH("GPU_S_Cache", "Latency"))
-	{
-		Latency = atoi(value);
-		for (i = 0; i < num_cus; i++)
-		{
-			gpu_s_caches[i].latency = Latency;
-		}
-	}
-
-	if(MATCH("GPU_S_Cache", "Policy"))
+/*	if(MATCH("GPU_S_Cache", "Policy"))
 	{
 		Policy = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_s_caches[i].policy_type = Policy;
 		}
-	}
+	}*/
 
 	if(MATCH("GPU_S_Cache", "MSHR"))
 	{
@@ -1073,14 +1074,14 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-	if(MATCH("GPU_S_Cache", "DirectoryLatency"))
+/*	if(MATCH("GPU_S_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_s_caches[i].directory_latency = DirectoryLatency;
 		}
-	}
+	}*/
 
 	if(MATCH("GPU_S_Cache", "MaxCoalesce"))
 	{
@@ -1088,6 +1089,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_s_caches[i].max_coal = maxcoal;
+		}
+	}
+
+	if(MATCH("GPU_S_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_s_caches[i].latency = Latency;
 		}
 	}
 
@@ -1099,6 +1109,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			gpu_s_caches[i].wire_latency = WireLatency;
 		}
 	}
+
 
 	if(MATCH("Bus", "GPUL2-GPUL1"))
 	{
@@ -1147,23 +1158,16 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-	if(MATCH("GPU_V_Cache", "Latency"))
-	{
-		Latency = atoi(value);
-		for (i = 0; i < num_cus; i++)
-		{
-			gpu_v_caches[i].latency = Latency;
-		}
-	}
 
-	if(MATCH("GPU_V_Cache", "Policy"))
+
+/*	if(MATCH("GPU_V_Cache", "Policy"))
 	{
 		Policy = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_v_caches[i].policy_type = Policy;
 		}
-	}
+	}*/
 
 	if(MATCH("GPU_V_Cache", "MSHR"))
 	{
@@ -1174,14 +1178,14 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-	if(MATCH("GPU_V_Cache", "DirectoryLatency"))
+/*	if(MATCH("GPU_V_Cache", "DirectoryLatency"))
 	{
 		DirectoryLatency = atoi(value);
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_v_caches[i].directory_latency = DirectoryLatency;
 		}
-	}
+	}*/
 
 	if(MATCH("GPU_V_Cache", "MaxCoalesce"))
 	{
@@ -1189,6 +1193,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		for (i = 0; i < num_cus; i++)
 		{
 			gpu_v_caches[i].max_coal = maxcoal;
+		}
+	}
+
+	if(MATCH("GPU_V_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_v_caches[i].latency = Latency;
 		}
 	}
 
@@ -1200,6 +1213,8 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			gpu_v_caches[i].wire_latency = WireLatency;
 		}
 	}
+
+
 
 	if(MATCH("Bus", "GPUL2-GPUL1"))
 	{
@@ -1455,7 +1470,8 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
-			l1_i_caches[i].run_fetch = cgm_mesi_fetch;
+			l1_i_caches[i].l1_i_fetch = cgm_mesi_fetch;
+			l1_i_caches[i].l1_i_puts = cgm_mesi_l1_i_puts;
 		}
 		else
 		{
@@ -1573,6 +1589,17 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l1_d_caches[i].cache_io_down_tasks = create_task(l1_d_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_mesi)
+		{
+			l1_d_caches[i].l1_d_load = cgm_mesi_load;
+			l1_d_caches[i].l1_d_store = cgm_mesi_store;
+		}
+		else
+		{
+			fatal("invalid protocol at d cache init\n");
+		}
 
 
 		/////////////
@@ -1703,6 +1730,17 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l2_caches[i].cache_io_down_tasks = create_task(l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_mesi)
+		{
+			l2_caches[i].l2_gets = cgm_mesi_l2_gets;
+			l2_caches[i].l2_get = cgm_mesi_l2_get;
+		}
+		else
+		{
+			fatal("invalid protocol at l2 cache init\n");
+		}
 
 
 		/////////////
@@ -1840,6 +1878,19 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l3_caches[i].cache_io_down_tasks = create_task(l3_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_mesi)
+		{
+			l3_caches[i].l3_gets = cgm_mesi_l3_gets;
+
+
+			l3_caches[i].l3_put = cgm_mesi_l3_put;
+		}
+		else
+		{
+			fatal("invalid protocol at l3 cache init\n");
+		}
 
 
 		//Initialize array of sets

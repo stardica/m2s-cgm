@@ -1252,35 +1252,13 @@ void l1_i_cache_ctrl(void){
 			///////////protocol v2
 			if (access_type == cgm_access_fetch || access_type == cgm_access_fetch_retry)
 			{
-				//star todo figure out if we want to go in this direction.
-
-				//via call back functions
-
-				/*if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					//via regualr functions
-					//cgm_mesi_fetch(&(l1_i_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_i_cache_ctrl(): invalid protocol\n");
-				}*/
-
-
-				//or via call back functions (runs cgm_mesi_fetch)
-				l1_i_caches[my_pid].run_fetch(&(l1_i_caches[my_pid]), message_packet);
-
+				//Call back function (cgm_mesi_fetch)
+				l1_i_caches[my_pid].l1_i_fetch(&(l1_i_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
-				if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					cgm_mesi_l1_i_puts(&(l1_i_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_i_cache_ctrl(): invalid protocol\n");
-				}
+				//Call back function (cgm_mesi_l1_i_puts)
+				l1_i_caches[my_pid].l1_i_puts(&(l1_i_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -1337,32 +1315,15 @@ void l1_d_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*printf("l1 D access id %llu\n", access_id);*/
-
 			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
-				//star todo figure out if we want to go in this direction.
-				if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					cgm_mesi_load(&(l1_d_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_d_cache_ctrl(): invalid protocol\n");
-				}
+				//Call back function (cgm_mesi_load)
+				l1_d_caches[my_pid].l1_d_load(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
-				//star todo figure out if we want to go in this direction.
-				if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					cgm_mesi_store(&(l1_d_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_d_cache_ctrl(): invalid protocol\n");
-				}
-
+				//Call back function (cgm_mesi_store)
+				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
@@ -1708,106 +1669,13 @@ void l2_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
-				//star todo figure out if we want to go in this direction.
-				if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					cgm_mesi_l2_gets(&(l2_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_d_cache_ctrl(): invalid protocol\n");
-				}
+				//Call back function (cgm_mesi_l2_gets)
+				l2_caches[my_pid].l2_gets(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
-				//get the status of the cache block
-				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				switch(*cache_block_state_ptr)
-				{
-					case cgm_cache_block_noncoherent:
-					case cgm_cache_block_owned:
-						fatal("l2_cache_ctrl(): Invalid block state on load hit as %s cycle %llu\n",
-								str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
-						break;
-
-					case cgm_cache_block_invalid:
-
-						/*printf("l2 get miss\n");*/
-
-						//stats
-						l2_caches[my_pid].misses++;
-
-						//check ORT for coalesce
-						cache_check_ORT(&(l2_caches[my_pid]), message_packet);
-
-						if(message_packet->coalesced == 1)
-							continue;
-
-						//error checking check this in L3 cache
-						//message_packet->cache_block_state = *cache_block_hit_ptr;
-
-						//add some routing/status data to the packet
-						message_packet->access_type = cgm_access_get;
-
-						l3_map = cgm_l3_cache_map(message_packet->set);
-						message_packet->l2_cache_id = l2_caches[my_pid].id;
-						message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
-
-						message_packet->src_name = l2_caches[my_pid].name;
-						message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
-						message_packet->dest_name = l3_caches[l3_map].name;
-						message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
-
-						// we are bringing a new block so evict the victim and flush the L1 copies
-						//find victim
-						message_packet->l2_victim_way = cgm_cache_replace_block(&(l2_caches[my_pid]), message_packet->set);
-						cgm_L2_cache_evict_block(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
-
-						//charge delay
-						P_PAUSE(l2_caches[my_pid].latency);
-
-						//transmit to L3
-						cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
-						break;
-
-					case cgm_cache_block_modified:
-					case cgm_cache_block_exclusive:
-					case cgm_cache_block_shared:
-
-						P_PAUSE(l2_caches[my_pid].latency);
-
-						//set message size
-						message_packet->size = l1_d_caches[my_pid].block_size; //this can be either L1 I or L1 D cache block size.
-
-						//update message status
-						if(*cache_block_state_ptr == cgm_cache_block_modified)
-						{
-							message_packet->access_type = cgm_access_putx;
-						}
-						else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
-						{
-							message_packet->access_type = cgm_access_put_clnx;
-						}
-						else if(*cache_block_state_ptr == cgm_cache_block_shared)
-						{
-							message_packet->access_type = cgm_access_puts;
-						}
-
-						/*this will send the block and block state up to the high level cache.*/
-						message_packet->cache_block_state = *cache_block_state_ptr;
-						/*assert(*cache_block_state_ptr == cgm_cache_block_shared);*/
-
-						cache_put_io_up_queue(&(l2_caches[my_pid]), message_packet);
-
-						if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
-						{
-							//enter retry state.
-							cache_coalesed_retry(&(l2_caches[my_pid]), message_packet->tag, message_packet->set);
-						}
-
-						break;
-				}
+				//Call back function (cgm_mesi_l2_get)
+				l2_caches[my_pid].l2_get(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
@@ -2575,16 +2443,8 @@ void l3_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
-				//star todo figure out if we want to go in this direction.
-				if(cgm_cache_protocol == cgm_protocol_mesi)
-				{
-					cgm_mesi_l3_gets(&(l3_caches[my_pid]), message_packet);
-				}
-				else
-				{
-					fatal("l1_d_cache_ctrl(): invalid protocol\n");
-				}
-
+				//via call back function (cgm_mesi_l3_gets)
+				l3_caches[my_pid].l3_gets(&(l3_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
@@ -2634,8 +2494,8 @@ void l3_cache_ctrl(void){
 						message_packet->access_type = cgm_access_mc_get;
 
 						//star todo this should be exclusive when Get is fully working
-						message_packet->cache_block_state = cgm_cache_block_exclusive;
-						/*message_packet->cache_block_state = cgm_cache_block_shared;*/
+						/*message_packet->cache_block_state = cgm_cache_block_exclusive;*/
+						message_packet->cache_block_state = cgm_cache_block_shared;
 
 						message_packet->src_name = l3_caches[my_pid].name;
 						message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
@@ -3051,11 +2911,7 @@ void l3_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
-				//find the access in the ORT table and clear it.
-				ort_clear(&(l3_caches[my_pid]), message_packet);
-
-				//set the block and retry the access in the cache.
-				cache_put_block(&(l3_caches[my_pid]), message_packet);
+				l3_caches[my_pid].l3_put(&(l3_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -3947,15 +3803,6 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 }
 
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
-	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu l2 queue free size %d\n",
-			cache->name, message_packet->access_id, P_TIME, list_count(l2_caches[cache->id].Rx_queue_top));
-	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
-			cache->name, message_packet->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
-	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu %s as %s\n",
-			cache->name, message_packet->access_id, P_TIME, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-	CGM_DEBUG(protocol_debug_file, "%s Access_id %llu cycle %llu %s miss SEND %s %s\n",
-			cache->name, message_packet->access_id, P_TIME, cache->name, l2_caches[cache->id].name, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));*/
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
