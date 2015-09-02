@@ -3089,7 +3089,7 @@ void gpu_l2_cache_ctrl(void){
 	while(1)
 	{
 
-		/*wait here until there is a job to do.*/
+		/*wait here until there is a job to do. */
 		await(&gpu_l2_cache[my_pid], step);
 
 		//check the top or bottom rx queues for messages.
