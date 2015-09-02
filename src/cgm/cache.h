@@ -134,7 +134,7 @@ struct cache_t{
 	unsigned int assoc;
 	unsigned int num_ports;
 	enum cache_policy_t policy;
-	int policy_type;
+	char * policy_type;
 	int slice_type;
 	int bus_width;
 
@@ -186,7 +186,6 @@ struct cache_t{
 	union directory_t **dir;
 	unsigned int share_mask;
 
-
 	//L1 I cache protocol virtual functions
 	void (*l1_i_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_i_puts)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -202,6 +201,23 @@ struct cache_t{
 	//L3 cache protocol virtual functions
 	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//GPU S cache protocol virtual functions
+	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_s_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_s_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//GPU V cache protocol virtual functions
+	void (*gpu_v_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	//GPU L2 cache protocol virtual functions
+	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 
 	//statistics
 	long long fetches;
@@ -293,17 +309,12 @@ void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(void);
 
-//cache tasks
+//cpu
 void l1_i_cache_ctrl(void);
 void l1_d_cache_ctrl(void);
 void l2_cache_ctrl(void);
 void l3_cache_ctrl(void);
-void gpu_s_cache_ctrl(void);
-void gpu_v_cache_ctrl(void);
-void gpu_l2_cache_ctrl(void);
-void gpu_lds_unit_ctrl(void);
 
-//cpu
 void l1_i_cache_down_io_ctrl(void);
 void l1_d_cache_down_io_ctrl(void);
 void l2_cache_up_io_ctrl(void);
@@ -312,6 +323,11 @@ void l3_cache_up_io_ctrl(void);
 void l3_cache_down_io_ctrl(void);
 
 //gpu
+void gpu_s_cache_ctrl(void);
+void gpu_v_cache_ctrl(void);
+void gpu_l2_cache_ctrl(void);
+void gpu_lds_unit_ctrl(void);
+
 void gpu_s_cache_down_io_ctrl(void);
 void gpu_v_cache_down_io_ctrl(void);
 void gpu_l2_cache_up_io_ctrl(void);

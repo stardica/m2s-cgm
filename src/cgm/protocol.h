@@ -22,6 +22,7 @@
 enum protocol_kind_t {
 	cgm_protocol_mesi = 0,
 	cgm_protocol_moesi,
+	cgm_protocol_gmesi,
 	num_cgm_protocol_types
 };
 
@@ -175,16 +176,16 @@ void cgm_mesi_l3_put(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 /*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
+void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
-/*void cpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);*/
+void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
 
 #endif /*PROTOCOL_H_*/

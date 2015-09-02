@@ -119,6 +119,7 @@ void cache_create(void){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 
+	//note, use calloc because it initializes the contents of the caches
 
 	////////////
 	//CPU Caches
@@ -284,7 +285,7 @@ void cache_create_tasks(void){
 		l3_cache_tasks[i] = *(create_task(l3_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
-	/*//gpu l2 caches
+	//gpu l2 caches
 	gpu_l2_cache_tasks = (void *) calloc(gpu_group_cache_num, sizeof(task));
 	for(i = 0; i < gpu_group_cache_num; i++)
 	{
@@ -309,7 +310,7 @@ void cache_create_tasks(void){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_s_cache_ctrl");
 		gpu_s_cache_tasks[i] = *(create_task(gpu_s_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
-	}*/
+	}
 
 	//gpu lds unit
 	gpu_lds_tasks = (void *) calloc(num_cus, sizeof(task));
@@ -2925,7 +2926,7 @@ void l3_cache_ctrl(void){
 	return;
 }
 
-/*void gpu_s_cache_ctrl(void){
+void gpu_s_cache_ctrl(void){
 
 	int my_pid = gpu_s_pid++;
 	int num_cus = si_gpu_num_compute_units;
@@ -2949,27 +2950,36 @@ void l3_cache_ctrl(void){
 		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
 			P_PAUSE(1);
-			//future_advance(&gpu_s_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
 			step++;
+
+			/*/////////testing
+			(*message_packet->witness_ptr)++;
+			list_remove(gpu_s_caches[my_pid].last_queue, message_packet);
+			free(message_packet);
+			continue;
+			/////////testing*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 			if (access_type == cgm_access_load_s)
 			{
-				//gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
-				gpu_l1_cache_access_load(&(gpu_s_caches[my_pid]), message_packet);
+				//Call back function (gpu_l1_cache_access_load)
+				gpu_s_caches[my_pid].gpu_s_load(&(gpu_s_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
-				gpu_cache_access_put(&(gpu_s_caches[my_pid]), message_packet);
+				//Call back function (gpu_cache_access_put)
+				gpu_s_caches[my_pid].gpu_s_put(&(gpu_s_caches[my_pid]), message_packet);
+
 			}
 			else if (access_type == cgm_access_retry)
 			{
-				gpu_cache_access_retry(&(gpu_s_caches[my_pid]), message_packet);
+				//Call back function (gpu_cache_access_retry)
+				gpu_s_caches[my_pid].gpu_s_retry(&(gpu_s_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -2979,13 +2989,7 @@ void l3_cache_ctrl(void){
 		}
 	}
 
-	/////////testing
-	//(*message_packet->witness_ptr)++;
-	//list_remove(gpu_s_caches[my_pid].Rx_queue_top, message_packet);
-	//continue;
-	/////////testing
-
-	 should never get here
+	//should never get here
 	fatal("gpu_s_cache_ctrl task is broken\n");
 	return;
 }
@@ -3011,7 +3015,6 @@ void gpu_v_cache_ctrl(void){
 		//In any given cycle I might have to service 1 to N number of caches
 		await(&gpu_v_cache[my_pid], step);
 
-
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
@@ -3025,41 +3028,42 @@ void gpu_v_cache_ctrl(void){
 		{
 			step++;
 
+			/*/////////testing
+			(*message_packet->witness_ptr)++;
+			list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
+			continue;
+			/////////testing*/
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 			if(access_type == cgm_access_load_v)
 			{
-				gpu_l1_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
-				//gpu_cache_access_load(&(gpu_v_caches[my_pid]), message_packet);
+				//Call back function (gpu_cache_access_load)
+				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
+
 			}
 			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
 			{
-				gpu_l1_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
-				//gpu_cache_access_store(&(gpu_v_caches[my_pid]), message_packet);
+				//Call back function (gpu_l1_cache_access_store)
+				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_retry)
 			{
-				gpu_cache_access_retry(&(gpu_v_caches[my_pid]), message_packet);
+				//Call back function (gpu_cache_access_retry)
+				gpu_v_caches[my_pid].gpu_v_retry(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_puts)
 			{
-				gpu_cache_access_put(&(gpu_v_caches[my_pid]), message_packet);
+				//Call back function (gpu_cache_access_put)
+				gpu_v_caches[my_pid].gpu_v_put(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else
 			{
 				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
-
-
 		}
-		/////////testing
-		//(*message_packet->witness_ptr)++;
-		//list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
-		//continue;
-		/////////testing
-
 	}
 	//should never get here
 	fatal("gpu_v_cache_ctrl task is broken\n");
@@ -3086,7 +3090,7 @@ void gpu_l2_cache_ctrl(void){
 	while(1)
 	{
 
-		wait here until there is a job to do.
+		/*wait here until there is a job to do.*/
 		await(&gpu_l2_cache[my_pid], step);
 
 		//check the top or bottom rx queues for messages.
@@ -3109,18 +3113,18 @@ void gpu_l2_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
 			{
-				gpu_cache_access_get(&gpu_l2_caches[my_pid], message_packet);
-				//gpu_l2_cache_access_gets(&gpu_l2_caches[my_pid], message_packet);
+				//Call back function (gpu_l2_cache_access_gets)
+				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if (access_type == cgm_access_retry)
 			{
-				gpu_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
-				//gpu_l2_cache_access_retry(&gpu_l2_caches[my_pid], message_packet);
+				//Call back function (gpu_l2_cache_access_retry)
+				gpu_l2_caches[my_pid].gpu_l2_retry(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_puts)
 			{
-				gpu_cache_access_put(&gpu_l2_caches[my_pid], message_packet);
-				//gpu_l2_cache_access_puts(&gpu_l2_caches[my_pid], message_packet);
+				//Call back function (gpu_cache_access_put)
+				gpu_l2_caches[my_pid].gpu_l2_put(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
@@ -3129,10 +3133,11 @@ void gpu_l2_cache_ctrl(void){
 			}
 		}
 	}
-	 should never get here
+
+	/*should never get here*/
 	fatal("gpu_l2_cache_ctrl task is broken\n");
 	return;
-}*/
+}
 
 void l1_i_cache_down_io_ctrl(void){
 
@@ -4177,6 +4182,3 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 
 		return;
 }*/
-
-
-

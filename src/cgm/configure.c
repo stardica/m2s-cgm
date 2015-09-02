@@ -446,7 +446,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	int Assoc = 0;
 	int BlockSize = 0;
 	int Latency = 0;
-	int Policy = 0;
+	char *Policy = 0;
 	int Ports = 0;
 	int MSHR = 0;
 	int DirectoryLatency = 0;
@@ -459,7 +459,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	//MISC Checks
 	////////////////////////
 
-	if( gpu_group_cache_num % 4 != 0)
+	if( num_cus % 4 != 0)
 	{
 		fatal("cache_read_config(): invalid number of compute units set for GPU, must be divisible by 4\n");
 	}
@@ -594,10 +594,17 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L1_D_Cache", "Policy"))
 	{
-		Policy = atoi(value);
+		Policy = strdup(value);
 		for (i = 0; i < num_cores; i++)
 		{
-			l1_d_caches[i].policy_type = Policy;
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				l1_d_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
 		}
 	}
 
@@ -702,12 +709,28 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
-	if(MATCH("CPU_L1_I_Cache", "Policy"))
+	/*if(MATCH("CPU_L1_I_Cache", "Policy"))
 	{
 		Policy = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
 			l1_i_caches[i].policy_type = Policy;
+		}
+	}*/
+
+	if(MATCH("CPU_L1_I_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				l1_i_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
 		}
 	}
 
@@ -812,12 +835,29 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L2_Cache", "Policy"))
 	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				l2_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
+		}
+	}
+
+
+	/*if(MATCH("CPU_L2_Cache", "Policy"))
+	{
 		Policy = atoi(value);
 		for (i = 0; i < num_cores; i++)
 		{
 			l2_caches[i].policy_type = Policy;
 		}
-	}
+	}*/
 
 	if(MATCH("CPU_L2_Cache", "MSHR"))
 	{
@@ -946,13 +986,29 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("CPU_L3_Cache", "Policy"))
 	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				l3_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
+		}
+	}
+
+	/*if(MATCH("CPU_L3_Cache", "Policy"))
+	{
 		Policy = atoi(value);
 
 		for (i = 0; i < num_cores; i++)
 		{
 			l3_caches[i].policy_type = Policy;
 		}
-	}
+	}*/
 
 	if(MATCH("CPU_L3_Cache", "MSHR"))
 	{
@@ -1065,6 +1121,23 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}*/
 
+	if(MATCH("GPU_S_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				gpu_s_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
+		}
+	}
+
+
 	if(MATCH("GPU_S_Cache", "MSHR"))
 	{
 		MSHR = atoi(value);
@@ -1158,9 +1231,23 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("GPU_V_Cache", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				gpu_v_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
+		}
+	}
 
-
-/*	if(MATCH("GPU_V_Cache", "Policy"))
+	/*if(MATCH("GPU_V_Cache", "Policy"))
 	{
 		Policy = atoi(value);
 		for (i = 0; i < num_cus; i++)
@@ -1281,12 +1368,29 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	if(MATCH("GPU_L2_Cache", "Policy"))
 	{
+		Policy = strdup(value);
+		for (i = 0; i < gpu_group_cache_num; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				gpu_l2_caches[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("cache_read_config(): invalid cache policy, check config file\n");
+			}
+		}
+	}
+
+
+	/*if(MATCH("GPU_L2_Cache", "Policy"))
+	{
 		Policy = atoi(value);
 		for (i = 0; i < gpu_group_cache_num; i++)
 		{
 			gpu_l2_caches[i].policy_type = Policy;
 		}
-	}
+	}*/
 
 	if(MATCH("GPU_L2_Cache", "MSHR"))
 	{
@@ -1377,13 +1481,9 @@ int cache_finish_create(){
 		l1_i_caches[i].fetches = 0;
 		l1_i_caches[i].stalls = 0;
 
-		if(l1_i_caches[i].policy_type == 1)
+		if(!l1_i_caches[i].policy)
 		{
-			l1_i_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid cache policy\n");
+			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
 
 		//pointer to my own event count
@@ -1444,7 +1544,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "l1_i_caches[%d].pending_request_buffer", i);
 		l1_i_caches[i].pending_request_buffer->name = strdup(buff);
 
-		//coherance queues
+		//Coherence queues
 		l1_i_caches[i].Coherance_Rx_queue = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l1_i_caches[%d].Coherance_Rx_queue", i);
@@ -1500,14 +1600,20 @@ int cache_finish_create(){
 		l1_d_caches[i].stores = 0;
 		l1_d_caches[i].stalls = 0;
 
-		if(l1_d_caches[i].policy_type == 1)
+
+		if(!l1_d_caches[i].policy)
+		{
+			fatal("cache_finish_create(): Invalid cache policy\n");
+		}
+
+		/*if(l1_d_caches[i].policy_type == 1)
 		{
 			l1_d_caches[i].policy = cache_policy_lru;
 		}
 		else
 		{
 			fatal("Invalid cache policy\n");
-		}
+		}*/
 
 		//pointer to my own event count
 		l1_d_caches[i].ec_ptr = &l1_d_cache[i];
@@ -1624,13 +1730,9 @@ int cache_finish_create(){
 		l2_caches[i].retries = 0;
 		l2_caches[i].stalls = 0;
 
-		if(l2_caches[i].policy_type == 1)
+		if(!l2_caches[i].policy)
 		{
-			l2_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid cache policy\n");
+			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
 
 		//pointer to my own event count
@@ -1772,14 +1874,19 @@ int cache_finish_create(){
 				l3_caches[i].share_mask = l3_caches[i].share_mask << 1;
 		}
 
-		if(l3_caches[i].policy_type == 1)
+		if(!l3_caches[i].policy)
+		{
+			fatal("cache_finish_create(): Invalid cache policy\n");
+		}
+
+		/*if(l3_caches[i].policy_type == 1)
 		{
 			l3_caches[i].policy = cache_policy_lru;
 		}
 		else
 		{
 			fatal("Invalid L3 cache policy\n");
-		}
+		}*/
 
 		//pointer to my own event counter
 		l3_caches[i].ec_ptr = &l3_cache[i];
@@ -1883,8 +1990,6 @@ int cache_finish_create(){
 		if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l3_caches[i].l3_gets = cgm_mesi_l3_gets;
-
-
 			l3_caches[i].l3_put = cgm_mesi_l3_put;
 		}
 		else
@@ -1966,11 +2071,7 @@ int cache_finish_create(){
 				block->way_next = way < l3_caches[i].assoc - 1 ? &l3_caches[i].sets[set].blocks[way + 1] : NULL;
 			}
 		}
-
-		//star todo init directory here?
 	}
-
-
 
 	//finish creating the GPU caches
 	for(i = 0 ; i < num_cus; i++)
@@ -1994,15 +2095,10 @@ int cache_finish_create(){
 		gpu_s_caches[i].fetches = 0;
 		gpu_s_caches[i].stalls = 0;
 
-		if(gpu_s_caches[i].policy_type == 1)
+		if(!gpu_s_caches[i].policy)
 		{
-			gpu_s_caches[i].policy = cache_policy_lru;
+			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
-		else
-		{
-			fatal("Invalid cache policy\n");
-		}
-
 
 		//pointer to my own event count
 		gpu_s_caches[i].ec_ptr = &gpu_s_cache[i];
@@ -2024,22 +2120,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_s_caches[%d].retry_queue", i);
 		gpu_s_caches[i].retry_queue->name = strdup(buff);
 
-
-		/*gpu_s_caches[i].mshrs = (void *) calloc(gpu_s_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < gpu_s_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_s_caches[%d].mshr[%d]", i, j);
-			gpu_s_caches[i].mshrs[j].name = strdup(buff);
-
-			gpu_s_caches[i].mshrs[j].entires = list_create();
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_s_caches[%d].mshr[%d].entires", i, j);
-			gpu_s_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(gpu_s_caches[i].mshrs[j]));
-		}*/
-
 		gpu_s_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_s_caches[%d].ort_list", i);
@@ -2060,39 +2140,58 @@ int cache_finish_create(){
 			}
 		}
 
-		/*l3_caches[i].Tx_queue_top = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
-		l3_caches[i].Tx_queue_top->name = strdup(buff);*/
-
+		//Tx queue
 		gpu_s_caches[i].Tx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_s_caches[%d].Tx_queue_bottom", i);
 		gpu_s_caches[i].Tx_queue_bottom->name = strdup(buff);
 
+		//WB
+		gpu_s_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].write_back_buffer", i);
+		gpu_s_caches[i].write_back_buffer->name = strdup(buff);
+
+		//Pending requests
+		gpu_s_caches[i].pending_request_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].pending_request_buffer", i);
+		gpu_s_caches[i].pending_request_buffer->name = strdup(buff);
+
+		//Coherence queues
+		gpu_s_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].Coherance_Rx_queue", i);
+		gpu_s_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		gpu_s_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_s_caches[%d].Coherance_Tx_queue", i);
+		gpu_s_caches[i].Coherance_Tx_queue->name = strdup(buff);
+
 		//io ctrl
-		/*l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
 		gpu_s_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_ec");
-		l3_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_ec");
 		gpu_s_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
 
 		//io tasks
-		/*l3_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
 		gpu_s_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_task");
-		l3_caches[i].cache_io_up_tasks = create_task(l3_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		gpu_s_caches[i].cache_io_down_tasks = create_task(gpu_s_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_gmesi)
+		{
+			fatal("invalid protocol at GPU S cache init\n");
+		}
+		else
+		{
+			gpu_s_caches[i].gpu_s_load = gpu_l1_cache_access_load;
+			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
+			gpu_s_caches[i].gpu_s_put = gpu_cache_access_put;
+		}
 
 		/////////////
 		//GPU V Cache
@@ -2112,13 +2211,9 @@ int cache_finish_create(){
 		gpu_v_caches[i].misses = 0;
 		gpu_v_caches[i].stalls = 0;
 
-		if(gpu_v_caches[i].policy_type == 1)
+		if(!gpu_v_caches[i].policy)
 		{
-			gpu_v_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid cache policy\n");
+			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
 
 		//pointer to my own event count
@@ -2141,22 +2236,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_v_caches[%d].retry_queue", i);
 		gpu_v_caches[i].retry_queue->name = strdup(buff);
 
-
-		/*gpu_v_caches[i].mshrs = (void *) calloc(gpu_v_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < gpu_v_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_v_caches[%d].mshr[%d]", i, j);
-			gpu_v_caches[i].mshrs[j].name = strdup(buff);
-
-			gpu_v_caches[i].mshrs[j].entires = list_create();
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_v_caches[%d].mshr[%d].entires", i, j);
-			gpu_v_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(gpu_v_caches[i].mshrs[j]));
-		}*/
-
 		gpu_v_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_v_caches[%d].ort_list", i);
@@ -2177,42 +2256,66 @@ int cache_finish_create(){
 			}
 		}
 
-		/*l3_caches[i].Tx_queue_top = list_create();
-		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "l3_caches[%d].Tx_queue_top", i);
-		l3_caches[i].Tx_queue_top->name = strdup(buff);*/
-
+		//Tx queue
 		gpu_v_caches[i].Tx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_v_caches[%d].Tx_queue_bottom", i);
 		gpu_v_caches[i].Tx_queue_bottom->name = strdup(buff);
 
+		//WB
+		gpu_v_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].write_back_buffer", i);
+		gpu_v_caches[i].write_back_buffer->name = strdup(buff);
+
+		//Pending requests
+		gpu_v_caches[i].pending_request_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].pending_request_buffer", i);
+		gpu_v_caches[i].pending_request_buffer->name = strdup(buff);
+
+		//Coherence queues
+		gpu_v_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].Coherance_Rx_queue", i);
+		gpu_v_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		gpu_v_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_v_caches[%d].Coherance_Tx_queue", i);
+		gpu_v_caches[i].Coherance_Tx_queue->name = strdup(buff);
+
 		//io ctrl
-		/*l3_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));*/
 		gpu_v_caches[i].cache_io_down_ec = (void *) calloc((1), sizeof(eventcount));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_ec");
-		l3_caches[i].cache_io_up_ec = new_eventcount(strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_ec");
 		gpu_v_caches[i].cache_io_down_ec = new_eventcount(strdup(buff));
 
 		//io tasks
-		/*l3_caches[i].cache_io_up_tasks = (void *) calloc((1), sizeof(task));*/
 		gpu_v_caches[i].cache_io_down_tasks = (void *) calloc((1), sizeof(task));
-
-		/*memset(buff,'\0' , 100);
-		snprintf(buff, 100, "cache_io_up_task");
-		l3_caches[i].cache_io_up_tasks = create_task(l3_cache_up_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));*/
-
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		gpu_v_caches[i].cache_io_down_tasks = create_task(gpu_v_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_gmesi)
+		{
+			fatal("invalid protocol at GPU S cache init\n");
+		}
+		else
+		{
+			gpu_v_caches[i].gpu_v_load = gpu_l1_cache_access_load;
+			gpu_v_caches[i].gpu_v_store = gpu_l1_cache_access_store;
+			gpu_v_caches[i].gpu_v_retry = gpu_cache_access_retry;
+			gpu_v_caches[i].gpu_v_put = gpu_cache_access_put;
+		}
 
+
+		////////////
 		//LDS caches
+		////////////
+
+
 		gpu_lds_units[i].id = i;
 		//gpu_lds_units[i].log_block_size = LOG2(gpu_lds_units[i].block_size);
 		//gpu_lds_units[i].log_set_size = LOG2(gpu_lds_units[i].num_sets);
@@ -2298,6 +2401,11 @@ int cache_finish_create(){
 		}*/
 	}
 
+
+	///////////////
+	//GPU L2 caches
+	///////////////
+
 	//set up one cache for every four CUs
 	for(i = 0 ; i < gpu_group_cache_num; i++)
 	{
@@ -2314,15 +2422,12 @@ int cache_finish_create(){
 		gpu_l2_caches[i].hits = 0;
 		gpu_l2_caches[i].invalid_hits = 0;
 		gpu_l2_caches[i].misses = 0;
+		gpu_l2_caches[i].retries = 0;
 		gpu_l2_caches[i].stalls = 0;
 
-		if(gpu_l2_caches[i].policy_type == 1)
+		if(!gpu_l2_caches[i].policy)
 		{
-			gpu_l2_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid cache policy\n");
+			fatal("cache_finish_create(): GPU L2 Invalid cache policy\n");
 		}
 
 		//pointer to my own event count
@@ -2345,22 +2450,6 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_l2_caches[%d].retry_queue", i);
 		gpu_l2_caches[i].retry_queue->name = strdup(buff);
 
-
-		/*gpu_l2_caches[i].mshrs = (void *) calloc(gpu_l2_caches[i].mshr_size, sizeof(struct mshr_t));
-		for(j = 0; j < gpu_l2_caches[i].mshr_size; j++)
-		{
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_l2_caches[%d].mshr[%d]", i, j);
-			gpu_l2_caches[i].mshrs[j].name = strdup(buff);
-
-			gpu_l2_caches[i].mshrs[j].entires = list_create();
-			memset (buff,'\0' , 100);
-			snprintf(buff, 100, "gpu_l2_caches[%d].mshr[%d].entires", i, j);
-			gpu_l2_caches[i].mshrs[j].entires->name = strdup(buff);
-
-			mshr_clear(&(gpu_l2_caches[i].mshrs[j]));
-		}*/
-
 		gpu_l2_caches[i].ort_list = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d].ort_list", i);
@@ -2381,6 +2470,7 @@ int cache_finish_create(){
 			}
 		}
 
+		//Tx queues
 		gpu_l2_caches[i].Tx_queue_top = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d].Tx_queue_top", i);
@@ -2390,6 +2480,29 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d].Tx_queue_bottom", i);
 		gpu_l2_caches[i].Tx_queue_bottom->name = strdup(buff);
+
+		//coherance queues
+		gpu_l2_caches[i].Coherance_Rx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].Coherance_Rx_queue", i);
+		gpu_l2_caches[i].Coherance_Rx_queue->name = strdup(buff);
+
+		gpu_l2_caches[i].Coherance_Tx_queue = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].Coherance_Tx_queue", i);
+		gpu_l2_caches[i].Coherance_Tx_queue->name = strdup(buff);
+
+		//WB
+		gpu_l2_caches[i].write_back_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].write_back_buffer", i);
+		gpu_l2_caches[i].write_back_buffer->name = strdup(buff);
+
+		//Pending Request Buffer
+		gpu_l2_caches[i].pending_request_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "gpu_l2_caches[%d].pending_request_buffer", i);
+		gpu_l2_caches[i].pending_request_buffer->name = strdup(buff);
 
 		//io ctrl
 		gpu_l2_caches[i].cache_io_up_ec = (void *) calloc((1), sizeof(eventcount));
@@ -2414,6 +2527,18 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		gpu_l2_caches[i].cache_io_down_tasks = create_task(gpu_l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		/*link cache virtual functions*/
+		if(cgm_cache_protocol == cgm_protocol_gmesi)
+		{
+			fatal("invalid protocol at GPU S cache init\n");
+		}
+		else
+		{
+			gpu_l2_caches[i].gpu_l2_get = gpu_cache_access_get;
+			gpu_l2_caches[i].gpu_l2_retry = gpu_cache_access_retry;
+			gpu_l2_caches[i].gpu_l2_put = gpu_cache_access_put;
+		}
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < gpu_l2_caches[i].num_sets; set++)

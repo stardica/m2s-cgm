@@ -504,6 +504,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	{
 		(*witness_ptr)++;
 		free(new_packet);
+		return;
 	}
 
 	//Add to the target L1 Cache Rx Queue
@@ -552,6 +553,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	{
 		(*witness_ptr)++;
 		free(new_packet);
+		return;
 	}
 
 	//Add to the target cache Rx queue
@@ -559,10 +561,12 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	{
 		//get the core ID number should be <= number of cores
 		id = scalar_unit_ptr->compute_unit->id;
-		assert( id < num_cus);
+		assert(id < num_cus);
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
+
+		/*printf("advace gpu s cache access_id %llu cycle %llu list size %d\n", new_packet->access_id,  P_TIME, list_count(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top));*/
 
 		//advance the L1 I Cache Ctrl task
 		advance(&gpu_s_cache[id]);
