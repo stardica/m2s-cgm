@@ -3041,7 +3041,6 @@ void gpu_v_cache_ctrl(void){
 			{
 				//Call back function (gpu_cache_access_load)
 				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
-
 			}
 			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
 			{
@@ -3113,15 +3112,15 @@ void gpu_l2_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
 			{
-				//Call back function (gpu_l2_cache_access_gets)
+				//Call back function (gpu_cache_access_get)
 				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if (access_type == cgm_access_retry)
 			{
-				//Call back function (gpu_l2_cache_access_retry)
+				//Call back function (gpu_cache_access_retry)
 				gpu_l2_caches[my_pid].gpu_l2_retry(&gpu_l2_caches[my_pid], message_packet);
 			}
-			else if(access_type == cgm_access_puts)
+			else if(access_type == cgm_access_mc_put)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_l2_caches[my_pid].gpu_l2_put(&gpu_l2_caches[my_pid], message_packet);

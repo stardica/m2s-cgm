@@ -1338,7 +1338,10 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			//P_PAUSE(hub_iommu->wire_latency);
 
 			message_packet->l1_access_type = message_packet->access_type;
-			message_packet->access_type = cgm_access_gets;
+
+			//changes start here
+			//message_packet->access_type = cgm_access_gets;
+			message_packet->access_type = cgm_access_mc_get;
 
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&gpu_l2_strn_map, cache->name);
@@ -1669,9 +1672,6 @@ void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr
 	int i = 0;
 	int tag = *tag_ptr;
 	int set = *set_ptr;
-
-	assert(tag != NULL);
-	assert(set != NULL);
 
 	LIST_FOR_EACH(cache->ort_list, i)
 	{

@@ -2189,8 +2189,8 @@ int cache_finish_create(){
 		else
 		{
 			gpu_s_caches[i].gpu_s_load = gpu_l1_cache_access_load;
-			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
 			gpu_s_caches[i].gpu_s_put = gpu_cache_access_put;
+			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
 		}
 
 		/////////////
@@ -2536,9 +2536,10 @@ int cache_finish_create(){
 		else
 		{
 			gpu_l2_caches[i].gpu_l2_get = gpu_cache_access_get;
-			gpu_l2_caches[i].gpu_l2_retry = gpu_cache_access_retry;
 			gpu_l2_caches[i].gpu_l2_put = gpu_cache_access_put;
+			gpu_l2_caches[i].gpu_l2_retry = gpu_cache_access_retry;
 		}
+
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < gpu_l2_caches[i].num_sets; set++)
