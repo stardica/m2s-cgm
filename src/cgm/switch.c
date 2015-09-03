@@ -1007,13 +1007,13 @@ void switch_south_io_ctrl(void){
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 			}
-			else if (message_packet->access_type == cgm_access_downgrade_ack)
+			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack)
 			{
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}
 			else
 			{
-				fatal("switch_south_io_ctrl(): bad access_type\n");
+				fatal("switch_south_io_ctrl(): bad access_type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
 
 			advance(&l3_cache[my_pid]);

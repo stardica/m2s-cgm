@@ -1,4 +1,100 @@
 	
+	if(*cache_block_hit_ptr == 1)
+				{
+					/*//pull the GET_FWD from the pending request buffer
+					pending_request = cache_search_pending_request_buffer(&(l2_caches[my_pid]), message_packet->address);
+
+					if not found uh-oh...
+					assert(pending_request);
+					the address better be the same too...
+					assert(pending_request->address == message_packet->address);*/
+
+					//downgrade the local block
+					cgm_cache_set_block(&(l2_caches[my_pid]), message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_shared);
+
+					printf("L2 id %d downgraded to shared\n", l1_d_caches[my_pid].id);
+
+					//prepare to forward the block
+					//set access type
+					message_packet->access_type = cgm_access_puts;
+
+					//set the block state
+					message_packet->cache_block_state = cgm_cache_block_shared;
+
+					//set message package size
+					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+					//fwd block to requesting core
+					//update routing headers swap dest and src
+					//requesting node
+					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+					//owning node L2
+					message_packet->src_name = l2_caches[my_pid].name;
+					message_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+
+					printf("requester name %s and id %d\n", message_packet->src_name, message_packet->l2_cache_id);
+
+					temp_id = message_packet->access_id;
+
+					//transmit block to requesting node
+					cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
+
+					printf("L2 id %d shared block forwarded to L2 cache id %d\n", l1_d_caches[my_pid].id, message_packet->l2_cache_id);
+				}
+				else
+				{
+					fatal("uh-oh 2\n");
+				}
+
+
+				///////////////
+				//downgrade_ack
+				///////////////
+
+				//send the downgrade ack to L3 cache.
+
+				//create downgrade_ack
+				reply_packet = packet_create();
+				assert(reply_packet);
+
+				init_downgrade_ack_packet(reply_packet, message_packet->address);
+
+				//set size
+				reply_packet->size = 1;
+
+				//set requesting core
+
+				//fwd reply (downgrade_ack) to L3
+				l3_map = cgm_l3_cache_map(message_packet->set);
+
+				//fakes src as the requester
+				/*reply_packet->l2_cache_id = l2_caches[my_pid].id;*/
+				reply_packet->l2_cache_id = message_packet->l2_cache_id;
+				reply_packet->l2_cache_name = message_packet->src_name;
+
+				reply_packet->src_name = l2_caches[my_pid].name;
+				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+				reply_packet->dest_name = l3_caches[l3_map].name;
+				reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+				//transmit downgrad_ack to L3 (home)
+				list_enqueue(l2_caches[my_pid].Tx_queue_bottom, reply_packet);
+				advance(l2_caches[my_pid].cache_io_down_ec);
+
+				/*//destroy the downgrade message because we don't need it anymore.
+				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
+				free(message_packet);*/
+
+				printf("L2 id %d sent downgrade_ack to L3 id %d cycle %llu\n", l2_caches[my_pid].id, l3_map, P_TIME);
+
+				continue;
+
+
+
+/*======================================================================*/
+	
 	/*void cpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
