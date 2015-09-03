@@ -2241,6 +2241,7 @@ void l2_cache_ctrl(void){
 					}
 				}
 
+
 				//free the message packet (inval_ack)
 				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
 				free(message_packet);
