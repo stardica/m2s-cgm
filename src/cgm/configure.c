@@ -533,7 +533,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	////////////////////////
 	//Protocol
 	////////////////////////
-	if(MATCH("Protocol", "Protocol_type"))
+	if(MATCH("Protocol", "CPU_Protocol_type"))
 	{
 		temp_strn = strdup(value);
 
@@ -543,7 +543,25 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 		else if(strcmp(temp_strn, "MOESI") == 0)
 		{
-			fatal("cache_read_config(): MOSEI protocol not yet supported, check config file\n");
+			fatal("cache_read_config(): MOESI protocol not yet supported, check config file\n");
+		}
+		else
+		{
+			fatal("cache_read_config(): invalid protocol, check config file\n");
+		}
+	}
+
+	if(MATCH("Protocol", "GPU_Protocol_type"))
+	{
+		temp_strn = strdup(value);
+
+		if(strcmp(temp_strn, "NC") == 0)
+		{
+			cgm_gpu_cache_protocol = cgm_protocol_non_coherent;
+		}
+		else if(strcmp(temp_strn, "GMESI") == 0)
+		{
+			fatal("cache_read_config(): GMESI protocol not yet supported, check config file\n");
 		}
 		else
 		{
@@ -2182,15 +2200,17 @@ int cache_finish_create(){
 		gpu_s_caches[i].cache_io_down_tasks = create_task(gpu_s_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_gmesi)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
-			fatal("invalid protocol at GPU S cache init\n");
+			gpu_s_caches[i].gpu_s_load = gpu_l1_cache_access_load;
+			/*gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_load;*/
+
+			gpu_s_caches[i].gpu_s_put = gpu_cache_access_put;
+			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
 		}
 		else
 		{
-			gpu_s_caches[i].gpu_s_load = gpu_l1_cache_access_load;
-			gpu_s_caches[i].gpu_s_put = gpu_cache_access_put;
-			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
+			fatal("invalid protocol at GPU S cache init\n");
 		}
 
 		/////////////
@@ -2298,16 +2318,16 @@ int cache_finish_create(){
 		gpu_v_caches[i].cache_io_down_tasks = create_task(gpu_v_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_gmesi)
-		{
-			fatal("invalid protocol at GPU S cache init\n");
-		}
-		else
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			gpu_v_caches[i].gpu_v_load = gpu_l1_cache_access_load;
 			gpu_v_caches[i].gpu_v_store = gpu_l1_cache_access_store;
 			gpu_v_caches[i].gpu_v_retry = gpu_cache_access_retry;
 			gpu_v_caches[i].gpu_v_put = gpu_cache_access_put;
+		}
+		else
+		{
+			fatal("invalid protocol at GPU V cache init\n");
 		}
 
 
@@ -2529,15 +2549,15 @@ int cache_finish_create(){
 		gpu_l2_caches[i].cache_io_down_tasks = create_task(gpu_l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_gmesi)
-		{
-			fatal("invalid protocol at GPU S cache init\n");
-		}
-		else
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			gpu_l2_caches[i].gpu_l2_get = gpu_cache_access_get;
 			gpu_l2_caches[i].gpu_l2_put = gpu_cache_access_put;
 			gpu_l2_caches[i].gpu_l2_retry = gpu_cache_access_retry;
+		}
+		else
+		{
+			fatal("invalid protocol at GPU L2 cache init\n");
 		}
 
 

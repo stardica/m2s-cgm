@@ -70,6 +70,7 @@ struct str_map_t cgm_mem_access_strn_map =
 
 
 enum protocol_kind_t cgm_cache_protocol;
+enum protocol_kind_t cgm_gpu_cache_protocol;
 
 //CPU will call create packet and load into correct queue.
 struct cgm_packet_t *packet_create(void){
@@ -813,6 +814,85 @@ void cgm_mesi_l3_put(struct cache_t *cache, struct cgm_packet_t *message_packet)
 ////////////////////////////
 //GPU non coherent functions
 ////////////////////////////
+void cgm_nc_gpu_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	enum cgm_access_kind_t access_type;
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	access_type = message_packet->access_type;
+	/*access_id = message_packet->access_id;*/
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_shared:
+		case cgm_cache_block_modified:
+		case cgm_cache_block_owned:
+			fatal("gpu_s_cache_ctrl(): Invalid block state on hit as %s\n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+			break;
+
+		//miss or invalid cache block states
+		case cgm_cache_block_invalid:
+
+			/*printf("I$ miss fetch\n");*/
+
+			//stats
+			cache->misses++;
+
+			//check ORT for coalesce
+			cache_check_ORT(cache, message_packet);
+
+			if(message_packet->coalesced == 1)
+				return;
+
+			//add some routing/status data to the packet
+			message_packet->gpu_access_type = cgm_access_load;
+			message_packet->gpu_cache_id = cache->id;
+
+			message_packet->access_type = cgm_access_gets_s;
+			message_packet->l1_access_type = cgm_access_gets_s;
+
+			//find victim and evict on return l1_i_cache just drops the block on return
+			message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);
+
+			//charge delay
+			P_PAUSE(cache->latency);
+
+			//transmit to L2
+			cache_put_io_down_queue(cache, message_packet);
+			break;
+
+		case cgm_cache_block_noncoherent:
+
+			//stats
+			cache->hits++;
+
+			//set retry state and delay
+			if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			{
+				P_PAUSE(cache->latency);
+
+				//enter retry state.
+				gpu_cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+			}
+
+			/*printf("fetch id %llu set %d tag %d complete cycle %llu\n", message_packet->access_id, message_packet->tag, message_packet->set, P_TIME);*/
+			message_packet->end_cycle = P_TIME;
+			cache_gpu_S_return(cache, message_packet);
+			break;
+	}
+
+	return;
+}
+
+
 
 void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -835,8 +915,6 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	int *state_ptr = &state;
 
 	int cache_status = 0;
-	int mshr_status = -1;
-	int mshr_row = -1;
 
 	int i = 0;
 	int row = 0;
@@ -875,6 +953,8 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 	//get the block and the state of the block and charge cycles
 	cache_status = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 	P_PAUSE(cache->latency);
+
+
 
 	//Cache Hit!
 	if(cache_status == 1 && *state_ptr != 0)

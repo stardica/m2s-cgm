@@ -3728,6 +3728,25 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	return;
 }
+void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//remove packet from cache queue, global queue, and simulator memory
+	(*message_packet->witness_ptr)++;
+	message_packet = list_remove(cache->last_queue, message_packet);
+	packet_destroy(message_packet);
+
+	return;
+}
+
+void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//remove packet from cache queue, global queue, and simulator memory
+	(*message_packet->witness_ptr)++;
+	message_packet = list_remove(cache->last_queue, message_packet);
+	packet_destroy(message_packet);
+
+	return;
+}
 
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -3929,6 +3948,48 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	}
 
 	//no coalesced packets remaining.
+	return;
+}
+
+void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
+
+	struct cgm_packet_t *ort_packet;
+	int i = 0;
+
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->tag == tag && ort_packet->set == set)
+		{
+			ort_packet = list_remove_at(cache->ort_list, i);
+
+			//set the correct retry type
+			//star todo retry types could be a potential problem.
+			/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
+			{
+				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+				//ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+			}
+			else if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+			{
+				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+			}*/
+
+			ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
+
+			list_enqueue(cache->retry_queue, ort_packet);
+			advance(cache->ec_ptr);
+
+			/*this may cause problems the intent is to run one coalesced
+			packet per iteration of the retry state so the timing is correctly charged*/
+			return;
+		}
+	}
+
+
+
 	return;
 }
 
@@ -4151,6 +4212,26 @@ long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set,
 	assert(id > 0);
 
 	return id;
+}
+
+enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state){
+
+	enum cgm_access_kind_t retry_state;
+
+	if(r_state == cgm_access_load)
+	{
+		retry_state = cgm_access_load_retry;
+	}
+	else if(r_state == cgm_access_store)
+	{
+		retry_state = cgm_access_store_retry;
+	}
+	else
+	{
+		fatal("cgm_cache_get_retry_state(): unrecognized state\n");
+	}
+
+	return retry_state;
 }
 
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state){

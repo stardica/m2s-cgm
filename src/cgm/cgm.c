@@ -548,6 +548,9 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
+	new_packet->start_cycle = P_TIME;
+	new_packet->gpu_access_type = cgm_access_load;
+
 	//leave for debugging purposes
 	if(mem_system_off == 3)
 	{

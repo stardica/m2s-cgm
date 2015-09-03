@@ -344,6 +344,9 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
@@ -392,7 +395,9 @@ void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 
 //ORT Manipulations
+enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
+void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set);
 void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 int get_ort_status(struct cache_t *cache);
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
