@@ -162,16 +162,16 @@ void X86AsmCreate(X86Asm *self)
 //star >> this is where instructions are decalred.
 //example from asm.dat >> DEFINST(add_al_imm8, 0x04, SKIP, SKIP, SKIP, IB, 0)
 
-	//DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) 				\
-	//info = &self->inst_info_list[x86_inst_add_al_imm8]; 								\
-	//info->opcode = x86_inst_add_al_imm8; 											\
-	//info->op1 = __op1; 															\
-	//info->op2 = __op2; 															\
-	//info->op3 = __op3; 															\
-	//info->modrm = __modrm; 														\
-	//info->imm = __imm; 															\
-	//info->prefixes = __prefixes; 													\
-	//info->fmt = add_al_imm8;
+	/*DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes)
+	info = &self->inst_info_list[x86_inst_add_al_imm8];
+	info->opcode = x86_inst_add_al_imm8;
+	info->op1 = __op1;
+	info->op2 = __op2;
+	info->op3 = __op3;
+	info->modrm = __modrm;
+	info->imm = __imm;
+	info->prefixes = __prefixes;
+	info->fmt = add_al_imm8;*/
 
 
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \

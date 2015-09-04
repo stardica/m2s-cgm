@@ -71,6 +71,17 @@ int loads = 0;
 int stores = 0;
 extern int mem_system_off = 0;
 
+void m2scgm_init(void){
+
+	/* Initial information*/
+	printf("---Welcome to M2S-CGM---\n");
+	printf("---A x86 Based CPU-GPU Heterogeneous Computing Simulator---\n");
+	printf("\n");
+	printf("---Simulator Init---\n");
+
+	return;
+}
+
 void cgm_init(void){
 
 	cgm_access_record = list_create();

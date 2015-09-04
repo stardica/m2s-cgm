@@ -375,6 +375,11 @@ void context_init (process_t *p, void (*f)(void))
 #define INIT_SP(p) (int)((char*)(p)->c.stack + (p)->c.sz)
 #define CURR_SP(p) DecodeJMPBUF((p)->c.buf[0].__jmpbuf[4])
 
+/*newer versions of GCC enable stack protectors by default
+which breaks the way context.c works via _FORTIFY_SOURCE =1 or = 2
+To fix this undef and redefine _FORTIFY_SOURCE to get things working again.*/
+
+
   //debug
   //int  i = 0;
   //for (i=4; i < sizeof(p->c.buf[0].__jmpbuf)/4; i++) {
@@ -387,7 +392,7 @@ void context_init (process_t *p, void (*f)(void))
   /*AFAIK there is no way to distinguish between the lines
   below and above using ifdefs... argh!*/
 
-/* This works with Red Hat 7.1
+	/* This works with Red Hat 7.1
 
 #define INIT_SP(p) (int)((char*)(p)->c.stack + (p)->c.sz)
 #define CURR_SP(p) (p)->c.buf[0].__jmpbuf[4]
@@ -402,8 +407,7 @@ void context_init (process_t *p, void (*f)(void))
 #define CURR_SP(p) (p)->c.buf[0].__sp
 
   p->c.buf[0].__pc = (__ptr_t)context_stub;
-  p->c.buf[0].__sp = (__ptr_t)((char*)stack+n-4);
-*/
+  p->c.buf[0].__sp = (__ptr_t)((char*)stack+n-4);*/
 
 #elif defined(__FreeBSD__) && defined(__i386__)
 

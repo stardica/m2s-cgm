@@ -22,7 +22,6 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-
 #ifndef DEFAULT_STACK_SIZE
 #ifdef SYNCHRONOUS
 #define DEFAULT_STACK_SIZE 0x2000

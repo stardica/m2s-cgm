@@ -9,7 +9,6 @@
 #ifndef M2S_H_
 #define M2S_H_
 
-
 //star for our development controls and incremental coding.
 #define SKIP 100000
 

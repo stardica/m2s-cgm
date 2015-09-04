@@ -206,10 +206,10 @@ int mshr_get_status(struct cache_t *cache, int *tag_ptr, int *set_ptr, long long
 
 	int tag = *tag_ptr;
 	int set = *set_ptr;
-	long long id = access_id;
+	/*long long id = access_id;*/
 
 	int i = 0;
-	int j = 0;
+	/*int j = 0;*/
 	int row = -1;
 
 	//struct cgm_packet_t *temp;

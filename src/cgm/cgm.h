@@ -42,11 +42,6 @@
 #include <cgm/switch.h>
 #include <cgm/protocol.h>
 
-/*
-#include <cgm/cache.h>
-#include <cgm/protocol.h>
-*/
-
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
@@ -146,6 +141,7 @@ extern int mem_system_off;
 
 
 //set up related
+void m2scgm_init(void);
 void cgm_init(void);
 void cgm_configure(void);
 void cgm_create_tasks(void);

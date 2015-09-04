@@ -103,8 +103,8 @@ static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
 static enum arch_sim_kind_t si_sim_kind = arch_sim_kind_functional;
 
-static char *mem_debug_file_name = "";
-static char *net_debug_file_name = "";
+/*static char *mem_debug_file_name = "";*/
+/*static char *net_debug_file_name = "";*/
 static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
 static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric digits) */
@@ -547,7 +547,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	int argi;
 	int arg_discard = 0;
 	int err;
-	char *net_sim_last_option = NULL;
+	/*char *net_sim_last_option = NULL;*/
 	//char *dram_sim_last_option = NULL;
 
 	// star >> argi is used as a temp counter
@@ -1489,9 +1489,8 @@ int main(int argc, char **argv)
 {
 
 	/* Global initialization and welcome message */
-	//m2s_init();
-
-	printf("---Simulator Init---\n");
+	/*m2s_init();*/
+	m2scgm_init();
 
 	/* Classes */
 	CLASS_REGISTER(Asm);

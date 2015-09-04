@@ -1856,6 +1856,8 @@ int cache_finish_create(){
 		{
 			l2_caches[i].l2_gets = cgm_mesi_l2_gets;
 			l2_caches[i].l2_get = cgm_mesi_l2_get;
+			l2_caches[i].l2_downgrade_ack = cgm_mesi_l2_downgrade_ack;
+			l2_caches[i].l2_get_fwd = cgm_mesi_l2_get_fwd;
 		}
 		else
 		{
@@ -2008,6 +2010,9 @@ int cache_finish_create(){
 		if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l3_caches[i].l3_gets = cgm_mesi_l3_gets;
+			l3_caches[i].l3_get = cgm_mesi_l3_get;
+			l3_caches[i].l3_downgrade_ack = cgm_mesi_l3_downgrade_ack;
+			l3_caches[i].l3_downgrade_nack = cgm_mesi_l3_downgrade_nack;
 			l3_caches[i].l3_put = cgm_mesi_l3_put;
 		}
 		else

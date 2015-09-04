@@ -197,9 +197,15 @@ struct cache_t{
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 
 	//L3 cache protocol virtual functions
 	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
