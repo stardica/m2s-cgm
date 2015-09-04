@@ -2916,7 +2916,7 @@ void si_isa_V_MIN_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%d<=(%gf)", work_item->id, INST.vdst, min.as_int);
+		si_isa_debug("t%d: V%d<=(%df)", work_item->id, INST.vdst, min.as_int);
 	}
 }
 #undef INST
@@ -4671,7 +4671,7 @@ void si_isa_V_MIN3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%gf)", work_item->id, INST.vdst, min.as_uint);
+		si_isa_debug("t%d: V%u<=(%df)", work_item->id, INST.vdst, min.as_uint);
 	}
 
 }

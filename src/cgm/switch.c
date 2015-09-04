@@ -194,7 +194,7 @@ void switch_init(void){
 void switch_create(void){
 
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cus = si_gpu_num_compute_units;*/
 
 	//for now the number of GPU connected switches is hard coded
 	//this one switch for all of the GPU.
@@ -210,7 +210,7 @@ void switch_create(void){
 void switch_create_tasks(void){
 
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cus = si_gpu_num_compute_units;*/
 
 	//star todo fix this
 	int extras = 1;
@@ -258,8 +258,8 @@ void switch_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	int next_switch = 0;
-	int queue_status;
+	/*int next_switch = 0;*/
+	/*int queue_status;*/
 
 	char *dest_name;
 	int dest_node;
@@ -268,7 +268,7 @@ void switch_ctrl(void){
 	int switch_node = switches[my_pid].switch_node_number;
 	float distance;
 
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 
 	assert(my_pid <= (num_cores + num_cus));
 
@@ -294,7 +294,7 @@ void switch_ctrl(void){
 		src_name = message_packet->src_name;
 		src_node = message_packet->src_id;
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s %d dest %s %d \n",
 			switches[my_pid].name, message_packet->access_id, P_TIME, src_name, src_node, dest_name, dest_node);
@@ -738,9 +738,7 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 				i = 0;
 				break;
 			}
-
 		}
-
 	}
 	else
 	{
@@ -748,8 +746,8 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 	}
 
 	/*CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu get from %s with size %d\n",
-			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
-*/
+			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));*/
+
 	return new_packet;
 }
 
@@ -819,10 +817,10 @@ void switch_north_io_ctrl(void){
 	long long step = 1;
 
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -835,7 +833,7 @@ void switch_north_io_ctrl(void){
 		message_packet = list_dequeue(switches[my_pid].Tx_north_queue);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -885,11 +883,11 @@ void switch_east_io_ctrl(void){
 	int my_pid = switch_east_io_pid++;
 	long long step = 1;
 
-	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -902,7 +900,7 @@ void switch_east_io_ctrl(void){
 		message_packet = list_dequeue(switches[my_pid].Tx_east_queue);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -925,11 +923,11 @@ void switch_west_io_ctrl(void){
 	int my_pid = switch_west_io_pid++;
 	long long step = 1;
 
-	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -942,7 +940,7 @@ void switch_west_io_ctrl(void){
 		message_packet = list_dequeue(switches[my_pid].Tx_west_queue);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -967,10 +965,10 @@ void switch_south_io_ctrl(void){
 	long long step = 1;
 
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -983,7 +981,7 @@ void switch_south_io_ctrl(void){
 		message_packet = list_dequeue(switches[my_pid].Tx_south_queue);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)

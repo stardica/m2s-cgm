@@ -22,7 +22,7 @@
 #include <cgm/tasking.h>
 #include <cgm/cache.h>
 #include <cgm/switch.h>
-#include <cgm/protocol.h>
+/*#include <cgm/protocol.h>*/
 
 
 enum cgm_io_kind_t {

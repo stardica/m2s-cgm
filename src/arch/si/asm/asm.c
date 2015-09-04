@@ -249,14 +249,14 @@ void si_disasm_init(){
 	assert(sizeof(union si_reg_t) == 4);
 
 	/* Read information about all instructions */
-	//	DEFINST(S_ADD_U32, " s_add_u32     %SDST, %SSRC0, %SSRC1", SOP2, 0, 4, 0 )\
-	//		info = &si_inst_info[SI_INST_S_ADD_U32]; 					\
-	//		info->inst = SI_INST_S_ADD_U32; 							\
-	//		info->name = S_ADD_U32; 									\
-	//		info->fmt_str = " s_add_u32     %SDST, %SSRC0, %SSRC1"; 	\
-	//		info->fmt = SI_FMT_SOP2; 									\
-	//		info->opcode = 0;	 										\
-	//		info->size = 4; 											\
+	//	DEFINST(S_ADD_U32, " s_add_u32     %SDST, %SSRC0, %SSRC1", SOP2, 0, 4, 0 )
+	//		info = &si_inst_info[SI_INST_S_ADD_U32];
+	//		info->inst = SI_INST_S_ADD_U32;
+	//		info->name = S_ADD_U32;
+	//		info->fmt_str = " s_add_u32     %SDST, %SSRC0, %SSRC1";
+	//		info->fmt = SI_FMT_SOP2;
+	//		info->opcode = 0;
+	//		info->size = 4;
 	//		info->flags = 0;
 
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags)\

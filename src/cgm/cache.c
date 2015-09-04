@@ -702,6 +702,10 @@ int cgm_gpu_cache_map(int cache_id){
 	{
 		fatal("cgm_gpu_cache_map(): cache_id out of bounds\n");
 	}
+	else
+	{
+		fatal("cgm_gpu_cache_map(): cache_id out of bounds\n");
+	}
 
 	return map;
 }
@@ -826,16 +830,17 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 	}
 
 	/* Block not found */
-	if (way == cache->assoc)
+	return 0;
+	/*if (way == cache->assoc)
 	{
-		return 0;
+
 	}
 	else
 	{
 		fatal("cgm_cache_find_block() incorrect behavior\n");
 	}
 
-	fatal("cgm_cache_find_block() reached bottom\n");
+	fatal("cgm_cache_find_block() reached bottom\n");*/
 }
 
 int cgm_cache_get_way(struct cache_t *cache, int tag, int set){
@@ -974,7 +979,8 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers){
 
 	enum cgm_cache_block_state_t victim_state;
-	int i = 0, core_id = 0;
+	int i = 0;
+	/*int core_id = 0;*/
 	unsigned char bit_vector;
 	int num_cores = x86_cpu_num_cores;
 	assert(sharers >= 0 && sharers <= num_cores);
@@ -1260,8 +1266,8 @@ void l1_i_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_puts)
 			{
-				//Call back function (cgm_mesi_l1_i_puts)
-				l1_i_caches[my_pid].l1_i_puts(&(l1_i_caches[my_pid]), message_packet);
+				//Call back function (cgm_mesi_l1_i_write_block)
+				l1_i_caches[my_pid].l1_i_write_block(&(l1_i_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -1332,41 +1338,9 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
-				enum cgm_cache_block_state_t victim_trainsient_state;
-				long long t_state_id;
-
-				//check the transient state of the victim
-				//if the state is set, an earlier access is bringing the block
-				//if it is not set the victim is clear to evict
-				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				victim_trainsient_state = cgm_cache_get_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->l1_victim_way);
-
-				//if the block is in the transient state there are stores waiting to write to the block.
-				if(victim_trainsient_state == cgm_cache_block_transient)
-				{
-
-					//the victim is locked, either wait, choose another victim, or schedule something else.
-					t_state_id = cgm_cache_get_block_transient_state_id(&(l1_d_caches[my_pid]), message_packet->set, message_packet->l1_victim_way);
-
-					//check ordering
-					assert(message_packet->access_id >= t_state_id);
-
-					fatal("l1 D cache stalled on transient\n");
-					/*printf("l1 D cache stalled on transient\n");*/
-
-					//try again we will pull the coherence message eventually.
+				//Call back function (cgm_mesi_l1_d_put)
+				if(!l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet))
 					step--;
-					P_PAUSE(1);
-				}
-				else
-				{
-					//find the access in the ORT table and clear it.
-					ort_clear(&(l1_d_caches[my_pid]), message_packet);
-
-					//set the block and retry the access in the cache.
-					cache_put_block(&(l1_d_caches[my_pid]), message_packet);
-				}
 			}
 			else if (access_type == cgm_access_write_back)
 			{
@@ -1494,7 +1468,7 @@ void l1_d_cache_ctrl(void){
 				//set the state to exclusive and clear the transient state
 				cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_exclusive);
 
-				cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, NULL, cgm_cache_block_null);
+				cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, 0, cgm_cache_block_null);
 
 				//enter the retry state
 				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
@@ -1509,105 +1483,8 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_downgrade)
 			{
-				//Received downgrade from L2; a block needs to be shared...
-				/*printf("L1 D id %d received downgrade from L2\n", l1_d_caches[my_pid].id);*/
-
-				//get the block status
-				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				/*printf("L1 D id %d block hit %d as %s\n", l1_d_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));*/
-
-				//first check the cache for the block
-				//find and invalidate the block
-				if(*cache_block_hit_ptr == 1)
-				{
-					/*if the block is in the cache it is not in the WB buffer
-					 * if the block is dirty send down to L2 cache for merge*/
-					switch(*cache_block_state_ptr)
-					{
-						case cgm_cache_block_owned:
-						case cgm_cache_block_noncoherent:
-						fatal("l1_d_cache_ctrl(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
-							break;
-
-						case cgm_cache_block_invalid:
-							//if invalid it was silently dropped
-							message_packet->size = 1;
-							message_packet->cache_block_state = cgm_cache_block_invalid;
-							break;
-
-						case cgm_cache_block_exclusive:
-						case cgm_cache_block_shared:
-							//if E or S it is not dirty
-							message_packet->size = 1;
-							message_packet->cache_block_state = cgm_cache_block_shared;
-							break;
-
-						case cgm_cache_block_modified:
-							//hit and its dirty send the ack and block down (sharing writeback) to the L2 cache.
-							message_packet->size = l1_d_caches[my_pid].block_size;
-							message_packet->cache_block_state = cgm_cache_block_modified;
-							break;
-					}
-
-					//set the access type
-					//hit and its dirty send the block down to the L2 cache.
-					message_packet->access_type = cgm_access_downgrade_ack;
-
-					//invalidate the local block
-					cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_shared);
-
-					/*printf("L1 D id %d downgraded to shared\n", l1_d_caches[my_pid].id);*/
-				}
-				//Second check (snoop) the WB buffer
-				else if(*cache_block_hit_ptr == 0)
-				{
-					/*//check the WB buffer for the block
-					wb_packet = cache_search_wb(&(l1_d_caches[my_pid]), message_packet->tag, message_packet->set);
-
-					//found the block in the wb buffer
-					if(wb_packet)
-					{
-						fatal("l1 d cache downgrade hit in wb buffer check this\n");
-
-						//get the block state
-						message_packet->cache_block_state = wb_packet->cache_block_state;
-
-						//if modified send downgrade_ack with data
-						if(message_packet->cache_block_state == cgm_cache_block_modified)
-						{
-							message_packet->size = l1_d_caches[my_pid].block_size;
-						}
-						//if not modified send downgrade_ack without data
-						else
-						{
-							message_packet->size = 1;
-							message_packet->cache_block_state = cgm_cache_block_shared;
-						}
-
-						//send inval_ack
-						message_packet->access_type = cgm_access_downgrade_ack;
-
-						//remove the block from the wb buffer
-						wb_packet = list_remove(l1_d_caches[my_pid].write_back_buffer, wb_packet);
-						free(wb_packet);
-					}
-					//block isn't in the cache or WB send downgrade_ack without data (empty reply)
-					else
-					{*/
-						/*fatal("l1 d cache downgrade miss in cache and wb buffer check this\n");*/
-						message_packet->cache_block_state = cgm_cache_block_invalid;
-						message_packet->size = 1;
-						message_packet->access_type = cgm_access_downgrade_ack;
-					/*}*/
-				}
-
-				message_packet->l1_cache_id = l1_d_caches[my_pid].id;
-
-				//reply to the L2 cache
-				cache_put_io_down_queue(&(l1_d_caches[my_pid]), message_packet);
-
-				/*printf("L1 D id %d downgrade_ack sent to L2 cache id %d\n", l1_d_caches[my_pid].id, my_pid);*/
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_downgrade(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -1628,10 +1505,10 @@ void l2_cache_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	struct cgm_packet_t *reply_packet;
+	/*struct cgm_packet_t *reply_packet;*/
 	struct cgm_packet_t *wb_packet;
-	struct cgm_packet_t *downgrade_packet;
-	struct cgm_packet_t *pending_request;
+	/*struct cgm_packet_t *downgrade_packet;*/
+	/*struct cgm_packet_t *pending_request;*/
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
@@ -1680,6 +1557,16 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_get)
 				l2_caches[my_pid].l2_get(&(l2_caches[my_pid]), message_packet);
+			}
+			else if(access_type == cgm_access_downgrade_ack)
+			{
+				//Call back function (cgm_mesi_l2_downgrade_ack)
+				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
+			}
+			else if(access_type == cgm_access_get_fwd)
+			{
+				//Call back function (cgm_mesi_l2_get_fwd)
+				l2_caches[my_pid].l2_get_fwd(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
@@ -1815,16 +1702,6 @@ void l2_cache_ctrl(void){
 						cache_put_io_down_queue(&(l2_caches[my_pid]), message_packet);
 						break;
 				}
-			}
-			else if(access_type == cgm_access_downgrade_ack)
-			{
-				//Call back function (cgm_mesi_l2_downgrade_ack)
-				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
-			}
-			else if(access_type == cgm_access_get_fwd)
-			{
-				//Call back function (cgm_mesi_l2_get_fwd)
-				l2_caches[my_pid].l2_get_fwd(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
@@ -1989,7 +1866,6 @@ void l2_cache_ctrl(void){
 					}
 				}
 
-
 				//free the message packet (inval_ack)
 				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
 				free(message_packet);
@@ -1997,46 +1873,11 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
-				/*if(message_packet->access_id == temp_id && temp_id > 0)
-				{
-					printf("L2 id %d access id %llu puts received\n", l2_caches[my_pid].id, message_packet->access_id);
-				}*/
+				//Call back function (cgm_mesi_l2_put)
 
-				enum cgm_cache_block_state_t victim_trainsient_state;
-				long long t_state_id;
-
-				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				victim_trainsient_state = cgm_cache_get_block_transient_state(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
-
-				if(victim_trainsient_state == cgm_cache_block_transient)
-				{
-					//the victim is locked, either wait or choose another victim.
-					t_state_id = cgm_cache_get_block_transient_state_id(&(l2_caches[my_pid]), message_packet->set, message_packet->l2_victim_way);
-
-					//check for write before read condition.
-					if(message_packet->access_id >= t_state_id)
-					{
-						//star todo i don't know if this is an actually problem or not
-						printf("t_state_id %llu message_packet id %llu as %s\n", t_state_id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
-						assert(message_packet->access_id >= t_state_id);
-					}
-
-					//try again we will pull the coherence message eventually.
-					printf("looping cache block %d\n", victim_trainsient_state);
-					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+				//if the block stalls on a transient state run again.
+				if(!l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet))
 					step--;
-					P_PAUSE(1);
-				}
-				else
-				{
-					//find the access in the ORT table and clear it.
-					ort_clear(&(l2_caches[my_pid]), message_packet);
-
-					//set the block and retry the access in the cache.
-					cache_put_block(&(l2_caches[my_pid]), message_packet);
-				}
-
 			}
 			else if(access_type == cgm_access_write_back)
 			{
@@ -2177,9 +2018,9 @@ void l3_cache_ctrl(void){
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int dirty;
+	/*int dirty;
 	int sharers;
-	int owning_core;
+	int owning_core;*/
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -2225,7 +2066,7 @@ void l3_cache_ctrl(void){
 				cache_get_block_status(&(l3_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 				//check the directory dirty bit status
-				dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way);
+				/*dirty = cgm_cache_get_dir_dirty_bit(&(l3_caches[my_pid]), message_packet->set, message_packet->l3_victim_way);*/
 
 				switch(*cache_block_state_ptr)
 				{
@@ -2407,7 +2248,7 @@ void l3_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
-				l3_caches[my_pid].l3_put(&(l3_caches[my_pid]), message_packet);
+				l3_caches[my_pid].l3_write_block(&(l3_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -2639,7 +2480,7 @@ void l1_i_cache_down_io_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2652,7 +2493,7 @@ void l1_i_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(l1_i_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -2676,7 +2517,7 @@ void l1_d_cache_down_io_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2689,7 +2530,7 @@ void l1_d_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(l1_d_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		transfer_time = (message_packet->size/l1_d_caches[my_pid].bus_width);
 
@@ -2724,7 +2565,7 @@ void l2_cache_up_io_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2741,7 +2582,7 @@ void l2_cache_up_io_ctrl(void){
 
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
@@ -2796,7 +2637,7 @@ void l2_cache_down_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2809,7 +2650,7 @@ void l2_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(l2_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l2_caches[my_pid].bus_width);
@@ -2838,7 +2679,7 @@ void l3_cache_up_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2851,7 +2692,7 @@ void l3_cache_up_io_ctrl(void){
 		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_top);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
@@ -2882,7 +2723,7 @@ void l3_cache_down_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2895,7 +2736,7 @@ void l3_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
@@ -2924,7 +2765,7 @@ void gpu_s_cache_down_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2939,7 +2780,7 @@ void gpu_s_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(gpu_s_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/gpu_s_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -2966,7 +2807,7 @@ void gpu_v_cache_down_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2981,7 +2822,7 @@ void gpu_v_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(gpu_v_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/gpu_v_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -3008,7 +2849,7 @@ void gpu_l2_cache_up_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -3021,7 +2862,7 @@ void gpu_l2_cache_up_io_ctrl(void){
 		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_top);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/gpu_v_caches[my_pid].bus_width);
 
@@ -3071,7 +2912,7 @@ void gpu_l2_cache_down_io_ctrl(void){
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -3084,7 +2925,7 @@ void gpu_l2_cache_down_io_ctrl(void){
 		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
 
@@ -3252,6 +3093,17 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	return;
 }
+
+void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//clear the gpu uop witness_ptr
+	(*message_packet->witness_ptr)++;
+	message_packet = list_remove(cache->Rx_queue_top, message_packet);
+	packet_destroy(message_packet);
+
+}
+
+
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//remove packet from cache queue, global queue, and simulator memory
@@ -3359,7 +3211,7 @@ void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message
 
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_cache_block_state_t victim_state;
+	/*enum cgm_cache_block_state_t victim_state;*/
 
 	//checks
 	if(message_packet->access_type == cgm_access_put_clnx)

@@ -1338,7 +1338,7 @@ static void m2s_signal_process(void)
 }
 
 
-static void m2s_init(void)
+/*static void m2s_init(void)
 {
 	//printf("inside m2s_init");
 	struct timeval tv;
@@ -1346,14 +1346,14 @@ static void m2s_init(void)
 	unsigned int max_id;
 	unsigned int id;
 
-	/* Compute simulation ID */
+	 Compute simulation ID
 	gettimeofday(&tv, NULL);
 	min_id = str_alnum_to_int("10000");
 	max_id = str_alnum_to_int("ZZZZZ");
 	id = (tv.tv_sec * 1000000000 + tv.tv_usec) % (max_id - min_id + 1) + min_id;
 	str_int_to_alnum(m2s_sim_id, sizeof m2s_sim_id, id);
 
-	/* Initial information  with fix*/
+	 Initial information  with fix
 	fprintf(stderr, "\n");
 	fprintf(stderr, "; Multi2Sim %s - ", m2sversion);
 	fprintf(stderr, "A Simulation Framework for CPU-GPU Heterogeneous Computing\n");
@@ -1361,7 +1361,7 @@ static void m2s_init(void)
 	fprintf(stderr, "; Simulation alpha-numeric ID: %s\n", m2s_sim_id);
 	fprintf(stderr, "\n");
 
-}
+}*/
 
 void m2s_loop(void){
 

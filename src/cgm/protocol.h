@@ -145,8 +145,6 @@ struct cgm_packet_status_t{
 
 /*struct cgm_packet_status_t;*/
 
-//star todo implement a MOESI protocol.
-
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
@@ -162,18 +160,22 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 ////////////////
 
 
+
 //implements a MESI protocol.
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_l1_i_puts(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_l3_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 

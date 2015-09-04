@@ -117,7 +117,7 @@ int cgm_cpu_configure(void){
 	return 1;
 }
 
-int cpu_configure(Timing *self, struct config_t *config){
+void cpu_configure(Timing *self, struct config_t *config){
 
 	//star set the thread pointer to our memory system entries.
 
@@ -168,7 +168,7 @@ int cpu_configure(Timing *self, struct config_t *config){
 		core->threads[0]->d_cache_ptr = &l1_d_caches[core->id];*/
 	}
 	//getchar();
-	return 1;
+	return;
 }
 
 
@@ -197,7 +197,7 @@ int cgm_gpu_configure(void){
 }
 
 
-int gpu_configure(Timing *self, struct config_t *config){
+void gpu_configure(Timing *self, struct config_t *config){
 
 	int num_cus = si_gpu_num_compute_units;
 	int i = 0;
@@ -244,7 +244,7 @@ int gpu_configure(Timing *self, struct config_t *config){
 		fflush(stdout);
 	}*/
 
-	return 1;
+	return;
 }
 
 int debug_read_config(void* user, const char* section, const char* name, const char* value){
@@ -1461,7 +1461,28 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	}
 
 
+	////////////////////////
+	//gpu LDS
+	////////////////////////
 
+
+	if(MATCH("GPU_L2_Cache", "Latency"))
+	{
+		Latency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_lds_units[i].latency = Latency;
+		}
+	}
+
+	if(MATCH("GPU_L2_Cache", "WireLatency"))
+	{
+		WireLatency = atoi(value);
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_lds_units[i].wire_latency = WireLatency;
+		}
+	}
 
 
 	return 0;
@@ -1589,7 +1610,7 @@ int cache_finish_create(){
 		if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l1_i_caches[i].l1_i_fetch = cgm_mesi_fetch;
-			l1_i_caches[i].l1_i_puts = cgm_mesi_l1_i_puts;
+			l1_i_caches[i].l1_i_write_block = cgm_mesi_l1_i_write_block;
 		}
 		else
 		{
@@ -1719,12 +1740,13 @@ int cache_finish_create(){
 		{
 			l1_d_caches[i].l1_d_load = cgm_mesi_load;
 			l1_d_caches[i].l1_d_store = cgm_mesi_store;
+			l1_d_caches[i].l1_d_write_block = cgm_mesi_l1_d_write_block;
+			l1_d_caches[i].l1_d_downgrade = cgm_mesi_l1_d_downgrade;
 		}
 		else
 		{
 			fatal("invalid protocol at d cache init\n");
 		}
-
 
 		/////////////
 		//L2 Cache
@@ -1858,6 +1880,7 @@ int cache_finish_create(){
 			l2_caches[i].l2_get = cgm_mesi_l2_get;
 			l2_caches[i].l2_downgrade_ack = cgm_mesi_l2_downgrade_ack;
 			l2_caches[i].l2_get_fwd = cgm_mesi_l2_get_fwd;
+			l2_caches[i].l2_write_block = cgm_mesi_l2_write_block;
 		}
 		else
 		{
@@ -2013,7 +2036,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_get = cgm_mesi_l3_get;
 			l3_caches[i].l3_downgrade_ack = cgm_mesi_l3_downgrade_ack;
 			l3_caches[i].l3_downgrade_nack = cgm_mesi_l3_downgrade_nack;
-			l3_caches[i].l3_put = cgm_mesi_l3_put;
+			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
 		}
 		else
 		{
@@ -2371,6 +2394,7 @@ int cache_finish_create(){
 		//memset (buff,'\0' , 100);
 		//snprintf(buff, 100, "gpu_lds_units[%d].mshr", i);
 		//gpu_lds_units[i].mshr->name = strdup(buff);
+
 
 		//Initialize array of sets
 		gpu_v_caches[i].sets = calloc(gpu_v_caches[i].num_sets, sizeof(struct cache_set_t));

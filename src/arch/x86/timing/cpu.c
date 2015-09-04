@@ -1004,7 +1004,7 @@ int X86CpuRun(Timing *self){
 
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Emu *emu = cpu->emu;
-	int i = 0;
+	/*int i = 0;*/
 
 	/* Stop if no context is running */
 	if (emu->finished_list_count >= emu->context_list_count)

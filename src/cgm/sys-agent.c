@@ -273,7 +273,7 @@ void sys_agent_ctrl_io_up(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -286,7 +286,7 @@ void sys_agent_ctrl_io_up(void){
 		message_packet = list_dequeue(system_agent->Tx_queue_top);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/system_agent->up_bus_width);
 
 		if(transfer_time == 0)
@@ -308,7 +308,7 @@ void sys_agent_ctrl_io_down(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -321,7 +321,7 @@ void sys_agent_ctrl_io_down(void){
 		message_packet = list_dequeue(system_agent->Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/system_agent->down_bus_width);
 
 		if(transfer_time == 0)
@@ -352,9 +352,9 @@ void sys_agent_ctrl(void){
 	long long step = 1;
 	//int i = 0;
 
-	long long access_id = 0;
-	enum cgm_access_kind_t access_type;
-	unsigned int addr;
+	/*long long access_id = 0;*/
+	/*enum cgm_access_kind_t access_type;*/
+	/*unsigned int addr;*/
 
 	set_id((unsigned int)my_pid);
 
@@ -376,8 +376,8 @@ void sys_agent_ctrl(void){
 			assert(message_packet);
 
 			//access_type = message_packet->access_type;
-			access_id = message_packet->access_id;
-			addr = message_packet->address;
+			/*access_id = message_packet->access_id;*/
+			/*addr = message_packet->address;*/
 
 			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
 					system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);

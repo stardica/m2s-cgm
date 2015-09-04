@@ -188,25 +188,27 @@ struct cache_t{
 
 	//L1 I cache protocol virtual functions
 	void (*l1_i_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l1_i_puts)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_i_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L1 D cache protocol virtual functions
 	void (*l1_d_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
+	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L3 cache protocol virtual functions
 	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
 	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -352,6 +354,7 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 //Scheduler functions

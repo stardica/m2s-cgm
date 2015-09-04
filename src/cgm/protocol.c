@@ -464,7 +464,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	return;
 }
 
-void cgm_mesi_l1_i_puts(struct cache_t *cache, struct cgm_packet_t *message_packet){
+void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//find the access in the ORT table and clear it.
 	/*ort_clear(&(l1_i_caches[my_pid]), message_packet);*/
@@ -475,6 +475,174 @@ void cgm_mesi_l1_i_puts(struct cache_t *cache, struct cgm_packet_t *message_pack
 	cache_put_block(cache, message_packet);
 
 	return;
+}
+
+void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	enum cgm_access_kind_t access_type;
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	access_type = message_packet->access_type;
+	/*access_id = message_packet->access_id;*/
+
+	//Received downgrade from L2; a block needs to be shared...
+	/*printf("L1 D id %d received downgrade from L2\n", l1_d_caches[my_pid].id);*/
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*printf("L1 D id %d block hit %d as %s\n", l1_d_caches[my_pid].id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));*/
+
+	//first check the cache for the block
+	//find and invalidate the block
+	if(*cache_block_hit_ptr == 1)
+	{
+		/*if the block is in the cache it is not in the WB buffer
+		 * if the block is dirty send down to L2 cache for merge*/
+		switch(*cache_block_state_ptr)
+		{
+			case cgm_cache_block_owned:
+			case cgm_cache_block_noncoherent:
+			fatal("l1_d_cache_ctrl(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+				break;
+
+			case cgm_cache_block_invalid:
+				//if invalid it was silently dropped
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+				break;
+
+			case cgm_cache_block_exclusive:
+			case cgm_cache_block_shared:
+				//if E or S it is not dirty
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_shared;
+				break;
+
+			case cgm_cache_block_modified:
+				//hit and its dirty send the ack and block down (sharing writeback) to the L2 cache.
+				message_packet->size = cache->block_size;
+				message_packet->cache_block_state = cgm_cache_block_modified;
+				break;
+		}
+
+		//set the access type
+		//hit and its dirty send the block down to the L2 cache.
+		message_packet->access_type = cgm_access_downgrade_ack;
+
+		//invalidate the local block
+		cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_shared);
+
+		/*printf("L1 D id %d downgraded to shared\n", l1_d_caches[my_pid].id);*/
+	}
+	//Second check (snoop) the WB buffer
+	else if(*cache_block_hit_ptr == 0)
+	{
+		/*//check the WB buffer for the block
+		wb_packet = cache_search_wb(&(l1_d_caches[my_pid]), message_packet->tag, message_packet->set);
+
+		//found the block in the wb buffer
+		if(wb_packet)
+		{
+			fatal("l1 d cache downgrade hit in wb buffer check this\n");
+
+			//get the block state
+			message_packet->cache_block_state = wb_packet->cache_block_state;
+
+			//if modified send downgrade_ack with data
+			if(message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				message_packet->size = l1_d_caches[my_pid].block_size;
+			}
+			//if not modified send downgrade_ack without data
+			else
+			{
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_shared;
+			}
+
+			//send inval_ack
+			message_packet->access_type = cgm_access_downgrade_ack;
+
+			//remove the block from the wb buffer
+			wb_packet = list_remove(l1_d_caches[my_pid].write_back_buffer, wb_packet);
+			free(wb_packet);
+		}
+		//block isn't in the cache or WB send downgrade_ack without data (empty reply)
+		else
+		{*/
+			/*fatal("l1 d cache downgrade miss in cache and wb buffer check this\n");*/
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+			message_packet->size = 1;
+			message_packet->access_type = cgm_access_downgrade_ack;
+		/*}*/
+	}
+
+	message_packet->l1_cache_id = cache->id;
+
+	//reply to the L2 cache
+	cache_put_io_down_queue(cache, message_packet);
+
+	/*printf("L1 D id %d downgrade_ack sent to L2 cache id %d\n", l1_d_caches[my_pid].id, my_pid);*/
+
+	return;
+}
+
+
+int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	enum cgm_access_kind_t access_type;
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	access_type = message_packet->access_type;
+	/*access_id = message_packet->access_id;*/
+
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+	long long t_state_id;
+
+	//check the transient state of the victim
+	//if the state is set, an earlier access is bringing the block
+	//if it is not set the victim is clear to evict
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
+
+	//if the block is in the transient state there are stores waiting to write to the block.
+	if(victim_trainsient_state == cgm_cache_block_transient)
+	{
+
+		//the victim is locked, either wait, choose another victim, or schedule something else.
+		t_state_id = cgm_cache_get_block_transient_state_id(cache, message_packet->set, message_packet->l1_victim_way);
+
+		//check ordering
+		assert(message_packet->access_id >= t_state_id);
+
+		fatal("l1 D cache stalled on transient\n");
+		/*printf("l1 D cache stalled on transient\n");*/
+
+		//try again we will pull the coherence message eventually.
+		P_PAUSE(1);
+		return 0;
+	}
+	else
+	{
+		//find the access in the ORT table and clear it.
+		ort_clear(cache, message_packet);
+
+		//set the block and retry the access in the cache.
+		cache_put_block(cache, message_packet);
+	}
+
+	return 1;
 }
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
@@ -995,6 +1163,72 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	return;
 }
 
+int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+	enum cgm_access_kind_t access_type;
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *reply_packet;
+	struct cgm_packet_t *wb_packet;
+	struct cgm_packet_t *downgrade_packet;
+	struct cgm_packet_t *pending_request;
+
+	access_type = message_packet->access_type;
+	/*access_id = message_packet->access_id;*/
+
+	int l3_map;
+	int temp_id;
+
+
+	/*if(message_packet->access_id == temp_id && temp_id > 0)
+	{
+		printf("L2 id %d access id %llu puts received\n", l2_caches[my_pid].id, message_packet->access_id);
+	}*/
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+	long long t_state_id;
+
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
+
+	if(victim_trainsient_state == cgm_cache_block_transient)
+	{
+		//the victim is locked, either wait or choose another victim.
+		t_state_id = cgm_cache_get_block_transient_state_id(cache, message_packet->set, message_packet->l2_victim_way);
+
+		//check for write before read condition.
+		if(message_packet->access_id >= t_state_id)
+		{
+			//star todo i don't know if this is an actually problem or not
+			printf("t_state_id %llu message_packet id %llu as %s\n", t_state_id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			assert(message_packet->access_id >= t_state_id);
+		}
+
+		//try again we will pull the coherence message eventually.
+		fatal("cgm_mesi_l2_put(): l2 looping cache block %d\n", victim_trainsient_state);
+		//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+		P_PAUSE(1);
+
+		return 0;
+	}
+	else
+	{
+		//find the access in the ORT table and clear it.
+		ort_clear(cache, message_packet);
+
+		//set the block and retry the access in the cache.
+		cache_put_block(cache, message_packet);
+	}
+
+	return 1;
+}
+
 
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -1439,8 +1673,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 
 
-void cgm_mesi_l3_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
+void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
