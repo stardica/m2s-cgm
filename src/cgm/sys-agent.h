@@ -20,7 +20,7 @@
 #include <cgm/cgm.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/tasking.h>
-#include <cgm/cache.h>
+/*#include <cgm/cache.h>*/
 #include <cgm/switch.h>
 /*#include <cgm/protocol.h>*/
 

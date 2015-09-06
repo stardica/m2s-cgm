@@ -224,7 +224,7 @@ void gpu_configure(Timing *self, struct config_t *config){
 		fatal("number of si_gpu->compute_units > 1 STOP\n");
 	}*/
 
-	int compute_unit_id;
+	/*int compute_unit_id;*/
 	struct si_compute_unit_t *compute_unit;
 
 
@@ -442,7 +442,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 	int Sliced = 0;
 	int Sets = 0;
-	int Qty = 0;
+	/*int Qty = 0;*/
 	int Assoc = 0;
 	int BlockSize = 0;
 	int Latency = 0;
@@ -2638,9 +2638,9 @@ int directory_read_config(void* user, const char* section, const char* name, con
 
 int directory_finish_create(void){
 
-	int num_cores = x86_cpu_num_cores;
+	/*int num_cores = x86_cpu_num_cores;
 	char buff[100];
-	int i = 0;
+	int i = 0;*/
 
 	// create the number of queues we need.
 	// for our base system one entry per l3 cache slice.
@@ -2717,7 +2717,7 @@ int directory_finish_create(void){
 int switch_read_config(void* user, const char* section, const char* name, const char* value){
 
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	/*int num_cus = si_gpu_num_compute_units;*/
 	int Ports = 0;
 	int i = 0;
 	int WireLatency = 0;

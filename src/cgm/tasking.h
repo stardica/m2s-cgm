@@ -101,7 +101,8 @@ void set_id(unsigned id);
 unsigned get_id(void);
 char * get_task_name (void);	/* get current task name */
 void initialize_wakeupcall (task*);
-void wakeupcall (void *arg);
+/*void wakeupcall (void *arg);*/
+void wakeupcall (void);
 void end_wakeupcall(long long final_time);
 void tasking_dump(void);
 count_t get_time (void);

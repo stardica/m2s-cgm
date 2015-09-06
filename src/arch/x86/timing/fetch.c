@@ -413,14 +413,15 @@ static void X86ThreadFetch(X86Thread *self)
 
 	/* Try to fetch from trace cache first */
 	//star no trace cache this is ignored.
-	/*if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
+	if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))
 	{
+		fatal("X86ThreadFetch(): \"if (x86_trace_cache_present && X86ThreadFetchTraceCache(self))\" check this\n");
 		//star >> never enters here
 		//printf("Pulled from trace cache\n");
 		//fflush(stdout);
 		//getchar();
 		return;
-	}*/
+	}
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
@@ -538,7 +539,6 @@ static void X86ThreadFetch(X86Thread *self)
 
 static void X86CoreFetch(X86Core *self)
 {
-	X86Cpu *cpu = self->cpu;
 	X86Thread *thread;
 
 	int i;
@@ -546,18 +546,16 @@ static void X86CoreFetch(X86Core *self)
 	switch (x86_cpu_fetch_kind)
 	{
 		//star pulled out some of these options for clarity.
-		/*case x86_cpu_fetch_kind_shared:
+		case x86_cpu_fetch_kind_shared:
 		{
-
-			//printf("entered shared\n");
-			//fflush(stdout);
-
-			 Fetch from all threads
-			for (i = 0; i < x86_cpu_num_threads; i++)
+			//Fetch from all threads
+			/*for (i = 0; i < x86_cpu_num_threads; i++)
 				if (X86ThreadCanFetch(self->threads[i]))
-					X86ThreadFetch(self->threads[i]);
+					X86ThreadFetch(self->threads[i]);*/
+
+			fatal("X86CoreFetch(): \"x86_cpu_fetch_kind_shared\" add this back in");
 			break;
-		}*/
+		}
 
 		case x86_cpu_fetch_kind_timeslice:
 		{
@@ -582,57 +580,55 @@ static void X86CoreFetch(X86Core *self)
 		}
 	
 		//star pulled out some of these options for clarity.
-		/*case x86_cpu_fetch_kind_switchonevent:
+		case x86_cpu_fetch_kind_switchonevent:
 		{
-
-			//printf("entered switchenv\n");
-			//fflush(stdout);
+			/*X86Cpu *cpu = self->cpu;
 			int must_switch;
 			int new_index;
 
 			X86Thread *new_thread;
 
-			 If current thread is stalled, it means that we just switched to it.
-			 * No fetching and no switching either.
+			// If current thread is stalled, it means that we just switched to it.
+			// * No fetching and no switching either.
 			thread = self->threads[self->fetch_current];
 			if (thread->fetch_stall_until >= asTiming(cpu)->cycle)
 				break;
 
-			 Switch thread if:
-			* - Quantum expired for current thread.
-			* - Long latency instruction is in progress.
+			 //Switch thread if:
+			// - Quantum expired for current thread.
+			// - Long latency instruction is in progress.
 			must_switch = !X86ThreadCanFetch(thread);
 			must_switch = must_switch || asTiming(cpu)->cycle - self->fetch_switch_when > x86_cpu_thread_quantum + x86_cpu_thread_switch_penalty;
 			must_switch = must_switch || X86ThreadLongLatencyInEventQueue(thread);
 
-			 Switch thread
+			 //Switch thread
 			if (must_switch)
 			{
-				 Find a new thread to switch to
+				 //Find a new thread to switch to
 				for (new_index = (thread->id_in_core + 1) % x86_cpu_num_threads;
 					new_index != thread->id_in_core;
 					new_index = (new_index + 1) % x86_cpu_num_threads)
 			{
-				 Do not choose it if it is not eligible for fetching
+				// Do not choose it if it is not eligible for fetching
 				new_thread = self->threads[new_index];
 				if (!X86ThreadCanFetch(new_thread))
 					continue;
 					
-				 Choose it if we need to switch
+				// Choose it if we need to switch
 				if (must_switch)
 					break;
 
-				 Do not choose it if it is unfair
+				// Do not choose it if it is unfair
 				if (new_thread->num_committed_uinst_array >
 						thread->num_committed_uinst_array + 100000)
 					continue;
 
-				 Choose it if it is not stalled
+				// Choose it if it is not stalled
 				if (!X86ThreadLongLatencyInEventQueue(new_thread))
 					break;
 			}
 				
-			 Thread switch successful?
+			 //Thread switch successful?
 			if (new_index != thread->id_in_core)
 			{
 				self->fetch_current = new_index;
@@ -642,12 +638,14 @@ static void X86CoreFetch(X86Core *self)
 			}
 		}
 
-		 Fetch
+		//Fetch
 		thread = self->threads[self->fetch_current];
 		if (X86ThreadCanFetch(thread))
-			X86ThreadFetch(thread);
+			X86ThreadFetch(thread);*/
+
+		fatal("X86CoreFetch(): \"x86_cpu_fetch_kind_switchonevent\" add this back in");
 		break;
-	}*/
+	}
 
 	default:
 		panic("%s: wrong fetch policy", __FUNCTION__);

@@ -20,6 +20,17 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 
+/*#include <cgm/cache.h>*/
+/*#include <cgm/protocol.h>*/
+#include <cgm/directory.h>
+#include <cgm/mem-ctrl.h>
+#include <cgm/configure.h>
+#include <cgm/sys-agent.h>
+#include <cgm/ini-parse.h>
+#include <cgm/tasking.h>
+#include <cgm/interrupt.h>
+#include <cgm/switch.h>
+
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
 
@@ -29,17 +40,6 @@
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/lds-unit.h>
 #include <arch/si/timing/compute-unit.h>
-
-#include <cgm/protocol.h>
-#include <cgm/cache.h>
-#include <cgm/directory.h>
-#include <cgm/mem-ctrl.h>
-#include <cgm/configure.h>
-#include <cgm/sys-agent.h>
-#include <cgm/ini-parse.h>
-#include <cgm/tasking.h>
-#include <cgm/interrupt.h>
-#include <cgm/switch.h>
 
 
 #define P_TIME (etime.count >> 1)

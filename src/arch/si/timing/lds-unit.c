@@ -154,8 +154,11 @@ void si_lds_mem(struct si_lds_t *lds)
 	int instructions_processed = 0;
 	int list_entries;
 	int i, j;
-	enum mod_access_kind_t access_type_m2s;
+#if CGM
 	enum cgm_access_kind_t access_type;
+#else
+	enum mod_access_kind_t access_type_m2s;
+#endif
 	int list_index = 0;
 
 	list_entries = list_count(lds->read_buffer);
@@ -230,10 +233,6 @@ void si_lds_mem(struct si_lds_t *lds)
 
 				uop->lds_witness--;
 #if CGM
-
-				/*printf("made it here\n");
-				fflush(stdout);*/
-
 
 				cgm_lds_access(lds, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
 #else

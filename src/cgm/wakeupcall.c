@@ -179,7 +179,8 @@ void initialize_wakeupcall (task* wakeup_task){
 //long long temp_time = 0;
 
 
-void wakeupcall (void *arg){
+/*void wakeupcall (void *arg){*/
+void wakeupcall (void){
 
 	long long next_wake_up_time;
 	alarm *current_alarm;

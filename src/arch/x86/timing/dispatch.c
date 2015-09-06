@@ -138,13 +138,15 @@ static void X86CoreDispatch(X86Core *self)
 
 	int skip = x86_cpu_num_threads;
 	int quantum = x86_cpu_dispatch_width;
-	int remain;
+
 
 	switch (x86_cpu_dispatch_kind)
 	{
 
-	/*case x86_cpu_dispatch_kind_shared:
+	case x86_cpu_dispatch_kind_shared:
 		
+		/*
+		int remain;
 		do
 		{
 			self->dispatch_current = (self->dispatch_current + 1) % x86_cpu_num_threads;
@@ -152,8 +154,10 @@ static void X86CoreDispatch(X86Core *self)
 			remain = X86ThreadDispatch(thread, 1);
 			skip = remain ? skip - 1 : x86_cpu_num_threads;
 			quantum = remain ? quantum : quantum - 1;
-		} while (quantum && skip);
-		break;*/
+		} while (quantum && skip);*/
+
+		fatal("X86CoreDispatch(): \"x86_cpu_dispatch_kind_shared\" add this back in\n");
+		break;
 	
 	case x86_cpu_dispatch_kind_timeslice:
 		do

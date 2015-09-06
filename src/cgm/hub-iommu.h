@@ -17,7 +17,8 @@
 #include <lib/util/string.h>
 #include <lib/util/debug.h>
 
-#include <cgm/cgm.h>
+/*#include <cgm/cgm.h>*/
+#include <cgm/protocol.h>
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
 

@@ -8,7 +8,7 @@
 
 
 #include <cgm/interrupt.h>
-/*
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@
 #include <arch/x86/timing/uop.h>
 #include <lib/util/list.h>
 #include <lib/util/debug.h>
-*/
+
 
 
 //global flags

@@ -69,7 +69,7 @@ eventcount volatile *sim_finish;
 int fetches = 0;
 int loads = 0;
 int stores = 0;
-extern int mem_system_off = 0;
+int mem_system_off = 0;
 
 void m2scgm_init(void){
 

@@ -50,7 +50,10 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 	struct x86_uop_t *store;
 	struct linked_list_t *sq = self->sq;
+#if CGM
+#else
 	struct mod_client_info_t *client_info;
+#endif
 
 	/* Process SQ */
 	linked_list_head(sq);
@@ -140,7 +143,10 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 	struct linked_list_t *lq = self->lq;
 	struct x86_uop_t *load;
+#if CGM
+#else
 	struct mod_client_info_t *client_info;
+#endif
 
 	/* Process lq */
 	linked_list_head(lq);

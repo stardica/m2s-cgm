@@ -20,15 +20,17 @@
 #include <lib/util/string.h>
 #include <lib/util/debug.h>
 
+
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
-/*#include <cgm/cgm.h>*/
+
+#include <cgm/cgm.h>
 #include <cgm/tasking.h>
 
-#include <cgm/hub-iommu.h>
-#include <cgm/cache.h>
-#include <cgm/sys-agent.h>
+/*#include <cgm/hub-iommu.h>*/
+/*#include <cgm/cache.h>*/
+/*#include <cgm/sys-agent.h>*/
 
 
 //star todo add some sophistication with the scheduler and routing algorithms.

@@ -664,7 +664,7 @@ int cgm_l3_cache_map(int set){
 
 int cgm_gpu_cache_map(int cache_id){
 
-	int map;
+	int map = -1;
 
 	if(cache_id < 4)
 	{
@@ -3592,7 +3592,7 @@ long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set,
 
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state){
 
-	enum cgm_access_kind_t retry_state;
+	enum cgm_access_kind_t retry_state = cgm_access_invalid;
 
 	if(r_state == cgm_access_load)
 	{
@@ -3612,7 +3612,7 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state){
 
-	enum cgm_access_kind_t retry_state;
+	enum cgm_access_kind_t retry_state = cgm_access_invalid;
 
 	if(r_state == cgm_access_fetch)
 	{

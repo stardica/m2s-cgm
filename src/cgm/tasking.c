@@ -200,7 +200,8 @@ void simulate (void (*f)(void)){
 	process_t * process;
 
 	process = context_select();
-	assert(!process == NULL);
+	/*assert(!process == NULL);*/
+	assert(process);
 
 
 	context_switch (process);

@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <cgm/cgm.h>
+/*#include <cgm/cgm.h>*/
 #include <cgm/misc.h>
 #include <cgm/tasking.h>
 

@@ -249,8 +249,8 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 void hub_iommu_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
-	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = (num_cus/4);
+	/*int num_cus = si_gpu_num_compute_units;*/
+	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
 
 	long long step = 1;
@@ -295,11 +295,11 @@ void hub_iommu_ctrl(void){
 void hub_iommu_io_up_ctrl(void){
 
 	int my_pid = hub_iommu_io_up_pid++;
-	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = (num_cus/4);
+	/*int num_cus = si_gpu_num_compute_units;*/
+	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
 
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 	long long step = 1;
 
@@ -314,7 +314,7 @@ void hub_iommu_io_up_ctrl(void){
 		message_packet = list_dequeue(hub_iommu->Tx_queue_top[my_pid]);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/hub_iommu->bus_width);
 
 		P_PAUSE(transfer_time);
@@ -328,11 +328,11 @@ void hub_iommu_io_up_ctrl(void){
 void hub_iommu_io_down_ctrl(void){
 
 	int my_pid = hub_iommu_io_down_pid++;
-	int num_cus = si_gpu_num_compute_units;
-	int gpu_group_cache_num = (num_cus/4);
+	/*int num_cus = si_gpu_num_compute_units;*/
+	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
 
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 	long long step = 1;
 
@@ -348,7 +348,7 @@ void hub_iommu_io_down_ctrl(void){
 		message_packet = list_dequeue(hub_iommu->Tx_queue_bottom);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/hub_iommu->bus_width);
 
 		P_PAUSE(transfer_time);

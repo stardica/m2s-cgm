@@ -206,7 +206,6 @@ void X86CoreCommit(X86Core *self)
 {
 	int pass;
 	int quantum;
-	int new;
 
 	/* Commit stage for core */
 	switch (x86_cpu_commit_kind)
@@ -233,17 +232,19 @@ void X86CoreCommit(X86Core *self)
 	
 	//star >> commented out for clarity
 	//not sure why the default is shared vs. timeslice when the rest of the CPU is defaults to timeslice.
-	/*case x86_cpu_commit_kind_timeslice:
+	case x86_cpu_commit_kind_timeslice:
 	
-		 //look for a not empty VB
+		/*//look for a not empty VB
+		int new;
 		new = (self->commit_current + 1) % x86_cpu_num_threads;
 		while (new != self->commit_current && !X86ThreadCanCommit(self->threads[new]))
 			new = (new + 1) % x86_cpu_num_threads;
 		
 		 //Commit new thread
 		self->commit_current = new;
-		X86ThreadCommit(self->threads[new], x86_cpu_commit_width);
-		break;*/
+		X86ThreadCommit(self->threads[new], x86_cpu_commit_width);*/
+		fatal("X86CoreCommit(): \"x86_cpu_commit_kind_timeslice\" add this back in\n");
+		break;
 	
 	}
 }

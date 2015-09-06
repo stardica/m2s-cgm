@@ -115,7 +115,7 @@ static long long mem_system_command_get_cycle(struct list_t *token_list,
 int mem_system_command_get_high_low(struct list_t *token_list, char *command_line)
 {
 	char *direction;
-	int high_net;
+	int high_net = -1;
 
 	/* Get direction string */
 	mem_system_command_expect(token_list, command_line);
@@ -144,7 +144,7 @@ int mem_system_command_get_high_low(struct list_t *token_list, char *command_lin
 int mem_system_command_get_in_out(struct list_t *token_list, char *command_line)
 {
 	char *direction;
-	int incoming;
+	int incoming = -1;
 
 	/* Get direction string */
 	mem_system_command_expect(token_list, command_line);

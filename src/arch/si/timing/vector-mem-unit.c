@@ -168,8 +168,11 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 	int instructions_processed = 0;
 	int list_entries;
 	int i;
-	enum mod_access_kind_t access_kind_m2s;
+#if CGM
 	enum cgm_access_kind_t access_kind;
+#else
+	enum mod_access_kind_t access_kind_m2s;
+#endif
 	int list_index = 0;
 
 	list_entries = list_count(vector_mem->read_buffer);

@@ -1,5 +1,3 @@
-
-
 /* protocol.c
  *
  *  Created on: Apr 6, 2015
@@ -479,14 +477,14 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//Received downgrade from L2; a block needs to be shared...
@@ -595,14 +593,14 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 
 int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 
@@ -859,7 +857,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
@@ -867,15 +865,15 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *reply_packet;
-	struct cgm_packet_t *wb_packet;
-	struct cgm_packet_t *downgrade_packet;
+	/*struct cgm_packet_t *wb_packet;
+	struct cgm_packet_t *downgrade_packet;*/
 	struct cgm_packet_t *pending_request;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	int l3_map;
-	int temp_id;
+	/*int temp_id;*/
 
 	//L1 D cache flushed,
 	/*printf("L2 id %d downgrade_ack received from L1 d cache id %d cycle %llu\n", l2_caches[my_pid].id, message_packet->l1_cache_id, P_TIME);*/
@@ -996,23 +994,23 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	struct cgm_packet_t *reply_packet;
-	struct cgm_packet_t *wb_packet;
+	/*struct cgm_packet_t *reply_packet;
+	struct cgm_packet_t *wb_packet;*/
 	struct cgm_packet_t *downgrade_packet;
-	struct cgm_packet_t *pending_request;
+	/*struct cgm_packet_t *pending_request;*/
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	int l3_map;
-	int temp_id;
+	/*int temp_id;*/
 
 	/*printf("L2 id %d get fwd received from L2 id %d cycle %llu\n", l2_caches[my_pid].id, message_packet->l2_cache_id, P_TIME);*/
 
@@ -1166,23 +1164,23 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	struct cgm_packet_t *reply_packet;
+	/*struct cgm_packet_t *reply_packet;
 	struct cgm_packet_t *wb_packet;
 	struct cgm_packet_t *downgrade_packet;
-	struct cgm_packet_t *pending_request;
+	struct cgm_packet_t *pending_request;*/
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
-	int l3_map;
-	int temp_id;
+	/*int l3_map;*/
+	/*int temp_id;*/
 
 
 	/*if(message_packet->access_id == temp_id && temp_id > 0)
@@ -2145,7 +2143,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//int mshr_status = 0;
 	//int l3_map = -1;
 
-	int i = 0;
+	/*int i = 0;*/
 	int row = 0;
 
 	access_type = message_packet->access_type;
@@ -2340,8 +2338,8 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	struct cgm_packet_t *ort_packet;
-	enum cgm_access_kind_t access_type;
+	/*struct cgm_packet_t *ort_packet;
+	enum cgm_access_kind_t access_type;*/
 	unsigned int addr = 0;
 	long long access_id = 0;
 	int set = 0;
@@ -2356,17 +2354,17 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	int mshr_row = -1;
+	/*int mshr_row = -1;
 
 	int i = 0;
-	int adv = 0;
+	int adv = 0;*/
 	int row = 0;
 
 
 	assert(message_packet != NULL);
 
 	//the packet is from the L2 cache
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	addr = message_packet->address;
 	access_id = message_packet->access_id;
 
@@ -2464,7 +2462,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	int i = 0;
+	/*int i = 0;*/
 
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;

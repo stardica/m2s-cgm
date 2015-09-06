@@ -158,6 +158,7 @@ extern int x86_cpu_issue_width;
 
 /* Commit stage */
 extern char *x86_cpu_commit_kind_map[];
+
 extern enum x86_cpu_commit_kind_t
 {
 	x86_cpu_commit_kind_shared = 0,

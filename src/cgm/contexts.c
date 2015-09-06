@@ -321,7 +321,7 @@ void context_init (process_t *p, void (*f)(void))
 {
   void *stack;
   int n;
-  int temp;
+  /*int temp;*/
 
   p->c.start = f;
   stack = p->c.stack;
@@ -476,7 +476,7 @@ To fix this undef and redefine _FORTIFY_SOURCE to get things working again.*/
 void context_write (FILE *fp, process_t *p)
 {
   int i;
-  int n;
+  /*int n;*/
   unsigned long *l;
   unsigned char *curr_sp, *init_sp;
 
@@ -518,7 +518,7 @@ void context_write (FILE *fp, process_t *p)
 void context_read (FILE *fp, process_t *p)
 {
   int i;
-  int n;
+  /*int n;*/
   unsigned long *l;
   unsigned char *init_sp, *curr_sp;
 

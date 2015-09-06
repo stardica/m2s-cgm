@@ -200,9 +200,6 @@ void X86CoreDumpROB(X86Core *self, FILE *f)
 
 int X86ThreadCanDequeueFromROB(X86Thread *self)
 {
-	X86Core *core = self->core;
-	struct x86_uop_t *uop;
-
 	switch (x86_rob_kind)
 	{
 	case x86_rob_kind_private:
@@ -213,8 +210,9 @@ int X86ThreadCanDequeueFromROB(X86Thread *self)
 		break;
 	
 	//star commented out for clarity.
-	/*case x86_rob_kind_shared:
-
+	case x86_rob_kind_shared:
+		/*X86Core *core = self->core;
+		struct x86_uop_t *uop;
 		X86CoreTrimROB(core);
 		if (!core->rob_count)
 			return 0;
@@ -222,8 +220,10 @@ int X86ThreadCanDequeueFromROB(X86Thread *self)
 		uop = list_get(core->rob, core->rob_head);
 		assert(x86_uop_exists(uop));
 		if (uop->thread == self)
-			return 1;
-		break;*/
+			return 1;*/
+
+		fatal("X86ThreadCanDequeueFromROB(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 	}
 	return 0;
 }
@@ -233,8 +233,6 @@ struct x86_uop_t *X86ThreadGetROBHead(X86Thread *self)
 {
 	X86Core *core = self->core;
 	struct x86_uop_t *uop;
-	int idx;
-	int i;
 
 	switch (x86_rob_kind)
 	{
@@ -248,8 +246,10 @@ struct x86_uop_t *X86ThreadGetROBHead(X86Thread *self)
 		break;
 
 	//star >> commented out for clarity.
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
 
+		/*int idx;
+		int i;
 		X86CoreTrimROB(core);
 		if (!self->rob_count)
 			return NULL;
@@ -261,8 +261,10 @@ struct x86_uop_t *X86ThreadGetROBHead(X86Thread *self)
 			if (uop && uop->thread == self)
 				return uop;
 		}
-		panic("%s: no head found", __FUNCTION__);
-		break;*/
+		panic("%s: no head found", __FUNCTION__);*/
+		fatal("X86ThreadGetROBHead(): \"x86_rob_kind_shared\" add this back in\n");
+
+		break;
 	}
 	return NULL;
 }
@@ -272,7 +274,6 @@ void X86ThreadRemoveROBHead(X86Thread *self)
 {
 	X86Core *core = self->core;
 	struct x86_uop_t *uop = NULL;
-	int idx, i;
 
 	switch (x86_rob_kind)
 	{
@@ -294,7 +295,8 @@ void X86ThreadRemoveROBHead(X86Thread *self)
 		self->rob_count--;
 		break;
 	
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
+		/*int idx, i;
 		X86CoreTrimROB(core);
 		assert(self->rob_count);
 		for (i = 0; i < core->rob_count; i++)
@@ -307,8 +309,9 @@ void X86ThreadRemoveROBHead(X86Thread *self)
 				self->rob_count--;
 				break;
 			}
-		}
-		break;*/
+		}*/
+		fatal("X86ThreadRemoveROBHead(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 	}
 
 	/* Free instruction */
@@ -321,7 +324,7 @@ struct x86_uop_t *X86ThreadGetROBTail(X86Thread *self)
 {
 	X86Core *core = self->core;
 	struct x86_uop_t *uop;
-	int idx, i;
+	int idx;
 
 	switch (x86_rob_kind)
 	{
@@ -337,8 +340,9 @@ struct x86_uop_t *X86ThreadGetROBTail(X86Thread *self)
 			break;
 	
 	//star >> commented out for clarity.
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
 
+		/*int i;
 		X86CoreTrimROB(core);
 		if (!self->rob_count)
 			return NULL;
@@ -349,8 +353,9 @@ struct x86_uop_t *X86ThreadGetROBTail(X86Thread *self)
 			if (uop && uop->thread == self)
 				return uop;
 		}
-		panic("rob_tail: no tail found");
-		break;*/
+		panic("rob_tail: no tail found");*/
+		fatal("X86ThreadGetROBTail(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 
 	}
 	return NULL;
@@ -391,7 +396,7 @@ void X86ThreadRemoveROBTail(X86Thread *self)
 {
 	X86Core *core = self->core;
 	struct x86_uop_t *uop = NULL;
-	int idx, i;
+	int idx;
 
 	switch (x86_rob_kind)
 	{
@@ -409,8 +414,9 @@ void X86ThreadRemoveROBTail(X86Thread *self)
 		break;
 	
 	//star >> commented out for clarity.
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
 
+		/*int i;
 		X86CoreTrimROB(core);
 		assert(self->rob_count);
 		for (i = core->rob_count - 1; i >= 0; i--)
@@ -423,8 +429,9 @@ void X86ThreadRemoveROBTail(X86Thread *self)
 				self->rob_count--;
 				break;
 			}
-		}
-		break;*/
+		}*/
+		fatal("X86ThreadRemoveROBTail(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 	}
 
 	/* Free instruction */
@@ -454,12 +461,13 @@ int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 		break;
 	
 	//star >> commented out for clarity
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
 
-		X86CoreTrimROB(self);
+		/*X86CoreTrimROB(self);
 		if (self->rob_count < x86_rob_total_size)
-			return 1;
-		break;*/
+			return 1;*/
+		fatal("X86CoreCanEnqueueInROB(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 	}
 
 	return 0;
@@ -491,16 +499,17 @@ void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 		break;
 
 		//star >> commented out for clarity
-	/*case x86_rob_kind_shared:
+	case x86_rob_kind_shared:
 
-		X86CoreTrimROB(self);
+		/*X86CoreTrimROB(self);
 		assert(self->rob_count < x86_rob_total_size);
 		assert(!list_get(self->rob, self->rob_tail));
 		list_set(self->rob, self->rob_tail, uop);
 		self->rob_tail = self->rob_tail == x86_rob_total_size - 1 ? 0 : self->rob_tail + 1;
 		self->rob_count++;
-		thread->rob_count++;
-		break;*/
+		thread->rob_count++;*/
+		fatal("X86CoreEnqueueInROB(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
 	}
 
 	/* Instruction is in the ROB */

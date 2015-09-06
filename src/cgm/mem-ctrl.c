@@ -102,7 +102,7 @@ void memctrl_ctrl_io(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	long long access_id = 0;
+	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -115,7 +115,7 @@ void memctrl_ctrl_io(void){
 		message_packet = list_dequeue(mem_ctrl->Tx_queue);
 		assert(message_packet);
 
-		access_id = message_packet->access_id;
+		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/mem_ctrl->bus_width);
 
 		if(transfer_time == 0)
@@ -172,6 +172,7 @@ void memctrl_ctrl(void){
 			//access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 			addr = message_packet->address;
+			access_type = message_packet->access_type;
 
 			CGM_DEBUG(memctrl_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 					mem_ctrl->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);

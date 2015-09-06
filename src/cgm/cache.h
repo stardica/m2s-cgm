@@ -21,11 +21,6 @@
 #include <lib/util/string.h>
 #include <lib/util/misc.h>
 
-#include <arch/si/timing/gpu.h>
-#include <arch/x86/timing/cpu.h>
-
-#include <cgm/misc.h>
-#include <cgm/tasking.h>
 
 /*star todo fix this somehow. We shouldn't need to be included before all of
 the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
@@ -42,9 +37,15 @@ enum cgm_cache_block_state_t{
 	cgm_cache_block_state_num
 };
 
+#include <cgm/misc.h>
+#include <cgm/tasking.h>
 #include <cgm/directory.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>
+#include <arch/si/timing/gpu.h>
+#include <arch/x86/timing/cpu.h>
+
+
 /*#include <cgm/cgm.h>*/
 
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))

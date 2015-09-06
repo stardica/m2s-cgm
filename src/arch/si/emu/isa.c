@@ -285,38 +285,40 @@ int si_isa_get_num_elems(int data_format)
 	switch (data_format)
 	{
 
-	case 1:
-	case 2:
-	case 4:
-	{
-		num_elems = 1;
-		break;
-	}
+		case 1:
+		case 2:
+		case 4:
+		{
+			num_elems = 1;
+			break;
+		}
 
-	case 3:
-	case 5:
-	case 11:
-	{
-		num_elems = 2;
-		break;
-	}
+		case 3:
+		case 5:
+		case 11:
+		{
+			num_elems = 2;
+			break;
+		}
 
-	case 13:
-	{
-		num_elems = 3;	
-		break;
-	}
+		case 13:
+		{
+			num_elems = 3;
+			break;
+		}
 
-	case 10:
-	case 12:
-	case 14:
-	{
-		num_elems = 4;
-		break;
-	}
+		case 10:
+		case 12:
+		case 14:
+		{
+			num_elems = 4;
+			break;
+		}
 
-	default:
-		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+		default:
+		{
+			fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+		}
 
 	}
 
@@ -330,38 +332,38 @@ int si_isa_get_elem_size(int data_format)
 	switch (data_format)
 	{
 
-	/* 8-bit data */
-	case 1:
-	case 3:
-	case 10:
-	{
-		elem_size = 1;
-		break;
-	}
+		/* 8-bit data */
+		case 1:
+		case 3:
+		case 10:
+		{
+			elem_size = 1;
+			break;
+		}
 
-	/* 16-bit data */
-	case 2:
-	case 5:
-	case 12:
-	{
-		elem_size = 2;
-		break;
-	}
+		/* 16-bit data */
+		case 2:
+		case 5:
+		case 12:
+		{
+			elem_size = 2;
+			break;
+		}
 
-	/* 32-bit data */
-	case 4:
-	case 11:
-	case 13:
-	case 14:
-	{
-		elem_size = 4;	
-		break;
-	}
+		/* 32-bit data */
+		case 4:
+		case 11:
+		case 13:
+		case 14:
+		{
+			elem_size = 4;
+			break;
+		}
 
-	default:
-	{
-		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
-	}
+		default:
+		{
+			fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+		}
 	}
 
 	return elem_size;
