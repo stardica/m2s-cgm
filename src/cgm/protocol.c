@@ -6,12 +6,6 @@
 #include <cgm/protocol.h>
 
 
-#include <cgm/cgm.h>
-#include <cgm/protocol.h>
-#include <cgm/switch.h>
-#include <cgm/hub-iommu.h>
-#include <cgm/sys-agent.h>
-
 
 struct str_map_t protocol_kind_strn_map =
 { num_cgm_protocol_types,
@@ -1069,7 +1063,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	if(*cache_block_hit_ptr == 1)
 	{
 		//a GET_FWD means the block is exclusive in this core, but could also be modified
-		assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
+		/*assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);*/
 
 		//store the get_fwd in the pending request buffer
 		message_packet->downgrade_pending = 1;

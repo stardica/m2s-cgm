@@ -125,7 +125,7 @@ long long mod_access(struct mod_t *mod,
 		struct mod_client_info_t *client_info)
 {
 	struct mod_stack_t *stack;
-	int event;
+	int event = EV_MOD_NMOESI_INVALID;
 
 	/* Create module stack with new ID */
 	mod_stack_id++;
@@ -205,6 +205,9 @@ long long mod_access(struct mod_t *mod,
 	/* Schedule */
 	//star >> instrumented here.
 	//MemEvent(event, stack);
+
+
+	assert(event != -1);
 	esim_execute_event(event, stack);
 
 
@@ -243,7 +246,7 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_
 	struct m2s_cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 
-	int set;
+	int set = -1;
 	int way;
 	int tag;
 
@@ -263,6 +266,9 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_
 	{
 		panic("%s: invalid range kind (%d)", __FUNCTION__, mod->range_kind);
 	}
+
+	//star added this line
+	assert(set != -1);
 
 	for (way = 0; way < cache->assoc; way++)
 	{

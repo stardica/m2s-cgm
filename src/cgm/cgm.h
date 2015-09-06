@@ -20,8 +20,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 
-/*#include <cgm/cache.h>*/
-/*#include <cgm/protocol.h>*/
+#include <cgm/cache.h>
 #include <cgm/directory.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/configure.h>

@@ -30,6 +30,7 @@
 #include <arch/si/timing/compute-unit.h>
 
 #include <cgm/cgm.h>
+#include <cgm/protocol.h>
 #include <cgm/directory.h>
 #include <cgm/switch.h>
 #include <cgm/hub-iommu.h>

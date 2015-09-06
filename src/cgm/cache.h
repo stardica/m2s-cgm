@@ -24,19 +24,8 @@
 
 /*star todo fix this somehow. We shouldn't need to be included before all of
 the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
-enum cgm_cache_block_state_t{
-
-	cgm_cache_block_invalid = 0,
-	cgm_cache_block_noncoherent,
-	cgm_cache_block_modified,
-	cgm_cache_block_owned,
-	cgm_cache_block_exclusive,
-	cgm_cache_block_shared,
-	cgm_cache_block_transient,
-	cgm_cache_block_null,
-	cgm_cache_block_state_num
-};
-
+#include <cgm/cgm-struct.h>
+#include <cgm/protocol.h>
 #include <cgm/misc.h>
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
@@ -50,13 +39,7 @@ enum cgm_cache_block_state_t{
 
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
 
-
-//star todo integrate m2s prefetcher
-extern struct str_map_t cgm_cache_policy_map;
-extern struct str_map_t cgm_cache_block_state_map;
-extern struct str_map_t cgm_mem_access_strn_map;
-
-enum cache_type_enum{
+/*enum cache_type_enum{
 
 	l1_i_cache_t,
 	l1_d_cache_t,
@@ -65,25 +48,24 @@ enum cache_type_enum{
 	gpu_s_cache_t,
 	gpu_v_cache_t,
 	gpu_l2_cache_t
-};
+};*/
 
-enum cache_waylist_enum{
+/*enum cache_waylist_enum{
 
 	cache_waylist_head,
 	cache_waylist_tail
-};
+};*/
 
-enum cache_policy_t{
+/*enum cache_policy_t{
 
 	cache_policy_invalid = 0,
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random,
 	cache_policy_num
-};
+};*/
 
-struct cache_block_t{
-
+/*struct cache_block_t{
 
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
@@ -104,10 +86,9 @@ struct cache_block_t{
 
 	//for error checking
 	long long transient_access_id;
+};*/
 
-};
-
-struct cache_set_t{
+/*struct cache_set_t{
 
 	int id;
 
@@ -115,9 +96,9 @@ struct cache_set_t{
 	struct cache_block_t *way_tail;
 	struct cache_block_t *blocks;
 
-};
+};*/
 
-struct cache_t{
+/*struct cache_t{
 
 	//star >> my added elements.
 	char *name;
@@ -243,10 +224,15 @@ struct cache_t{
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;
 	unsigned int *store_address_history;
-};
+};*/
 
 //global variables.
-//star todo bring this into the cache struct
+
+//star todo integrate m2s prefetcher
+extern struct str_map_t cgm_cache_policy_map;
+extern struct str_map_t cgm_cache_block_state_map;
+extern struct str_map_t cgm_mem_access_strn_map;
+
 extern int QueueSize;
 extern int l1_i_inf;
 extern int l1_d_inf;

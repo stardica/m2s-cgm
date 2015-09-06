@@ -18,7 +18,7 @@
 #include <cgm/cgm.h>
 #include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
-#include <cgm/cache.h>
+/*#include <cgm/cache.h>*/
 
 
 //#include <DRAMSim/DRAMSim.h>

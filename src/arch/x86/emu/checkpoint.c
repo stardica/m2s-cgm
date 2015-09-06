@@ -620,7 +620,7 @@ static void save_regs(struct x86_regs_t *regs)
 	/* x87 */
 	{
 		int fpsw;
-		int ftw;
+		int ftw = - 1;
 		int rel_idx;
 		char buf[10];
 
@@ -639,9 +639,13 @@ static void save_regs(struct x86_regs_t *regs)
 			sprintf(buf, "st%d", rel_idx);
 			abs_idx = (regs->fpu_top + rel_idx) % 8;
 			save_value(buf, regs->fpu_stack[abs_idx].value, 10);
+
+			//star added this line
 			ftw = SETBITVALUE32(ftw, abs_idx,
 				regs->fpu_stack[abs_idx].valid);
 		}
+
+		assert(ftw != -1);
 		save_int16("ftw", ftw);
 	}
 

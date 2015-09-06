@@ -5764,8 +5764,7 @@ void si_isa_V_CMP_LT_U64_VOP3a_impl(struct si_work_item_t *work_item,
 
 /* Median of three numbers. */
 #define INST SI_INST_VOP3a
-void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t s0;
 	union si_reg_t s1;
@@ -5781,6 +5780,7 @@ void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item,
 	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
 	s1.as_uint = si_isa_read_reg(work_item, INST.src1);
 	s2.as_uint = si_isa_read_reg(work_item, INST.src2);
+	median.as_int = 0;
 
 	/* Determine the median. */
 	/* max3(s0, s1, s2) == s0 */
@@ -5808,6 +5808,9 @@ void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item,
 	{
 		fatal("%s: Median algorithm failed\n", __FUNCTION__);
 	}
+
+	//star added this line
+	assert(median.as_int != 0);
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, median.as_uint);

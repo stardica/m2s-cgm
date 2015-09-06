@@ -173,8 +173,8 @@ void net_event_handler(int event, void *data)
 
 	else if (event == EV_NET_OUTPUT_BUFFER)
 	{
-		struct net_buffer_t *input_buffer;
-		int lat;
+		struct net_buffer_t *input_buffer = NULL;
+		int lat = 0;
 
 		/* Debug */
 		net_debug("msg "
@@ -372,6 +372,7 @@ void net_event_handler(int event, void *data)
 				fatal("%s: message does not fit in buffer.\n%s",
 					net->name, net_err_large_message);
 
+			assert(input_buffer != NULL);
 			if (input_buffer->count + msg->size > input_buffer->size)
 			{
 				net_buffer_wait(input_buffer, event, stack);

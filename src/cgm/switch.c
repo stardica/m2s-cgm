@@ -696,7 +696,7 @@ float switch_get_distance(int dest_node, int src_node){
 
 struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 
-	struct cgm_packet_t *new_packet;
+	struct cgm_packet_t *new_packet = NULL;
 	int i = 0;
 
 	//choose a port this cycle to work from
@@ -748,6 +748,7 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 	/*CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu get from %s with size %d\n",
 			switches->name, new_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));*/
 
+	assert(new_packet != NULL);
 	return new_packet;
 }
 
@@ -785,7 +786,7 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 
 enum port_name get_next_queue_rb(enum port_name queue){
 
-	enum port_name next_queue;
+	enum port_name next_queue = invalid_queue;
 
 	if(queue == west_queue)
 	{
@@ -808,6 +809,7 @@ enum port_name get_next_queue_rb(enum port_name queue){
 		fatal("get_next_queue() Invalid port name\n");
 	}
 
+	assert(next_queue != invalid_queue);
 	return next_queue;
 }
 

@@ -1164,10 +1164,9 @@ void si_inst_VOP3_64_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg,
 		}
 	}
 }
-void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, 
-	char **inst_str, int str_size)
+void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size)
 {
-	int vdata_end;
+	int vdata_end = -1;
 
 	switch (op)
 	{
@@ -1195,6 +1194,8 @@ void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str,
 		default:
 			fatal("MUBUF/MTBUF opcode not recognized");
 	}
+
+	assert(vdata_end != -1);
 
 	operand_dump_series_vector(operand_str, vdata, vdata_end);
 	str_printf(inst_str, &str_size, "%s", operand_str);
@@ -1501,7 +1502,7 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
 			int sdst = inst->micro_inst.smrd.sdst;
-			int sdst_end;
+			int sdst_end = 0;
 			int op = inst->micro_inst.smrd.op;
 
 			/* S_LOAD_DWORD */
@@ -1525,8 +1526,7 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 							sdst_end = sdst + 15;
 							break;
 						default:
-							fatal("Invalid smrd "
-								"opcode");
+							fatal("Invalid smrd opcode");
 					}
 				}
 			}
@@ -1573,6 +1573,9 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 				fatal("Invalid smrd opcode");
 			}
 
+			//star added this line
+			assert(sdst_end != 0);
+
 			operand_dump_series_scalar(operand_str, sdst, sdst_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 
@@ -1583,7 +1586,7 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
 			int sbase = inst->micro_inst.smrd.sbase * 2;
-			int sbase_end;
+			int sbase_end = 0;
 			int op = inst->micro_inst.smrd.op;
 
 			/* S_LOAD_DWORD */
@@ -1615,8 +1618,10 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 				fatal("Invalid smrd opcode");
 			}
 
-			operand_dump_series_scalar(operand_str, sbase, 
-				sbase_end);
+			//star added this
+			assert(sbase_end != 0);
+
+			operand_dump_series_scalar(operand_str, sbase, sbase_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP2_LIT", &token_len))

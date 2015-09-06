@@ -564,11 +564,15 @@ void elf_enc_file_generate(struct elf_enc_file_t *file,
 	elf_header->e_ident[2] = ELFMAG2;
 	elf_header->e_ident[3] = ELFMAG3;
 
-	/* Set remaining e_ident properties - e_ident[7-15] is padding */
+	/* Set remaining e_ident properties - e_ident[7-14] is padding */
 	elf_header->e_ident[4] = ELFCLASS32;
 	elf_header->e_ident[5] = ELFDATA2LSB;
 	elf_header->e_ident[6] = EV_CURRENT;
-	elf_header->e_ident[16] = EI_NIDENT;
+
+	/*star changed to 15 from 16
+	in elf.h e_ident is e_ident[EI_NIDENT] which is #define EI_NIDENT (16)
+	so this should be accessible as 0 - 15*/
+	elf_header->e_ident[15] = EI_NIDENT;
 
 	elf_header->e_type = ET_EXEC;
 	

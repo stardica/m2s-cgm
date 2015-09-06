@@ -23,6 +23,8 @@
 
 /* NMOESI Event-Driven Simulation */
 
+extern int EV_MOD_NMOESI_INVALID;
+
 extern int EV_MOD_NMOESI_LOAD;
 extern int EV_MOD_NMOESI_LOAD_LOCK;
 extern int EV_MOD_NMOESI_LOAD_ACTION;

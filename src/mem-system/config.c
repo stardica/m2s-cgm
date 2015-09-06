@@ -496,7 +496,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	int enable_prefetcher;
 	char *prefetcher_type_str;
-	enum prefetcher_type_t prefetcher_type;
+	enum prefetcher_type_t prefetcher_type = prefetcher_type_invalid;
 	int prefetcher_ghb_size;
 	int prefetcher_it_size;
 	int prefetcher_lookup_depth;
@@ -590,6 +590,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
 	{
+		assert(prefetcher_type != prefetcher_type_invalid);
 		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, prefetcher_it_size, prefetcher_lookup_depth, prefetcher_type);
 	}
 
@@ -663,8 +664,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config,
 }
 
 
-static void mem_config_read_module_address_range(struct config_t *config,
-	struct mod_t *mod, char *section)
+static void mem_config_read_module_address_range(struct config_t *config, struct mod_t *mod, char *section)
 {
 	char *range_str;
 	char *token;
@@ -784,7 +784,7 @@ invalid_format:
 
 static void mem_config_read_modules(struct config_t *config)
 {
-	struct mod_t *mod;
+	struct mod_t *mod = NULL;
 
 	char *section;
 	char *mod_type;
@@ -810,6 +810,9 @@ static void mem_config_read_modules(struct config_t *config)
 			mod = mem_config_read_main_memory(config, section);
 		else
 			fatal("%s: %s: invalid or missing value for 'Type'.\n%s", mem_config_file_name, mod_name, mem_err_config_note);
+
+		//star added this line
+		assert(mod != NULL);
 
 		/* Read module address range */
 		mem_config_read_module_address_range(config, mod, section);

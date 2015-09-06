@@ -73,7 +73,7 @@
 //star >> added version here because eclipse was complaining.
 //this are pointers to strings its like saying visual_file_name[].
 //The version number is defined by either make or configure.
-static char *m2sversion = "0";
+/*static char *m2sversion = "0";*/
 //static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";

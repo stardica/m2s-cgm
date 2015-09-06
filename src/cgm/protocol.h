@@ -8,25 +8,37 @@
 #ifndef PROTOCOL_H_
 #define PROTOCOL_H_
 
+#include <cgm/switch.h>
+#include <cgm/hub-iommu.h>
+#include <cgm/sys-agent.h>
+#include <cgm/cgm.h>
 
 #include <lib/util/linked-list.h>
 
 #include <cgm/misc.h>
-/*#include <cgm/cgm.h>*/
-#include <cgm/cache.h>
-#include <cgm/switch.h>
-#include <cgm/hub-iommu.h>
-#include <cgm/sys-agent.h>
+/*#include <cgm/cache.h>*/
 
 
-enum protocol_kind_t {
+/*enum cgm_cache_block_state_t{
+
+	cgm_cache_block_invalid = 0,
+	cgm_cache_block_noncoherent,
+	cgm_cache_block_modified,
+	cgm_cache_block_owned,
+	cgm_cache_block_exclusive,
+	cgm_cache_block_shared,
+	cgm_cache_block_transient,
+	cgm_cache_block_null,
+	cgm_cache_block_state_num
+};*/
+
+/*enum protocol_kind_t {
 	cgm_protocol_mesi = 0,
 	cgm_protocol_moesi,
 	cgm_protocol_gmesi,
 	cgm_protocol_non_coherent,
 	num_cgm_protocol_types
 };
-
 
 enum cgm_access_kind_t {
 	cgm_access_invalid = 0,
@@ -68,15 +80,9 @@ enum cgm_access_kind_t {
 	cgm_access_write_back,
 	cgm_access_retry_i,//not used
 	num_access_types
-};
+};*/
 
-extern struct str_map_t protocol_kind_strn_map;
-extern struct str_map_t cgm_mem_access_strn_map;
-
-extern enum protocol_kind_t cgm_cache_protocol;
-extern enum protocol_kind_t cgm_gpu_cache_protocol;
-
-struct cgm_packet_t{
+/*struct cgm_packet_t{
 
 	char *name;
 
@@ -141,9 +147,15 @@ struct cgm_packet_status_t{
 	unsigned int address;
 	long long access_id;
 	int in_flight;
-};
+};*/
 
 /*struct cgm_packet_status_t;*/
+
+extern struct str_map_t protocol_kind_strn_map;
+extern struct str_map_t cgm_mem_access_strn_map;
+
+extern enum protocol_kind_t cgm_cache_protocol;
+extern enum protocol_kind_t cgm_gpu_cache_protocol;
 
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);

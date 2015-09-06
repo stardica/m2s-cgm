@@ -25,7 +25,7 @@
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/vector-mem-unit.h>
 
-#include <cgm/cache.h>
+/*#include <cgm/cache.h>*/
 
 
 struct si_reg_file_t;

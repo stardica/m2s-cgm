@@ -39,6 +39,7 @@
 
 
 /* Events */
+int EV_MOD_NMOESI_INVALID = -1;
 
 int EV_MOD_NMOESI_LOAD;
 int EV_MOD_NMOESI_LOAD_LOCK;
@@ -2663,7 +2664,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 	struct mod_t *mod = stack->mod;
 	struct mod_t *target_mod = stack->target_mod;
 
-	struct dir_t *dir;
+	struct dir_t *dir = NULL;
 	struct dir_entry_t *dir_entry;
 	uint32_t z;
 
@@ -2752,6 +2753,9 @@ void mod_handler_nmoesi_message(int event, void *data)
 		{
 			fatal("Unexpected message");
 		}
+
+		//star added this line
+		assert(mod != NULL);
 
 		/* Unlock the directory entry */
 		dir_entry_unlock(dir, stack->set, stack->way);

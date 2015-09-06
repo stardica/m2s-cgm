@@ -155,7 +155,7 @@ void si_lds_mem(struct si_lds_t *lds)
 	int list_entries;
 	int i, j;
 #if CGM
-	enum cgm_access_kind_t access_type;
+	enum cgm_access_kind_t access_type = cgm_access_invalid;
 #else
 	enum mod_access_kind_t access_type_m2s;
 #endif
@@ -234,6 +234,8 @@ void si_lds_mem(struct si_lds_t *lds)
 				uop->lds_witness--;
 #if CGM
 
+
+				assert(access_type != cgm_access_invalid);
 				cgm_lds_access(lds, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness);
 #else
 				mod_access(lds->compute_unit->lds_module, access_type, work_item_uop->lds_access_addr[j], &uop->lds_witness, NULL, NULL, NULL);

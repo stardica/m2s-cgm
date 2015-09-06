@@ -516,7 +516,7 @@ void net_graph_label_assignment(struct net_graph_t *graph)
 			}
 		}
 
-		struct net_graph_vertex_t *candidate;
+		struct net_graph_vertex_t *candidate = NULL;
 		struct net_graph_vertex_t *vertex;
 		struct list_t *candidate_list;
 		candidate_list = list_create();
@@ -579,6 +579,8 @@ void net_graph_label_assignment(struct net_graph_t *graph)
 				}
 			}
 		}
+		//star added this
+		assert(candidate != NULL);
 		candidate->key_val = label;
 		label++;
 		list_free(candidate_list);

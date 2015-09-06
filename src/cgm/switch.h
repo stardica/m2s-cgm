@@ -160,7 +160,8 @@ enum gpu_l2_map{
 
 enum port_name
 {
-	north_queue = 0,
+	invalid_queue = 0,
+	north_queue,
 	east_queue,
 	south_queue,
 	west_queue,

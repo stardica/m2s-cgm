@@ -174,8 +174,7 @@ unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 	return work_item->vreg[vreg].as_uint;
 }
 
-void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, 
-	unsigned int value)
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, unsigned int value)
 {
 	assert(vreg >= 0);
 	assert(vreg < 256);
@@ -280,7 +279,7 @@ unsigned int si_isa_const_mem_allocate(unsigned int size)
  */
 int si_isa_get_num_elems(int data_format)
 {
-	int num_elems;
+	int num_elems = 0;
 
 	switch (data_format)
 	{
@@ -322,12 +321,13 @@ int si_isa_get_num_elems(int data_format)
 
 	}
 
+	assert(num_elems != 0);
 	return num_elems;
 }
 
 int si_isa_get_elem_size(int data_format)
 {
-	int elem_size;
+	int elem_size = 0;
 
 	switch (data_format)
 	{
@@ -366,5 +366,6 @@ int si_isa_get_elem_size(int data_format)
 		}
 	}
 
+	assert(elem_size != 0);
 	return elem_size;
 }

@@ -247,9 +247,10 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 	struct net_t *net;
 	char *section;
 	char section_str[MAX_STRING_SIZE];
-	int def_input_buffer_size;
-	int def_output_buffer_size;
-	int def_bandwidth;
+	//star made these equal 0
+	int def_input_buffer_size = 0;
+	int def_output_buffer_size = 0;
+	int def_bandwidth = 0;
 
 	/* Create network */
 	net = net_create(name);
@@ -291,8 +292,9 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		char *node_name;
 		char *node_type;
 
-		int input_buffer_size;
-		int output_buffer_size;
+		//star made these equal zero
+		int input_buffer_size = 0;
+		int output_buffer_size = 0;
 		int bandwidth;
 		int lanes;	/* BUS lanes */
 
@@ -321,10 +323,8 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 		/* Get properties */
 		node_type = config_read_string(config, section, "Type", "");
-		input_buffer_size = config_read_int(config, section,
-				"InputBufferSize", def_input_buffer_size);
-		output_buffer_size = config_read_int(config, section,
-				"OutputBufferSize", def_output_buffer_size);
+		input_buffer_size = config_read_int(config, section, "InputBufferSize", def_input_buffer_size);
+		output_buffer_size = config_read_int(config, section, "OutputBufferSize", def_output_buffer_size);
 		bandwidth = config_read_int(config, section,
 				"BandWidth", def_bandwidth);
 		lanes = config_read_int(config, section, "Lanes", 1);
@@ -373,7 +373,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		char *src_node_name;
 		char *dst_node_name;
 
-		int bandwidth;
+		int bandwidth = 0;
 		int v_channel_count;
 		int src_buffer_size;
 		int dst_buffer_size;
@@ -407,8 +407,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		/* Fields */
 		link_type = config_read_string(config, section, "Type",
 				"Unidirectional");
-		bandwidth = config_read_int(config, section, "Bandwidth",
-				def_bandwidth);
+		bandwidth = config_read_int(config, section, "Bandwidth", def_bandwidth);
 		src_node_name = config_read_string(config, section, "Source", "");
 		dst_node_name = config_read_string(config, section, "Dest", "");
 		v_channel_count = config_read_int(config, section, "VC", 1);
@@ -958,7 +957,7 @@ void net_add_bus_port(struct net_t *net, struct net_node_t *src_node,
 	/* Checks */
 	assert(src_node->net == net);
 	assert(dst_node->net == net);
-	struct net_buffer_t *buffer;
+	struct net_buffer_t *buffer = NULL;
 
 	/* Condition 1: No support for direct BUS to BUS connection */
 	if (src_node->kind == net_node_bus && dst_node->kind == net_node_bus)
@@ -974,6 +973,9 @@ void net_add_bus_port(struct net_t *net, struct net_node_t *src_node,
 						input_buffer_size;
 
 		buffer = net_node_add_input_buffer(dst_node, dst_buffer_size);
+
+		//star added this
+		assert(buffer != NULL);
 
 		assert(!buffer->link);
 		list_add(src_node->dst_buffer_list, buffer);
