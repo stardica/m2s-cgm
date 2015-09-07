@@ -1880,6 +1880,9 @@ int cache_finish_create(){
 			l2_caches[i].l2_get = cgm_mesi_l2_get;
 			l2_caches[i].l2_downgrade_ack = cgm_mesi_l2_downgrade_ack;
 			l2_caches[i].l2_get_fwd = cgm_mesi_l2_get_fwd;
+			l2_caches[i].l2_getx_fwd = cgm_mesi_l2_getx_fwd;
+			l2_caches[i].l2_getx_fwd_inval_ack = cgm_mesi_l2_getx_fwd_inval_ack;
+			l2_caches[i].l2_inval_ack = cgm_mesi_l2_inval_ack;
 			l2_caches[i].l2_write_block = cgm_mesi_l2_write_block;
 		}
 		else
@@ -2036,6 +2039,8 @@ int cache_finish_create(){
 			l3_caches[i].l3_get = cgm_mesi_l3_get;
 			l3_caches[i].l3_downgrade_ack = cgm_mesi_l3_downgrade_ack;
 			l3_caches[i].l3_downgrade_nack = cgm_mesi_l3_downgrade_nack;
+			l3_caches[i].l3_getx_fwd_nack = cgm_mesi_l3_getx_fwd_nack;
+			l3_caches[i].l3_getx_fwd_ack = cgm_mesi_l3_getx_fwd_ack;
 			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
 		}
 		else

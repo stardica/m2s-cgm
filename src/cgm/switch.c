@@ -850,12 +850,13 @@ void switch_north_io_ctrl(void){
 		{
 
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd)
+			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
+			|| message_packet->access_type == cgm_access_getx_fwd)
 			{
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
-			else if (message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv)
+			else if (message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv || message_packet->access_type == cgm_access_upgrade_ack)
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);
@@ -1007,7 +1008,8 @@ void switch_south_io_ctrl(void){
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 			}
-			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack)
+			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
+					|| message_packet->access_type == cgm_access_getx_fwd_nack)
 			{
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}

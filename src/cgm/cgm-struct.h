@@ -59,6 +59,11 @@ enum cgm_access_kind_t {
 	cgm_access_gets_i,
 	cgm_access_get, //get specific to d caches
 	cgm_access_get_fwd,
+	cgm_access_get_fwd_nack,
+	cgm_access_getx_fwd,
+	cgm_access_getx_fwd_nack,
+	cgm_access_getx_fwd_ack,
+	cgm_access_getx_fwd_inval_ack,
 	cgm_access_gets_s, //get shared specific to s caches
 	cgm_access_gets_v, //get shared specific to v caches
 	cgm_access_getx, //get exclusive (or get with intent to write)
@@ -71,8 +76,8 @@ enum cgm_access_kind_t {
 	cgm_access_downgrade_nack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
-	cgm_access_put_clnx, //put block in exclusive or modified state
-	cgm_access_putx, //request for write back of cache block exclusive data.
+	cgm_access_put_clnx, //put block in clean exclusive state
+	cgm_access_putx, //
 	cgm_access_puts, //request for write back of cache block in shared state.
 	cgm_access_puto, //request for write back of cache block in owned state.
 	cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
@@ -155,7 +160,6 @@ struct cgm_packet_status_t{
 
 struct cache_block_t{
 
-
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
 
@@ -165,6 +169,7 @@ struct cache_block_t{
 	int way;
 	int prefetched;
 	int flush_pending;
+	unsigned int address;
 
 	enum cgm_cache_block_state_t state;
 	enum cgm_cache_block_state_t transient_state;
@@ -175,7 +180,6 @@ struct cache_block_t{
 
 	//for error checking
 	long long transient_access_id;
-
 };
 
 struct cache_set_t{
@@ -293,6 +297,10 @@ struct cache_t{
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L3 cache protocol virtual functions
@@ -300,6 +308,8 @@ struct cache_t{
 	void (*l3_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_getx_fwd_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions

@@ -34,197 +34,7 @@ the #includes (cgm.h) is loading protocol.h before cache_block_state_t is define
 #include <arch/si/timing/gpu.h>
 #include <arch/x86/timing/cpu.h>
 
-
-/*#include <cgm/cgm.h>*/
-
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
-
-/*enum cache_type_enum{
-
-	l1_i_cache_t,
-	l1_d_cache_t,
-	l2_cache_t,
-	l3_cache_t,
-	gpu_s_cache_t,
-	gpu_v_cache_t,
-	gpu_l2_cache_t
-};*/
-
-/*enum cache_waylist_enum{
-
-	cache_waylist_head,
-	cache_waylist_tail
-};*/
-
-/*enum cache_policy_t{
-
-	cache_policy_invalid = 0,
-	cache_policy_lru,
-	cache_policy_fifo,
-	cache_policy_random,
-	cache_policy_num
-};*/
-
-/*struct cache_block_t{
-
-	struct cache_block_t *way_next;
-	struct cache_block_t *way_prev;
-
-	int tag;
-	int set;
-	int transient_tag;
-	int way;
-	int prefetched;
-	int flush_pending;
-
-	enum cgm_cache_block_state_t state;
-	enum cgm_cache_block_state_t transient_state;
-
-	//each block has it's own directory (unsigned char)
-	union directory_t directory_entry;
-	int data_type;
-
-	//for error checking
-	long long transient_access_id;
-};*/
-
-/*struct cache_set_t{
-
-	int id;
-
-	struct cache_block_t *way_head;
-	struct cache_block_t *way_tail;
-	struct cache_block_t *blocks;
-
-};*/
-
-/*struct cache_t{
-
-	//star >> my added elements.
-	char *name;
-	int id;
-
-	enum cache_type_enum cache_type;
-
-	//this is so the cache can advance itself
-	eventcount *ec_ptr;
-
-	//cache configuration settings
-	unsigned int num_slices;
-	unsigned int num_sets;
-	unsigned int block_size;
-	unsigned int assoc;
-	unsigned int num_ports;
-	enum cache_policy_t policy;
-	char * policy_type;
-	int slice_type;
-	int bus_width;
-
-	//cache data
-	struct cache_set_t *sets;
-	unsigned int block_mask;
-	int log_block_size;
-	unsigned int set_mask;
-	int log_set_size;
-
-	//mshr control links
-	int mshr_size;
-	struct mshr_t *mshrs;
-
-	//outstanding request table
-	int **ort;
-	struct list_t *ort_list;
-	int max_coal;
-
-	//cache queues
-	//star todo rewrite all of this queues should be inboxes
-	//buffers are internal buffers
-	struct list_t *Rx_queue_top;
-	struct list_t *Rx_queue_bottom;
-	struct list_t *Tx_queue_top;
-	struct list_t *Tx_queue_bottom;
-	struct list_t *Coherance_Tx_queue;
-	struct list_t *Coherance_Rx_queue;
-	struct list_t *retry_queue;
-	struct list_t *write_back_buffer;
-	struct list_t *pending_request_buffer;
-	struct list_t *next_queue;
-	struct list_t *last_queue;
-
-	//io ctrl
-	eventcount volatile *cache_io_up_ec;
-	task *cache_io_up_tasks;
-
-	eventcount volatile *cache_io_down_ec;
-	task *cache_io_down_tasks;
-
-	//physical characteristics
-	unsigned int latency;
-	unsigned int wire_latency;
-	unsigned int directory_latency;
-
-	//directory bit vectors for coherence
-	unsigned int dir_latency;
-	union directory_t **dir;
-	unsigned int share_mask;
-
-	//L1 I cache protocol virtual functions
-	void (*l1_i_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l1_i_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//L1 D cache protocol virtual functions
-	void (*l1_d_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//L2 cache protocol virtual functions
-	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//L3 cache protocol virtual functions
-	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//GPU S cache protocol virtual functions
-	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_s_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_s_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//GPU V cache protocol virtual functions
-	void (*gpu_v_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_v_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_v_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-	//GPU L2 cache protocol virtual functions
-	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_l2_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
-	//statistics
-	long long fetches;
-	long long loads;
-	long long stores;
-	long long hits;
-	long long invalid_hits;
-	long long misses;
-	long long upgrade_misses;
-	long long retries;
-	long long coalesces;
-	long long mshr_entires;
-	long long stalls;
-	unsigned int *fetch_address_history;
-	unsigned int *load_address_history;
-	unsigned int *store_address_history;
-};*/
 
 //global variables.
 
@@ -356,6 +166,7 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way);
+void cgm_cache_clear_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
 int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);
@@ -383,7 +194,8 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);
-void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way, int bit);
+void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way);
+void cgm_cache_clear_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
