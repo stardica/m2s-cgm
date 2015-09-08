@@ -63,6 +63,7 @@ enum cgm_access_kind_t {
 	cgm_access_getx_fwd,
 	cgm_access_getx_fwd_nack,
 	cgm_access_getx_fwd_ack,
+	cgm_access_getx_fwd_inval,
 	cgm_access_getx_fwd_inval_ack,
 	cgm_access_gets_s, //get shared specific to s caches
 	cgm_access_gets_v, //get shared specific to v caches
@@ -291,6 +292,7 @@ struct cache_t{
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);

@@ -1,4 +1,141 @@
 
+void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *getx_fwd_reply_packet;
+	struct cgm_packet_t *pending_getx_fwd_request;
+
+	struct cgm_packet_t *inval_packet;
+
+	int l3_map;
+
+	//star todo add in the wb buffer checks
+	/*printf("L2 id %d getx fwd received from L2 id %d cycle %llu\n", cache->id, message_packet->l2_cache_id, P_TIME);*/
+
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*printf("L2 id %d block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));*/
+
+	//block still present in L2 cache
+	if(*cache_block_hit_ptr == 1)
+	{
+		//a GET_FWD means the block is exclusive in this core, but could also be modified
+		assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
+
+		/*if not found uh-oh...*/
+		/*the address better be the same too...*/
+		/*assert(pending_getx_fwd_request);
+		assert(pending_getx_fwd_request->address == message_packet->address);*/
+
+		//invalidate the local block
+		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_invalid);
+
+		//prepare to forward the block
+		//set access type
+		message_packet->access_type = cgm_access_put_clnx;
+
+		//set the block state
+		message_packet->cache_block_state = cgm_cache_block_exclusive;
+
+		//set message package size
+		message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+		//fwd block to requesting core
+		//update routing headers swap dest and src
+		//requesting node
+		message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+		//owning node L2
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		/*printf("requester name %s and id %d\n", pending_request->src_name, pending_request->l2_cache_id);*/
+		/*temp_id = pending_request->access_id;*/
+
+		//transmit block to requesting node
+		message_packet = list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->Tx_queue_bottom, message_packet);
+		advance(cache->cache_io_down_ec);
+		/*printf("L2 id %d exclusive block forwarded to L2 cache id %d\n", cache->id, message_packet->l2_cache_id);*/
+
+
+		///////////////
+		//getx_fwd_ack
+		///////////////
+
+		//send the getx_fwd_ack to L3 cache.
+
+		//create downgrade_ack
+		getx_fwd_reply_packet = packet_create();
+		assert(getx_fwd_reply_packet);
+
+		init_getx_fwd_ack_packet(getx_fwd_reply_packet, message_packet->address);
+
+		//fwd reply (getx_fwd_ack) to L3
+		l3_map = cgm_l3_cache_map(message_packet->set);
+
+		//fakes src as the requester
+		/*reply_packet->l2_cache_id = l2_caches[my_pid].id;*/
+		getx_fwd_reply_packet->l2_cache_id = message_packet->l2_cache_id;
+		getx_fwd_reply_packet->l2_cache_name = message_packet->src_name;
+
+		getx_fwd_reply_packet->src_name = cache->name;
+		getx_fwd_reply_packet->src_id = str_map_string(&node_strn_map, cache->name);
+		getx_fwd_reply_packet->dest_name = l3_caches[l3_map].name;
+		getx_fwd_reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+		//transmit downgrad_ack to L3 (home)
+		list_enqueue(cache->Tx_queue_bottom, getx_fwd_reply_packet);
+		advance(cache->cache_io_down_ec);
+
+		//destroy the L1 D inval_ack message because we don't need it anymore.
+		/*message_packet = list_remove(cache->last_queue, message_packet);
+		free(message_packet);*/
+
+		/*printf("L2 id %d sent getx_fwd_ack to L3 id %d cycle %llu\n", cache->id, l3_map, P_TIME);*/
+	}
+	//block was evicted while flush was in progress
+	else if(*cache_block_hit_ptr == 0)
+	{
+		//block was locally dropped
+
+		//set cgm_access_getx_fwd_nack
+		message_packet->access_type = cgm_access_getx_fwd_nack;
+
+		//fwd reply (downgrade_nack) to L3
+		l3_map = cgm_l3_cache_map(message_packet->set);
+
+		/*here send the nack down to the L3
+		don't change any of the source information*/
+
+		/*message_packet->l2_cache_id = l2_caches[my_pid].id;
+		message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
+		reply_packet->src_name = l2_caches[my_pid].name;
+		reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);*/
+
+
+		message_packet->dest_name = l3_caches[l3_map].name;
+		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+		//charge delay
+		P_PAUSE(cache->latency);
+
+		//transmit block to L3
+		cache_put_io_down_queue(cache, message_packet);
+	}
+	else
+	{
+		fatal("cgm_mesi_l2_getx_fwd(): l2 miss on getx_fwd check this\n");
+	}
+
+
+	return;
+
 //set retry state
 		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
 

@@ -30,14 +30,14 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet);
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int tag, int pending, enum cgm_cache_block_state_t cache_block_state);
 void init_reply_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
-void init_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
+void init_getx_fwd_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
 void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
-////////////////
-/////CPU MESI protocol V2
-////////////////
+//////////////////////
+/////CPU MESI protocol
+//////////////////////
 
 
 //implements a MESI protocol.
@@ -48,6 +48,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);

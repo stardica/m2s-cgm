@@ -37,6 +37,7 @@ the #includes (cgm.h) is loading protocol.h before cache_block_state_t is define
 #define WIRE_DELAY(wire_latency) (etime.count + (wire_latency *2))
 
 //global variables.
+extern long long temp_id;
 
 //star todo integrate m2s prefetcher
 extern struct str_map_t cgm_cache_policy_map;

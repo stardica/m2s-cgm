@@ -1356,6 +1356,11 @@ void l1_d_cache_ctrl(void){
 				advance itself when the evict results in a write back buffer entry.*/
 				step--;
 			}
+			else if (access_type == cgm_access_getx_fwd_inval)
+			{
+				//Call back function (cgm_mesi_l1_d_getx_fwd_inval)
+				l1_d_caches[my_pid].l1_d_getx_fwd_inval(&(l1_d_caches[my_pid]), message_packet);
+			}
 			else if (access_type == cgm_access_inv)
 			{
 				//Invalidation request from L2 cache
@@ -1523,7 +1528,7 @@ void l2_cache_ctrl(void){
 	set_id((unsigned int)my_pid);
 
 	int l3_map;
-	int upgrade_ack_count = 0;
+	/*int upgrade_ack_count = 0;*/
 
 
 	while(1)
@@ -1713,6 +1718,11 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_getx_fwd)
 				l2_caches[my_pid].l2_getx_fwd(&(l2_caches[my_pid]), message_packet);
 			}
+			else if(access_type == cgm_access_getx_fwd_inval_ack)
+			{
+				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
+				l2_caches[my_pid].l2_getx_fwd_inval_ack(&(l2_caches[my_pid]), message_packet);
+			}
 			else if(access_type == cgm_access_upgrade)
 			{
 
@@ -1847,11 +1857,6 @@ void l2_cache_ctrl(void){
 					packet_destroy(message_packet);
 				}
 
-			}
-			else if(access_type == cgm_access_getx_fwd_inval_ack)
-			{
-				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
-				l2_caches[my_pid].l2_getx_fwd_inval_ack(&(l2_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_inv_ack)
 			{
@@ -2095,6 +2100,8 @@ void l3_cache_ctrl(void){
 				//check to see if access is from an already owning core
 				owning_core = cgm_cache_is_owning_core(&(l3_caches[my_pid]), message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
+				/*printf("L3 id %d getx received access id %d cycle %llu\n", cache->id, message_packet->l2_cache_id, P_TIME);*/
+
 				switch(*cache_block_state_ptr)
 				{
 
@@ -2128,6 +2135,7 @@ void l3_cache_ctrl(void){
 
 						//set the returned block state
 						message_packet->cache_block_state = cgm_cache_block_exclusive;
+						/*message_packet->cache_block_state = cgm_cache_block_shared;*/
 
 						//set dest and src
 						message_packet->src_name = l3_caches[my_pid].name;
@@ -2143,6 +2151,9 @@ void l3_cache_ctrl(void){
 						break;
 
 					case cgm_cache_block_shared:
+
+						/*printf("L3 getx shared\n");
+						STOP;*/
 						//note block can be in shared state because of a previous downgrade.
 
 						/*star todo UPDATE THIS. THis is temporary code and is wrong.
@@ -2239,9 +2250,12 @@ void l3_cache_ctrl(void){
 						}
 						else if(sharers >= 1)
 						{
-							// in the exclusive state there should only be one core with the cache block
+							//in the exclusive state there should only be one core with the cache block
 							//there better be only one owning core at this stage.
 							assert(sharers == 1);
+
+							/*printf("L3 id %d sending Getx_fwd access id %llu cycle %llu\n", l3_caches[my_pid].id, message_packet->access_id, P_TIME);
+							temp_id = message_packet->access_id;*/
 
 							/*forward the GETX to the owning core*/
 
@@ -2712,10 +2726,14 @@ void l1_d_cache_down_io_ctrl(void){
 			advance(&l2_cache[my_pid]);
 		}
 		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv_ack
-				|| message_packet->access_type == cgm_access_downgrade_ack)
+				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack)
 		{
 			list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 			advance(&l2_cache[my_pid]);
+		}
+		else
+		{
+			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 		}
 	}
 
@@ -2772,7 +2790,7 @@ void l2_cache_up_io_ctrl(void){
 				advance(&l1_d_cache[my_pid]);
 			}
 			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_inv
-					|| message_packet->access_type == cgm_access_downgrade)
+					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval)
 			{
 				list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l1_d_cache[my_pid]);
