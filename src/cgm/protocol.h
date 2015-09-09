@@ -31,6 +31,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 void init_reply_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
 void init_getx_fwd_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
+void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
 void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
@@ -52,10 +53,12 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 

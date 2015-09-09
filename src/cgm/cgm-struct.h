@@ -117,7 +117,7 @@ struct cgm_packet_t{
 	int size;
 	int coalesced;
 
-	//for evictions, write backs, downgrades
+	//for evictions, write backs, downgrades, upgrades
 	int flush_pending;
 	int downgrade;
 	int downgrade_pending;
@@ -125,6 +125,9 @@ struct cgm_packet_t{
 	int inval;
 	int inval_pending;
 	int inval_ack;
+	int upgrade;
+	int upgrade_pending;
+	int inval_ack_count;
 
 
 	int l1_victim_way;
@@ -170,6 +173,7 @@ struct cache_block_t{
 	int way;
 	int prefetched;
 	int flush_pending;
+	int upgrade_pending;
 	unsigned int address;
 
 	enum cgm_cache_block_state_t state;
@@ -297,17 +301,19 @@ struct cache_t{
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
+	void (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L3 cache protocol virtual functions
 	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
