@@ -45,6 +45,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_inv_ack", cgm_access_inv_ack},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
+		{"cgm_access_upgrade_inval", cgm_access_upgrade_inval},
+		{"cgm_access_upgrade_inval_ack", cgm_access_upgrade_inval_ack},
 		{"cgm_access_downgrade", cgm_access_downgrade},
 		{"cgm_access_downgrade_ack", cgm_access_downgrade_ack},
 		{"cgm_access_downgrade_nack", cgm_access_downgrade_nack},
@@ -170,6 +172,15 @@ void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, un
 	upgrade_request_packet->size = 1;
 	upgrade_request_packet->address = address;
 
+	return;
+}
+
+void init_upgrade_inval_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address){
+
+	upgrade_request_packet->access_type = cgm_access_upgrade_inval;
+	upgrade_request_packet->upgrade = 1;
+	upgrade_request_packet->size = 1;
+	upgrade_request_packet->address = address;
 
 	return;
 }
@@ -198,14 +209,14 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -255,7 +266,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			cache->hits++;
 
 			//set retry state and delay
-			if(access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				P_PAUSE(cache->latency);
 
@@ -274,14 +285,14 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -351,7 +362,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			/*printf("d cache load block state %s\n", str_map_value(&cache_block_state_map, *cache_block_state_ptr));*/
 
 			//set the retry state and charge latency
-			if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				/*P_PAUSE(l1_d_caches[my_pid].latency);*/
 				P_PAUSE(cache->latency);
@@ -375,14 +386,14 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -426,8 +437,12 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 		case cgm_cache_block_shared:
 
+			//this is an upgrade_miss
+
 			//stats
 			cache->upgrade_misses++;
+
+			assert(message_packet->access_type != cgm_access_store_retry);
 
 			printf("L1 D %d upgrade miss access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);
 
@@ -476,7 +491,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			}
 
 			//check for retry state
-			if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				P_PAUSE(cache->latency);
 
@@ -784,14 +799,14 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	int l3_map;
@@ -880,7 +895,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_put_io_up_queue(cache, message_packet);
 
 			//check if the packet has coalesced accesses.
-			if(access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -892,14 +907,14 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	int l3_map;
@@ -984,7 +999,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			cache_put_io_up_queue(cache, message_packet);
 
-			if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -996,14 +1011,14 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	int l3_map;
@@ -1092,7 +1107,7 @@ void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_put_io_up_queue(cache, message_packet);
 
 			//set retry state
-			if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -1450,9 +1465,7 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 		printf("L2 id %d upgrade request block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
 
-
-		//insert the upgrade into the pending request buffer.
-		//store the upgrade request in the pending request buffer
+		//insert the upgrade request into the pending request buffer
 		message_packet->upgrade_pending = 1;
 		cgm_cache_insert_pending_request_buffer(cache, message_packet);
 
@@ -1462,6 +1475,10 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		//send upgrade request to L3 (home)
 		upgrade_request_packet = packet_create();
 		init_upgrade_request_packet(upgrade_request_packet, message_packet->address);
+
+		//delete later
+		upgrade_request_packet->access_id = message_packet->access_id;
+		//delete later
 
 		//set routing headers
 		l3_map = cgm_l3_cache_map(message_packet->set);
@@ -1484,8 +1501,134 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	}
 	else if(*cache_block_hit_ptr == 0)
 	{
+		/*star todo block evicted by L2 and inval is on its way to L1
+		change upgrade request to GetX and send on to L3 cache.*/
 		fatal("cgm_mesi_l2_upgrade(): miss on upgrade request\n");
 	}
+
+
+	return;
+}
+
+void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	printf("L2 id %d received upgrade_inval\n", cache->id);
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	printf("L2 %d upgrade request received access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);
+
+	//received upgrade_ivnal request from L3
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//if the block is in the cache invalidate it
+	if(*cache_block_hit_ptr == 1)
+	{
+		printf("L2 id %d upgrade_inval request block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+		//invalidate the block
+
+		/*transmit inval up to L1 D cache
+		no need for an ack from L1 D cache*/
+
+		//set local cache block and directory to invalid
+		cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+		//transmit upgrade_inval_ack to requesting L2 cache
+		message_packet->access_type = cgm_access_upgrade_ack;
+
+		//update routing headers swap dest and src
+		//requesting node
+		message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+		//owning node L2
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		/*printf("requester name %s and id %d\n", pending_request->src_name, pending_request->l2_cache_id);*/
+		/*temp_id = pending_request->access_id;*/
+
+		//transmit block to requesting node
+		cache_put_io_down_queue(cache, message_packet);
+		/*message_packet = list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->Tx_queue_bottom, message_packet);
+		advance(cache->cache_io_down_ec);*/
+
+		printf("L2 id %d upgrade_ack sent to L2 id %d\n", cache->id, message_packet->dest_id);
+		STOP;
+	}
+	else
+	{
+		fatal("cgm_mesi_l2_upgrade_inval(): block miss, need to code this interaction\n");
+
+	}
+
+	return;
+}
+
+
+void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	/*enum cgm_access_kind_t access_type;*/
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *upgrade_request_packet;
+
+	int num_cores = x86_cpu_num_cores;
+	int dirty, num_sharers, owning_core;
+
+	/*access_type = message_packet->access_type;*/
+	/*access_id = message_packet->access_id;*/
+
+	printf("L2 id %d upgrade_ack received number of sharers %d (other than myself)\n", cache->id, message_packet->upgrade_ack);
+	printf("P_PAUSE here\n");
+	P_PAUSE(1000000);
+
+
+
+
+	//upgrade_ack from L3
+	P_PAUSE(cache->latency);
+
+	//we have permission to upgrade our set block state and retry access
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//find the access in the ORT table and clear it.
+	ort_clear(cache, message_packet);
+
+	/*if the block is no longer here on upgrade_ack,
+	the block was evicted and maybe in the WB we can treat this as a miss.
+	This means the trasient state is broken.*/
+	if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cgm_cache_block_shared)
+	{
+		//printf("evicted\n");
+		//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+		//fatal("access_id %llu evicted or not shared as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+	}
+
+	//set the state to exclusive and clear the transient state
+	cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
+	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, (int) NULL, cgm_cache_block_null);
+
+	//enter the retry state
+	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+	assert(message_packet->access_type == cgm_access_store_retry);
+	assert(message_packet->coalesced != 1);
+
+	message_packet = list_remove(cache->last_queue, message_packet);
+	list_enqueue(cache->retry_queue, message_packet);
 
 
 	return;
@@ -1929,14 +2072,14 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -2025,7 +2168,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_put_io_up_queue(cache, message_packet);
 
 			//check if the packet has coalesced accesses.
-			if(access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -2037,7 +2180,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
@@ -2047,7 +2190,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int num_cores = x86_cpu_num_cores;
 	int dirty, sharers, owning_core;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -2147,7 +2290,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cache_put_io_up_queue(cache, message_packet);
 
 			//check if the packet has coalesced accesses.
-			if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -2202,7 +2345,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache_put_io_up_queue(cache, message_packet);
 
 				//check if the packet has coalesced accesses.
-				if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -2258,7 +2401,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache_put_io_up_queue(cache, message_packet);
 
 				//check if the packet has coalesced accesses.
-				if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -2287,7 +2430,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	enum cgm_access_kind_t access_type;
+	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
@@ -2295,9 +2438,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int *cache_block_state_ptr = &cache_block_state;
 
 	int num_cores = x86_cpu_num_cores;
-	int dirty, sharers, owning_core;
+	int dirty, num_sharers, owning_core, xowning_core;
 
-	access_type = message_packet->access_type;
+	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
@@ -2307,7 +2450,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	//check the directory dirty bit status
 	dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
@@ -2336,7 +2479,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);
 
 			//evict the victim
-			cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way, sharers);
+			cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way, num_sharers);
 
 			//clear the directory entry
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
@@ -2398,11 +2541,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_put_io_up_queue(cache, message_packet);
 
 			//check if the packet has coalesced accesses.
-			if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+			/*if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
-			}
+			}*/
 
 			break;
 
@@ -2418,11 +2561,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if the request comes from a different core the block will need to be invalidated and forwarded to the requesting core.
 			the block should only ever be in one core if not downgraded to shared*/
 
-			assert(sharers >= 0 && sharers <= num_cores);
+			assert(num_sharers >= 0 && num_sharers <= num_cores);
 			assert(owning_core >= 0 && owning_core <= 1);
 
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
-			if(sharers == 0 || owning_core == 1)
+			if(num_sharers == 0 || owning_core == 1)
 			{
 				//update message status
 				message_packet->access_type = cgm_access_put_clnx;
@@ -2453,17 +2596,17 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_put_io_up_queue(cache, message_packet);
 
 				//check if the packet has coalesced accesses.
-				if(access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+				if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 				}
 			}
-			else if(sharers >= 1)
+			else if(num_sharers >= 1)
 			{
 				//in the exclusive state there should only be one core with the cache block
 				//there better be only one owning core at this stage.
-				assert(sharers == 1);
+				assert(num_sharers == 1);
 
 				/*printf("L3 id %d sending Getx_fwd access id %llu cycle %llu\n", l3_caches[my_pid].id, message_packet->access_id, P_TIME);
 				temp_id = message_packet->access_id;
@@ -2488,10 +2631,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				We can derive the home (directory) later from the original access address.*/
 
 				//get the id of the owning core L2
-				owning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+				xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
 
 				//owning node
-				message_packet->dest_name = str_map_value(&l2_strn_map, owning_core);
+				message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
 				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
 
 				//requesting node L2
@@ -2503,11 +2646,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_put_io_up_queue(cache, message_packet);
 
 				//check if the packet has coalesced accesses.
-				if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+				/*if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
-				}
+				}*/
 
 			}
 
@@ -2692,6 +2835,128 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//charge delay
 	P_PAUSE(cache->latency);
+
+	return;
+}
+
+void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	/*enum cgm_access_kind_t access_type;*/
+	/*long long access_id = 0;*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *upgrade_inval_request_packet;
+
+	int num_cores = x86_cpu_num_cores;
+	int dirty, num_sharers, owning_core, i;
+
+	/*access_type = message_packet->access_type;*/
+	/*access_id = message_packet->access_id;*/
+
+	//star todo this needs to check state of directory and respond accordingly.
+	printf("L3 %d upgrade request received from L2 %d\n", cache->id, message_packet->l2_cache_id);
+
+	P_PAUSE(cache->latency);
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//get the directory state
+	//check the directory dirty bit status
+	dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
+	//get number of sharers
+	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	//check to see if access is from an already owning core
+	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+	printf("L3 id %d block hit %d as %s number_sharers %d\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), num_sharers);
+
+	//if the block is in the L3 cache it should be in the shared state
+	if(*cache_block_hit_ptr == 1)
+	{
+		//block should be in this cache and in the shared state
+		assert(*cache_block_state_ptr == cgm_cache_block_shared);
+
+		//should not be dirty in the directory
+		assert(dirty == 0);
+
+		/*there should always be at least one sharer
+		but no more than the number of cores.*/
+		assert(num_sharers >= 1 && num_sharers <= num_cores);
+
+		//build the upgrade_ack packet
+		//set access type
+		message_packet->access_type = cgm_access_upgrade_ack;
+		//set number of sharers
+		//if there is 1 sharer and its the owning core set 0
+		if(num_sharers == 1 && owning_core == 1)
+		{
+			message_packet->upgrade_ack = 0;
+		}
+		else
+		{
+			/*set the number of inval_acks expected to receive
+			number of sharers minus your self*/
+			message_packet->upgrade_ack = (num_sharers - 1);
+		}
+
+		//transmit the upgrade_ack
+		message_packet->access_type = cgm_access_upgrade_ack;
+
+		//set route etc
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		cache_put_io_up_queue(cache, message_packet);
+
+		printf("L3 id %d transmitted upgrade_ack to L2 id %d\n", cache->id, message_packet->l2_cache_id);
+		/*P_PAUSE(1000000);*/
+
+		//invalidate the other sharers
+		for(i = 0; i < num_cores; i++)
+		{
+			//find the other cores
+			if(cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, i) && i != message_packet->l2_cache_id)
+			{
+				//create and init the upgrade_inval packet
+				upgrade_inval_request_packet = packet_create();
+				init_upgrade_inval_request_packet(upgrade_inval_request_packet, message_packet->address);
+
+				upgrade_inval_request_packet->dest_name = str_map_value(&l2_strn_map, i);
+				upgrade_inval_request_packet->dest_id = str_map_string(&node_strn_map, upgrade_inval_request_packet->dest_name);
+
+				//requesting node L2
+				upgrade_inval_request_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+				upgrade_inval_request_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
+
+				list_enqueue(cache->Tx_queue_top, upgrade_inval_request_packet);
+				advance(cache->cache_io_up_ec);
+
+				printf("L3 id %d transmitted upgrade_inval to L2 id %d\n", cache->id, i);
+			}
+		}
+
+		//set local cache block and directory to modified.
+		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_modified);
+
+		//clear the directory
+		cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+		//set the sharer bit for the upgraded node
+		cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+		printf("L3 id %d set block modified, cleared directory, and set directory\n", cache->id);
+
+	}
+	else if(*cache_block_hit_ptr == 0)
+	{
+		fatal("cgm_mesi_l3_upgrade(): miss on L3 upgrade request\n");
+	}
 
 	return;
 }

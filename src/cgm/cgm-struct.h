@@ -72,15 +72,17 @@ enum cgm_access_kind_t {
 	cgm_access_inv_ack,
 	cgm_access_upgrade, //upgrade request
 	cgm_access_upgrade_ack,
+	cgm_access_upgrade_inval,
+	cgm_access_upgrade_inval_ack,
 	cgm_access_downgrade, //downgrade request
 	cgm_access_downgrade_ack,
 	cgm_access_downgrade_nack,
 	cgm_access_mc_get,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_put_clnx, //put block in clean exclusive state
-	cgm_access_putx, //
-	cgm_access_puts, //request for write back of cache block in shared state.
-	cgm_access_puto, //request for write back of cache block in owned state.
+	cgm_access_putx, //put block in modified state
+	cgm_access_puts, //put block in shared state.
+	cgm_access_puto, //put block in owned state.
 	cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
 	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 	cgm_access_retry,
@@ -126,10 +128,11 @@ struct cgm_packet_t{
 	int inval_pending;
 	int inval_ack;
 	int upgrade;
+	int upgrade_ack;
 	int upgrade_pending;
 	int inval_ack_count;
 
-
+	//for victims
 	int l1_victim_way;
 	int l2_victim_way;
 	int l3_victim_way;
@@ -308,6 +311,8 @@ struct cache_t{
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L3 cache protocol virtual functions
@@ -318,6 +323,7 @@ struct cache_t{
 	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_getx_fwd_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions

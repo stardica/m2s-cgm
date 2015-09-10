@@ -1598,41 +1598,17 @@ void l2_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{
-				//ack from L3
-				P_PAUSE(l2_caches[my_pid].latency);
-
-				//we have permission to upgrade our set block state and retry access
-
-				//get the status of the cache block
-				cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-				//find the access in the ORT table and clear it.
-				ort_clear(&(l2_caches[my_pid]), message_packet);
-
-				/*if the block is no longer here on upgrade_ack,
-				the block was evicted and maybe in the WB we can treat this as a miss.
-				This means the trasient state is broken.*/
-				if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cgm_cache_block_shared)
-				{
-					//printf("evicted\n");
-					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-					//fatal("access_id %llu evicted or not shared as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-				}
-
-				//set the state to exclusive and clear the transient state
-				cgm_cache_set_block_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_exclusive);
-				cgm_cache_set_block_transient_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, (int) NULL, cgm_cache_block_null);
-
-				//enter the retry state
-				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
-				assert(message_packet->access_type == cgm_access_store_retry);
-				assert(message_packet->coalesced != 1);
-
-				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
-				list_enqueue(l2_caches[my_pid].retry_queue, message_packet);
+				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
+				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
 
 				//run again
 				step--;
+			}
+			else if (access_type == cgm_access_upgrade_inval)
+			{
+				//Call back function (cgm_mesi_l2_upgrade_inval)
+				l2_caches[my_pid].l2_upgrade_inval(&(l2_caches[my_pid]), message_packet);
+
 			}
 			else if (access_type == cgm_access_inv)
 			{
@@ -1931,22 +1907,8 @@ void l3_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
-				//star todo this needs to check state of directory and respond accordingly.
-				printf("L3 %d upgrade request received from L2 %d\n", l3_caches[my_pid].id, message_packet->l2_cache_id);
-				STOP;
-
-				P_PAUSE(l3_caches[my_pid].latency);
-
-				message_packet->access_type = cgm_access_upgrade_ack;
-
-				//set route etc
-				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
-				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
-				message_packet->src_name = l3_caches[my_pid].name;
-				message_packet->src_id = str_map_string(&node_strn_map, l3_caches[my_pid].name);
-
-				cache_put_io_up_queue(&(l3_caches[my_pid]), message_packet);
-
+				//via call back function (cgm_mesi_l3_upgrade)
+				l3_caches[my_pid].l3_upgrade(&(l3_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_write_back)
 			{
@@ -3248,6 +3210,15 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	}
 
 	return sharers;
+}
+
+int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way){
+
+	//cycles through the cores and try to match the core id with the share
+
+
+
+
 }
 
 int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
