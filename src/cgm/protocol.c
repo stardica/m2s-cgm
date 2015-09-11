@@ -1690,6 +1690,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 		inval_packet = packet_create();
 		init_upgrade_inval_request_packet(inval_packet, message_packet->address);
 
+
 		//testing
 		inval_packet->access_id = message_packet->access_id;
 
