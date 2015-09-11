@@ -1250,6 +1250,8 @@ void l1_i_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall
 			l1_i_caches[my_pid].stalls++;
 
+			/*printf("L1 I %d stalling\n", l1_i_caches[my_pid].id);*/
+
 			P_PAUSE(1);
 		}
 		else
@@ -1316,7 +1318,9 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].stalls++;
 
-			//printf("L1 d id %d stalling l2 in queue size %d Tx bottom queue size %d\n", l1_d_caches[my_pid].id, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l1_d_caches[my_pid].Tx_queue_bottom));
+			/*printf("L1 D %d stalling\n", l1_d_caches[my_pid].id);*/
+			/*printf("L1 d id %d stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
+					l1_d_caches[my_pid].id, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l1_d_caches[my_pid].Tx_queue_bottom), list_count(l1_d_caches[my_pid].ort_list));*/
 
 			P_PAUSE(1);
 		}
@@ -1337,7 +1341,7 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_store)
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
+			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx || access_type == cgm_access_upgrade_putx)
 			{
 				//Call back function (cgm_mesi_l1_d_put)
 				if(!l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet))
@@ -1360,6 +1364,11 @@ void l1_d_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l1_d_getx_fwd_inval)
 				l1_d_caches[my_pid].l1_d_getx_fwd_inval(&(l1_d_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_upgrade_inval)
+			{
+				//Call back function (cgm_mesi_l1_d_upgrade_inval)
+				l1_d_caches[my_pid].l1_d_upgrade_inval(&(l1_d_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_inv)
 			{
@@ -1454,36 +1463,10 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{
-				//we have permission to upgrade our set block state and retry access
+				//Call back function (cgm_mesi_l1_d_upgrade_ack)
+				l1_d_caches[my_pid].l1_d_upgrade_ack(&(l1_d_caches[my_pid]), message_packet);
 
-				//get the status of the cache block
-				cache_get_block_status(&(l1_d_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-				//find the access in the ORT table and clear it.
-				ort_clear(&(l1_d_caches[my_pid]), message_packet);
-
-				/*if the block is no longer here on upgrade_ack,
-				the block was evicted and maybe in the WB we can treat this as a miss.
-				This means the trasient state is broken.*/
-				if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cgm_cache_block_shared)
-				{
-					//printf("evicted\n");
-					//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-					//fatal("L1 D %d access_id %llu evicted or not shared as %s cycle %llu\n", l1_d_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-				}
-
-				//set the state to exclusive and clear the transient state
-				cgm_cache_set_block_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_exclusive);
-
-				cgm_cache_set_block_transient_state(&(l1_d_caches[my_pid]), message_packet->set, message_packet->way, 0, cgm_cache_block_null);
-
-				//enter the retry state
-				message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
-				assert(message_packet->access_type == cgm_access_store_retry);
-				assert(message_packet->coalesced != 1);
-
-				message_packet = list_remove(l1_d_caches[my_pid].last_queue, message_packet);
-				list_enqueue(l1_d_caches[my_pid].retry_queue, message_packet);
 
 				//run again
 				step--;
@@ -1515,7 +1498,7 @@ void l2_cache_ctrl(void){
 	/*struct cgm_packet_t *reply_packet;*/
 	struct cgm_packet_t *wb_packet;
 	/*struct cgm_packet_t *downgrade_packet;*/
-	struct cgm_packet_t *pending_request;
+	/*struct cgm_packet_t *pending_request;*/
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
@@ -1528,7 +1511,7 @@ void l2_cache_ctrl(void){
 	set_id((unsigned int)my_pid);
 
 	int l3_map;
-	int upgrade_ack_count = 0;
+	/*int upgrade_ack_count = 0;*/
 
 	while(1)
 	{
@@ -1600,9 +1583,6 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
-
-				//run again
-				step--;
 			}
 			else if (access_type == cgm_access_upgrade_inval)
 			{
@@ -1833,9 +1813,9 @@ void l3_cache_ctrl(void){
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int dirty;
+	/*int dirty;
 	int sharers;
-	int owning_core;
+	int owning_core;*/
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -1854,6 +1834,7 @@ void l3_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 
 			l3_caches[my_pid].stalls++;
+			printf("L3 %d stalling\n", l3_caches[my_pid].id);
 
 			P_PAUSE(1);
 		}
@@ -2343,8 +2324,16 @@ void l2_cache_up_io_ctrl(void){
 				advance(&l1_d_cache[my_pid]);
 			}
 			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_inv
-					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval)
+					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
+					|| message_packet->access_type == cgm_access_upgrade_inval)
 			{
+
+				if(message_packet->access_type == cgm_access_upgrade_inval)
+				{
+					printf("L2 %d sending upgrade inval access id %llu cycle %llu\n", l2_caches[my_pid].id, message_packet->access_id, P_TIME);
+
+				}
+
 				list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l1_d_cache[my_pid]);
 			}
@@ -3212,14 +3201,14 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	return sharers;
 }
 
-int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way){
+/*int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way){
 
 	//cycles through the cores and try to match the core id with the share
 
 
 
-
-}
+	return;
+}*/
 
 int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
 

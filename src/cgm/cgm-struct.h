@@ -74,6 +74,7 @@ enum cgm_access_kind_t {
 	cgm_access_upgrade_ack,
 	cgm_access_upgrade_inval,
 	cgm_access_upgrade_inval_ack,
+	cgm_access_upgrade_putx,
 	cgm_access_downgrade, //downgrade request
 	cgm_access_downgrade_ack,
 	cgm_access_downgrade_nack,
@@ -130,7 +131,7 @@ struct cgm_packet_t{
 	int upgrade;
 	int upgrade_ack;
 	int upgrade_pending;
-	int inval_ack_count;
+	int upgrade_inval_ack_count;
 
 	//for victims
 	int l1_victim_way;
@@ -300,6 +301,8 @@ struct cache_t{
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);

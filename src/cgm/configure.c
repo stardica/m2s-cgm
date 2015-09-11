@@ -1743,6 +1743,8 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_write_block = cgm_mesi_l1_d_write_block;
 			l1_d_caches[i].l1_d_downgrade = cgm_mesi_l1_d_downgrade;
 			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_mesi_l1_d_getx_fwd_inval;
+			l1_d_caches[i].l1_d_upgrade_inval = cgm_mesi_l1_d_upgrade_inval;
+			l1_d_caches[i].l1_d_upgrade_ack = cgm_mesi_l1_d_upgrade_ack;
 		}
 		else
 		{

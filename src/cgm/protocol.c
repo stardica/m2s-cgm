@@ -5,8 +5,6 @@
 
 #include <cgm/protocol.h>
 
-
-
 struct str_map_t protocol_kind_strn_map =
 { num_cgm_protocol_types,
 	{
@@ -47,6 +45,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
 		{"cgm_access_upgrade_inval", cgm_access_upgrade_inval},
 		{"cgm_access_upgrade_inval_ack", cgm_access_upgrade_inval_ack},
+		{"cgm_access_upgrade_putx", cgm_access_upgrade_putx},
 		{"cgm_access_downgrade", cgm_access_downgrade},
 		{"cgm_access_downgrade_ack", cgm_access_downgrade_ack},
 		{"cgm_access_downgrade_nack", cgm_access_downgrade_nack},
@@ -68,6 +67,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		}
 };
 
+long long temp_access_id = 0;
 
 enum protocol_kind_t cgm_cache_protocol;
 enum protocol_kind_t cgm_gpu_cache_protocol;
@@ -164,6 +164,16 @@ void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int a
 
 	return;
 }
+
+/*void init_upgrade_inval_packet(struct cgm_packet_t *inval_packet, unsigned int address){
+
+	inval_packet->access_type = cgm_access_upgrade;
+	inval_packet->inval = 1;
+	inval_packet->size = 1;
+	inval_packet->address = address;
+
+	return;
+}*/
 
 void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address){
 
@@ -501,6 +511,14 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			message_packet->end_cycle = P_TIME;
 			cache_l1_d_return(cache,message_packet);
+
+			if(temp_access_id > 0 && temp_access_id == message_packet->access_id)
+			{
+				printf("L1 D %d hit access_id %llu \n", cache->id, message_packet->access_id);
+				/*STOP;*/
+			}
+
+
 			break;
 	}
 
@@ -740,6 +758,94 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 	cache_put_io_down_queue(cache, message_packet);
 
 	/*printf("L1 D id %d getx_fwd_inval_ack sent to L2 cache id %d\n", l1_d_caches[my_pid].id, my_pid);*/
+
+	return;
+}
+
+void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	printf("L1 D %d received upgrade_inval access_id %llu request cycle %llu\n", cache->id, message_packet->access_id, P_TIME);
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//if the block is in the cache invalidate it
+	if(*cache_block_hit_ptr == 1)
+	{
+		//block shoud be in the shared state
+		assert(*cache_block_state_ptr == cgm_cache_block_shared);
+		printf("L1 D %d upgrade_inval request block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+		//set local cache block and directory to modified.
+		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_invalid);
+
+		printf("L1 d id %d set block invalid\n", cache->id);
+
+		//free the upgrade_inval
+		message_packet = list_remove(cache->last_queue, message_packet);
+		free(message_packet);
+
+		printf("size %d\n", list_count(cache->Coherance_Rx_queue));
+	}
+	else
+	{
+		//the block was silently dropped and is already invalid so do nothing
+		/*fatal("cgm_mesi_l1_d_upgrade_inval(): miss on block access\n");*/
+	}
+
+	return;
+}
+
+void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	//we have permission to upgrade our set block state and retry access
+
+	printf("L1 D %d received upgrade_ack request\n", cache->id);
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	if(*cache_block_hit_ptr == 1)
+	{
+		//block should be in the shared state
+		assert(*cache_block_state_ptr == cgm_cache_block_shared);
+
+		//find the access in the ORT table and clear it.
+		ort_clear(cache, message_packet);
+
+		//set the state to exclusive and clear the transient state
+		cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+
+		//enter the retry state
+
+		assert(message_packet->cpu_access_type == cgm_access_store);
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		assert(message_packet->access_type == cgm_access_store_retry);
+		assert(message_packet->coalesced != 1);
+
+		message_packet = list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->retry_queue, message_packet);
+
+		printf("L1 D %d set block modified\n", cache->id);
+
+		temp_access_id = message_packet->access_id;
+
+	}
+	else
+	{
+		fatal("cgm_mesi_l1_d_upgrade_ack(): miss on cache block access\n");
+	}
 
 	return;
 }
@@ -1485,10 +1591,18 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		upgrade_request_packet->l2_cache_id = cache->id;
 		upgrade_request_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
+		/*printf("L2 packet l2 name/id %s and %d\n", upgrade_request_packet->l2_cache_name, upgrade_request_packet->l2_cache_id);*/
+
 		upgrade_request_packet->src_name = cache->name;
 		upgrade_request_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		/*printf("L2 packet src name/id %s and %d\n", upgrade_request_packet->src_name, upgrade_request_packet->src_id);*/
+
 		upgrade_request_packet->dest_name = l3_caches[l3_map].name;
 		upgrade_request_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+		/*printf("L2 packet dest name/id %s and %d\n", upgrade_request_packet->dest_name, upgrade_request_packet->dest_id);
+		STOP;*/
 
 		//latency
 		P_PAUSE(cache->latency);
@@ -1512,14 +1626,16 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("L2 id %d received upgrade_inval\n", cache->id);
+	printf("L2 id %d received upgrade_inval access id %llu\n", cache->id, message_packet->access_id);
 
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	printf("L2 %d upgrade request received access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);
+	struct cgm_packet_t *inval_packet;
+
+	/*printf("L2 id %d upgrade_innval received access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);*/
 
 	//received upgrade_ivnal request from L3
 
@@ -1542,16 +1658,22 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 		//transmit upgrade_inval_ack to requesting L2 cache
 		message_packet->access_type = cgm_access_upgrade_ack;
 
+		message_packet->upgrade_ack = -1;
+
 		//update routing headers swap dest and src
 		//requesting node
-		message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+		message_packet->dest_name = message_packet->src_name;
+		message_packet->dest_id = message_packet->src_id;
+
+		/*printf("L2 id %d upgrad_inval dest name/id %s and %d\n", cache->id, message_packet->dest_name, message_packet->dest_id);*/
 
 		//owning node L2
 		message_packet->src_name = cache->name;
 		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
-		/*printf("requester name %s and id %d\n", pending_request->src_name, pending_request->l2_cache_id);*/
+		/*printf("L2 id %d upgrad_inval src name/id %s and %d\n", cache->id, message_packet->src_name, message_packet->src_id);
+		STOP;*/
+
 		/*temp_id = pending_request->access_id;*/
 
 		//transmit block to requesting node
@@ -1560,12 +1682,53 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 		list_enqueue(cache->Tx_queue_bottom, message_packet);
 		advance(cache->cache_io_down_ec);*/
 
-		printf("L2 id %d upgrade_ack sent to L2 id %d\n", cache->id, message_packet->dest_id);
-		STOP;
+		printf("L2 id %d upgrade_ack sent to %s id %d\n", cache->id, message_packet->dest_name, message_packet->dest_id);
+		/*STOP;*/
+
+		//invalidate the L1 D caches lines
+		//flush the L1 cache because the line may be dirty in L1
+		inval_packet = packet_create();
+		init_upgrade_inval_request_packet(inval_packet, message_packet->address);
+
+		//testing
+		inval_packet->access_id = message_packet->access_id;
+
+		//send the L1 D cache the downgrade message
+		inval_packet->cpu_access_type = cgm_access_store;
+		list_enqueue(cache->Tx_queue_top, inval_packet);
+		advance(cache->cache_io_up_ec);
+
+		printf("L2 id %d inval sent to L1 D\n", cache->id);
+
 	}
 	else
 	{
-		fatal("cgm_mesi_l2_upgrade_inval(): block miss, need to code this interaction\n");
+		/*block has been silently dropped by L2 and is dropped in L1 by inclusion.
+		fwd the ack on to the requesting core.*/
+
+		//transmit upgrade_inval_ack to requesting L2 cache
+		message_packet->access_type = cgm_access_upgrade_ack;
+
+		message_packet->upgrade_ack = -1;
+
+		//update routing headers swap dest and src
+		//requesting node
+		message_packet->dest_name = message_packet->src_name;
+		message_packet->dest_id = message_packet->src_id;
+
+		/*printf("L2 id %d upgrad_inval dest name/id %s and %d\n", cache->id, message_packet->dest_name, message_packet->dest_id);*/
+
+		//owning node L2
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		/*printf("L2 id %d upgrad_inval src name/id %s and %d\n", cache->id, message_packet->src_name, message_packet->src_id);
+		STOP;*/
+
+		/*temp_id = pending_request->access_id;*/
+
+		//transmit block to requesting node
+		cache_put_io_down_queue(cache, message_packet);
 
 	}
 
@@ -1582,19 +1745,13 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	struct cgm_packet_t *upgrade_request_packet;
+	struct cgm_packet_t *pending_packet;
 
 	int num_cores = x86_cpu_num_cores;
 	int dirty, num_sharers, owning_core;
 
 	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
-
-	printf("L2 id %d upgrade_ack received number of sharers %d (other than myself)\n", cache->id, message_packet->upgrade_ack);
-	printf("P_PAUSE here\n");
-	P_PAUSE(1000000);
-
-
 
 
 	//upgrade_ack from L3
@@ -1605,18 +1762,95 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	//find the access in the ORT table and clear it.
-	ort_clear(cache, message_packet);
-
-	/*if the block is no longer here on upgrade_ack,
-	the block was evicted and maybe in the WB we can treat this as a miss.
-	This means the trasient state is broken.*/
-	if(*cache_block_hit_ptr != 1 || *cache_block_state_ptr != cgm_cache_block_shared)
+	//if the block is in the cache invalidate it
+	if(*cache_block_hit_ptr == 1)
 	{
-		//printf("evicted\n");
-		//printf("access_id %llu as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
-		//fatal("access_id %llu evicted or not shared as %s cycle %llu\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+		//block shoud be in the shared state
+		assert(*cache_block_state_ptr == cgm_cache_block_shared);
+
+		//get the pending request from the request buffer
+		//pull the GET_FWD from the pending request buffer
+		pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+		/*if not found uh-oh...*/
+		assert(pending_packet);
+		/*the address better be the same too...*/
+		assert(pending_packet->address == message_packet->address);
+
+		/*printf("pulled pending packet\n");*/
+
+		//check if we are ready to perform the join
+		if(message_packet->upgrade_ack >= 0)
+		{
+			printf("L2 id %d upgrade_ack received from L3 number of sharers %d (other than myself)\n", cache->id, message_packet->upgrade_ack);
+			printf("L2 id %d block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+			pending_packet->upgrade_inval_ack_count = message_packet->upgrade_ack;
+
+			printf("Pending request ack counter set to %d\n", pending_packet->upgrade_inval_ack_count);
+
+			//free the L3's upgrade_ack message packet
+			message_packet = list_remove(cache->last_queue, message_packet);
+			free(message_packet);
+		}
+		else if(message_packet->upgrade_ack < 0)
+		{
+			printf("L2 id %d upgrade_ack received from other sharing L2 (-1)\n", cache->id);
+			printf("L2 id %d block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
+			pending_packet->upgrade_inval_ack_count--;
+
+			printf("Pending request ack counter decremented\n");
+
+			//free the other L2's upgrade_ack message packet
+			message_packet = list_remove(cache->last_queue, message_packet);
+			free(message_packet);
+		}
+		else
+		{
+			fatal("cgm_mesi_l2_upgrade_ack(): bad upgrade_ack counter value\n");
+		}
+
+
+		if(pending_packet->upgrade_inval_ack_count == 0)
+		{
+			printf("L2 id %d join complete\n", cache->id);
+
+			//set local cache block and directory to modified.
+			cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_modified);
+
+			//clear the upgrade_pending bit in the block
+			cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
+
+			printf("L2 id %d set block modified\n", cache->id);
+
+			//pull the pending request from the pending request buffer
+			pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+
+			//testing delete later
+			temp_access_id = pending_packet->access_id;
+			//testing delete later
+
+			//set access type, block state,
+			pending_packet->access_type = cgm_access_upgrade_ack;
+			pending_packet->cache_block_state = cgm_cache_block_modified;
+
+			list_enqueue(cache->Tx_queue_top, pending_packet);
+			advance(cache->cache_io_up_ec);
+		}
+
 	}
+	else
+	{
+		fatal("cgm_mesi_l2_upgrade_ack(): cache block miss on upgrade ack\n");
+
+	}
+
+
+
+	return;
+
+
+
 
 	//set the state to exclusive and clear the transient state
 	cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
@@ -2853,6 +3087,9 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	int num_cores = x86_cpu_num_cores;
 	int dirty, num_sharers, owning_core, i;
 
+	int l2_src_id;
+	char *l2_name;
+
 	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
@@ -2906,15 +3143,26 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		//transmit the upgrade_ack
 		message_packet->access_type = cgm_access_upgrade_ack;
 
-		//set route etc
-		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
-		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		/*printf("L3 packet l2 src name/id %s and %d\n", message_packet->l2_cache_name, message_packet->l2_cache_id);*/
+
+		//set destination
+		message_packet->dest_id = message_packet->src_id;
+		message_packet->dest_name = message_packet->src_name;
+
+		l2_src_id = message_packet->src_id;
+		l2_name = strdup(message_packet->src_name);
+
+		/*printf("L3 dest name/id %s and %d\n", message_packet->dest_name, message_packet->dest_id);*/
+
+		//set the source of the packet as L3
 		message_packet->src_name = cache->name;
 		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
+		/*printf("L3 packet src name/id %s and %d\n", message_packet->src_name, message_packet->src_id);*/
+
 		cache_put_io_up_queue(cache, message_packet);
 
-		printf("L3 id %d transmitted upgrade_ack to L2 id %d\n", cache->id, message_packet->l2_cache_id);
+		/*printf("L3 id %d transmitted upgrade_ack to L2 id %d\n", cache->id, message_packet->l2_cache_id);*/
 		/*P_PAUSE(1000000);*/
 
 		//invalidate the other sharers
@@ -2927,19 +3175,31 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 				upgrade_inval_request_packet = packet_create();
 				init_upgrade_inval_request_packet(upgrade_inval_request_packet, message_packet->address);
 
+				//testing
+				upgrade_inval_request_packet->access_id = message_packet->access_id;
+				//testing
+
 				upgrade_inval_request_packet->dest_name = str_map_value(&l2_strn_map, i);
 				upgrade_inval_request_packet->dest_id = str_map_string(&node_strn_map, upgrade_inval_request_packet->dest_name);
 
+				/*printf("L3 inval dest name/id %s and %d\n", upgrade_inval_request_packet->dest_name, upgrade_inval_request_packet->dest_id);*/
+
 				//requesting node L2
-				upgrade_inval_request_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
-				upgrade_inval_request_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
+				upgrade_inval_request_packet->src_id = str_map_string(&node_strn_map, l2_name);
+				upgrade_inval_request_packet->src_name = str_map_value(&node_strn_map, l2_src_id);
+
+				/*printf("L3 request src name/id %s and %d\n", upgrade_inval_request_packet->src_name, upgrade_inval_request_packet->src_id);
+				STOP;*/
 
 				list_enqueue(cache->Tx_queue_top, upgrade_inval_request_packet);
 				advance(cache->cache_io_up_ec);
 
-				printf("L3 id %d transmitted upgrade_inval to L2 id %d\n", cache->id, i);
+				printf("L3 id %d transmitted upgrade_inval access id %llu to L2 id %d\n", cache->id, upgrade_inval_request_packet->access_id, i);
 			}
 		}
+
+		//free the temp string
+		free(l2_name);
 
 		//set local cache block and directory to modified.
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, cgm_cache_block_modified);
