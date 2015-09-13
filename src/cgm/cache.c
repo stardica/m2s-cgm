@@ -1715,13 +1715,13 @@ void l2_cache_ctrl(void){
 						case cgm_cache_block_modified:
 						case cgm_cache_block_exclusive:
 
-							if(*cache_block_hit_ptr == cgm_cache_block_shared)
+							if(*cache_block_state_ptr == cgm_cache_block_shared)
 							{
 								printf("L2 WB received with block in shared state\n");
 							}
 
 							//set modified if the line was exclusive
-							if(*cache_block_hit_ptr == cgm_cache_block_exclusive)
+							if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 							{
 								cgm_cache_set_block_state(&(l2_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_modified);
 							}
@@ -1923,10 +1923,10 @@ void l3_cache_ctrl(void){
 						case cgm_cache_block_exclusive:
 
 							//set modified if the line was exclusive
-							if(*cache_block_hit_ptr == cgm_cache_block_exclusive)
+							/*if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 							{
 								cgm_cache_set_block_state(&(l3_caches[my_pid]), message_packet->set, message_packet->way, cgm_cache_block_modified);
-							}
+							}*/
 
 							//in the real world we would merge changes with L3 block here.
 
