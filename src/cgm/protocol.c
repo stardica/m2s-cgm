@@ -320,8 +320,6 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		//miss or invalid cache block states
 		case cgm_cache_block_invalid:
 
-			/*printf("D$ load miss\n");*/
-
 			//stats
 			cache->misses++;
 			/*l1_d_caches[my_pid].misses++;*/
@@ -331,7 +329,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			/*cache_check_ORT(&(l1_d_caches[my_pid]), message_packet);*/
 
 			if(message_packet->coalesced == 1)
-				return;
+				break;
 				/*continue;*/
 
 			/*printf("load access_id %llu set %d tag %d as %s coalesced cycle %llu\n",
@@ -356,6 +354,13 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//transmit to L2
 			/*cache_put_io_down_queue(&(l1_d_caches[my_pid]), message_packet);*/
 			cache_put_io_down_queue(cache, message_packet);
+
+			if(message_packet->access_id == 373844)
+			{
+				printf("***l1 D 373844 is a load miss***\n");
+				/*STOP;*/
+			}
+
 			break;
 
 		//hit states
@@ -441,10 +446,16 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//charge delay
 			P_PAUSE(cache->latency);
 
-			if(message_packet->access_id == 373797)
+			/*if(message_packet->access_id == 373797)
 			{
 				printf("***l1 D 373797 was a miss***\n");
-				/*STOP;*/
+				STOP;
+			}*/
+
+			if(message_packet->access_id == 373844)
+			{
+				printf("***l1 D 373844 was a miss***\n");
+				STOP;
 			}
 
 			//transmit to L2
@@ -454,6 +465,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_shared:
 
 			//this is an upgrade_miss
+			if(message_packet->access_id == 373844)
+			{
+				printf("***l1 D 373844 was an upgrade_miss***\n");
+				STOP;
+			}
 
 			//stats
 			cache->upgrade_misses++;
@@ -483,6 +499,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				message_packet->access_id, message_packet->set, message_packet->tag, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
 			//set block transient state
+			//star should be able to remove this at some point.
 			cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, message_packet->access_id, cgm_cache_block_transient);
 
 			message_packet->access_type = cgm_access_upgrade;
@@ -523,7 +540,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				printf("L1 D %d hit access_id %llu \n", cache->id, message_packet->access_id);
 				/*STOP;*/
 			}
-
 
 			break;
 	}
@@ -831,19 +847,21 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	{
 		//block should be in the shared state
 		assert(*cache_block_state_ptr == cgm_cache_block_shared);
+		assert(message_packet->access_type == cgm_access_upgrade_ack);
+		assert(message_packet->cpu_access_type == cgm_access_store);
+		assert(message_packet->coalesced != 1);
 
 		//find the access in the ORT table and clear it.
 		ort_clear(cache, message_packet);
 
-		//set the state to exclusive and clear the transient state
+		//set the state to modified and clear the transient state
 		cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
 		//enter the retry state
 
-		assert(message_packet->cpu_access_type == cgm_access_store);
 		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
 		assert(message_packet->access_type == cgm_access_store_retry);
-		assert(message_packet->coalesced != 1);
+
 
 		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->retry_queue, message_packet);
@@ -859,11 +877,28 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 		to it originally going out as a GETX on a cache miss
 		We need to store the block and set modified before we retry*/
 
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		assert(message_packet->cache_block_state == cgm_cache_block_modified);
+		assert(message_packet->access_type == cgm_access_upgrade_ack);
+		assert(message_packet->cpu_access_type == cgm_access_store);
+		assert(message_packet->coalesced != 1);
+
 		printf("L1 D upgrade_ack miss access_id %llu\n", message_packet->access_id);
 		printf("victim way is %d\n", message_packet->l1_victim_way);
-		STOP;
 
+		//find the access in the ORT table and clear it.
+		ort_clear(cache, message_packet);
 
+		//set the block and retry the access in the cache.
+		cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, cgm_cache_block_modified);
+
+		//set retry state
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		assert(message_packet->access_type == cgm_access_store_retry);
+
+		//retry the access
+		message_packet = list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->retry_queue, message_packet);
 	}
 
 	return;
@@ -886,6 +921,13 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 	enum cgm_cache_block_state_t victim_trainsient_state;
 	long long t_state_id;
 
+
+	if(message_packet->access_id == 373844)
+	{
+		printf("***L1 id %d 373844 write block cycle %llu\n", cache->id, P_TIME);
+		/*STOP;*/
+	}
+
 	//check the transient state of the victim
 	//if the state is set, an earlier access is bringing the block
 	//if it is not set the victim is clear to evict
@@ -894,7 +936,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 
 	//if the block is in the transient state there are stores waiting to write to the block.
-	if(victim_trainsient_state == cgm_cache_block_transient)
+	/*if(victim_trainsient_state == cgm_cache_block_transient)
 	{
 
 		//the victim is locked, either wait, choose another victim, or schedule something else.
@@ -904,20 +946,20 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		assert(message_packet->access_id >= t_state_id);
 
 		fatal("l1 D cache stalled on transient\n");
-		/*printf("l1 D cache stalled on transient\n");*/
+		printf("***L1 id %d 373844 write block stalled on transient\n", cache->id);
 
 		//try again we will pull the coherence message eventually.
 		P_PAUSE(1);
 		return 0;
 	}
 	else
-	{
+	{*/
 		//find the access in the ORT table and clear it.
 		ort_clear(cache, message_packet);
 
 		//set the block and retry the access in the cache.
 		cache_put_block(cache, message_packet);
-	}
+	/*}*/
 
 	return 1;
 }
@@ -1093,6 +1135,13 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//transmit to L3
 			cache_put_io_down_queue(cache, message_packet);
+
+			if(message_packet->access_id == 373844)
+			{
+				printf("***l2 id %d 373844 is a load miss***\n", cache->id);
+				/*STOP;*/
+			}
+
 			break;
 
 		case cgm_cache_block_modified:
@@ -1128,6 +1177,13 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+			}
+
+			if(message_packet->access_id == 373844)
+			{
+				printf("***l2 id %d 373844 hit on retry cycle %llu***\n", cache->id, P_TIME);
+				assert(message_packet->access_type = cgm_access_put_clnx);
+				/*STOP;*/
 			}
 
 			break;
@@ -1171,7 +1227,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cache_check_ORT(cache, message_packet);
 
 			if(message_packet->coalesced == 1)
-				return;
+				break;
 
 			//find victim
 			message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);
@@ -1252,7 +1308,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//access was a miss in L1 D but a hit at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
-
 
 			return 0;
 
@@ -1902,26 +1957,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 	}
 
-
-
-	return;
-
-
-
-
-	//set the state to exclusive and clear the transient state
-	cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
-	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, (int) NULL, cgm_cache_block_null);
-
-	//enter the retry state
-	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
-	assert(message_packet->access_type == cgm_access_store_retry);
-	assert(message_packet->coalesced != 1);
-
-	message_packet = list_remove(cache->last_queue, message_packet);
-	list_enqueue(cache->retry_queue, message_packet);
-
-
 	return;
 }
 
@@ -2314,12 +2349,10 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	/*int temp_id;*/
 
 
-	/*if(message_packet->access_id == temp_id && temp_id > 0)
+	if(message_packet->access_id == 373844)
 	{
-		printf("L2 id %d access id %llu put_clnx received\n", cache->id, message_packet->access_id);
-		P_PAUSE(1000000);
-		STOP;
-	}*/
+		printf("***l2 id %d 373844 put_clnx cycle %llu***\n", cache->id, P_TIME);
+	}
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 	long long t_state_id;
@@ -2542,6 +2575,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
+
 			break;
 
 		case cgm_cache_block_shared:
@@ -2608,6 +2642,18 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
+				if(owning_core == 1)
+				{
+					assert(sharers == 1);
+
+				}
+
+				if(message_packet->access_id == 373844)
+				{
+					printf("***l3 373844 is a hit x state shares %d owning core %d cycle %llu***\n", sharers, owning_core, P_TIME);
+					/*STOP;*/
+				}
+
 				//update message status
 				message_packet->access_type = cgm_access_put_clnx;
 
@@ -2619,6 +2665,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(*cache_block_state_ptr == cgm_cache_block_exclusive);
 
 				//set the presence bit in the directory for the requesting core.
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 				//set message package size
@@ -2699,6 +2746,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 			}
+			else
+			{
+				fatal("cgm_mesi_l3_get(): invalid sharer/owning_core state\n");
+			}
 
 			break;
 
@@ -2710,7 +2761,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->access_type = cgm_access_putx;
 			}
 
-			fatal("L3 modified cache block without GetX\n");
+			/*fatal("L3 modified cache block without GetX access_id %llu\n", message_packet->access_id);*/
+
 			break;
 
 	}

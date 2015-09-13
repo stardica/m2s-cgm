@@ -1465,8 +1465,6 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_upgrade_ack)
 				l1_d_caches[my_pid].l1_d_upgrade_ack(&(l1_d_caches[my_pid]), message_packet);
 
-
-
 				//run again
 				step--;
 			}

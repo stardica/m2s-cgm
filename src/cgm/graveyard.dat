@@ -1,4 +1,20 @@
 
+
+
+	return;
+
+	/*//set the state to exclusive and clear the transient state
+	cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
+	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, (int) NULL, cgm_cache_block_null);
+
+	//enter the retry state
+	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+	assert(message_packet->access_type == cgm_access_store_retry);
+	assert(message_packet->coalesced != 1);
+
+	message_packet = list_remove(cache->last_queue, message_packet);
+	list_enqueue(cache->retry_queue, message_packet);*/
+
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
