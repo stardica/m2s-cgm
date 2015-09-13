@@ -441,6 +441,12 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//charge delay
 			P_PAUSE(cache->latency);
 
+			if(message_packet->access_id == 373797)
+			{
+				printf("***l1 D 373797 was a miss***\n");
+				/*STOP;*/
+			}
+
 			//transmit to L2
 			cache_put_io_down_queue(cache, message_packet);
 			break;
@@ -790,12 +796,17 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 		message_packet = list_remove(cache->last_queue, message_packet);
 		free(message_packet);
 
-		printf("size %d\n", list_count(cache->Coherance_Rx_queue));
+		/*printf("size %d\n", list_count(cache->Coherance_Rx_queue));*/
 	}
 	else
 	{
 		//the block was silently dropped and is already invalid so do nothing
-		/*fatal("cgm_mesi_l1_d_upgrade_inval(): miss on block access\n");*/
+
+		//free the upgrade_inval
+		message_packet = list_remove(cache->last_queue, message_packet);
+		free(message_packet);
+
+		/*printf("size %d\n", list_count(cache->Coherance_Rx_queue));*/
 	}
 
 	return;
@@ -844,7 +855,15 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	}
 	else
 	{
-		fatal("cgm_mesi_l1_d_upgrade_ack(): miss on cache block access\n");
+		/*if the access misses this can be due
+		to it originally going out as a GETX on a cache miss
+		We need to store the block and set modified before we retry*/
+
+		printf("L1 D upgrade_ack miss access_id %llu\n", message_packet->access_id);
+		printf("victim way is %d\n", message_packet->l1_victim_way);
+		STOP;
+
+
 	}
 
 	return;
@@ -1115,7 +1134,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 }
 
-void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
+int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
@@ -1226,7 +1245,18 @@ void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//stats
 			cache->upgrade_misses++;
 
-			assert(message_packet->access_type != cgm_access_store_retry);
+			if(message_packet->access_id == 373797)
+			{
+				printf("*** L2 373797 was a hit as shared\n");
+			}
+
+			//access was a miss in L1 D but a hit at the L2 level, set upgrade and run again.
+			message_packet->access_type = cgm_access_upgrade;
+
+
+			return 0;
+
+			/*assert(message_packet->access_type != cgm_access_store_retry);
 
 			//for potential coalesced load-store condition
 			if(message_packet->coalesced == 1)
@@ -1259,11 +1289,11 @@ void cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			P_PAUSE(cache->latency);
 
 			//transmit upgrade request to L3
-			cache_put_io_down_queue(cache, message_packet);
+			cache_put_io_down_queue(cache, message_packet);*/
 			break;
 	}
 
-	return;
+	return 1;
 }
 
 void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
@@ -1313,6 +1343,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 		assert(pending_request);
 		/*the address better be the same too...*/
 		assert(pending_request->address == message_packet->address);
+		printf("L2 id %d downgrade pending_packet pulled from buffer access_id %llu\n", cache->id, pending_request->access_id);
 
 		//downgrade the local block
 		cgm_cache_set_block(cache, pending_request->set, pending_request->way, pending_request->tag, cgm_cache_block_shared);
@@ -1443,11 +1474,11 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 	{
 		//pull the GETX_FWD from the pending request buffer
 		pending_getx_fwd_request = cache_search_pending_request_buffer(cache, message_packet->address);
-
 		/*if not found uh-oh...*/
 		/*the address better be the same too...*/
 		assert(pending_getx_fwd_request);
 		assert(pending_getx_fwd_request->address == message_packet->address);
+		printf("L2 id %d getx_fwd pending_packet pulled from buffer access_id %llu\n", cache->id, pending_getx_fwd_request->access_id);
 
 		//invalidate the local block
 		cgm_cache_set_block(cache, pending_getx_fwd_request->set, pending_getx_fwd_request->way, pending_getx_fwd_request->tag, cgm_cache_block_invalid);
@@ -1543,6 +1574,9 @@ void cgm_mesi_l2_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_p
 
 void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+
+	//received upgrade request from L1
+
 	/*enum cgm_access_kind_t access_type;*/
 	/*long long access_id = 0;*/
 	int cache_block_hit;
@@ -1559,7 +1593,11 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	printf("L2 %d upgrade request received access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);
 
-	//received upgrade request from L1
+	if(message_packet->access_id == 373797)
+	{
+		printf("***l2 373797 now an upgrade\n");
+		/*STOP;*/
+	}
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1574,6 +1612,7 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		//insert the upgrade request into the pending request buffer
 		message_packet->upgrade_pending = 1;
 		cgm_cache_insert_pending_request_buffer(cache, message_packet);
+		printf("L2 id %d upgrade request pending_packet inserted into buffer access_id %llu\n", cache->id, message_packet->access_id);
 
 		//set the upgrade_pending bit to 1 in the block
 		cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
@@ -1699,7 +1738,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 		list_enqueue(cache->Tx_queue_top, inval_packet);
 		advance(cache->cache_io_up_ec);
 
-		printf("L2 id %d inval sent to L1 D\n", cache->id);
+		printf("L2 id %d inval sent to L1 D access id $llu cycle $llu\n", cache->id, inval_packet->access_id, P_TIME);
 
 	}
 	else
@@ -1754,6 +1793,11 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
+	if(message_packet->access_id == 373797)
+	{
+		printf("L2 id %d 373797 upgrade_ack\n", cache->id);
+	}
+
 
 	//upgrade_ack from L3
 	P_PAUSE(cache->latency);
@@ -1763,9 +1807,14 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+	printf("L2 id %d block hit %d as %s\n", cache->id, *cache_block_hit_ptr, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
 	//if the block is in the cache invalidate it
 	if(*cache_block_hit_ptr == 1)
 	{
+
+		//it is possible that an upgrade_ack can be received from a responding L2 before the L3 cache.
+
 		//block shoud be in the shared state
 		assert(*cache_block_state_ptr == cgm_cache_block_shared);
 
@@ -1773,7 +1822,14 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 		//pull the GET_FWD from the pending request buffer
 		pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 		/*if not found uh-oh...*/
-		assert(pending_packet);
+
+		if(pending_packet == NULL)
+		{
+			printf("crashing missing packet in buffer access_id %llu\n", message_packet->access_id);
+			printf("message_packet cup access type %d\n", message_packet->cpu_access_type);
+			assert(pending_packet);
+		}
+
 		/*the address better be the same too...*/
 		assert(pending_packet->address == message_packet->address);
 
@@ -3095,7 +3151,7 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	/*access_id = message_packet->access_id;*/
 
 	//star todo this needs to check state of directory and respond accordingly.
-	printf("L3 %d upgrade request received from L2 %d\n", cache->id, message_packet->l2_cache_id);
+	printf("L3 %d upgrade request received from L2 %d access_id %llu\n", cache->id, message_packet->l2_cache_id, message_packet->access_id);
 
 	P_PAUSE(cache->latency);
 
@@ -3163,7 +3219,7 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 		cache_put_io_up_queue(cache, message_packet);
 
-		/*printf("L3 id %d transmitted upgrade_ack to L2 id %d\n", cache->id, message_packet->l2_cache_id);*/
+		printf("L3 id %d transmitted upgrade_ack to L2 id %d access_id %llu\n", cache->id, message_packet->l2_cache_id, message_packet->access_id);
 		/*P_PAUSE(1000000);*/
 
 		//invalidate the other sharers

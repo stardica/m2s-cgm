@@ -518,7 +518,6 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 		//get pointer to access in queue and check it's status.
 		pending_request = list_get(cache->pending_request_buffer, i);
 
-		//found block in write back buffer
 		if(pending_request->address == address)
 		{
 			return pending_request;
@@ -1562,7 +1561,11 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
 				//Call back function (cgm_mesi_l2_getx)
-				l2_caches[my_pid].l2_getx(&(l2_caches[my_pid]), message_packet);
+
+				//will run again if getx results in upgrade request at L2 level.
+
+				if(!l2_caches[my_pid].l2_getx(&(l2_caches[my_pid]), message_packet))
+					step--;
 			}
 			else if(access_type == cgm_access_getx_fwd)
 			{

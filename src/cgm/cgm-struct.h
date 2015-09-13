@@ -307,7 +307,7 @@ struct cache_t{
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
