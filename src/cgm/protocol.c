@@ -3053,6 +3053,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			}
 			else
 			{
+
 				fatal("cgm_mesi_l3_get(): invalid sharer/owning_core state\n");
 			}
 
