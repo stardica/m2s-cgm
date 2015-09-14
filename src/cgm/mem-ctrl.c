@@ -179,14 +179,27 @@ void memctrl_ctrl(void){
 
 			P_PAUSE(mem_ctrl->DRAM_latency);
 
-			/*message_packet->access_type = cgm_access_puts;
-			list_enqueue(mem_ctrl->system_agent_queue, message_packet);
-			advance(system_agent_ec);*/
+			if(message_packet->access_type == cgm_access_mc_store)
+			{
+				/*the message is a store message (Write Back) from a L3 cache
+				for now charge the latency for the store, then, just destroy the packet*/
 
-			message_packet->access_type = cgm_access_mc_put;
-			message_packet->size = l3_caches[0].block_size;
-			list_enqueue(mem_ctrl->Tx_queue, message_packet);
-			advance(mem_ctrl_io_ec);
+				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
+				free(message_packet);
+			}
+			else if(message_packet->access_type == cgm_access_mc_load)
+			{
+				/*This is a L3 load request (cached memory system miss)
+				charge the latency for the load, then, reply with data*/
+
+				//set the access type
+				message_packet->access_type = cgm_access_mc_put;
+				message_packet->size = l3_caches[0].block_size;
+
+				//reply to L3
+				list_enqueue(mem_ctrl->Tx_queue, message_packet);
+				advance(mem_ctrl_io_ec);
+			}
 		}
 	}
 	return;

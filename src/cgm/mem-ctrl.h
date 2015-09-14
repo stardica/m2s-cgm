@@ -68,6 +68,7 @@ extern int mem_ctrl_io_pid;
 void memctrl_init(void);
 void memctrl_create(void);
 void memctrl_create_tasks(void);
+
 void memctrl_ctrl(void);
 void memctrl_ctrl_io(void);
 int memctrl_can_access(void);

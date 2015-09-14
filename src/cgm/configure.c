@@ -1745,6 +1745,8 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_mesi_l1_d_getx_fwd_inval;
 			l1_d_caches[i].l1_d_upgrade_inval = cgm_mesi_l1_d_upgrade_inval;
 			l1_d_caches[i].l1_d_upgrade_ack = cgm_mesi_l1_d_upgrade_ack;
+			l1_d_caches[i].l1_d_write_back = cgm_mesi_l1_d_write_back;
+			l1_d_caches[i].l1_d_inval = cgm_mesi_l1_d_inval;
 		}
 		else
 		{
@@ -1891,6 +1893,9 @@ int cache_finish_create(){
 			l2_caches[i].l2_upgrade_inval = cgm_mesi_l2_upgrade_inval;
 			l2_caches[i].l2_inval_ack = cgm_mesi_l2_inval_ack;
 			l2_caches[i].l2_write_block = cgm_mesi_l2_write_block;
+			l2_caches[i].l2_write_back = cgm_mesi_l2_write_back;
+			l2_caches[i].l2_inval = cgm_mesi_l2_inval;
+			l2_caches[i].l2_inval_ack = cgm_mesi_l2_inval_ack;
 		}
 		else
 		{
@@ -2051,6 +2056,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_getx_fwd_ack = cgm_mesi_l3_getx_fwd_ack;
 			l3_caches[i].l3_upgrade = cgm_mesi_l3_upgrade;
 			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
+			l3_caches[i].l3_write_back = cgm_mesi_l3_write_back;
 		}
 		else
 		{

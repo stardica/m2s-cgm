@@ -53,6 +53,8 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l1_d_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -64,8 +66,10 @@ void cgm_mesi_l2_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_p
 void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -76,6 +80,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 //////////////////

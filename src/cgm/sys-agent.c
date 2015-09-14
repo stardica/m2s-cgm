@@ -198,9 +198,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
 
-	/*printf("routing\n");*/
-
-	if(access_type == cgm_access_mc_get)
+	if(access_type == cgm_access_mc_load || access_type == cgm_access_mc_store)
 	{
 		/*while(!memctrl_can_access())
 		{
@@ -212,7 +210,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		P_PAUSE(system_agent->latency);
 
 		list_remove(system_agent->last_queue, message_packet);
-		//list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
+
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
@@ -240,11 +238,10 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		//success
 		list_remove(system_agent->last_queue, message_packet);
-		//list_enqueue(system_agent->switch_queue, message_packet);
+
+
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
 
-		//future_advance(&switches_ec[system_agent->switch_id], WIRE_DELAY(switches[system_agent->switch_id].wire_latency));
-		//advance(&switches_ec[system_agent->switch_id]);
 		advance(system_agent_io_up_ec);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
@@ -384,7 +381,6 @@ void sys_agent_ctrl(void){
 
 
 			//star todo this is where we will receive our other directory coherence messages
-			//for now lets just patch it up.
 			system_agent_route(message_packet);
 		}
 	}

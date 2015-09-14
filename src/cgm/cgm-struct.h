@@ -78,7 +78,8 @@ enum cgm_access_kind_t {
 	cgm_access_downgrade, //downgrade request
 	cgm_access_downgrade_ack,
 	cgm_access_downgrade_nack,
-	cgm_access_mc_get,	//request sent to system agent/memory controller
+	cgm_access_mc_load,	//request sent to system agent/memory controller
+	cgm_access_mc_store,	//request sent to system agent/memory controller
 	cgm_access_mc_put,	//reply from system agent/memory controller
 	cgm_access_put_clnx, //put block in clean exclusive state
 	cgm_access_putx, //put block in modified state
@@ -303,6 +304,8 @@ struct cache_t{
 	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -317,6 +320,8 @@ struct cache_t{
 	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//L3 cache protocol virtual functions
 	void (*l3_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -328,6 +333,7 @@ struct cache_t{
 	void (*l3_getx_fwd_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
 	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
