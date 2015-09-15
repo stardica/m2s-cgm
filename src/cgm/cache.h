@@ -174,7 +174,7 @@ int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);
 
 //Write Back Buffer Manipulations
-struct cgm_packet_t *cache_search_wb(struct cache_t *cache,int tag, int set);
+struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set);
 
 //Pending Request Buffer Manipulations
 void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -184,6 +184,7 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
 enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state);
+void cgm_cache_set_block_address(struct cache_t *cache, int set, int way, unsigned int address);
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr);

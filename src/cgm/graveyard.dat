@@ -1,3 +1,17 @@
+if(message_packet->access_id == 373844)
+	{
+		printf("***L1 id %d 373844 write block cycle %llu\n", cache->id, P_TIME);
+		/*STOP;*/
+	}
+
+
+if(message_packet->access_id == 373844)
+			{
+				printf("***l2 id %d 373844 hit on retry cycle %llu***\n", cache->id, P_TIME);
+				assert(message_packet->access_type = cgm_access_put_clnx);
+				/*STOP;*/
+			}
+
 //on a write back with inclusive caches L2 Merges the line
 	//if the write back is a surprise the block will be exclusive in the L2 cache, but the data is old.
 
