@@ -1252,7 +1252,7 @@ void l1_i_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall
 			l1_i_caches[my_pid].stalls++;
 
-			/*printf("L1 I %d stalling\n", l1_i_caches[my_pid].id);*/
+			printf("L1 I %d stalling\n", l1_i_caches[my_pid].id);
 
 			P_PAUSE(1);
 		}
@@ -1460,7 +1460,7 @@ void l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			l2_caches[my_pid].stalls++;
-			/*printf("L2 id %d stalling\n", l2_caches[my_pid].id);*/
+			printf("L2 id %d stalling\n", l2_caches[my_pid].id);
 
 			P_PAUSE(1);
 		}
@@ -1483,7 +1483,7 @@ void l2_cache_ctrl(void){
 
 			//check for block each time I run...
 			//get the status of the cache block
-			cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+			/*cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);*/
 
 
 
@@ -1521,6 +1521,16 @@ void l2_cache_ctrl(void){
 				//if the block was internally scheduled decrement the counter.
 				if(!l2_caches[my_pid].l2_write_back(&(l2_caches[my_pid]), message_packet))
 					step--;
+			}
+			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
+			{
+				//Call back function (cgm_mesi_l2_put)
+
+				//if the block stalls on a transient state run again.
+				l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet);
+
+				//run again
+				step--;
 			}
 
 
@@ -1572,14 +1582,6 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_inval_ack)
 				l2_caches[my_pid].l2_inval_ack(&(l2_caches[my_pid]), message_packet);
 			}
-			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
-			{
-				//Call back function (cgm_mesi_l2_put)
-
-				//if the block stalls on a transient state run again.
-				if(!l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet))
-					step--;
-			}
 			else
 			{
 				fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -1616,6 +1618,8 @@ void l3_cache_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
+	int temp;
+
 	while(1)
 	{
 		/*wait here until there is a job to do.*/
@@ -1630,7 +1634,7 @@ void l3_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 
 			l3_caches[my_pid].stalls++;
-			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
+			printf("L3 %d stalling\n", l3_caches[my_pid].id);
 
 			P_PAUSE(1);
 		}
@@ -1642,8 +1646,26 @@ void l3_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+			/*temp = ort_search(&(l3_caches[my_pid]), 18, 238);
+			if(temp < l3_caches[my_pid].mshr_size)
+			{
+				printf("***L3 coalesced access_id %llu addr %u cycle %llu\n", message_packet->access_id, message_packet->address, P_TIME);
+				STOP;
+			}*/
+
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
+				if(message_packet->access_id == 372310 && access_type == cgm_access_gets)
+				{
+					printf("L3 received gets access_id %llu\n", message_packet->access_id);
+				}
+				else if(message_packet->access_id == 372310 && access_type == cgm_access_fetch_retry)
+				{
+					printf("L3 received fetch_retry access_id %llu\n", message_packet->access_id);
+
+				}
+
+
 				//via call back function (cgm_mesi_l3_gets)
 				l3_caches[my_pid].l3_gets(&(l3_caches[my_pid]), message_packet);
 			}
@@ -1665,8 +1687,6 @@ void l3_cache_ctrl(void){
 			}
 
 
-
-
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_ack)
@@ -1680,6 +1700,8 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 				step--;
 			}
+
+
 			else if(access_type == cgm_access_getx_fwd_ack)
 			{
 				//via call back function (cgm_mesi_l3_getx_fwd_ack)
@@ -1693,6 +1715,8 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 				step--;
 			}
+
+
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
@@ -1703,6 +1727,9 @@ void l3_cache_ctrl(void){
 			{
 				//via call back function (cgm_mesi_l3_write_block)
 				l3_caches[my_pid].l3_write_block(&(l3_caches[my_pid]), message_packet);
+
+				//retry state set so run again
+				step--;
 			}
 			else
 			{
@@ -2449,6 +2476,7 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 		assert(way >= 0 && way <cache->num_sets);
+
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
 	}
 
@@ -2528,13 +2556,24 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 
 	if(l3_inf && cache->cache_type == l3_cache_t)
 	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
 		if(message_packet->cpu_access_type == cgm_access_fetch)
 		{
 			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
 		}
-		else if(message_packet->cpu_access_type == cgm_access_store || message_packet->cpu_access_type == cgm_access_load)
+		else if(message_packet->cpu_access_type == cgm_access_store)
 		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
+		}
+		else if(message_packet->cpu_access_type == cgm_access_load)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
 		}
 	}
 
@@ -2644,6 +2683,34 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	i = ort_search(cache, message_packet->tag, message_packet->set);
 
+	/*if(message_packet->access_id == 372310
+	|| message_packet->access_id == 373815
+	|| message_packet->access_id == 373852
+	|| message_packet->access_id == 373853
+	|| message_packet->access_id == 378080
+	|| message_packet->access_id == 378091
+	|| message_packet->access_id == 378279
+	|| message_packet->access_id == 378247
+	|| message_packet->access_id == 378289
+	|| message_packet->access_id == 378318
+	|| message_packet->access_id == 378416
+	cache->cache_type == l3_cache_t)
+	{
+		i = cache->mshr_size;
+	}*/
+
+	if(message_packet->access_id == 372310)
+	{
+		printf("cache name %s i %d\n", cache->name, i);
+
+		if(cache->cache_type == l3_cache_t)
+		{
+			printf("address tag %d set %d\n", message_packet->tag, message_packet->set);
+			printf("ORT tag %d set %d\n", cache->ort[i][0], cache->ort[i][1]);
+			printf("address %u\n", message_packet->address);
+		}
+	}
+
 	//unique memory accesses
 	if(i == cache->mshr_size)
 	{
@@ -2651,6 +2718,14 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		row = get_ort_status(cache);
 		assert(row < cache->mshr_size);
 		ort_set(cache, row, message_packet->tag, message_packet->set);
+
+		if(cache->cache_type == l3_cache_t && message_packet->tag == 18 && message_packet->set == 238)
+		{
+			printf("L3 write to ort access_id %llu\n", message_packet->access_id);
+			printf("tag %d set %d\n", message_packet->tag, message_packet->set);
+			printf("address = %u\n", message_packet->address);
+		}
+
 	}
 	//can be coalesced
 	else if(i >= 0 && i < cache->mshr_size)

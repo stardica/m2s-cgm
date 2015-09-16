@@ -370,6 +370,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//////////////testing
 	//this can remove the memory system for testing purposes
 	//if(mem_system_off == 1 || mem_system_off == 3)
+
 	/*if(new_packet->cpu_access_type == cgm_access_fetch)
 	{
 		//put back on the core event queue to end memory system access.
@@ -377,7 +378,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
 		return access_id;
-		return;
 	}*/
 	//////////////testing
 
@@ -432,7 +432,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	//////////////testing
 	/*if(mem_system_off == 2 || mem_system_off == 3)*/
-	if(new_packet->cpu_access_type == cgm_access_store) //new_packet->cpu_access_type == cgm_access_load) //
+	if(new_packet->cpu_access_type == cgm_access_store || new_packet->cpu_access_type == cgm_access_load)
 	{
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);

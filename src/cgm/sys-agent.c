@@ -194,6 +194,8 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	access_id = message_packet->access_id;
 	addr = message_packet->address;
 
+	P_PAUSE(system_agent->latency);
+
 
 	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
 		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
@@ -207,10 +209,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 			P_PAUSE(1);
 		}*/
 
-		P_PAUSE(system_agent->latency);
-
-		list_remove(system_agent->last_queue, message_packet);
-
+		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
@@ -220,7 +219,6 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	}
 	else if(access_type == cgm_access_mc_put)
 	{
-
 		//set the dest and sources
 		//message_packet->access_type = cgm_access_put;
 		message_packet->dest_id = message_packet->src_id;
@@ -234,14 +232,9 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 			P_PAUSE(1);
 		}*/
 
-		P_PAUSE(system_agent->latency);
-
 		//success
-		list_remove(system_agent->last_queue, message_packet);
-
-
+		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
-
 		advance(system_agent_io_up_ec);
 
 		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
