@@ -292,7 +292,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//stats
 			cache->hits++;
 
-			/*star todo note hit on exclusive could be due to the test configureation
+			/*star todo note hit on exclusive could be due to the test configuration
 			check this when all of the inf settings are turned off*/
 
 			//set retry state and delay
@@ -1215,10 +1215,9 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->size = l1_i_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
 
 			//update message status
-			message_packet->access_type = cgm_access_puts;
+
 			message_packet->cache_block_state = *cache_block_state_ptr;
 
-			cache_put_io_up_queue(cache, message_packet);
 
 			//check if the packet has coalesced accesses.
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
@@ -1226,6 +1225,13 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
+
+			message_packet->access_type = cgm_access_puts;
+			cache_put_io_up_queue(cache, message_packet);
+
+
+
+
 			break;
 	}
 	return;
@@ -2747,6 +2753,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//update message packet status
 			message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
 
 
 			/*star todo this is broken, try to fix this.
