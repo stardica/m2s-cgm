@@ -1,3 +1,96 @@
+void cgm_mesi_l1_d_inval(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//Invalidation/eviction request from L2 cache
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *wb_packet;
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//first check the cache for the block
+
+	//find and invalidate the block
+	if(*cache_block_hit_ptr == 1)
+	{
+		/*if the block is dirty send down to L2 cache for merge*/
+		switch(*cache_block_state_ptr)
+		{
+			case cgm_cache_block_owned:
+			case cgm_cache_block_noncoherent:
+			fatal("l1_d_cache_ctrl(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+				break;
+
+			//if invalid check the WB buffer
+			case cgm_cache_block_invalid:
+
+
+
+				break;
+			case cgm_cache_block_exclusive:
+			case cgm_cache_block_shared:
+				//hit and its NOT dirty send the ack down to the L2 cache.
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+				break;
+
+			case cgm_cache_block_modified:
+				//hit and its dirty send the ack and block down (sharing writeback) to the L2 cache.
+				message_packet->size = cache->block_size;
+				message_packet->cache_block_state = cgm_cache_block_modified;
+				break;
+		}
+
+		//invalidate the local block
+		cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+	}
+	//Second check the WB buffer
+	else if(*cache_block_hit_ptr == 0)
+	{
+		//check the WB buffer for the block
+		wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+		//found the block in the WB buffer
+		if(wb_packet)
+		{
+			//if modified send inval_ack with data
+			if(wb_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				message_packet->size = cache->block_size;
+				message_packet->cache_block_state = cgm_cache_block_modified;
+			}
+			//if not modified send inval_ack without data
+			else
+			{
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+			}
+
+			//remove the block from the WB buffer
+			wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+			free(wb_packet);
+		}
+		//block isn't in the cache or WB send inval_acl without data (empty inval_ack)
+		else
+		{
+			message_packet->size = 1;
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+		}
+	}
+
+	//set access type inval_ack
+	message_packet->access_type = cgm_access_inv_ack;
+
+	//reply to the L2 cache
+	cache_put_io_down_queue(cache, message_packet);
+
+	return;
+}
+
 if(message_packet->access_id == 373844)
 	{
 		printf("***L1 id %d 373844 write block cycle %llu\n", cache->id, P_TIME);
