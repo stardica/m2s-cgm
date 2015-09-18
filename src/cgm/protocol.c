@@ -2648,7 +2648,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *cache_block_state_ptr = &cache_block_state;
 
 	int num_cores = x86_cpu_num_cores;
-	int dirty, sharers, owning_core;
+	int sharers, owning_core;
 
 	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
@@ -2661,7 +2661,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	//get the directory state
 	//check the directory dirty bit status
-	dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
+	//dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
 	//get number of sharers
 	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
@@ -2872,7 +2872,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int *cache_block_state_ptr = &cache_block_state;
 
 	int num_cores = x86_cpu_num_cores;
-	int dirty, num_sharers, owning_core, xowning_core;
+	int num_sharers, owning_core, xowning_core;
 
 	/*enum cgm_access_kind_t access_type;
 	long long access_id = 0;
@@ -2887,7 +2887,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 	//get the directory state
 	//check the directory dirty bit status
-	dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
+	//dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
 	//get number of sharers
 	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
@@ -3302,7 +3302,7 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	struct cgm_packet_t *upgrade_inval_request_packet;
 
 	int num_cores = x86_cpu_num_cores;
-	int dirty, num_sharers, owning_core, i;
+	int num_sharers, owning_core, i;
 
 	int l2_src_id;
 	char *l2_name;
@@ -3320,7 +3320,7 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	//get the directory state
 	//check the directory dirty bit status
-	dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
+	//dirty = cgm_cache_get_dir_dirty_bit(cache, message_packet->set, message_packet->way);
 	//get number of sharers
 	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core

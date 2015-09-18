@@ -806,7 +806,7 @@ unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag){
  * The set where the address would belong is returned anyways. */
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
-	int set, tag, way, state;
+	int set, tag, way;
 	//unsigned int offset;
 
 	/* Locate block */
@@ -1593,8 +1593,8 @@ void l3_cache_ctrl(void){
 	/*int dirty;
 	int sharers;
 	int owning_core;*/
-	int i = 0;
-	int flag = 0;
+	/*int i = 0;
+	int flag = 0;*/
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
