@@ -806,12 +806,13 @@ unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag){
  * The set where the address would belong is returned anyways. */
 int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
-	int set, tag, way;
+	int set, tag, way, state;
 	//unsigned int offset;
 
 	/* Locate block */
 	tag = *(tag_ptr);
 	set = *(set_ptr);
+
 	//offset = *(offset_ptr);
 
 	*(state_ptr) = 0;
@@ -824,22 +825,18 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 			/* Block found */
 			*(way_ptr) = way;
 			*(state_ptr) = cache->sets[set].blocks[way].state;
+
+			/*if(*(state_ptr) == 5)
+			{
+				printf("bad block state cache %s cycle %llu\n", cache->name, P_TIME);
+			}*/
 			return 1;
 		}
 	}
 
+	assert(way == cache->assoc);
 	/* Block not found */
 	return 0;
-	/*if (way == cache->assoc)
-	{
-
-	}
-	else
-	{
-		fatal("cgm_cache_find_block() incorrect behavior\n");
-	}
-
-	fatal("cgm_cache_find_block() reached bottom\n");*/
 }
 
 int cgm_cache_get_way(struct cache_t *cache, int tag, int set){
@@ -1596,11 +1593,13 @@ void l3_cache_ctrl(void){
 	/*int dirty;
 	int sharers;
 	int owning_core;*/
+	int i = 0;
+	int flag = 0;
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
-	int temp;
+	/*int temp;*/
 
 	while(1)
 	{
@@ -1627,7 +1626,6 @@ void l3_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
 				//via call back function (cgm_mesi_l3_gets)
@@ -1649,8 +1647,6 @@ void l3_cache_ctrl(void){
 				if(!l3_caches[my_pid].l3_write_back(&(l3_caches[my_pid]), message_packet))
 					step--;
 			}
-
-
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_ack)
@@ -1664,8 +1660,6 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 				step--;
 			}
-
-
 			else if(access_type == cgm_access_getx_fwd_ack)
 			{
 				//via call back function (cgm_mesi_l3_getx_fwd_ack)
@@ -1679,8 +1673,6 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 				step--;
 			}
-
-
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
@@ -2556,6 +2548,12 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	//get the block and the state of the block
 	*(cache_block_hit_ptr) = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
+	/*if(*cache_block_state_ptr == cgm_cache_block_shared)
+	{
+		printf("here\n");
+		STOP;
+	}*/
+
 	//store the way
 	message_packet->way = way;
 
@@ -2994,6 +2992,15 @@ void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm
 
 	return;
 }
+
+/*enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way){
+
+	enum cgm_cache_block_state_t block_state;
+
+	block_state = cache->sets[set].blocks[way].state;
+
+	return block_state;
+}*/
 
 void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way){
 

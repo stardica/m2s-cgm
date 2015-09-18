@@ -61,10 +61,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
-void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -78,9 +78,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);

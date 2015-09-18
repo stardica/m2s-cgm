@@ -197,12 +197,13 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);
+enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way);
-enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);
+/*enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);*/
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
