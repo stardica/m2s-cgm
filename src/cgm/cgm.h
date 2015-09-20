@@ -148,7 +148,7 @@ void cgm_mem_run(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 
-//cache access realted
+//cache access related
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr);
 int cgm_can_issue_access(X86Thread *self, unsigned int addr);
 int cgm_in_flight_access(long long id);
