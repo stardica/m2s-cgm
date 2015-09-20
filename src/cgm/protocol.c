@@ -1611,8 +1611,6 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-		case cgm_cache_block_exclusive:
-
 		case cgm_cache_block_invalid:
 		fatal("cgm_mesi_l2_upgrade(): L2 id %d invalid block state on upgrade as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
@@ -1625,6 +1623,7 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 		case cgm_cache_block_shared:
 		case cgm_cache_block_modified:
+		case cgm_cache_block_exclusive:
 
 			//insert the upgrade request into the pending request buffer
 			message_packet->upgrade_pending = 1;
@@ -1920,7 +1919,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-		case cgm_cache_block_exclusive:
+
 
 			fatal("cgm_mesi_l2_upgrade_ack(): L2 id %d invalid block state on upgrade ack as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
@@ -1932,6 +1931,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 		case cgm_cache_block_shared:
 		case cgm_cache_block_modified:
+		case cgm_cache_block_exclusive:
 
 			//it is possible that an upgrade_ack can be received from a responding L2 before the L3 cache.
 
