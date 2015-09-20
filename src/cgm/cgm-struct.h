@@ -72,6 +72,7 @@ enum cgm_access_kind_t {
 	cgm_access_inv_ack,
 	cgm_access_upgrade, //upgrade request
 	cgm_access_upgrade_ack,
+	cgm_access_upgrade_putx_n,
 	cgm_access_upgrade_inval,
 	cgm_access_upgrade_inval_ack,
 	cgm_access_upgrade_putx,
@@ -130,6 +131,7 @@ struct cgm_packet_t{
 	int inval_pending;
 	int inval_ack;
 	int upgrade;
+	int upgrade_putx_n;
 	int upgrade_ack;
 	int upgrade_pending;
 	int upgrade_inval_ack_count;
@@ -318,6 +320,7 @@ struct cache_t{
 	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_upgrade_putx_n)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);

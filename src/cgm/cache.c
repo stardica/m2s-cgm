@@ -1511,10 +1511,6 @@ void l2_cache_ctrl(void){
 				//run again
 				step--;
 			}
-
-
-
-
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//Call back function (cgm_mesi_l2_downgrade_ack)
@@ -1545,6 +1541,11 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
+			}
+			else if(access_type == cgm_access_upgrade_putx_n)
+			{
+				//Call back function (cgm_mesi_l2_upgrade_putx_n)
+				l2_caches[my_pid].l2_upgrade_putx_n(&(l2_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_upgrade_inval)
 			{

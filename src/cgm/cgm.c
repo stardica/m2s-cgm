@@ -372,14 +372,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//if(mem_system_off == 1 || mem_system_off == 3)
 
 	//////////////testing
-	if(new_packet->cpu_access_type == cgm_access_fetch)
+	/*if(new_packet->cpu_access_type == cgm_access_fetch)
 	{
 		//put back on the core event queue to end memory system access.
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
 		return access_id;
-	}
+	}*/
 	//////////////testing
 
 
