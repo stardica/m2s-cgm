@@ -242,11 +242,6 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	/*enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;*/
-
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -290,9 +285,6 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//stats
 			cache->hits++;
 
-			/*star todo note hit on exclusive could be due to the test configuration
-			check this when all of the inf settings are turned off*/
-
 			//set retry state and delay
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
@@ -320,11 +312,6 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-
-	/*enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;*/
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -394,6 +381,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 }
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	printf("l1 d %d storing\n", cache->id);
+	STOP;
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -992,11 +982,6 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	/*enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;*/
-
 	int l3_map;
 
 	//charge delay
@@ -1011,7 +996,8 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_owned:
-			fatal("cgm_mesi_l2_gets(): Invalid block state on fetch hit as %s cycle %llu\n",
+		case cgm_cache_block_exclusive:
+			fatal("cgm_mesi_l2_gets(): Invalid block state on gets as %s cycle %llu\n",
 					str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
 			break;
 
@@ -1048,7 +1034,6 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_exclusive:
 
 			//stats
 			cache->hits++;
@@ -1062,14 +1047,17 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			/*star todo this is broken, try to fix this.
 			the I$ is accessing memory in the D$'s swim lane*/
-			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 			{
 				message_packet->cache_block_state = cgm_cache_block_shared;
 			}
 			else
 			{
 				message_packet->cache_block_state = *cache_block_state_ptr;
-			}
+			}*/
+
+			//set block state
+			message_packet->cache_block_state = *cache_block_state_ptr;
 
 			//set message size
 			message_packet->size = l1_i_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
@@ -1092,11 +1080,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	/*enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;*/
-
 	int l3_map;
 
 	//charge delay
@@ -1109,13 +1092,11 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-			fatal("l2_cache_ctrl(): Invalid block state on load hit as %s cycle %llu\n",
-					str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
+			fatal("cgm_mesi_l2_get(): L2 id %d Invalid block state on get as %s cycle %llu\n",
+					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:
-
-			/*printf("l2 get miss\n");*/
 
 			//stats
 			cache->misses++;
@@ -2421,27 +2402,72 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*enum cgm_access_kind_t access_type;*/
-	/*long long access_id = 0;*/
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	/*access_type = message_packet->access_type;*/
-	/*access_id = message_packet->access_id;*/
+	int set;
+	int tag;
+	int way;
+	int i = 0;
 
 	//charge the delay
 	P_PAUSE(cache->latency);
 
+	/*TOP:*/
+
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	set = message_packet->set;
+	tag = message_packet->tag;
+	way = message_packet->way;
+
+	if(message_packet->set == 390 && message_packet->tag == 12)
+	{
+		printf("gets hit_ptr %d access %d tag %d way %d cycle %llu\n", *cache_block_hit_ptr, message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+		printf("address 0x%08x\n", message_packet->address);
+
+		/*for(i = 0; i < cache->assoc; i++)
+		{
+			printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
+
+			if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
+			{
+				printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+			}
+		}
+
+		printf("\n\n");*/
+	}
 
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-			fatal("l3_cache_ctrl(): GetS invalid block state on hit as %s\n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+		case cgm_cache_block_modified:
+		case cgm_cache_block_exclusive:
+			/*cgm_cache_set_block(cache, set, way, tag, cgm_cache_block_shared);*/
+
+			printf("Crashing: access_id %llu address 0x%08x set %d tag %d way %d cpu_access_type %d cycle %llu\n",
+					message_packet->access_id, message_packet->address, set, tag, way, message_packet->cpu_access_type, P_TIME);
+			printf("*** set %d way %d tag %d state %d\n", cache->sets[set].id, way, cache->sets[set].blocks[way].tag, cache->sets[set].blocks[way].state);
+			/*goto TOP;*/
+
+			for(i = 0; i < cache->assoc; i++)
+			{
+				printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
+
+				/*if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
+				{
+					printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+				}*/
+			}
+
+			printf("\n\n");
+
+			fatal("l3_cache_ctrl(): L3 id %d GetS invalid block state as %s cycle %llu\n", cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:
@@ -2481,13 +2507,9 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
 
-			/*printf("last sent access_id %llu\n", message_packet->access_id);*/
-
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_exclusive:
-		case cgm_cache_block_modified:
 
 			//stats;
 			cache->hits++;
@@ -2509,17 +2531,17 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			/*star todo this is broken, try to fix this.
 			the I$ is accessing memory in the D$'s swim lane*/
-			if(*cache_block_state_ptr == cgm_cache_block_exclusive ||*cache_block_state_ptr == cgm_cache_block_modified)
+			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive ||*cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				message_packet->cache_block_state = cgm_cache_block_shared;
 			}
 			else
 			{
 				message_packet->cache_block_state = *cache_block_state_ptr;
-			}
+			}*/
 
+			message_packet->cache_block_state = *cache_block_state_ptr;
 			message_packet->access_type = cgm_access_puts;
-			/*message_packet->cache_block_state = *cache_block_state_ptr;*/
 
 			message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
 			message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
@@ -2717,8 +2739,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*enum cgm_access_kind_t access_type;*/
-	/*long long access_id = 0;*/
+
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -2727,14 +2748,38 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int num_cores = x86_cpu_num_cores;
 	int sharers, owning_core;
 
-	/*access_type = message_packet->access_type;*/
-	/*access_id = message_packet->access_id;*/
+	int set;
+	int tag;
+	int way;
+	int i = 0;
+
 
 	//charge delay
 	P_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	set = message_packet->set;
+	tag = message_packet->tag;
+	way = message_packet->way;
+
+	if(message_packet->set == 390 && message_packet->tag == 12)
+	{
+		printf("get hit_ptr %d access %d tag %d way %d\n", *cache_block_hit_ptr, set, tag, way);
+		printf("address 0x%08x\n", message_packet->address);
+
+		for(i = 0; i < cache->assoc; i++)
+		{
+			printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
+
+			/*if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
+			{
+				printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+			}*/
+		}
+		printf("\n\n");
+	}
 
 	//get the directory state
 	//check the directory dirty bit status
@@ -2752,9 +2797,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			break;
 
 		case cgm_cache_block_invalid:
-
-			/*printf("l3 load miss\n");
-			STOP;*/
 
 			//stats;
 			cache->misses++;

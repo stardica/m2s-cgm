@@ -1594,8 +1594,8 @@ void l3_cache_ctrl(void){
 	/*int dirty;
 	int sharers;
 	int owning_core;*/
-	/*int i = 0;
-	int flag = 0;*/
+	int i = 0;
+	/*int flag = 0;*/
 
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
@@ -1693,6 +1693,23 @@ void l3_cache_ctrl(void){
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
+
+			/*if(my_pid == 2 && message_packet->set == 390 && message_packet->tag)
+			{
+				for(i = 0; i < l3_caches[my_pid].assoc; i++)
+				{
+					printf("l3 id %d accessing cache\n", l3_caches[my_pid].id);
+
+					if(cgm_cache_get_block_state(&(l3_caches[my_pid]), message_packet->set, i) == 4)
+					{
+						printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+						STOP;
+					}
+				}
+				printf("\n\n");
+			}*/
+
+
 		}
 	}
 	/* should never get here*/
