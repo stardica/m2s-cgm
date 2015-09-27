@@ -992,13 +992,12 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 	switch(*cache_block_state_ptr)
 	{
-
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_exclusive:
-			fatal("cgm_mesi_l2_gets(): Invalid block state on gets as %s cycle %llu\n",
-					str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
+			fatal("cgm_mesi_l2_gets(): L2 id %d Invalid block state on gets as %s cycle %llu\n",
+					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:
@@ -2424,12 +2423,13 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	tag = message_packet->tag;
 	way = message_packet->way;
 
-	if(message_packet->set == 390 && message_packet->tag == 12)
+	/*if(message_packet->set == 390 && message_packet->tag == 12)
 	{
 		printf("gets hit_ptr %d access %d tag %d way %d cycle %llu\n", *cache_block_hit_ptr, message_packet->set, message_packet->tag, message_packet->way, P_TIME);
 		printf("address 0x%08x\n", message_packet->address);
+		printf("address (unsigned int) %u\n", message_packet->address);
 
-		/*for(i = 0; i < cache->assoc; i++)
+		for(i = 0; i < cache->assoc; i++)
 		{
 			printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
 
@@ -2439,8 +2439,8 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			}
 		}
 
-		printf("\n\n");*/
-	}
+		printf("\n\n");
+	}*/
 
 	switch(*cache_block_state_ptr)
 	{
@@ -2450,22 +2450,23 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_exclusive:
 			/*cgm_cache_set_block(cache, set, way, tag, cgm_cache_block_shared);*/
 
-			printf("Crashing: access_id %llu address 0x%08x set %d tag %d way %d cpu_access_type %d cycle %llu\n",
+			/*printf("Crashing: access_id %llu address 0x%08x set %d tag %d way %d cpu_access_type %d cycle %llu\n",
 					message_packet->access_id, message_packet->address, set, tag, way, message_packet->cpu_access_type, P_TIME);
 			printf("*** set %d way %d tag %d state %d\n", cache->sets[set].id, way, cache->sets[set].blocks[way].tag, cache->sets[set].blocks[way].state);
-			/*goto TOP;*/
+
+			goto TOP;
 
 			for(i = 0; i < cache->assoc; i++)
 			{
 				printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
 
-				/*if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
+				if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
 				{
 					printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
-				}*/
+				}
 			}
 
-			printf("\n\n");
+			printf("\n\n");*/
 
 			fatal("l3_cache_ctrl(): L3 id %d GetS invalid block state as %s cycle %llu\n", cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
 			break;
@@ -2764,22 +2765,23 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	tag = message_packet->tag;
 	way = message_packet->way;
 
-	if(message_packet->set == 390 && message_packet->tag == 12)
+	/*if(message_packet->set == 390 && message_packet->tag == 12)
 	{
 		printf("get hit_ptr %d access %d tag %d way %d\n", *cache_block_hit_ptr, set, tag, way);
 		printf("address 0x%08x\n", message_packet->address);
+		printf("address (unsigned int) %u\n", message_packet->address);
 
 		for(i = 0; i < cache->assoc; i++)
 		{
 			printf("cache set %d way %d tag %d state %d\n", cache->sets[set].id, i, cache->sets[set].blocks[i].tag, cache->sets[set].blocks[i].state);
 
-			/*if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
+			if(cgm_cache_get_block_state(cache, message_packet->set, i) == 4)
 			{
 				printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
-			}*/
+			}
 		}
 		printf("\n\n");
-	}
+	}*/
 
 	//get the directory state
 	//check the directory dirty bit status

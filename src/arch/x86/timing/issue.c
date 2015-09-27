@@ -195,6 +195,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		loads++;
 		cgm_issue_lspq_access(self, cgm_access_load, load->phy_addr, core->event_queue, load);
 
+
+
 #else
 		/* create and fill the mod_client_info_t object */
 		//star >> repos is just a repository of objects.

@@ -255,6 +255,7 @@ void X86ContextExecute(X86Context *self){
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
 	buffer_ptr = mem_get_buffer(mem, regs->eip, 20, mem_access_exec);
+
 	if (!buffer_ptr)
 	{
 		/* Disable safe mode. If a part of the 20 read bytes does not belong to the
@@ -276,6 +277,7 @@ void X86ContextExecute(X86Context *self){
 
 
 	/* Disassemble */
+
 	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
 
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
@@ -283,18 +285,15 @@ void X86ContextExecute(X86Context *self){
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 	}
 
-
 	/* Stop if instruction matches last instruction bytes */
 	if (x86_emu_last_inst_size && x86_emu_last_inst_size == self->inst.size && !memcmp(x86_emu_last_inst_bytes, buffer_ptr, x86_emu_last_inst_size))
 	{
 		esim_finish = esim_finish_x86_last_inst;
 	}
 
-
 	/* Execute instruction */
 	X86ContextExecuteInst(self);
 	
-
 	/* Statistics */
 	asEmu(emu)->instructions++;
 }
@@ -313,7 +312,7 @@ void X86ContextSetEip(X86Context *self, unsigned int eip)
 		x86_regs_copy(self->backup_regs, self->regs);
 		self->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
-	
+
 	/* Set it */
 	self->regs->eip = eip;
 }

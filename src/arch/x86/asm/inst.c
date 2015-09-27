@@ -508,9 +508,7 @@ void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
 	/* Assembler must be initialized */
 	assert(x86_asm);
 
-
 	/* Initialize instruction */
-
 	inst->eip = eip;
 	inst->size = 0;
 	inst->opcode = 0;
@@ -723,4 +721,5 @@ void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
 
 	/* Calculate total size */
 	inst->size = inst->prefix_size + inst->opcode_size + inst->modrm_size + inst->sib_size + inst->disp_size + inst->imm_size;
+
 }

@@ -366,6 +366,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = cgm_access_fetch;
 
+
+/*	#include <mem-image/memory.h>
+	printf("%d\n", MEM_PAGE_SHIFT);
+	printf("%d\n", MEM_PAGE_MASK);
+	STOP;*/
+
 	//this can remove the memory system for testing purposes
 	//if(mem_system_off == 1 || mem_system_off == 3)
 
@@ -379,8 +385,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		return access_id;
 	}*/
 	//////////////testing
-
-
 
 
 	//Add (2) to the target L1 I Cache Rx Queue

@@ -391,9 +391,7 @@ unsigned int X86ContextEffectiveAddress(X86Context *self)
 	}
 
 	/* Address */
-	addr = X86ContextLoadReg(self, self->inst.ea_base) +
-		X86ContextLoadReg(self, self->inst.ea_index) * self->inst.ea_scale +
-		self->inst.disp;
+	addr = X86ContextLoadReg(self, self->inst.ea_base) + X86ContextLoadReg(self, self->inst.ea_index) * self->inst.ea_scale + self->inst.disp;
 	
 	/* Add segment base */
 	addr = X86ContextLinearAddress(self, addr);

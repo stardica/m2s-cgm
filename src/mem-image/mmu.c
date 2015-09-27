@@ -44,8 +44,8 @@ unsigned int mmu_page_mask;
  */
 
 /* Local constants */
-#define MMU_PAGE_HASH_SIZE  (1 << 10)
-#define MMU_PAGE_LIST_SIZE  (1 << 10)
+#define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
+#define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
 
 /* Physical memory page */
 struct mmu_page_t
@@ -78,6 +78,8 @@ struct mmu_t
 static struct mmu_t *mmu;
 
 
+#include <cgm/cgm.h>
+
 /*
  * Private Functions
  */
@@ -92,7 +94,9 @@ static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtl
 	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	tag = vtladdr & ~mmu_page_mask;
 	prev = NULL;
+
 	page = mmu->page_hash_table[index];
+
 	while (page)
 	{
 		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
@@ -163,6 +167,10 @@ void mmu_init()
 	/* Variables derived from page size */
 	mmu_log_page_size = log_base2(mmu_page_size);
 	mmu_page_mask = mmu_page_size - 1;
+
+	/*printf("%d\n", mmu_log_page_size);
+	printf("%d\n", mmu_page_mask);
+	getchar();*/
 
 	/* Initialize */
 	mmu = xcalloc(1, sizeof(struct mmu_t));
@@ -248,17 +256,24 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr)
 	unsigned int offset;
 	unsigned int phy_addr;
 
-	offset = vtl_addr & mmu_page_mask;
 	page = mmu_get_page(address_space_index, vtl_addr);
+
+	/*printf("page physical address %d cycle %llu\n", (page->phy_addr >> 12), P_TIME);*/
+	/*getchar();*/
+
 	assert(page);
+
+	offset = vtl_addr & mmu_page_mask;
+
 	phy_addr = page->phy_addr | offset;
+
 	/*//star testing.
 	printf("virtual address 0x%08x\n", vtl_addr);
 	printf("page->phy_addr 0x%08x\n", page->phy_addr);
-	printf("offset 0x%08x\n", offset);
 	printf("physical address 0x%08x\n", phy_addr);
 	fflush(stdout);
 	getchar();*/
+
 	return phy_addr;
 }
 

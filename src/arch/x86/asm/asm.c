@@ -367,6 +367,7 @@ void x86_asm_disassemble_binary(char *path)
 
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
+
 			ptr = elf_buffer_tell(buffer);
 			x86_inst_decode(&inst, eip, ptr);
 			if (inst.size)

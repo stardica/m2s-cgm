@@ -74,38 +74,38 @@ struct mem_t
 extern unsigned long mem_mapped_space;
 extern unsigned long mem_max_mapped_space;
 
-struct mem_t *mem_create(void);
-void mem_free(struct mem_t *mem);
+struct mem_t *mem_create(void); /*star used*/
+void mem_free(struct mem_t *mem); /*star used*/
 
-struct mem_t *mem_link(struct mem_t *mem);
-void mem_unlink(struct mem_t *mem);
+struct mem_t *mem_link(struct mem_t *mem); /*star used*/
+void mem_unlink(struct mem_t *mem); /*star used*/
 
-void mem_clear(struct mem_t *mem);
+void mem_clear(struct mem_t *mem); /*star used*/
 
 struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr);
-struct mem_page_t *mem_page_get_next(struct mem_t *mem, unsigned int addr);
+struct mem_page_t *mem_page_get_next(struct mem_t *mem, unsigned int addr); /*star used*/
 
-unsigned int mem_map_space(struct mem_t *mem, unsigned int addr, int size);
-unsigned int mem_map_space_down(struct mem_t *mem, unsigned int addr, int size);
+unsigned int mem_map_space(struct mem_t *mem, unsigned int addr, int size); /*star used*/
+unsigned int mem_map_space_down(struct mem_t *mem, unsigned int addr, int size); /*star used*/
 
-void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm);
-void mem_unmap(struct mem_t *mem, unsigned int addr, int size);
+void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm); /*star used*/
+void mem_unmap(struct mem_t *mem, unsigned int addr, int size); /*star used*/
 
-void mem_protect(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm);
-void mem_copy(struct mem_t *mem, unsigned int dest, unsigned int src, int size);
+void mem_protect(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm); /*star used*/
+void mem_copy(struct mem_t *mem, unsigned int dest, unsigned int src, int size); /*star used*/
 
-void mem_access(struct mem_t *mem, unsigned int addr, int size, void *buf, enum mem_access_t access);
-void mem_read(struct mem_t *mem, unsigned int addr, int size, void *buf);
-void mem_write(struct mem_t *mem, unsigned int addr, int size, void *buf);
+void mem_access(struct mem_t *mem, unsigned int addr, int size, void *buf, enum mem_access_t access); /*star used*/
+void mem_read(struct mem_t *mem, unsigned int addr, int size, void *buf); /*star used*/
+void mem_write(struct mem_t *mem, unsigned int addr, int size, void *buf); /*star used*/
 
-void mem_zero(struct mem_t *mem, unsigned int addr, int size);
-int mem_read_string(struct mem_t *mem, unsigned int addr, int size, char *str);
-void mem_write_string(struct mem_t *mem, unsigned int addr, char *str);
-void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t access);
+void mem_zero(struct mem_t *mem, unsigned int addr, int size); /*star used*/
+int mem_read_string(struct mem_t *mem, unsigned int addr, int size, char *str); /*star used*/
+void mem_write_string(struct mem_t *mem, unsigned int addr, char *str); /*star used*/
+void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t access); /*star used*/
 
 void mem_dump(struct mem_t *mem, char *filename, unsigned int start, unsigned int end);
 void mem_load(struct mem_t *mem, char *filename, unsigned int start);
 
-void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem);
+void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem); /*star used*/
 #endif
 

@@ -51,13 +51,12 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr)
 	printf("balh 0x%08x\n", index);
 	getchar();*/
 
-
 	//star index used to get index from pages[].
 	page = mem->pages[index];
 	prev = NULL;
 	
 	/* Look for page */
-	//just goes down the list of pages hased to pages[index].
+	//just goes down the list of pages hashed to pages[index].
 	while (page && page->tag != tag)
 	{
 		prev = page;
@@ -66,7 +65,6 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr)
 	
 	/* Place page into list head */
 	//if both prev and page are found then insert the page at the top.
-	//why?
 	if (prev && page)
 	{
 		prev->next = page->next;
