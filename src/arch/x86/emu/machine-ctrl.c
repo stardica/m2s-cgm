@@ -77,13 +77,18 @@ void x86_isa_set##cc##_rm8_impl(X86Context *ctx) \
 }
 
 
+
 #define op_jcc_rel8(cc, idep1, idep2) \
-void x86_isa_j##cc##_rel8_impl(X86Context *ctx) \
-{ \
-	struct x86_regs_t *regs = ctx->regs; \
-	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b; \
-	if (cc_##cc) \
-		regs->eip = ctx->target_eip; \
+void x86_isa_j##cc##_rel8_impl(X86Context *ctx){ 				\
+																\
+	struct x86_regs_t *regs = ctx->regs; 						\
+	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b; 		\
+	/*printf("ctx->target_eip 0x%08x\n", ctx->target_eip);*/		\
+	if (cc_##cc)\
+	{\
+		regs->eip = ctx->target_eip; 							\
+		/*printf("regs->eip 0x%08x\n", regs->eip);*/				\
+	}\
 	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -93,8 +98,12 @@ void x86_isa_j##cc##_rel32_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	ctx->target_eip = regs->eip + ctx->inst.imm.d; \
+	/*printf("ctx->target_eip 0x%08x\n", ctx->target_eip);*/		\
 	if (cc_##cc) \
+	{\
 		regs->eip = ctx->target_eip; \
+		/*printf("regs->eip 0x%08x\n", regs->eip);*/\
+	}\
 	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -148,8 +157,15 @@ void x86_isa_jecxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
+
+	/*printf("target 0x%08x\n", ctx->target_eip);*/
+
 	if (!X86ContextLoadReg(ctx, x86_inst_reg_ecx))
+	{
 		regs->eip = ctx->target_eip;
+		/*printf("regs->eip 0x%08x\n", regs->eip);*/
+	}
+
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 
@@ -159,8 +175,15 @@ void x86_isa_jcxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
+
+	/*printf("target 0x%08x\n", ctx->target_eip);*/
+
 	if (!X86ContextLoadReg(ctx, x86_inst_reg_cx))
+	{
 		regs->eip = ctx->target_eip;
+		/*printf("regs->eip 0x%08x\n", regs->eip);*/
+	}
+
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 

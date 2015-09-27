@@ -233,7 +233,13 @@ void x86_isa_call_rel32_impl(X86Context *ctx)
 
 	regs->esp -= 4;
 	X86ContextMemWrite(ctx, regs->esp, 4, &regs->eip);
+
 	ctx->target_eip = regs->eip + ctx->inst.imm.d;
+
+	/*printf("ctx->target_eip 0x%08x regs->eip 0x%08x ctx->inst.imm.d 0x%08x\n", ctx->target_eip, regs->eip, ctx->inst.imm.d);
+	if(ctx->target_eip > 2000000000)
+		getchar();*/
+
 	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -247,10 +253,19 @@ void x86_isa_call_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
+	/*printf("ctx->target_eip 0x%08x\n", ctx->target_eip);*/
+
+	//target eip is always zero at this point
 	ctx->target_eip = X86ContextLoadRm32(ctx);
 	regs->esp -= 4;
+
+	printf("ctx->curr_eip 0x%08x ctx->target_eip 0x%08x regs->eip 0x%08x ctx->eff_addr 0x%08x\n", ctx->curr_eip, ctx->target_eip, regs->eip, ctx->effective_address);
+	if(ctx->target_eip > 2000000000)
+		getchar();
+
 	X86ContextMemWrite(ctx, regs->esp, 4, &regs->eip);
 	regs->eip = ctx->target_eip;
+
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1086,7 +1101,16 @@ void x86_isa_jmp_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b;
+
+	/*printf("ctx->target_eip 0x%08x regs->eip 0x%08x ctx->inst.imm.d 0x%08x\n", ctx->target_eip, regs->eip, ctx->inst.imm.d);
+	if(regs->eip > 2000000000)
+		getchar();*/
+
 	regs->eip = ctx->target_eip;
+
+	/*printf("regs->eip = 0x%08x\n", regs->eip);
+	if(regs->eip > 2000000000)
+		getchar();*/
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1097,6 +1121,11 @@ void x86_isa_jmp_rel32_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.d;
+
+	/*printf("ctx->target_eip 0x%08x regs->eip 0x%08x ctx->inst.imm.d 0x%08x\n", ctx->target_eip, regs->eip, ctx->inst.imm.d);
+	if(regs->eip > 2000000000)
+		getchar();*/
+
 	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
@@ -1109,6 +1138,10 @@ void x86_isa_jmp_rm32_impl(X86Context *ctx)
 
 	ctx->target_eip = X86ContextLoadRm32(ctx);
 	regs->eip = ctx->target_eip;
+
+	/*printf("regs->eip = 0x%08x\n", regs->eip);
+	if(regs->eip > 2000000000)
+		getchar();*/
 
 	x86_uinst_new(ctx, x86_uinst_jump, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
@@ -1805,6 +1838,10 @@ void x86_isa_ret_impl(X86Context *ctx)
 	regs->esp += 4;
 	regs->eip = ctx->target_eip;
 
+	/*printf("regs->eip = 0x%08x\n", regs->eip);
+	if(regs->eip > 2000000000)
+		getchar();*/
+
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
@@ -1833,6 +1870,10 @@ void x86_isa_ret_imm16_impl(X86Context *ctx)
 	pop = ctx->inst.imm.w;
 	regs->esp += 4 + pop;
 	regs->eip = ctx->target_eip;
+
+	/*printf("regs->eip = 0x%08x\n", regs->eip);
+	if(regs->eip > 2000000000)
+		getchar();*/
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */

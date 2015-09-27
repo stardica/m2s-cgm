@@ -104,6 +104,7 @@ void X86ThreadRecover(X86Thread *self)
 		/* Stall fetch and set eip to fetch. */
 		self->fetch_stall_until = MAX(self->fetch_stall_until, asTiming(cpu)->cycle + x86_cpu_recover_penalty - 1);
 		self->fetch_neip = self->ctx->regs->eip;
+		/*printf("self->fetch_neip 0x%08x\n", self->fetch_neip);*/
 	}
 }
 

@@ -263,10 +263,8 @@ static char x86_signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 void X86ContextRunSignalHandler(X86Context *ctx, int sig)
 {
-
-
 	printf("X86ContextRunSignalHandler\n");
-	fflush(stdout);
+	fatal("X86ContextRunSignalHandler(); check this\n");
 
 	unsigned int handler;
 	struct x86_sigframe sigframe;
@@ -331,6 +329,7 @@ void X86ContextRunSignalHandler(X86Context *ctx, int sig)
 	if (!handler)
 		fatal("%s: invalid signal handler", __FUNCTION__);
 	ctx->regs->eip = handler;
+	/*printf("ctx->regs->eip 0x%08x\n", ctx->regs->eip);*/
 }
 
 
@@ -353,6 +352,8 @@ void X86ContextReturnFromSignalHandler(X86Context *ctx)
 
 void X86ContextCheckSignalHandlerIntr(X86Context *ctx)
 {
+	fatal("X86ContextCheckSignalHandlerIntr():check this\n");
+
 	int sig;
 
 	/* Context cannot be running a signal handler */

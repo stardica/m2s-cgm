@@ -72,6 +72,9 @@ static void x86_isa_rep_init(X86Context *ctx)
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
 			regs->eip -= ctx->inst.size; \
+			/*printf("regs->eip 0x%08x\n", regs->eip);\
+			if(regs->eip > 2000000000)\
+				getchar();*/\
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -93,7 +96,12 @@ static void x86_isa_rep_init(X86Context *ctx)
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
 			if (X86ContextGetFlag(ctx, x86_inst_flag_zf)) \
-				regs->eip -= ctx->inst.size; \
+			{\
+				/*star change is here*/ regs->eip -= ctx->inst.size; \
+				/*printf("regs->eip 0x%08x\n", regs->eip);\
+				if(regs->eip > 2000000000)\
+					getchar();*/\
+			}\
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -114,8 +122,13 @@ static void x86_isa_rep_init(X86Context *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
-			if (!X86ContextGetFlag(ctx, x86_inst_flag_zf)) \
+			if (!X86ContextGetFlag(ctx, x86_inst_flag_zf))\
+			{\
 				regs->eip -= ctx->inst.size; \
+				/*printf("regs->eip 0x%08x\n", regs->eip);\
+				if(regs->eip > 2000000000)\
+					getchar();*/\
+			}\
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \

@@ -163,7 +163,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 	//star >> increment the instruction pointer.
 	self->fetch_neip = self->fetch_eip + ctx->inst.size;
 
-
 	/*if(self->fetch_eip < min)
 	{
 		min = self->fetch_eip;
@@ -224,16 +223,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->pred_neip = self->fetch_neip;
 		uop->target_neip = ctx->target_eip;
 
-		/*printf("self->fetch_eip = 0x%08x\n", self->fetch_eip);*/
-
-
-		/*if(self->fetch_eip > 0x9000000)
-		{
-
-			printf("here\n");
-			uop->eip = 0x0;
-			//assert(self->fetch_eip < 0x9000000);
-		}*/
+		/*printf("uop->neip = 0x%08x\n", uop->neip);
+		if(uop->neip > 2000000000)
+			getchar();*/
 
 
 		//star added this to catch interrupts at issue.
@@ -557,11 +549,15 @@ static void X86ThreadFetch(X86Thread *self)
 		if (uop->flags & X86_UINST_CTRL)
 		{
 			target = X86ThreadLookupBTB(self, uop);
+
+			/*printf("target 0x%08x\n", target);*/
+
 			taken = target && X86ThreadLookupBranchPred(self, uop);
 			if (taken)
 			{
 				self->fetch_neip = target;
 				uop->pred_neip = target;
+
 				break;
 			}
 		}

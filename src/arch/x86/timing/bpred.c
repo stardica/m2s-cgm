@@ -76,6 +76,7 @@ int X86ThreadLookupBranchPred(X86Thread *self, struct x86_uop_t *uop)
 	/* Perfect predictor */
 	if (x86_bpred_kind == x86_bpred_kind_perfect)
 		uop->pred = uop->neip != uop->eip + uop->mop_size;
+
 	
 	/* Taken predictor */
 	if (x86_bpred_kind == x86_bpred_kind_taken)
@@ -219,8 +220,13 @@ unsigned int X86ThreadLookupBTB(X86Thread *self, struct x86_uop_t *uop)
 	assert(uop->flags & X86_UINST_CTRL);
 
 	/* Perfect branch predictor */
+
+
+
 	if (x86_bpred_kind == x86_bpred_kind_perfect)
 		return uop->neip;
+
+	fatal("X86ThreadLookupBTB(): something other than x86_bpred_kind_perfect set\n");
 
 	/* Internal branch (string operations) always predicted to jump to itself */
 	if (uop->uinst->opcode == x86_uinst_ibranch)

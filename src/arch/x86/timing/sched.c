@@ -305,6 +305,8 @@ void X86CpuAllocateContext(X86Cpu *self, X86Context *ctx)
 	thread->ctx = ctx;
 	thread->fetch_neip = ctx->regs->eip;
 
+	/*printf("thread->fetch_neip 0x%08x\n", thread->fetch_neip);*/
+
 	/* Debug */
 	X86ContextDebug("#%lld ctx %d in thread %s allocated\n", asTiming(self)->cycle, ctx->pid, thread->name);
 

@@ -454,6 +454,7 @@ unsigned int X86ContextLoadRm32(X86Context *self)
 		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
 
 	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 4, &value);
+
 	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
 	return value;
 }
@@ -836,6 +837,12 @@ void X86ContextExecuteInst(X86Context *self)
 	self->curr_eip = regs->eip;
 	self->target_eip = 0;
 
+	/*printf(" regs_eip 0x%08x\n", regs->eip);
+
+	if(regs->eip > 2000000000)
+		getchar();*/
+
+
 	/* Reset effective address */
 	self->effective_address = 0;
 
@@ -848,10 +855,13 @@ void X86ContextExecuteInst(X86Context *self)
 	}
 
 	/* Call instruction emulation function */
+
 	//star >> increments instruction pointer value.
-	//this runs the correct function from the machine files.
 	regs->eip = regs->eip + self->inst.size;
 
+	/*printf("size %d\n", self->inst.size);
+	if(self->inst.size > 10)
+		getchar();*/
 
 	//set a flag if we run into a syscall
 	if(self->inst.opcode == 255)
@@ -866,7 +876,7 @@ void X86ContextExecuteInst(X86Context *self)
 		}
 	}
 
-
+	//this runs the correct function from the machine files.
 	if (self->inst.opcode)
 	{
 		x86_context_inst_func[self->inst.opcode](self);

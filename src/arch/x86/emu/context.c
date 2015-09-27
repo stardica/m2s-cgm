@@ -304,9 +304,12 @@ void X86ContextExecute(X86Context *self){
  * starts, which will end on the next call to 'x86_ctx_recover'. */
 void X86ContextSetEip(X86Context *self, unsigned int eip)
 {
+	/*printf("eip before 0x%08x\n", eip);*/
+
 	/* Entering specmode */
 	if (self->regs->eip != eip && !X86ContextGetState(self, X86ContextSpecMode))
 	{
+		printf("spec mode\n");
 		X86ContextSetState(self, X86ContextSpecMode);
 		//star >> backs up the registers.
 		x86_regs_copy(self->backup_regs, self->regs);
