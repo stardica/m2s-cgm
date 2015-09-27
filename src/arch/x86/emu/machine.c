@@ -248,6 +248,7 @@ void x86_isa_call_rel32_impl(X86Context *ctx)
 	x86_uinst_new(ctx, x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
 }
 
+#include <cgm/cgm.h>
 
 void x86_isa_call_rm32_impl(X86Context *ctx)
 {
@@ -256,12 +257,16 @@ void x86_isa_call_rm32_impl(X86Context *ctx)
 	/*printf("ctx->target_eip 0x%08x\n", ctx->target_eip);*/
 
 	//target eip is always zero at this point
+	/*printf("cycle %llu\n", P_TIME);*/
 	ctx->target_eip = X86ContextLoadRm32(ctx);
 	regs->esp -= 4;
 
 	printf("ctx->curr_eip 0x%08x ctx->target_eip 0x%08x regs->eip 0x%08x ctx->eff_addr 0x%08x\n", ctx->curr_eip, ctx->target_eip, regs->eip, ctx->effective_address);
 	if(ctx->target_eip > 2000000000)
+	{
+		printf("cycle %llu\n", P_TIME);
 		getchar();
+	}
 
 	X86ContextMemWrite(ctx, regs->esp, 4, &regs->eip);
 	regs->eip = ctx->target_eip;
