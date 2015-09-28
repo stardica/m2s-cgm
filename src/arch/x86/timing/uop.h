@@ -97,9 +97,9 @@ struct x86_uop_t
 	unsigned int int_dest_ptr;
 	unsigned int int_size;
 
-
 	/* For memory uops */
 	unsigned int phy_addr;  /* ... corresponding to 'uop->uinst->address' */
+	int protection_fault;
 
 	/* Cycles */
 	long long when;  /* cycle when ready */

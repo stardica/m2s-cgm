@@ -66,6 +66,7 @@ char *cgm_stats_output_path = "";
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 
+int protection_faults = 0;
 int fetches = 0;
 int loads = 0;
 int stores = 0;
@@ -386,6 +387,16 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	}*/
 	//////////////testing
 
+	//bad access address kill fetch
+	if(addr == 0)
+	{
+		protection_faults++;
+		list_dequeue(cgm_access_record);
+		status_packet_destroy(new_packet_status);
+		packet_destroy(new_packet);
+		return access_id;
+	}
+
 
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
@@ -435,13 +446,13 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	//////////////testing
 	/*if(mem_system_off == 2 || mem_system_off == 3)*/
-	if(new_packet->cpu_access_type == cgm_access_store)
+	/*if(new_packet->cpu_access_type == cgm_access_store)
 	{
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);
 		packet_destroy(new_packet);
 		return;
-	}
+	}*/
 	/*if(new_packet->cpu_access_type == cgm_access_load)
 	{
 		//put back on the core event queue to end memory system access.
@@ -450,6 +461,18 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		return;
 	}*/
 	//////////////testing
+
+
+	if(addr == 0)
+	{
+		protection_faults++;
+
+		linked_list_add(event_queue, event_queue_item);
+		packet_destroy(new_packet);
+		//printf("load store protection fault %d total %llu cycle %llu\n", protection_faults, access_id, P_TIME);
+		return;
+	}
+
 
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)

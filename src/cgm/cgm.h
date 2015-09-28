@@ -133,6 +133,7 @@ extern unsigned long Current_Cycle;
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 
+extern int protection_faults;
 extern int fetches;
 extern int loads;
 extern int stores;

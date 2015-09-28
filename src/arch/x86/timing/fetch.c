@@ -120,7 +120,7 @@ static int X86ThreadCanFetch(X86Thread *self){
 		fflush(stdout);
 		getchar();*/
 
-		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
+		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 #if CGM
 		//if (!cgm_can_fetch_access(self->i_cache_ptr, phy_addr))
 		if (!cgm_can_fetch_access(self, phy_addr))
@@ -212,6 +212,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->mop_size = ctx->inst.size;
 		uop->mop_id = uop->id - uinst_index;
 		uop->mop_index = uinst_index;
+		uop->protection_fault = 0;
 
 		uop->eip = self->fetch_eip;
 		uop->in_fetch_queue = 1;
@@ -280,33 +281,8 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-
-			/*if(uinst->address < min)
-			{
-				min = uinst->address;
-				printf("D$ min = 0x%08x\n", min);
-			}
-			if(uinst->address > max)
-			{
-				max = uinst->address;
-				printf("D$ max = 0x%08x\n", max);
-			}
-			if(uinst->address > 0xB7000000 && uinst->address < 0xB7FFFFFF)
-			{
-				printf("D$ access = 0x%08x\n", uinst->address);
-				printf("here\n");
-				STOP;
-			}*/
-
-			uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address);
+			uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address, mmu_access_load_store);
 		}
-
-
-		/*if(uop->phy_addr == 418176 && (uop->flags & X86_UINST_MEM))
-		{
-			printf("here 1 \n");
-			printf("D$ virtual address 0x%08x\n", uinst->address);
-		}*/
 
 		/* Trace */
 		if (x86_tracing())
@@ -481,7 +457,7 @@ static void X86ThreadFetch(X86Thread *self)
 	if (block != self->fetch_block)
 	{
 		fetches++;
-		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip);
+		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;
 

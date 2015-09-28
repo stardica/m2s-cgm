@@ -108,7 +108,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		assert(uop->thread == self);
 		assert(!recover);
 		
-		/* Mispredicted branch */
+		/* Miss predicted branch */
 		if (x86_cpu_recover_kind == x86_cpu_recover_kind_commit && (uop->flags & X86_UINST_CTRL) && uop->neip != uop->pred_neip)
 			recover = 1;
 	
@@ -158,10 +158,17 @@ void X86ThreadCommit(X86Thread *self, int quant)
 				cpu->num_mispred_branch_uinst++;
 			}
 		}
+
 		if (uop->flags == X86_UINST_MEM)
 		{
 			//MEMINSTCOMMITED++;
 		}
+
+		if(uop->protection_fault == 1)
+		{
+			printf("X86ThreadCommit(): protection fault committing access_id %llu\n", uop->id);
+		}
+
 
 		/* Trace */
 		if (x86_tracing())
@@ -184,10 +191,14 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		 * recovers at commit. */
 		if (recover)
 		{
+			//fatal("X86ThreadCommit(): protection fault committing access_id %llu\n", uop->id);
+
 			X86ThreadRecover(self);
 			X86CoreReleaseAllFunctionalUnits(core);
 		}
 	}
+
+	//getchar();
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */

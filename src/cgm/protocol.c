@@ -382,8 +382,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("l1 d %d storing\n", cache->id);
-	STOP;
+	/*printf("l1 d %d storing\n", cache->id);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;

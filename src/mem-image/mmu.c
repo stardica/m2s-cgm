@@ -56,6 +56,8 @@ struct mmu_page_t
 	unsigned int vtl_addr;  /* Virtual address of page */
 	unsigned int phy_addr;  /* Physical address */
 
+	enum mmu_page_type_t page_type; /*type of page either .text or data segments
+
 	/* Statistics */
 	long long num_read_accesses;
 	long long num_write_accesses;
@@ -84,7 +86,7 @@ static struct mmu_t *mmu;
  * Private Functions
  */
 
-static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr)
+static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
 {
 	struct mmu_page_t *prev, *page;
 	unsigned int tag;
@@ -113,6 +115,20 @@ static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtl
 		page->vtl_addr = tag;
 		page->address_space_index = address_space_index;
 		page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
+
+		//star added this here, this tells us if the page is a .text of data page.
+		if(access_type == mmu_access_fetch)
+		{
+			page->page_type = mmu_page_text;
+		}
+		else if(access_type == mmu_access_load_store)
+		{
+			page->page_type = mmu_page_data;
+		}
+		else
+		{
+			fatal("mmu_get_page(): invalid access_type\n");
+		}
 
 		/* Insert in page list */
 		list_add(mmu->page_list, page);
@@ -249,32 +265,45 @@ int mmu_address_space_new(void)
 }
 
 
-unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr)
+unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type)
 {
 	struct mmu_page_t *page;
 
 	unsigned int offset;
 	unsigned int phy_addr;
 
-	page = mmu_get_page(address_space_index, vtl_addr);
-
-	/*printf("page physical address %d cycle %llu\n", (page->phy_addr >> 12), P_TIME);*/
-	/*getchar();*/
-
+	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 
 	offset = vtl_addr & mmu_page_mask;
-
 	phy_addr = page->phy_addr | offset;
 
-	/*//star testing.
+	//if there is an a fault send back null.
+	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
+	{
+		//this is a bad lookup the TLB (MMU) produced an address in the data segment
+		return 0;
+	}
+	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
+	{
+		//this is a bad lookup the TLB (MMU) produced an address in the .text segment
+		return 0;
+	}
+	else
+	{
+		return phy_addr;
+	}
+
+	/*star testing.
+	printf("page physical address %d cycle %llu\n", (page->phy_addr >> 12), P_TIME);
+	getchar();
 	printf("virtual address 0x%08x\n", vtl_addr);
 	printf("page->phy_addr 0x%08x\n", page->phy_addr);
 	printf("physical address 0x%08x\n", phy_addr);
 	fflush(stdout);
 	getchar();*/
 
-	return phy_addr;
+	/*return phy_addr;*/
 }
 
 

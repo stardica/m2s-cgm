@@ -24,9 +24,18 @@
 enum mmu_access_t
 {
 	mmu_access_invalid = 0,
+	mmu_access_fetch,
+	mmu_access_load_store,
 	mmu_access_read,
 	mmu_access_write,
 	mmu_access_execute
+};
+
+enum mmu_page_type_t
+{
+	mmu_page_invalid = 0,
+	mmu_page_text,
+	mmu_page_data
 };
 
 extern char *mmu_report_file_name;
@@ -41,12 +50,15 @@ void mmu_dump_report(void);
 
 int mmu_address_space_new(void);
 
-unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
+//star made changes to this function
+//unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
+unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type);
+
+
+
 
 int mmu_valid_phy_addr(unsigned int phy_addr);
 
 void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 
-
 #endif
-
