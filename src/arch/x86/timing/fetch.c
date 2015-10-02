@@ -281,7 +281,33 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address, mmu_access_load_store);
+
+			if(uinst->opcode == 51 || uinst->opcode == 52)
+			{
+				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address, mmu_access_load_store);
+			}
+			else
+			{
+				uop->phy_addr = 0;
+			}
+
+			if(uinst->opcode == 51)
+			{
+				//printf("\tuop load to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address , uop->phy_addr);
+			}
+			else if(uinst->opcode == 52)
+			{
+				//printf("\tuop store to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address, uop->phy_addr);
+			}
+			else if(uinst->opcode == 53)
+			{
+				//printf("\tuop prefetch to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address, uop->phy_addr);
+
+			}
+			else
+			{
+				fatal("bad op code\n");
+			}
 		}
 
 		/* Trace */
@@ -456,7 +482,10 @@ static void X86ThreadFetch(X86Thread *self)
 
 	if (block != self->fetch_block)
 	{
-		fetches++;
+		/*fetches++;*/
+
+		printf("fetch neip 0x%08x\n", self->fetch_neip);
+
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;

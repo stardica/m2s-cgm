@@ -394,6 +394,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
+
+		printf("bad fetch\n");
 		return access_id;
 	}
 
@@ -419,7 +421,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 }
 
 
-void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, long long uop_id, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
 	X86Thread *thread;
 	thread = self;
@@ -469,7 +471,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 		linked_list_add(event_queue, event_queue_item);
 		packet_destroy(new_packet);
-		//printf("load store protection fault %d total %llu cycle %llu\n", protection_faults, access_id, P_TIME);
+		printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
 		return;
 	}
 

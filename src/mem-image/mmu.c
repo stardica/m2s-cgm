@@ -271,23 +271,42 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	unsigned int offset;
 	unsigned int phy_addr;
+	unsigned int tag;
+	unsigned int index;
 
 	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 
+	//star added these two
+	index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	tag = (vtl_addr & ~mmu_page_mask) >> mmu_log_page_size;
+
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
+
+
+	/*printf("vtrl_addr 0x%08x phy_addr 0x%08x\n", vtl_addr, phy_addr);
+	printf("index 0x%08x tag 0x%08x offset 0x%08x page->phy_addr 0x%08x\n", index, tag, offset, page->phy_addr);
+	getchar();*/
+
 
 	//if there is an a fault send back null.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
 	{
 		//this is a bad lookup the TLB (MMU) produced an address in the data segment
-		return 0;
+
+		//type 2
+		printf("protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x cycle %llu\n", access_type, vtl_addr, phy_addr, P_TIME);
+
+		return phy_addr;
 	}
 	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
 	{
 		//this is a bad lookup the TLB (MMU) produced an address in the .text segment
-		return 0;
+
+		//type 1
+		//printf("protection fault data segment type %d vtrl_addr 0x%08x phy_addr 0x%08x cycle %llu\n", access_type, vtl_addr, phy_addr, P_TIME);
+		return phy_addr;
 	}
 	else
 	{

@@ -99,7 +99,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			store->protection_fault = 1;
 		}
 
-		cgm_issue_lspq_access(self, cgm_access_store, store->phy_addr, core->event_queue, store);
+		cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -203,7 +203,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 			load->protection_fault = 1;
 		}
 
-		cgm_issue_lspq_access(self, cgm_access_load, load->phy_addr, core->event_queue, load);
+		cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
 
 
 
@@ -317,11 +317,6 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 			continue;
 		}
 
-		/*//star >> added this
-		pthread_mutex_lock(&instrumentation_mutex);
-		IssuedLSQStats(prefetch);
-		pthread_mutex_unlock(&instrumentation_mutex);*/
-
 		/* Remove from prefetch queue */
 		assert(prefetch->uinst->opcode == x86_uinst_prefetch);
 		X86ThreadRemovePreQ(self);
@@ -329,7 +324,8 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 #if CGM
 		//star todo
 		/* Access memory system */
-		cgm_issue_lspq_access(self, cgm_access_prefetch, prefetch->phy_addr, core->event_queue, prefetch);
+
+		cgm_issue_lspq_access(self, cgm_access_prefetch, prefetch->id, prefetch->phy_addr, core->event_queue, prefetch);
 #else
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch, prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);

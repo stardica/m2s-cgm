@@ -162,6 +162,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (uop->flags == X86_UINST_MEM)
 		{
 			//MEMINSTCOMMITED++;
+
 		}
 
 		if(uop->protection_fault == 1)

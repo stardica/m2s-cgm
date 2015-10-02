@@ -594,11 +594,12 @@ void X86ContextLoadExe(X86Context *self, char *exe)
 	/* Stack */
 	X86ContextLoadStack(self);
 
-
 	/* Register initialization */
 	self->regs->eip = loader->interp ? loader->interp_prog_entry : loader->prog_entry;
 	self->regs->esp = loader->environ_base;
 
+
+	printf("---Program entry address is 0x%08x---\n", self->regs->eip);
 
 	//star added
 	/*printf("stdin_file \"%s\"\n", loader->stdin_file);

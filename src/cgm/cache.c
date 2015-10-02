@@ -2435,6 +2435,8 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->set = set;
 	message_packet->offset = offset;
 
+
+
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
