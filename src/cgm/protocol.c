@@ -996,8 +996,8 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_modified:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_exclusive:
-			fatal("cgm_mesi_l2_gets(): L2 id %d Invalid block state on gets as %s cycle %llu\n",
-					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
+			fatal("cgm_mesi_l2_gets(): L2 id %d Invalid block state on gets as %s address 0x%08x cycle %llu\n",
+					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address, P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:

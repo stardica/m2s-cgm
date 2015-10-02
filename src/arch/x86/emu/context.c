@@ -273,38 +273,11 @@ void X86ContextExecute(X86Context *self){
 
 
 	/* Disassemble */
-
 	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
 
-	//print the instruction....
-	char str[MAX_STRING_SIZE];
-	int i;
+	//star added this
+	x86_asm_print_disassembly(&self->inst, regs->eip, buffer_ptr);
 
-
-	x86_inst_dump_buf(&self->inst, str, MAX_STRING_SIZE);
-
-
-	printf("0x%08x:\t", self->inst.eip);//regs->eip);
-
-	/* Hex dump of bytes 0..6 */
-	for (i = 0; i < 7; i++)
-	{
-		if (i < self->inst.size)
-			printf("%02x ", buffer_ptr[i]);
-		else
-			printf("   ");
-	}
-
-	printf("%s\n", str);
-
-	/* Hex dump of bytes 7..13 */
-	if (self->inst.size > 7)
-	{
-		printf("%8x:\t", regs->eip + 7);
-		for (i = 7; i < 14 && i < self->inst.size; i++)
-			printf("%02x ", buffer_ptr[i]);
-		printf("\n");
-	}
 
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
 	{

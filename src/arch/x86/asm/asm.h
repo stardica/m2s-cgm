@@ -65,6 +65,7 @@ extern X86Asm *x86_asm;
 void x86_asm_init(void);
 void x86_asm_done(void);
 
+void x86_asm_print_disassembly(struct x86_inst_t *inst, unsigned int eip, unsigned char *buf);
 void x86_asm_disassemble_binary(char *path);
 
 

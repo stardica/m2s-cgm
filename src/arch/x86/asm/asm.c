@@ -323,6 +323,38 @@ void x86_asm_done(void)
 	delete(x86_asm);
 }
 
+//star added this
+void x86_asm_print_disassembly(struct x86_inst_t *inst, unsigned int eip, unsigned char *buf){
+
+	char str[MAX_STRING_SIZE];
+	int i;
+
+	x86_inst_dump_buf(inst, str, MAX_STRING_SIZE);
+
+	printf("0x%08x:\t", inst->eip);
+
+	/* Hex dump of bytes 0..6 */
+	for (i = 0; i < 7; i++)
+	{
+		if (i < inst->size)
+			printf("%02x ", buf[i]);
+		else
+			printf("   ");
+	}
+
+	printf("%s\n", str);
+
+	/* Hex dump of bytes 7..13 */
+	if (inst->size > 7)
+	{
+		printf("%8x:\t", eip + 7);
+		for (i = 7; i < 14 && i < inst->size; i++)
+			printf("%02x ", buf[i]);
+		printf("\n");
+	}
+
+	return;
+}
 
 void x86_asm_disassemble_binary(char *path)
 {
