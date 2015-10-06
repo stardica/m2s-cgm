@@ -116,6 +116,7 @@ struct x86_uop_t
 struct x86_uop_t *x86_uop_create(void);
 void x86_uop_free_if_not_queued(struct x86_uop_t *uop);
 void x86_uop_dump(struct x86_uop_t *uop, FILE *f);
+void x86_uop_print(struct x86_uop_t *uop);
 
 int x86_uop_exists(struct x86_uop_t *uop);
 void x86_uop_count_deps(struct x86_uop_t *uop);

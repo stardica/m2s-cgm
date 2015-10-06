@@ -845,11 +845,6 @@ void X86ContextExecuteInst(X86Context *self)
 	self->curr_eip = regs->eip;
 	self->target_eip = 0;
 
-	/*printf(" regs_eip 0x%08x\n", regs->eip);
-
-	if(regs->eip > 2000000000)
-		getchar();*/
-
 
 	/* Reset effective address */
 	self->effective_address = 0;
@@ -867,9 +862,6 @@ void X86ContextExecuteInst(X86Context *self)
 	//star >> increments instruction pointer value.
 	regs->eip = regs->eip + self->inst.size;
 
-	/*printf("size %d\n", self->inst.size);
-	if(self->inst.size > 10)
-		getchar();*/
 
 	//set a flag if we run into a syscall
 	if(self->inst.opcode == 255)
@@ -884,11 +876,26 @@ void X86ContextExecuteInst(X86Context *self)
 		}
 	}
 
+	/*if(self->inst.eip == (unsigned int)0x8049528)
+	{
+		printf("***** self->inst.opcode %d\n",self->inst.opcode);
+		//printf("%s", self->inst.format);
+		exit(0);
+	}*/
+
+
 	//this runs the correct function from the machine files.
 	if (self->inst.opcode)
 	{
 		x86_context_inst_func[self->inst.opcode](self);
 	}
+
+	/*if(self->inst.eip == (unsigned int)0x8049528)
+	{
+		printf("self->inst.addr 0x%08x\n",self->inst.addr_size);
+		fflush(stdout);//printf("%s", self->inst.format);
+	}*/
+
 
 	/* Statistics */
 	x86_inst_freq[self->inst.opcode]++;
@@ -897,4 +904,6 @@ void X86ContextExecuteInst(X86Context *self)
 	X86ContextDebugISA("\n");
 	if (debug_status(x86_context_call_debug_category))
 		X86ContextDebugCallInst(self);
+
+
 }

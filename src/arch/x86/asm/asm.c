@@ -331,6 +331,9 @@ void x86_asm_print_disassembly(struct x86_inst_t *inst, unsigned int eip, unsign
 
 	x86_inst_dump_buf(inst, str, MAX_STRING_SIZE);
 
+	//padding
+	printf("   ");
+
 	printf("0x%08x:\t", inst->eip);
 
 	/* Hex dump of bytes 0..6 */

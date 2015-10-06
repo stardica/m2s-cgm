@@ -1,3 +1,133 @@
+/*Initialize
+		page = xcalloc(1, sizeof(struct mmu_page_t));
+
+		//assign page id
+		page->id = page_number;
+		page_number++;
+
+		page->vtl_addr = tag;
+		page->address_space_index = address_space_index;
+		page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
+
+		star added this here,
+		this tells us if the page is a .text or data page.
+
+		if(access_type == mmu_access_fetch)
+		{
+			page->page_type = mmu_page_text;
+		}
+		else if(access_type == mmu_access_load_store)
+		{
+			page->page_type = mmu_page_data;
+		}
+		else
+		{
+			fatal("mmu_get_page(): invalid access_type\n");
+		}
+
+		Insert in page list
+		list_add(mmu->page_list, page);
+
+		Insert in page hash table
+		page->next = mmu->page_hash_table[index];
+		mmu->page_hash_table[index] = page;
+		prev = NULL;*/
+
+//page hit with same access and segment type
+				if(page->page_type == page_type)
+				{
+					//printf("here_2 page->page_type %d access_type %d cycle %llu\n", page->page_type, access_type, P_TIME);
+				}
+				else
+				{
+					/*printf("here_3 page->page_type %d access_type %d cycle %llu\n", page->page_type, access_type, P_TIME);
+					//create a page to cove this access type.
+					page = NULL;
+					break;*/
+
+					//if this isn't the page continue
+					//prev = page;
+					//page = page->next;
+					printf("looping cycle %llu\n", P_TIME);
+				}
+				//printf("looping cycle %llu\n", P_TIME);
+
+while (page)
+	{
+		//find a matching page.
+		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
+		{
+			//if the segment type matches done, other wise keep looking.
+			//printf("here_1 page->page_type %d access_type %d cycle %llu\n", page->page_type, access_type, P_TIME);
+
+			//page hit with same access and segment type
+			if(page->page_type == page_type)
+			{
+				//printf("here_2 page->page_type %d access_type %d cycle %llu\n", page->page_type, access_type, P_TIME);
+				break;
+			}
+			else
+			{
+				/*printf("here_3 page->page_type %d access_type %d cycle %llu\n", page->page_type, access_type, P_TIME);
+				//create a page to cove this access type.
+				page = NULL;
+				break;*/
+
+				//if this isn't the page continue
+				//prev = page;
+				//page = page->next;
+				printf("looping cycle %llu\n", P_TIME);
+			}
+			//printf("looping cycle %llu\n", P_TIME);
+		}
+
+		//printf("looping cycle %llu\n", P_TIME);
+		//getchar();
+
+		prev = page;
+		page = page->next;
+	}
+
+//this is a bad lookup the TLB (MMU) produced an address in the data segment
+		//type 2
+		//printf("---protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n", access_type, vtl_addr, phy_addr, mmu_get_page_id(0, vtl_addr), P_TIME);
+
+/*printf("vtrl_addr 0x%08x phy_addr 0x%08x\n", vtl_addr, phy_addr);
+	printf("index 0x%08x tag 0x%08x offset 0x%08x page->phy_addr 0x%08x\n", index, tag, offset, page->phy_addr);
+	getchar();*/
+
+
+		/*printf("max_1 address = 0x%08x\n", vtl_addr);*/
+
+assert(vtl_addr < (unsigned int)0x80481c0);
+
+		if(vtl_addr > max_1 && page->id == 0)
+		{
+			max_1 = vtl_addr;
+		}
+
+//this is a bad lookup the TLB (MMU) produced an address in the .text segment
+
+		//type 1
+		//printf("---protection fault data segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n", access_type, vtl_addr, phy_addr, mmu_get_page_id(0, vtl_addr), P_TIME);
+		//fflush(stdout);
+
+		/*if(vtl_addr > max_2 && page->id == 0)
+		{
+			max_2 = vtl_addr;
+		}
+
+		printf("max_2 address = 0x%08x\n", vtl_addr);*/
+
+/*star testing.
+	printf("page physical address %d cycle %llu\n", (page->phy_addr >> 12), P_TIME);
+	getchar();
+	printf("virtual address 0x%08x\n", vtl_addr);
+	printf("page->phy_addr 0x%08x\n", page->phy_addr);
+	printf("physical address 0x%08x\n", phy_addr);
+	fflush(stdout);
+	getchar();*/
+
 /*assert(message_packet->access_type != cgm_access_store_retry);
 
 			//for potential coalesced load-store condition

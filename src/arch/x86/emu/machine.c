@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
+
 #include <arch/common/arch.h>
 #include <lib/util/misc.h>
 #include <arch/x86/emu/context.h>
@@ -370,6 +372,8 @@ void x86_isa_cmpxchg8b_m64_impl(X86Context *ctx)
 		regs->edx = m64 >> 32;
 		regs->eax = m64;
 	}
+
+
 
 	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextEffectiveAddress(ctx), 8, 0, 0, 0,
 		x86_dep_aux, 0, 0, 0);  /* Load m64 */
@@ -1288,6 +1292,8 @@ void x86_isa_mov_ax_moffs16_impl(X86Context *ctx)
 {
 	unsigned short value;
 
+
+
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 2, &value);
 	X86ContextStoreReg(ctx, x86_inst_reg_ax, value);
 
@@ -1299,6 +1305,8 @@ void x86_isa_mov_ax_moffs16_impl(X86Context *ctx)
 void x86_isa_mov_eax_moffs32_impl(X86Context *ctx)
 {
 	unsigned int value;
+
+	/*printf("here\n");*/
 
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 4, &value);
 	X86ContextStoreReg(ctx, x86_inst_reg_eax, value);
@@ -1655,6 +1663,8 @@ void x86_isa_pop_rm32_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value;
 
+
+
 	X86ContextMemRead(ctx, regs->esp, 4, &value);
 	regs->esp += 4;
 	X86ContextStoreRm32(ctx, value);
@@ -1680,6 +1690,8 @@ void x86_isa_pop_ir32_impl(X86Context *ctx)
 	regs->esp += 4;
 	X86ContextStoreIR32(ctx, value);
 
+
+
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1699,6 +1711,8 @@ void x86_isa_popf_impl(X86Context *ctx)
 	 * host to push this value of 'eflags', causing a TRAP in the host code. */
 	regs->eflags &= ~(1 << 8);
 
+
+
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1715,6 +1729,7 @@ void x86_isa_prefetcht0_m8_impl(X86Context *ctx)
 
 	if (!x86_emu_process_prefetch_hints)
 		return;
+	/*printf("here\n");*/
 
 	eff_addr = X86ContextEffectiveAddress(ctx);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_aux, 0, 0, 0);
@@ -1843,9 +1858,7 @@ void x86_isa_ret_impl(X86Context *ctx)
 	regs->esp += 4;
 	regs->eip = ctx->target_eip;
 
-	/*printf("regs->eip = 0x%08x\n", regs->eip);
-	if(regs->eip > 2000000000)
-		getchar();*/
+	/*printf("here\n");*/
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
@@ -1876,9 +1889,7 @@ void x86_isa_ret_imm16_impl(X86Context *ctx)
 	regs->esp += 4 + pop;
 	regs->eip = ctx->target_eip;
 
-	/*printf("regs->eip = 0x%08x\n", regs->eip);
-	if(regs->eip > 2000000000)
-		getchar();*/
+	/*printf("here\n");*/
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */

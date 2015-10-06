@@ -264,9 +264,6 @@ void X86ContextSyscall(X86Context *self)
 		/* Set return value in 'eax'. */
 		regs->eax = err;
 
-		printf("syscall eax 0x%08x\n", regs->eax);
-		getchar();
-
 		if (code == 329 && INT ==1)
 		{
 			printf("CTX X86ContextSyscall() end \n");

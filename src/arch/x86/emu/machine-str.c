@@ -147,6 +147,9 @@ static void x86_isa_rep_init(X86Context *ctx)
 
 static void x86_isa_cmpsb_uinst(X86Context *ctx, unsigned int esi, unsigned int edi)
 {
+
+
+
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
@@ -205,6 +208,9 @@ void x86_isa_cmpsb_impl(X86Context *ctx)
 
 static void x86_isa_cmpsd_uinst(X86Context *ctx, unsigned int esi, unsigned int edi)
 {
+
+
+
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);

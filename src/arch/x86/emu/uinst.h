@@ -312,6 +312,7 @@ void x86_uinst_clear(void);
 
 void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size);
 void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f);
+void x86_uinst_print(struct x86_uinst_t *uinst);
 void x86_uinst_list_dump(FILE *f);
 
 

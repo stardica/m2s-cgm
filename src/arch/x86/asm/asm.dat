@@ -12,7 +12,6 @@ DEFINST(adc_rm32_r32, 0x11, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(adc_r8_rm8, 0x12, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(adc_r16_rm16, 0x13, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(adc_r32_rm32, 0x13, SKIP, SKIP, REG, SKIP, 0)
-
 DEFINST(add_al_imm8, 0x04, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(add_ax_imm16, 0x05, SKIP, SKIP, SKIP, IW, x86_inst_prefix_op)
 DEFINST(add_eax_imm32, 0x05, SKIP, SKIP, SKIP, ID, 0)
@@ -27,13 +26,10 @@ DEFINST(add_rm32_r32, 0x01, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(add_r8_rm8, 0x02, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(add_r16_rm16, 0x03, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(add_r32_rm32, 0x03, SKIP, SKIP, REG, SKIP, 0)
-
 DEFINST(addpd_xmm_xmmm128, 0x0f, 0x58, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(addps_xmm_xmmm128, 0x0f, 0x58, SKIP, REG, SKIP, 0)
-
 DEFINST(addsd_xmm_xmmm64, 0x0f, 0x58, SKIP, REG, SKIP, x86_inst_prefix_repnz)
 DEFINST(addss_xmm_xmmm32, 0x0f, 0x58, SKIP, REG, SKIP, x86_inst_prefix_rep)
-
 DEFINST(and_al_imm8, 0x24, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(and_ax_imm16, 0x25, SKIP, SKIP, SKIP, IW, x86_inst_prefix_op)
 DEFINST(and_eax_imm32, 0x25, SKIP, SKIP, SKIP, ID, 0)
@@ -48,34 +44,22 @@ DEFINST(and_rm32_r32, 0x21, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(and_r8_rm8, 0x22, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(and_r16_rm16, 0x23, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(and_r32_rm32, 0x23, SKIP, SKIP, REG, SKIP, 0)
-
 DEFINST(andpd_xmm_xmmm128, 0x0f, 0x54, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(andps_xmm_xmmm128, 0x0f, 0x54, SKIP, REG, SKIP, 0)
-
 DEFINST(bound_r16_rm32, 0x62, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(bound_r32_rm64, 0x62, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
-
 DEFINST(bsf_r32_rm32, 0x0f, 0xbc, SKIP, REG, SKIP, 0)
-
 DEFINST(bsr_r32_rm32, 0x0f, 0xbd, SKIP, REG, SKIP, 0)
-
 DEFINST(bswap_ir32, 0x0f, 0xc8|INDEX, SKIP, SKIP, SKIP, 0)
-
 DEFINST(bt_rm32_r32, 0x0f, 0xa3, SKIP, REG, SKIP, 0)
 DEFINST(bt_rm32_imm8, 0x0f, 0xba, SKIP, 4, IB, 0)
-
 DEFINST(bts_rm32_imm8, 0x0f, 0xba, SKIP, 5, IB, 0)
-
 DEFINST(call_rel32, 0xe8, SKIP, SKIP, SKIP, ID, 0)
 DEFINST(call_rm32, 0xff, SKIP, SKIP, 2, SKIP, 0)
-
 DEFINST(cbw, 0x98, SKIP, SKIP, SKIP, SKIP, x86_inst_prefix_op)
 DEFINST(cwde, 0x98, SKIP, SKIP, SKIP, SKIP, 0)
-
 DEFINST(cdq, 0x99, SKIP, SKIP, SKIP, SKIP, 0)
-
 DEFINST(cld, 0xfc, SKIP, SKIP, SKIP, SKIP, 0)
-
 DEFINST(cmova_r16_rm16, 0x0f, 0x47, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(cmova_r32_rm32, 0x0f, 0x47, SKIP, REG, SKIP, 0)
 DEFINST(cmovae_r16_rm16, 0x0f, 0x43, SKIP, REG, SKIP, x86_inst_prefix_op)
@@ -108,7 +92,6 @@ DEFINST(cmovp_r16_rm16, 0x0f, 0x4a, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(cmovp_r32_rm32, 0x0f, 0x4a, SKIP, REG, SKIP, 0)
 DEFINST(cmovs_r16_rm16, 0x0f, 0x48, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(cmovs_r32_rm32, 0x0f, 0x48, SKIP, REG, SKIP, 0)
-
 DEFINST(cmp_al_imm8, 0x3c, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(cmp_ax_imm16, 0x3d, SKIP, SKIP, SKIP, IW, x86_inst_prefix_op)
 DEFINST(cmp_eax_imm32, 0x3d, SKIP, SKIP, SKIP, ID, 0)

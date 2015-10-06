@@ -38,6 +38,11 @@ unsigned int mmu_page_size = 1 << 12;  /* 4KB default page size */
 unsigned int mmu_log_page_size;
 unsigned int mmu_page_mask;
 
+int page_number = 0;
+
+
+unsigned int max_2 = 0;
+unsigned int max_1 = 0;
 
 /*
  * Private variables
@@ -50,6 +55,8 @@ unsigned int mmu_page_mask;
 /* Physical memory page */
 struct mmu_page_t
 {
+	int id;
+
 	struct mmu_page_t *next;
 
 	int address_space_index;  /* Memory map ID */
@@ -71,7 +78,7 @@ struct mmu_t
 	struct list_t *page_list;
 
 	/* Hash table of pages */
-	struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
+	//struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
 
 	/* Report file */
 	FILE *report_file;
@@ -86,18 +93,63 @@ static struct mmu_t *mmu;
  * Private Functions
  */
 
-static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
-{
-	struct mmu_page_t *prev, *page;
+static struct mmu_page_t *mmu_page_access(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type){
+
+	struct mmu_page_t *prev = NULL;
+	struct mmu_page_t *page = NULL;
+	struct mmu_page_t *text_page = NULL;
+	struct mmu_page_t *data_page = NULL;
 	unsigned int tag;
 	int index;
+	int i = 0;
+
+	enum mmu_page_type_t page_type;
 
 	/* Look for page */
 	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	tag = vtladdr & ~mmu_page_mask;
-	prev = NULL;
 
-	page = mmu->page_hash_table[index];
+	/*search the page list for a page hit.*/
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		//pull a page
+		page = list_get(mmu->page_list, i);
+
+		//check to see if it is a hit and look for both text and data page types
+		if(mmu_search_page(page, vtladdr, address_space_index, tag))
+		{
+			//assign to text or data page ptr
+			if(page->page_type == mmu_page_text)
+			{
+				text_page = page;
+			}
+			else if(page->page_type == mmu_page_data)
+			{
+				data_page = page;
+			}
+		}
+		/*printf("page id %d, page type %d\n", page->id, page->page_type);*/
+	}
+
+	//figure out if we are looking for a .text or a data page.
+	page_type = mmu_get_page_type(access_type);
+
+	if(page_type == mmu_page_text && text_page)
+	{
+		return text_page;
+	}
+	else if(page_type == mmu_page_data && data_page)
+	{
+		return data_page;
+	}
+	else
+	{
+		fatal("mmu_page_access(): page miss\n");
+	}
+
+
+
+	/*page = mmu->page_hash_table[index];
 
 	while (page)
 	{
@@ -105,50 +157,122 @@ static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtl
 			break;
 		prev = page;
 		page = page->next;
+	}*/
+
+	assert(page);
+
+	/* Return it */
+	return page;
+}
+
+int mmu_search_page(struct mmu_page_t *page, unsigned int vtl_addr, int address_space_index, int tag){
+
+	int hit = 0;
+
+	if (page->vtl_addr == tag && page->address_space_index == address_space_index)
+	{
+		hit = 1;
 	}
+
+	return hit;
+}
+
+
+static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
+{
+	//struct mmu_page_t *prev = NULL;
+	struct mmu_page_t *page = NULL;
+	struct mmu_page_t *text_page = NULL;
+	struct mmu_page_t *data_page = NULL;
+	unsigned int tag;
+	int index;
+	/*int num_pages;*/
+	int i = 0;
+
+	enum mmu_page_type_t page_type;
+
+	/* Look for page */
+	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	tag = vtladdr & ~mmu_page_mask;
+	//prev = NULL;
+
+	/*search the page list for a page hit.*/
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		//pull a page
+		page = list_get(mmu->page_list, i);
+
+		//check to see if it is a hit and look for both text and data page types
+		if(mmu_search_page(page, vtladdr, address_space_index, tag))
+		{
+			//assign to text or data page ptr
+			if(page->page_type == mmu_page_text)
+			{
+				text_page = page;
+			}
+			else if(page->page_type == mmu_page_data)
+			{
+				data_page = page;
+			}
+		}
+		/*printf("page id %d, page type %d\n", page->id, page->page_type);*/
+	}
+
+	//figure out if we are looking for a .text or a data page.
+	page_type = mmu_get_page_type(access_type);
+
+	/*either return the page or create a new one
+	if the segment types do not match create a new page*/
+
+	/*if i found a text or data page and I am a text or data access return the existing page
+	otherwise this is an access that doesn't have a mapped page. create a page now.*/
+	if(page_type == mmu_page_text && text_page)
+	{
+		return text_page;
+	}
+	else if(page_type == mmu_page_data && data_page)
+	{
+		return data_page;
+	}
+	else
+	{
+		return mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
+	}
+
+	/*page = mmu->page_hash_table[index];*/
+
+
+
+	//this searches the page list for an existing page.
+	//page = mmu_search_page(page, vtladdr, address_space_index, tag, access_type, page_type);
+
+	/*while(page)
+	{
+		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
+		{
+			break;
+		}
+
+		prev = page;
+		page = page->next;
+	}*/
 	
 	/* Not found */
-	if (!page)
+	/*if (!page)// == NULL || found == 0)
 	{
-		/* Initialize */
-		page = xcalloc(1, sizeof(struct mmu_page_t));
-		page->vtl_addr = tag;
-		page->address_space_index = address_space_index;
-		page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
+		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
+	}*/
 
-		//star added this here, this tells us if the page is a .text of data page.
-		if(access_type == mmu_access_fetch)
-		{
-			page->page_type = mmu_page_text;
-		}
-		else if(access_type == mmu_access_load_store)
-		{
-			page->page_type = mmu_page_data;
-		}
-		else
-		{
-			fatal("mmu_get_page(): invalid access_type\n");
-		}
-
-		/* Insert in page list */
-		list_add(mmu->page_list, page);
-
-		/* Insert in page hash table */
-		page->next = mmu->page_hash_table[index];
-		mmu->page_hash_table[index] = page;
-		prev = NULL;
-	}
-	
 	/* Locate page at the head of the hash table for faster subsequent lookup */
-	if (prev)
+	/*if (prev)
 	{
 		prev->next = page->next;
 		page->next = mmu->page_hash_table[index];
 		mmu->page_hash_table[index] = page;
-	}
+	}*/
 
 	/* Return it */
-	return page;
+	/*return page;*/
 }
 
 
@@ -255,7 +379,6 @@ void mmu_dump_report(void)
 	fclose(f);
 }
 
-
 /* Obtain an identifier for a new virtual address space */
 int mmu_address_space_new(void)
 {
@@ -264,6 +387,96 @@ int mmu_address_space_new(void)
 	return mmu_address_space_index++;
 }
 
+unsigned int mmu_get_phyaddr(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type){
+
+	struct mmu_page_t *page;
+
+	unsigned int offset;
+	unsigned int phy_addr;
+
+	page = mmu_page_access(address_space_index, vtl_addr, access_type);
+
+	offset = vtl_addr & mmu_page_mask;
+	phy_addr = page->phy_addr | offset;
+
+	return phy_addr;
+}
+
+int mmu_get_page_id(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type){
+
+	struct mmu_page_t *page;
+
+	page = mmu_page_access(address_space_index, vtl_addr, access_type);
+
+	return page->id;
+}
+
+enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type){
+
+	enum mmu_page_type_t page_type = mmu_page_invalid;
+
+	if(access_type == mmu_access_fetch)
+	{
+		page_type = mmu_page_text;
+	}
+	else if(access_type == mmu_access_load_store)
+	{
+		page_type = mmu_page_data;
+	}
+	else
+	{
+		fatal("mmu_get_page_type(): invalid page access_type\n");
+	}
+
+	return page_type;
+}
+
+
+struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, enum mmu_access_t access_type, int index, unsigned int vtl_addr){
+
+	struct mmu_page_t *prev = NULL;
+	struct mmu_page_t *page = NULL;
+
+	/* Initialize */
+	page = xcalloc(1, sizeof(struct mmu_page_t));
+
+	//assign page id
+	page->id = page_number;
+	page_number++;
+
+	/*printf("---page created %d\n", page_number);*/
+
+	page->vtl_addr = tag;
+	page->address_space_index = address_space_index;
+	page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
+
+	/*star added this here,
+	this tells us if the page is a .text or data page.*/
+	if(access_type == mmu_access_fetch)
+	{
+		page->page_type = mmu_page_text;
+	}
+	else if(access_type == mmu_access_load_store)
+	{
+		page->page_type = mmu_page_data;
+	}
+	else
+	{
+		fatal("mmu_get_page(): invalid access_type\n");
+	}
+
+	/* Insert in page list */
+	list_add(mmu->page_list, page);
+
+	/* Insert in page hash table */
+	/*page->next = mmu->page_hash_table[index];
+	mmu->page_hash_table[index] = page;
+	prev = NULL;*/
+
+	return page;
+}
+
+
 
 unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type)
 {
@@ -271,58 +484,34 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	unsigned int offset;
 	unsigned int phy_addr;
-	unsigned int tag;
-	unsigned int index;
+	//unsigned int tag;
+	//unsigned int index;
 
 	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 
 	//star added these two
-	index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
-	tag = (vtl_addr & ~mmu_page_mask) >> mmu_log_page_size;
+	//index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	//tag = (vtl_addr & ~mmu_page_mask) >> mmu_log_page_size;
 
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
 
-
-	/*printf("vtrl_addr 0x%08x phy_addr 0x%08x\n", vtl_addr, phy_addr);
-	printf("index 0x%08x tag 0x%08x offset 0x%08x page->phy_addr 0x%08x\n", index, tag, offset, page->phy_addr);
-	getchar();*/
-
-
-	//if there is an a fault send back null.
+	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
 	{
-		//this is a bad lookup the TLB (MMU) produced an address in the data segment
-
-		//type 2
-		printf("protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x cycle %llu\n", access_type, vtl_addr, phy_addr, P_TIME);
-
-		return phy_addr;
+		fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, vtl_addr, mmu_access_fetch), P_TIME);
+		return 0;
 	}
 	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
 	{
-		//this is a bad lookup the TLB (MMU) produced an address in the .text segment
-
-		//type 1
-		//printf("protection fault data segment type %d vtrl_addr 0x%08x phy_addr 0x%08x cycle %llu\n", access_type, vtl_addr, phy_addr, P_TIME);
-		return phy_addr;
-	}
-	else
-	{
-		return phy_addr;
+		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, vtl_addr, mmu_access_load_store), P_TIME);
+		return 0;
 	}
 
-	/*star testing.
-	printf("page physical address %d cycle %llu\n", (page->phy_addr >> 12), P_TIME);
-	getchar();
-	printf("virtual address 0x%08x\n", vtl_addr);
-	printf("page->phy_addr 0x%08x\n", page->phy_addr);
-	printf("physical address 0x%08x\n", phy_addr);
-	fflush(stdout);
-	getchar();*/
-
-	/*return phy_addr;*/
+	return phy_addr;
 }
 
 

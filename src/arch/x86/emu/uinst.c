@@ -279,6 +279,9 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, X86Cont
 	if (!x86_uinst_mem_dep_size(uinst, index, ctx, NULL))
 		return;
 
+	/*printf("here_1\n");
+	fflush(stdout);*/
+
 	/* Record occurrence */
 	x86_uinst_effaddr_emitted = 1;
 	
@@ -668,6 +671,13 @@ void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f)
 	fprintf(f, "%s", buf);
 }
 
+void x86_uinst_print(struct x86_uinst_t *uinst)
+{
+	char buf[MAX_STRING_SIZE];
+
+	x86_uinst_dump_buf(uinst, buf, sizeof(buf));
+	printf("%s", buf);
+}
 
 void x86_uinst_list_dump(FILE *f)
 {

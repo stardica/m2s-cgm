@@ -165,10 +165,10 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		}
 
-		if(uop->protection_fault == 1)
+		/*if(uop->protection_fault == 1)
 		{
 			printf("X86ThreadCommit(): protection fault committing access_id %llu\n", uop->id);
-		}
+		}*/
 
 
 		/* Trace */

@@ -388,16 +388,15 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//////////////testing
 
 	//bad access address kill fetch
-	if(addr == 0)
+	/*if(addr == 0)
 	{
 		protection_faults++;
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
-
 		printf("bad fetch\n");
 		return access_id;
-	}
+	}*/
 
 
 	//Add (2) to the target L1 I Cache Rx Queue
@@ -465,15 +464,15 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//////////////testing
 
 
-	if(addr == 0)
+	/*if(addr == 0)
 	{
 		protection_faults++;
 
 		linked_list_add(event_queue, event_queue_item);
 		packet_destroy(new_packet);
-		printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
+		//printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
 		return;
-	}
+	}*/
 
 
 	//For memory system load store request

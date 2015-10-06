@@ -104,7 +104,7 @@
 								<option id="gnu.c.compiler.option.include.paths.302576728" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/home/stardica/Desktop/m2s-cgm/src"/>
 								</option>
-								<option id="gnu.c.compiler.option.optimization.flags.174636391" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-D_FORTIFY_SOURCE=0" valueType="string"/>
+								<option id="gnu.c.compiler.option.optimization.flags.174636391" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-U_FORTIFY_SOURCE" valueType="string"/>
 								<option id="gnu.c.compiler.option.misc.other.1496706460" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-pthread -mmmx -msse -c -fmessage-length=0" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2144661043" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

@@ -53,12 +53,16 @@ int mmu_address_space_new(void);
 //star made changes to this function
 //unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
 unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type);
-
-
-
+unsigned int mmu_get_phyaddr(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type);
+int mmu_get_page_id(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type);
+static struct mmu_page_t *mmu_page_access(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type);
+struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, enum mmu_access_t access_type, int index, unsigned int vtl_addr);
+enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type);
+int mmu_search_page(struct mmu_page_t *page, unsigned int vtl_addr, int address_space_index, int tag);
+static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type);
 
 int mmu_valid_phy_addr(unsigned int phy_addr);
 
-void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
+void mmu_access_stats(unsigned int phy_addr, enum mmu_access_t access);
 
 #endif

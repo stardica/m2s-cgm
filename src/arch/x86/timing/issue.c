@@ -94,10 +94,10 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//pritnf("issue cycle %llu");
 
 		//stores++;
-		if(store->phy_addr == 0)
+		/*if(store->phy_addr == 0)
 		{
 			store->protection_fault = 1;
-		}
+		}*/
 
 		cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
 
@@ -198,10 +198,10 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* Access memory system */
 		//loads++;
-		if(load->phy_addr == 0)
+		/*if(load->phy_addr == 0)
 		{
 			load->protection_fault = 1;
-		}
+		}*/
 
 		cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
 

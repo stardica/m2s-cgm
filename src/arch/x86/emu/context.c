@@ -276,7 +276,7 @@ void X86ContextExecute(X86Context *self){
 	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
 
 	//star added this
-	x86_asm_print_disassembly(&self->inst, regs->eip, buffer_ptr);
+	//x86_asm_print_disassembly(&self->inst, regs->eip, buffer_ptr);
 
 
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)

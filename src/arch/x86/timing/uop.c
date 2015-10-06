@@ -54,6 +54,26 @@ void x86_uop_free_if_not_queued(struct x86_uop_t *uop)
 	free(uop);
 }
 
+//star added this.
+void x86_uop_print(struct x86_uop_t *uop){
+
+	/* Fields */
+	//padding
+	printf("      ");
+
+	printf("id=%lld, ", uop->id);
+	printf("eip=0x%x, ", uop->eip);
+	printf("spec_mode=%c, ", uop->specmode ? 't' : 'f');
+	printf("trace_cache=%c, ", uop->trace_cache ? 't' : 'f');
+
+	/* Micro-instruction */
+	printf("uinst='");
+
+	x86_uinst_print(uop->uinst);
+	printf("'\n");
+
+	return;
+}
 
 void x86_uop_dump(struct x86_uop_t *uop, FILE *f)
 {

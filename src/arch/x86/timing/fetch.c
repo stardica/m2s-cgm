@@ -49,11 +49,6 @@
  * Class 'X86Thread'
  */
 
-int i = 0;
-int max = 0x00000000;
-int min = 0xFFFFFFFF;
-
-
 static int X86ThreadCanFetch(X86Thread *self){
 
 	//printf("X86ThreadCanFetch()\n");
@@ -278,35 +273,19 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		 * flags, etc. */
 		x86_uop_count_deps(uop);
 
+		//star added this
+		//x86_uop_print(uop);
+
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-
-			if(uinst->opcode == 51 || uinst->opcode == 52)
+			if(uinst->opcode == 51 || uinst->opcode == 52 || uinst->opcode == 53)
 			{
 				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address, mmu_access_load_store);
 			}
 			else
 			{
-				uop->phy_addr = 0;
-			}
-
-			if(uinst->opcode == 51)
-			{
-				//printf("\tuop load to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address , uop->phy_addr);
-			}
-			else if(uinst->opcode == 52)
-			{
-				//printf("\tuop store to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address, uop->phy_addr);
-			}
-			else if(uinst->opcode == 53)
-			{
-				//printf("\tuop prefetch to vtrl_address 0x%08x phy_address 0x%08x\n", uinst->address, uop->phy_addr);
-
-			}
-			else
-			{
-				fatal("bad op code\n");
+				fatal("X86ThreadFetchInst(): Invalid memory uop\n");
 			}
 		}
 
@@ -483,8 +462,9 @@ static void X86ThreadFetch(X86Thread *self)
 	if (block != self->fetch_block)
 	{
 		/*fetches++;*/
-
-		printf("fetch neip 0x%08x\n", self->fetch_neip);
+		//star this prints out the current fetch address
+		/*printf("fetch neip vtrl_addr 0x%08x, phy_addr 0x%08x page_id %d\n",
+				self->fetch_neip, mmu_get_phyaddr(0, self->fetch_neip), mmu_get_page_id(0, self->fetch_neip, mmu_access_fetch));*/
 
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 		self->fetch_block = block;
