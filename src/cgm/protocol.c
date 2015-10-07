@@ -234,8 +234,8 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 i %d fetching\n", cache->id);
-	STOP;*/
+	/*printf("l1 i %d fetching\n", cache->id);*/
+	/*STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -305,8 +305,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 d %d loading\n", cache->id);
-	STOP;*/
+	/*printf("l1 d %d loading\n", cache->id);*/
+	/*STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -382,8 +382,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 d %d storing\n", cache->id);
-	STOP;*/
+	/*printf("l1 d %d storing\n", cache->id);*/
+	/*STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -394,9 +394,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	long long access_id = 0;
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;*/
-
-	//charge delay
-	P_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -410,6 +407,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 		//miss or invalid cache block state
 		case cgm_cache_block_invalid:
+
+			//charge delay
+			P_PAUSE(cache->latency);
 
 			//stats
 			cache->misses++;
@@ -443,6 +443,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//stats
 			cache->upgrade_misses++;
+
+			if(message_packet->access_type == cgm_access_store_retry)
+			{
+				printf("access_id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			}
 
 			assert(message_packet->access_type != cgm_access_store_retry);
 
@@ -1276,6 +1281,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//access was a miss in L1 D but a hit at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
 
+			//return 0 to process as an upgrade.
 			return 0;
 
 			break;
@@ -1591,19 +1597,18 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-		case cgm_cache_block_invalid:
-		fatal("cgm_mesi_l2_upgrade(): L2 id %d invalid block state on upgrade as %s address %u\n",
+		case cgm_cache_block_modified:
+		case cgm_cache_block_exclusive:
+			fatal("cgm_mesi_l2_upgrade(): L2 id %d invalid block state on upgrade as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
 
+		case cgm_cache_block_invalid:
 			/*star todo block evicted by L2 and inval is on its way to L1
 			change upgrade request to GetX and send on to L3 cache.*/
-
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_modified:
-		case cgm_cache_block_exclusive:
 
 			//insert the upgrade request into the pending request buffer
 			message_packet->upgrade_pending = 1;
@@ -1899,26 +1904,27 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-
-
-			fatal("cgm_mesi_l2_upgrade_ack(): L2 id %d invalid block state on upgrade ack as %s address %u\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
-			break;
-
+		case cgm_cache_block_modified:
+		case cgm_cache_block_exclusive:
 		case cgm_cache_block_invalid:
-			fatal("cgm_mesi_l2_upgrade_ack(): cache block miss on upgrade ack check this\n");
+			fatal("cgm_mesi_l2_upgrade_ack(): L2 id %d invalid block state on upgrade ack as %s access_id %llu address 0x%08x cycle %llu\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, P_TIME);
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_modified:
-		case cgm_cache_block_exclusive:
-
 			//it is possible that an upgrade_ack can be received from a responding L2 before the L3 cache.
 
 			//pull the GET_FWD from the pending request buffer
 			pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 			/*if not found uh-oh...*/
+			/*if(!pending_packet)
+			{
+				printf("l2 upgrade ack crashing\n");
+
+			}*/
+
 			assert(pending_packet);
+
 			/*the address better be the same too...*/
 			assert(pending_packet->address == message_packet->address);
 
@@ -3462,7 +3468,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
-void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
+int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -3501,14 +3507,13 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_invalid:
-
-			fatal("cgm_mesi_l3_upgrade(): L3 id %d invalid block state on upgrade as %s address %u\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			fatal("cgm_mesi_l3_upgrade(): L3 id %d invalid block state on upgrade as %s access_id %llu address 0x%08x set %d and way %d sharers %d owning core %d\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->set, message_packet->way, num_sharers, owning_core);
 			break;
 
-		case cgm_cache_block_shared:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
+		case cgm_cache_block_shared:
 
 			/*there should always be at least one sharer
 			but no more than the number of cores.*/
@@ -3525,13 +3530,20 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 			else
 			{
-				/*set the number of inval_acks expected to receive
-				number of sharers minus your self*/
-				message_packet->upgrade_ack = (num_sharers - 1);
-			}
+				if(*cache_block_state_ptr == cgm_cache_block_shared)
+				{
+					/*set the number of inval_acks expected to receive number of sharers minus your self*/
+					message_packet->upgrade_ack = (num_sharers - 1);
+				}
+				else if(*cache_block_state_ptr == cgm_cache_block_shared || *cache_block_state_ptr == cgm_cache_block_modified)
+				{
+					/*another core has gained control. */
+					message_packet->upgrade_ack = num_sharers;
 
-			/*//transmit the upgrade_ack
-			message_packet->access_type = cgm_access_upgrade_ack;*/
+					/*should only be one other core*/
+					assert(message_packet->upgrade_ack == 1);
+				}
+			}
 
 			//set destination
 			message_packet->dest_id = message_packet->src_id;
@@ -3586,7 +3598,8 @@ void cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 			break;
 	}
-	return;
+
+	return 1;
 }
 
 

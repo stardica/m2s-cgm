@@ -453,11 +453,6 @@ unsigned int X86ContextLoadRm32(X86Context *self)
 	if (self->inst.modrm_mod == 0x03)
 	{
 		value = X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
-
-		if(P_TIME == 559309)
-		{
-			printf("current value of eax register 0x%08x cycle %llu\n", value, P_TIME);
-		}
 		return value;
 	}
 

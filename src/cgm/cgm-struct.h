@@ -334,7 +334,7 @@ struct cache_t{
 	void (*l3_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_getx_fwd_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l3_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l3_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
