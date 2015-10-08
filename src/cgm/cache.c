@@ -447,15 +447,19 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	assert(new_message);
 
 	//debugging
+	//if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	{
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
-				cache->name, new_message->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
+		if(new_message->access_type == cgm_access_load || new_message->access_type == cgm_access_store || new_message->access_type == cgm_access_put_clnx)
+		{
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu (%s) pulled from %s queue size %d cycle %llu\n",
+					cache->name, new_message->access_id, str_map_value(&cgm_mem_access_strn_map, new_message->access_type), cache->last_queue->name, list_count(cache->last_queue), P_TIME);
+		}
 	}
 	else if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
 	{
-		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu pulled from %s queue size %d\n",
-				cache->name, new_message->access_id, P_TIME, cache->last_queue->name, list_count(cache->last_queue));
+		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu pulled from %s queue size %d cycle %llu\n",
+				cache->name, new_message->access_id, cache->last_queue->name, list_count(cache->last_queue), P_TIME);
 	}
 	else
 	{
@@ -2462,8 +2466,8 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->set = set;
 	message_packet->offset = offset;
 
-	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
-			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+	/*CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);*/
 
 	//////testing
 	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
@@ -2644,7 +2648,7 @@ void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//debug
-	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);
+	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -2660,7 +2664,7 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//debug
-	CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);
+	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -2692,7 +2696,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//entry found in ORT so coalesce the packet
 		assert(cache->ort[i][0] == message_packet->tag && cache->ort[i][1] == message_packet->set && cache->ort[i][2] == 1);
 
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
+		/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);*/
 
 		message_packet->coalesced = 1;
 

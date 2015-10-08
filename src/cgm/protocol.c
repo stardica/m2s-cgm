@@ -364,6 +364,10 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//transmit to L2
 			cache_put_io_down_queue(cache, message_packet);
 
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+
 			break;
 
 		//hit states
@@ -386,6 +390,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			message_packet->end_cycle = P_TIME;
 			cache_l1_d_return(cache,message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit cycle %llu\n", cache->name, message_packet->access_id, P_TIME);
 			break;
 	}
 
@@ -451,6 +458,10 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//transmit to L2
 			cache_put_io_down_queue(cache, message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			break;
 
 		case cgm_cache_block_shared:
@@ -508,6 +519,10 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//transmit upgrade request to L2
 			//printf("access_id %llu forwarded set %d tag %d cycle %llu\n", message_packet->access_id, message_packet->set, message_packet->tag, P_TIME);
 			cache_put_io_down_queue(cache, message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu upgrade miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			break;
 
 		case cgm_cache_block_exclusive:
@@ -533,6 +548,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			message_packet->end_cycle = P_TIME;
 			cache_l1_d_return(cache,message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit cycle %llu\n", cache->name, message_packet->access_id, P_TIME);
 			break;
 	}
 
@@ -1171,13 +1189,16 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//transmit to L3
 			cache_put_io_down_queue(cache, message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			break;
 
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_shared:
 
-			//
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
@@ -1205,6 +1226,9 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->cache_block_state = *cache_block_state_ptr;
 
 			cache_put_io_up_queue(cache, message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit cycle %llu\n", cache->name, message_packet->access_id, P_TIME);
 			break;
 	}
 }
@@ -1274,6 +1298,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//transmit to L3
 			cache_put_io_down_queue(cache, message_packet);
 
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+
 			break;
 
 		case cgm_cache_block_modified:
@@ -1309,6 +1337,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//send up to L1 D cache
 			cache_put_io_up_queue(cache, message_packet);
 
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit cycle %llu\n", cache->name, message_packet->access_id, P_TIME);
+
 			break;
 
 		case cgm_cache_block_shared:
@@ -1318,6 +1349,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//access was a miss in L1 D but a hit at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 
 			//return 0 to process as an upgrade.
 			return 0;
@@ -2892,6 +2927,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
 
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+
 			break;
 
 		case cgm_cache_block_shared:
@@ -2925,6 +2964,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 			cache_put_io_up_queue(cache, message_packet);
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 
 				break;
 
@@ -3036,6 +3079,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			{
 				fatal("cgm_mesi_l3_get(): invalid sharer/owning_core state\n");
 			}
+
+			//debug
+			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit changed (%s) cycle %llu\n",
+					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 
 			break;
 	}
