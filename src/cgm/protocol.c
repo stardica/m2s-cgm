@@ -69,7 +69,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		}
 };
 
-long long temp_access_id = 0;
+/*long long temp_access_id = 0;*/
+long long write_back_id = 0;
 
 enum protocol_kind_t cgm_cache_protocol;
 enum protocol_kind_t cgm_gpu_cache_protocol;
@@ -118,6 +119,10 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->flush_pending = pending;
 	write_back_packet->cache_block_state = victim_state;
+	write_back_packet->write_back_id = write_back_id++;
+
+
+	/*printf("--- WB packet created id %llu\n", write_back_packet->write_back_id);*/
 
 	//reconstruct the address from the set and tag
 	//write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
@@ -316,6 +321,13 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+	/*if(message_packet->set == 11 && message_packet->tag == 66)
+	{
+		printf("access_id %llu access_type (%s) tag %d set %d cycle %llu\n",
+				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->tag, message_packet->set, P_TIME);
+
+	}*/
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_transient:
@@ -398,6 +410,13 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+	/*if(message_packet->set == 11 && message_packet->tag == 66)
+	{
+		printf("access_id %llu access_type (%s) tag %d set %d cycle %llu\n",
+				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->tag, message_packet->set, P_TIME);
+
+	}*/
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_owned:
@@ -441,15 +460,25 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//charge delay
 			P_PAUSE(cache->latency);
 
+			if(message_packet->address == (unsigned int) 0x00004810)
+			{
+				cgm_cache_dump_set(cache, message_packet->set);
+				printf("L1 D %d %s access_id %llu address 0x%08x set %d tag %d cycle %llu\n",
+						cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, P_TIME);
+			}
+
 			//stats
 			cache->upgrade_misses++;
 
-			if(message_packet->access_type == cgm_access_store_retry)
+			/*if(message_packet->access_type == cgm_access_store_retry)
 			{
-				printf("access_id %llu cycle %llu\n", message_packet->access_id, P_TIME);
-			}
+				printf("access_id %llu addr 0x%08x cycle %llu set %d tag %d way %d\n",
+						message_packet->access_id, message_packet->address, P_TIME, message_packet->set, message_packet->tag, message_packet->way);
 
-			assert(message_packet->access_type != cgm_access_store_retry);
+				ort_dump(cache);
+
+				assert(message_packet->access_type != cgm_access_store_retry);
+			}*/
 
 			/*printf("L1 D %d upgrade miss access id %llu addr 0x%08x cycle %llu\n", cache->id, message_packet->access_id, message_packet->address, P_TIME);*/
 
@@ -793,8 +822,11 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	//charge the latency
 	P_PAUSE(cache->latency);
 
+	message_packet = list_remove(cache->last_queue, message_packet);
+	free(message_packet);
+
 	//if the line is still in the exclusive state at this point drop it.
-	if(message_packet->cache_block_state == cgm_cache_block_exclusive)
+	/*if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 	{
 		message_packet = list_remove(cache->last_queue, message_packet);
 		free(message_packet);
@@ -803,11 +835,17 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	{
 		//block is dirty send the write back down to the L2 cache.
 		cache_put_io_down_queue(cache, message_packet);
+
+		if(message_packet->address == (unsigned int) 0x00029804)
+		{
+			printf("l1 d %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
+							cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);
+		}
 	}
 	else
 	{
 		fatal("cgm_mesi_l1_d_write_back(): Invalid block state in write back buffer cycle %llu\n", P_TIME);
-	}
+	}*/
 
 	return;
 }
@@ -1203,9 +1241,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//stats
 			cache->misses++;
 
-			//check L1 block state
-			assert(message_packet->cache_block_state == cgm_cache_block_invalid);
-
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
 
@@ -1214,6 +1249,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//find victim
 			message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);
+
+			//evict the victim
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
 
 			//set the data type bit in the block
 			/*int type;
@@ -1599,8 +1637,11 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_owned:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
-			fatal("cgm_mesi_l2_upgrade(): L2 id %d invalid block state on upgrade as %s address %u\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			fatal("cgm_mesi_l2_upgrade(): L2 id %d invalid block state on upgrade as %s access_id %llu address 0x%08x set %d tag %d cycle %llu\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:
@@ -2611,7 +2652,11 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				{
 					printf("L2 id %d WB received with block in shared state\n", cache->id);
 				}*/
-			fatal("cgm_mesi_l2_write_back(): L2 id %d invalid block state on write back as %s address %u\n",
+
+			printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
+						cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);
+
+			fatal("cgm_mesi_l2_write_back(): L2 id %d invalid block state on write back as %s address 0x%08x\n",
 					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 				break;
 
@@ -2668,6 +2713,12 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			case cgm_cache_block_modified:
 
 				//hit in cache merge write back here.
+
+				if(message_packet->address == (unsigned int) 0x00029804)
+				{
+					printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
+							cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
+				}
 
 				//set modified if the line is exclusive
 				if(*cache_block_state_ptr == cgm_cache_block_exclusive)
@@ -2755,10 +2806,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int num_cores = x86_cpu_num_cores;
 	int sharers, owning_core;
 
-	int set;
+	/*int set;
 	int tag;
 	int way;
-	int i = 0;
+	int i = 0;*/
 
 
 	//charge delay
@@ -2767,9 +2818,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	set = message_packet->set;
+	/*set = message_packet->set;
 	tag = message_packet->tag;
-	way = message_packet->way;
+	way = message_packet->way;*/
 
 	/*if(message_packet->set == 390 && message_packet->tag == 12)
 	{

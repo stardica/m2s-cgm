@@ -23,6 +23,8 @@ extern struct str_map_t cgm_mem_access_strn_map;
 extern enum protocol_kind_t cgm_cache_protocol;
 extern enum protocol_kind_t cgm_gpu_cache_protocol;
 
+long long write_back_id;
+
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);

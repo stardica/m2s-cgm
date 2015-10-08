@@ -207,6 +207,7 @@ int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int wa
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
+void cgm_cache_dump_set(struct cache_t *cache, int set);
 
 //ORT Manipulations
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state);

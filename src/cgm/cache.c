@@ -1059,6 +1059,20 @@ int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag){
 	return type;
 }
 
+void cgm_cache_dump_set(struct cache_t *cache, int set){
+
+	int i = 0;
+
+	for(i=0; i<cache->assoc; i++)
+	{
+		printf("set %d tag %d way %d state %s\n",
+				set, i, cache->sets[set].blocks[i].tag, str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state));
+	}
+
+	return;
+}
+
+
 /* Return the way of the block to be replaced in a specific set,
  * depending on the replacement policy */
 int cgm_cache_replace_block(struct cache_t *cache, int set)
@@ -1337,6 +1351,12 @@ void l1_d_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+			if(message_packet->address == (unsigned int) 0x00004810)
+			{
+				printf("l1 D %d access_id %llu write_back_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
+						l1_d_caches[my_pid].id, message_packet->access_id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
+			}
+
 			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
 				//Call back function (cgm_mesi_load)
@@ -1363,20 +1383,13 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_write_back)
 			{
+
 				//Call back function (cgm_mesi_l1_d_write_back)
 				l1_d_caches[my_pid].l1_d_write_back(&(l1_d_caches[my_pid]), message_packet);
 
 				/*write backs are internally scheduled so decrement the counter*/
 				step--;
 			}
-
-
-
-
-
-
-
-
 			else if (access_type == cgm_access_getx_fwd_inval)
 			{
 				//Call back function (cgm_mesi_l1_d_getx_fwd_inval)
@@ -1470,6 +1483,14 @@ void l2_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+
+			if(message_packet->address == (unsigned int) 0x00004810)
+			{
+				printf("l2 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
+						l2_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
+			}
+
 
 			//check for block each time I run...
 			//get the status of the cache block
@@ -1626,6 +1647,12 @@ void l3_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			if(message_packet->address == (unsigned int) 0x00004810)
+			{
+				printf("l3 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
+						l3_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
+			}
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -2434,8 +2461,6 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->tag = tag;
 	message_packet->set = set;
 	message_packet->offset = offset;
-
-
 
 	CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);

@@ -45,56 +45,56 @@ enum protocol_kind_t {
 
 enum cgm_access_kind_t {
 
-	cgm_access_invalid = 0,
-	cgm_access_fetch,
-	cgm_access_load,
-	cgm_access_store,
-	cgm_access_nc_store,
-	cgm_access_nc_load,
-	cgm_access_store_v,
-	cgm_access_load_s,
-	cgm_access_load_v,
-	cgm_access_prefetch,
-	cgm_access_gets, //get shared
-	cgm_access_gets_i,
-	cgm_access_get, //get specific to d caches
-	cgm_access_get_fwd,
-	cgm_access_get_fwd_nack,
-	cgm_access_getx_fwd,
-	cgm_access_getx_fwd_nack,
-	cgm_access_getx_fwd_ack,
-	cgm_access_getx_fwd_inval,
-	cgm_access_getx_fwd_inval_ack,
-	cgm_access_gets_s, //get shared specific to s caches
-	cgm_access_gets_v, //get shared specific to v caches
-	cgm_access_getx, //get exclusive (or get with intent to write)
-	cgm_access_inv,  //invalidation request
-	cgm_access_inv_ack,
-	cgm_access_upgrade, //upgrade request
-	cgm_access_upgrade_ack,
-	cgm_access_upgrade_putx_n,
-	cgm_access_upgrade_inval,
-	cgm_access_upgrade_inval_ack,
-	cgm_access_upgrade_putx,
-	cgm_access_downgrade, //downgrade request
-	cgm_access_downgrade_ack,
-	cgm_access_downgrade_nack,
-	cgm_access_mc_load,	//request sent to system agent/memory controller
-	cgm_access_mc_store,	//request sent to system agent/memory controller
-	cgm_access_mc_put,	//reply from system agent/memory controller
-	cgm_access_put_clnx, //put block in clean exclusive state
-	cgm_access_putx, //put block in modified state
-	cgm_access_puts, //put block in shared state.
-	cgm_access_puto, //put block in owned state.
-	cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
-	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
-	cgm_access_retry,
-	cgm_access_fetch_retry,
-	cgm_access_load_retry,
-	cgm_access_store_retry,
-	cgm_access_write_back,
-	cgm_access_retry_i,//not used
-	num_access_types
+	/*0*/	cgm_access_invalid = 0,
+			cgm_access_fetch,
+			cgm_access_load,
+	/*3*/	cgm_access_store,
+			cgm_access_nc_store,
+			cgm_access_nc_load,
+			cgm_access_store_v,
+			cgm_access_load_s,
+			cgm_access_load_v,
+			cgm_access_prefetch,
+	/*10*/	cgm_access_gets, //get shared
+			cgm_access_gets_i,
+			cgm_access_get, //get specific to d caches
+			cgm_access_get_fwd,
+			cgm_access_get_fwd_nack,
+			cgm_access_getx_fwd,
+			cgm_access_getx_fwd_nack,
+			cgm_access_getx_fwd_ack,
+			cgm_access_getx_fwd_inval,
+			cgm_access_getx_fwd_inval_ack,
+	/*20*/	cgm_access_gets_s, //get shared specific to s caches
+			cgm_access_gets_v, //get shared specific to v caches
+			cgm_access_getx, //get exclusive (or get with intent to write)
+			cgm_access_inv,  //invalidation request
+			cgm_access_inv_ack,
+			cgm_access_upgrade, //upgrade request
+			cgm_access_upgrade_ack,
+			cgm_access_upgrade_putx_n,
+			cgm_access_upgrade_inval,
+			cgm_access_upgrade_inval_ack,
+	/*30*/	cgm_access_upgrade_putx,
+			cgm_access_downgrade, //downgrade request
+			cgm_access_downgrade_ack,
+			cgm_access_downgrade_nack,
+			cgm_access_mc_load,	//request sent to system agent/memory controller
+			cgm_access_mc_store,	//request sent to system agent/memory controller
+			cgm_access_mc_put,	//reply from system agent/memory controller
+			cgm_access_put_clnx, //put block in clean exclusive state
+			cgm_access_putx, //put block in modified state
+			cgm_access_puts, //put block in shared state.
+	/*40*/	cgm_access_puto, //put block in owned state.
+			cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
+			cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
+			cgm_access_retry,
+			cgm_access_fetch_retry,
+			cgm_access_load_retry,
+	/*46*/	cgm_access_store_retry,
+			cgm_access_write_back,
+			cgm_access_retry_i,//not used
+			num_access_types
 };
 
 struct cgm_packet_t{
@@ -114,6 +114,7 @@ struct cgm_packet_t{
 
 	//access data
 	long long access_id;
+	long long write_back_id;
 	unsigned int address;
 	int set;
 	int tag;
