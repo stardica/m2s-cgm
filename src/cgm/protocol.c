@@ -471,6 +471,14 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//charge delay
 			P_PAUSE(cache->latency);
 
+
+			//put back on the core event queue to end memory system access.
+			/*cache_l1_d_return(cache, message_packet);
+			return;*/
+
+
+
+
 			if(message_packet->address == (unsigned int) 0x00004810)
 			{
 				cgm_cache_dump_set(cache, message_packet->set);
