@@ -1355,11 +1355,11 @@ void l1_d_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(message_packet->address == (unsigned int) 0x00004810)
+			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
 				printf("l1 D %d access_id %llu write_back_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
 						l1_d_caches[my_pid].id, message_packet->access_id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}
+			}*/
 
 			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
@@ -1489,11 +1489,11 @@ void l2_cache_ctrl(void){
 			access_id = message_packet->access_id;
 
 
-			if(message_packet->address == (unsigned int) 0x00004810)
+			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
 				printf("l2 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
 						l2_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}
+			}*/
 
 
 			//check for block each time I run...
@@ -1652,11 +1652,11 @@ void l3_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(message_packet->address == (unsigned int) 0x00004810)
+			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
 				printf("l3 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
 						l3_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}
+			}*/
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -3130,7 +3130,6 @@ enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t 
 	return t_state;
 }
 void cgm_cache_set_block_address(struct cache_t *cache, int set, int way, unsigned int address){
-
 
 	cache->sets[set].blocks[way].address = address;
 

@@ -121,19 +121,15 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	write_back_packet->cache_block_state = victim_state;
 	write_back_packet->write_back_id = write_back_id++;
 
-
-	/*printf("--- WB packet created id %llu\n", write_back_packet->write_back_id);*/
-
 	//reconstruct the address from the set and tag
-	//write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
-
-	//to make WB buffer snooping easier
-	write_back_packet->address = cache->sets[set].blocks[way].address;
-	write_back_packet->set = cache->sets[set].blocks[way].set;
-	write_back_packet->tag = cache->sets[set].blocks[way].tag;
-
+	//write_back_packet->address = cache->sets[set].blocks[way].address;
+	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);
 	assert(write_back_packet->address != 0);
+	/*printf("address 0x%08x\n", write_back_packet->address);
+	STOP;*/
 
+	write_back_packet->set = cache->sets[set].id;
+	write_back_packet->tag = cache->sets[set].blocks[way].tag;
 	return;
 }
 
@@ -318,6 +314,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
+	struct cgm_packet_t *write_back_packet = NULL;
+
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -327,6 +325,24 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->tag, message_packet->set, P_TIME);
 
 	}*/
+
+
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+		printf("load done!\n");
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		message_packet->end_cycle = P_TIME;
+		cache_l1_d_return(cache,message_packet);
+		return;
+	}
+
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -401,13 +417,15 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 d %d storing\n", cache->id);*/
-	/*STOP;*/
+	/*printf("l1 d %d storing\n", cache->id);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *write_back_packet = NULL;
 
 	/*enum cgm_access_kind_t access_type;
 	long long access_id = 0;
@@ -423,6 +441,24 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->tag, message_packet->set, P_TIME);
 
 	}*/
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+		printf("store done\n");
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		write_back_packet->cache_block_state = cgm_cache_block_modified;
+
+		message_packet->end_cycle = P_TIME;
+		cache_l1_d_return(cache,message_packet);
+		return;
+	}
+
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -1026,11 +1062,6 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 	//write the block
 	cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, message_packet->cache_block_state);
-
-	//testing
-	//set block address
-	cgm_cache_set_block_address(cache, message_packet->set, message_packet->l1_victim_way, message_packet->address);
-	//testing
 
 	//set retry state
 	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
