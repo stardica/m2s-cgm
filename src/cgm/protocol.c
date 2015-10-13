@@ -316,6 +316,10 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
+	//enum cgm_cache_block_state_t transient_state = cgm_cache_block_invalid;
+
+	int upgrade = 0;
+
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -334,7 +338,6 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	{
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
-		printf("load done!\n");
 		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
 		message_packet->end_cycle = P_TIME;
@@ -342,11 +345,11 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		return;
 	}
 
-
+	//check for transient state
+	//transient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
 	switch(*cache_block_state_ptr)
 	{
-		case cgm_cache_block_transient:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_noncoherent:
 			fatal("l1_d_cache_ctrl(): Invalid block state on load hit as \"%s\"\n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
@@ -393,6 +396,37 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//stats
 			cache->hits++;
+
+			//check for pending upgrade before finishing
+			upgrade = ort_search(cache, message_packet->tag, message_packet->set);
+
+			/*star todo start separating out these kinds of things,
+			this should be done in parallel with the cache access.*/
+			if(upgrade < cache->mshr_size)
+			{
+				/*there is a pending upgrade this means we have a valid block
+				in the shared state, but an earlier store is waiting on an upgrade to modified.
+				We must coalesce this access and wait for the earlier store to finish.*/
+
+				assert(*cache_block_state_ptr == cgm_cache_block_shared);
+
+				//charge delay
+				P_PAUSE(cache->latency);
+
+				//stats
+				//cache->transient_misses++;
+
+				//check ORT for coalesce
+				cache_check_ORT(cache, message_packet);
+
+				if(message_packet->coalesced == 1)
+					return;
+
+				//should always coalese because we are waiting on an upgrade miss.
+				fatal("cgm_mesi_load(): transient state no coalesce\n");
+			}
+
+			//there are no pending accesses, we can continue and finish the load.
 
 			//set the retry state and charge latency
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -448,7 +482,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	{
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
-		printf("store done\n");
+		/*printf("store done\n");*/
 		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
 		write_back_packet->cache_block_state = cgm_cache_block_modified;
@@ -513,14 +547,12 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			return;*/
 
 
-
-
-			if(message_packet->address == (unsigned int) 0x00004810)
+			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
 				cgm_cache_dump_set(cache, message_packet->set);
 				printf("L1 D %d %s access_id %llu address 0x%08x set %d tag %d cycle %llu\n",
 						cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, P_TIME);
-			}
+			}*/
 
 			//stats
 			cache->upgrade_misses++;
@@ -555,8 +587,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				return;
 
 			//set block transient state
-			//star todo should be able to remove this at some point.
-			cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, message_packet->access_id, cgm_cache_block_transient);
+			//cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, message_packet->access_id, cgm_cache_block_transient);
 
 			message_packet->access_type = cgm_access_upgrade;
 
@@ -884,11 +915,8 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	//charge the latency
 	P_PAUSE(cache->latency);
 
-	message_packet = list_remove(cache->last_queue, message_packet);
-	free(message_packet);
-
 	//if the line is still in the exclusive state at this point drop it.
-	/*if(message_packet->cache_block_state == cgm_cache_block_exclusive)
+	if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 	{
 		message_packet = list_remove(cache->last_queue, message_packet);
 		free(message_packet);
@@ -897,17 +925,11 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	{
 		//block is dirty send the write back down to the L2 cache.
 		cache_put_io_down_queue(cache, message_packet);
-
-		if(message_packet->address == (unsigned int) 0x00029804)
-		{
-			printf("l1 d %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
-							cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);
-		}
 	}
 	else
 	{
 		fatal("cgm_mesi_l1_d_write_back(): Invalid block state in write back buffer cycle %llu\n", P_TIME);
-	}*/
+	}
 
 	return;
 }
@@ -1181,11 +1203,33 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	int l3_map;
 
+	struct cgm_packet_t *write_back_packet = NULL;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		printf("l2 WB found\n");
+		/*STOP;
+
+		message_packet->end_cycle = P_TIME;
+		cache_l1_d_return(cache,message_packet);
+		return;*/
+	}
+
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -1274,12 +1318,15 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
 	int l3_map;
+
+	struct cgm_packet_t *write_back_packet = NULL;
 
 	/*enum cgm_access_kind_t access_type;
 	long long access_id = 0;
@@ -1291,6 +1338,24 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		printf("l2 WB found\n");
+		/*STOP;
+
+		message_packet->end_cycle = P_TIME;
+		cache_l1_d_return(cache,message_packet);
+		return 1;*/
+	}
 
 	switch(*cache_block_state_ptr)
 	{
@@ -2726,9 +2791,8 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				{
 					printf("L2 id %d WB received with block in shared state\n", cache->id);
 				}*/
-
-			printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
-						cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);
+			/*printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
+						cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);*/
 
 			fatal("cgm_mesi_l2_write_back(): L2 id %d invalid block state on write back as %s address 0x%08x\n",
 					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
@@ -2788,11 +2852,11 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				//hit in cache merge write back here.
 
-				if(message_packet->address == (unsigned int) 0x00029804)
+				/*if(message_packet->address == (unsigned int) 0x00029804)
 				{
 					printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
 							cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-				}
+				}*/
 
 				//set modified if the line is exclusive
 				if(*cache_block_state_ptr == cgm_cache_block_exclusive)
