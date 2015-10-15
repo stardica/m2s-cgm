@@ -338,10 +338,15 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	{
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
-		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		//printf("l1 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
 
 		message_packet->end_cycle = P_TIME;
-		cache_l1_d_return(cache,message_packet);
+		cache_l1_d_return(cache, message_packet);
 		return;
 	}
 
@@ -483,7 +488,12 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
 		/*printf("store done\n");*/
-		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+
+		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		//printf("l1 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
 
 		write_back_packet->cache_block_state = cgm_cache_block_modified;
 
@@ -491,8 +501,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		cache_l1_d_return(cache,message_packet);
 		return;
 	}
-
-
 
 	switch(*cache_block_state_ptr)
 	{
@@ -537,6 +545,8 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_shared:
 
 			//this is an upgrade_miss
+
+			fatal("l1 upgrade delete me\n");
 
 			//charge delay
 			P_PAUSE(cache->latency);
@@ -1219,14 +1229,33 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	{
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
+
+		/*fatal("l2 wb load delete me\n");*/
+
+		printf("l2 WB found WB state %d cache state %d cycle %llu\n", write_back_packet->cache_block_state, *cache_block_state_ptr, P_TIME);
+
+		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
 		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
-		printf("l2 WB found\n");
-		/*STOP;
+		//set message size
+		message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
 
-		message_packet->end_cycle = P_TIME;
-		cache_l1_d_return(cache,message_packet);
-		return;*/
+		//update message status
+		if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+		else if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+
+		cache_put_io_up_queue(cache, message_packet);
+		return;
 	}
 
 
@@ -1349,12 +1378,28 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		data should not be in the rest of the cache*/
 		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
-		printf("l2 WB found\n");
-		/*STOP;
+		printf("l2 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
 
-		message_packet->end_cycle = P_TIME;
-		cache_l1_d_return(cache,message_packet);
-		return 1;*/
+		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		//set message size
+		message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+
+		//update message status
+		if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+		else if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+
+		cache_put_io_up_queue(cache, message_packet);
+		return 1;
 	}
 
 	switch(*cache_block_state_ptr)
@@ -2774,6 +2819,8 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	//WB from L1 D cache
 	if(cache->last_queue == cache->Rx_queue_top)
 	{
+		printf("WB from L1\n");
+
 		//we should only receive modified lines from L1 D cache
 		assert(message_packet->cache_block_state != cgm_cache_block_exclusive
 				&& message_packet->cache_block_state != cgm_cache_block_shared
@@ -2811,8 +2858,6 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				if(wb_packet)
 				{
-					/*fatal("L2 found block in WB should not occur until l2 inf is off\n");*/
-
 					//cache block found in the WB buffer merge the change here
 					//set modified if the line was exclusive
 					if(wb_packet->cache_block_state == cgm_cache_block_exclusive)
@@ -2879,6 +2924,10 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	//if here the L2 generated it's own write back.
 	else if(cache->last_queue == cache->write_back_buffer)
 	{
+
+
+
+
 		/*star todo figure out a better way to deal with the pending flush state
 		maybe look into the scheduler*/
 
@@ -2889,11 +2938,16 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			//if the line is still in the exclusive state at this point drop it.
 			if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 			{
+
+
 				message_packet = list_remove(cache->last_queue, message_packet);
 				free(message_packet);
 			}
 			else if (message_packet->cache_block_state == cgm_cache_block_modified)
 			{
+				//delete this
+				printf("WB from L2\n");
+
 				//block is dirty send the write back down to the L3 cache.
 				l3_map = cgm_l3_cache_map(message_packet->set);
 				message_packet->l2_cache_id = cache->id;
@@ -2944,17 +2998,106 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int num_cores = x86_cpu_num_cores;
 	int sharers, owning_core;
 
+	struct cgm_packet_t *write_back_packet = NULL;
+
 	/*int set;
 	int tag;
 	int way;
 	int i = 0;*/
-
 
 	//charge delay
 	P_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+
+		printf("l3 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
+
+		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		//update message status
+		if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+		else if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+
+		//get the cache block state
+		//message_packet->cache_block_state = *cache_block_state_ptr;
+
+		//set the presence bit in the directory for the requesting core.
+		//cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+		//cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+		//set message package size
+		message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+		//update routing headers
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		//send the cache block out
+		cache_put_io_up_queue(cache, message_packet);
+		return;
+
+		/*message_packet->end_cycle = P_TIME;
+		cache_l1_d_return(cache,message_packet);
+		return;*/
+	}
+	else
+	{
+
+		/*printf("here\n");
+		STOP;*/
+
+		//update message status
+		if(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_invalid)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+		else
+		{
+			fatal("bad cache block state\n");
+		}
+
+		//get the cache block state
+		//message_packet->cache_block_state = *cache_block_state_ptr;
+
+		//set the presence bit in the directory for the requesting core.
+		//cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+		//cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+		//set message package size
+		message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+		//update routing headers
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		//send the cache block out
+		cache_put_io_up_queue(cache, message_packet);
+		return;
+	}
+
 
 	/*set = message_packet->set;
 	tag = message_packet->tag;
@@ -3204,6 +3347,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 	struct cgm_packet_t *upgrade_putx_n_inval_request_packet;
 
+	struct cgm_packet_t *write_back_packet = NULL;
+
 	int i = 0;
 	int l2_src_id;
 	char *l2_name;
@@ -3213,11 +3358,93 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;*/
 
+
+
 	//charge latency
 	P_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	if(write_back_packet)
+	{
+		/*found the packet in the write back buffer
+		data should not be in the rest of the cache*/
+
+		printf("l3 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
+
+		//update message status
+		if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+		else if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+
+		//get the cache block state
+		//message_packet->cache_block_state = *cache_block_state_ptr;
+
+		//set the presence bit in the directory for the requesting core.
+		//cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+		//cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+		//set message package size
+		message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+		//update routing headers
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		//send the cache block out
+		cache_put_io_up_queue(cache, message_packet);
+		return;
+	}
+	else
+	{
+		/*printf("here\n");
+		STOP;*/
+
+		//update message status
+		if(*cache_block_state_ptr == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_invalid)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+		else
+		{
+			fatal("bad cache block state\n");
+		}
+
+		//get the cache block state
+		//message_packet->cache_block_state = *cache_block_state_ptr;
+
+		//set the presence bit in the directory for the requesting core.
+		//cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+		//cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+		//set message package size
+		message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+		//update routing headers
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		//send the cache block out
+		cache_put_io_up_queue(cache, message_packet);
+		return;
+	}
 
 	//get the directory state
 	//check the directory dirty bit status
@@ -3954,6 +4181,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		else if (message_packet->cache_block_state ==  cgm_cache_block_modified)
 		{
 			/*send the Write Back to the memory controller if the line is modified*/
+			printf("WB from L3\n");
 
 			//add routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_store;
