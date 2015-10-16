@@ -3643,6 +3643,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		case cgm_cache_block_invalid:
 
+
+
 			//stats;
 			cache->misses++;
 			assert(message_packet->cpu_access_type == cgm_access_load);
@@ -3717,6 +3719,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					assert(sharers == 1);
 				}
 
+
 				//update message status
 				if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 				{
@@ -3745,6 +3748,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//send the cache block out
 				cache_put_io_up_queue(cache, message_packet);
+
 
 			}
 			else if (sharers >= 1)
