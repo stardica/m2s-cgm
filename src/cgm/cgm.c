@@ -20,7 +20,7 @@ long long access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
-unsigned long Current_Cycle = 0;
+unsigned long long Current_Cycle = 0;
 
 //files for debugging and stats;
 FILE *CPU_cache_debug_file;
@@ -688,7 +688,7 @@ void PrintCycle(int skip){
 
 	if((Current_Cycle % skip) == 0)
 	{
-		printf("---Cycles %lu---\n", Current_Cycle);
+		printf("---Cycles %llu---\n", Current_Cycle);
 		fflush(stdout);
 	}
 

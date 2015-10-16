@@ -58,24 +58,26 @@ enum cgm_access_kind_t {
 	/*10*/	cgm_access_gets, //get shared
 			cgm_access_gets_i,
 			cgm_access_get, //get specific to d caches
+			cgm_access_get_nack,
 			cgm_access_get_fwd,
 			cgm_access_get_fwd_nack,
 			cgm_access_getx_fwd,
 			cgm_access_getx_fwd_nack,
 			cgm_access_getx_fwd_ack,
 			cgm_access_getx_fwd_inval,
-			cgm_access_getx_fwd_inval_ack,
-	/*20*/	cgm_access_gets_s, //get shared specific to s caches
+	/*20*/	cgm_access_getx_fwd_inval_ack,
+			cgm_access_gets_s, //get shared specific to s caches
 			cgm_access_gets_v, //get shared specific to v caches
 			cgm_access_getx, //get exclusive (or get with intent to write)
+			cgm_access_getx_nack,
 			cgm_access_inv,  //invalidation request
 			cgm_access_inv_ack,
 			cgm_access_upgrade, //upgrade request
 			cgm_access_upgrade_ack,
 			cgm_access_upgrade_putx_n,
-			cgm_access_upgrade_inval,
+	/*30*/	cgm_access_upgrade_inval,
 			cgm_access_upgrade_inval_ack,
-	/*30*/	cgm_access_upgrade_putx,
+			cgm_access_upgrade_putx,
 			cgm_access_downgrade, //downgrade request
 			cgm_access_downgrade_ack,
 			cgm_access_downgrade_nack,
@@ -83,15 +85,15 @@ enum cgm_access_kind_t {
 			cgm_access_mc_store,	//request sent to system agent/memory controller
 			cgm_access_mc_put,	//reply from system agent/memory controller
 			cgm_access_put_clnx, //put block in clean exclusive state
-			cgm_access_putx, //put block in modified state
+	/*40*/	cgm_access_putx, //put block in modified state
 			cgm_access_puts, //put block in shared state.
-	/*40*/	cgm_access_puto, //put block in owned state.
+			cgm_access_puto, //put block in owned state.
 			cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
 			cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 			cgm_access_retry,
-			cgm_access_fetch_retry,
+	/*46*/	cgm_access_fetch_retry,
 			cgm_access_load_retry,
-	/*46*/	cgm_access_store_retry,
+			cgm_access_store_retry,
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
 			num_access_types
@@ -313,7 +315,9 @@ struct cache_t{
 	//L2 cache protocol virtual functions
 	void (*l2_gets)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_get_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_getx_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);

@@ -128,7 +128,7 @@ extern char *cgm_stats_output_path;
 //global access record
 extern struct list_t *cgm_access_record;
 
-extern unsigned long Current_Cycle;
+extern unsigned long long Current_Cycle;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;

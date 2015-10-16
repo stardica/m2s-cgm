@@ -1541,6 +1541,16 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
 			}
+			else if(access_type == cgm_access_get_nack)
+			{
+				//Call back function (cgm_mesi_l2_downgrade_ack)
+				l2_caches[my_pid].l2_get_nack(&(l2_caches[my_pid]), message_packet);
+			}
+			else if(access_type == cgm_access_getx_nack)
+			{
+				//Call back function (cgm_mesi_l2_downgrade_ack)
+				l2_caches[my_pid].l2_getx_nack(&(l2_caches[my_pid]), message_packet);
+			}
 			else if(access_type == cgm_access_get_fwd)
 			{
 				//Call back function (cgm_mesi_l2_get_fwd)
@@ -2925,6 +2935,15 @@ void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way){
 
 	return;
 
+}
+
+int cgm_cache_get_dir_pending_bit(struct cache_t *cache, int set, int way){
+
+	int pending_bit = 0;
+
+	pending_bit = cache->sets[set].blocks[way].directory_entry.entry_bits.pending;
+
+	return pending_bit;
 }
 
 void cgm_cache_clear_dir_pending_bit(struct cache_t *cache, int set, int way){
