@@ -37,6 +37,7 @@ enum cache_waylist_enum{
 enum protocol_kind_t {
 
 	cgm_protocol_mesi = 0,
+	cgm_protocol_bt,
 	cgm_protocol_moesi,
 	cgm_protocol_gmesi,
 	cgm_protocol_non_coherent,

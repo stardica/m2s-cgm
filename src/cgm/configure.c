@@ -537,9 +537,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	{
 		temp_strn = strdup(value);
 
-		if(strcmp(temp_strn, "MESI") == 0)
+		if(strcmp(temp_strn, "BT") == 0)
+		{
+			cgm_cache_protocol = cgm_protocol_bt;
+			printf("---CPU memory protocol is BT---\n");
+		}
+		else if(strcmp(temp_strn, "MESI") == 0)
 		{
 			cgm_cache_protocol = cgm_protocol_mesi;
+			printf("---CPU memory protocol is MESI---\n");
 		}
 		else if(strcmp(temp_strn, "MOESI") == 0)
 		{
@@ -558,6 +564,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		if(strcmp(temp_strn, "NC") == 0)
 		{
 			cgm_gpu_cache_protocol = cgm_protocol_non_coherent;
+			printf("---GPU memory protocol is NC---\n");
 		}
 		else if(strcmp(temp_strn, "GMESI") == 0)
 		{
@@ -1607,7 +1614,12 @@ int cache_finish_create(){
 		l1_i_caches[i].cache_io_down_tasks = create_task(l1_i_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_mesi)
+		if(cgm_cache_protocol == cgm_protocol_bt)
+		{
+			l1_i_caches[i].l1_i_fetch = cgm_bt_fetch;
+			l1_i_caches[i].l1_i_write_block = cgm_bt_l1_i_write_block;
+		}
+		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l1_i_caches[i].l1_i_fetch = cgm_mesi_fetch;
 			l1_i_caches[i].l1_i_write_block = cgm_mesi_l1_i_write_block;
@@ -1736,7 +1748,17 @@ int cache_finish_create(){
 		l1_d_caches[i].cache_io_down_tasks = create_task(l1_d_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_mesi)
+		if(cgm_cache_protocol == cgm_protocol_bt)
+		{
+			l1_d_caches[i].l1_d_load = cgm_bt_load;
+			l1_d_caches[i].l1_d_store = cgm_bt_store;
+			l1_d_caches[i].l1_d_write_block = cgm_bt_l1_d_write_block;
+			l1_d_caches[i].l1_d_downgrade = cgm_bt_l1_d_downgrade;
+			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_bt_l1_d_getx_fwd_inval;
+			l1_d_caches[i].l1_d_write_back = cgm_bt_l1_d_write_back;
+			l1_d_caches[i].l1_d_inval = cgm_bt_l1_d_inval;
+		}
+		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l1_d_caches[i].l1_d_load = cgm_mesi_load;
 			l1_d_caches[i].l1_d_store = cgm_mesi_store;
@@ -1879,7 +1901,24 @@ int cache_finish_create(){
 		l2_caches[i].cache_io_down_tasks = create_task(l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_mesi)
+		if(cgm_cache_protocol == cgm_protocol_bt)
+		{
+			l2_caches[i].l2_gets = cgm_bt_l2_gets;
+			l2_caches[i].l2_get = cgm_bt_l2_get;
+			l2_caches[i].l2_get_nack = cgm_bt_l2_get_nack;
+			l2_caches[i].l2_getx = cgm_bt_l2_getx;
+			l2_caches[i].l2_getx_nack = cgm_bt_l2_getx_nack;
+			l2_caches[i].l2_downgrade_ack = cgm_bt_l2_downgrade_ack;
+			l2_caches[i].l2_get_fwd = cgm_bt_l2_get_fwd;
+			l2_caches[i].l2_getx_fwd = cgm_bt_l2_getx_fwd;
+			l2_caches[i].l2_getx_fwd_inval_ack = cgm_bt_l2_getx_fwd_inval_ack;
+			l2_caches[i].l2_inval_ack = cgm_bt_l2_inval_ack;
+			l2_caches[i].l2_write_block = cgm_bt_l2_write_block;
+			l2_caches[i].l2_write_back = cgm_bt_l2_write_back;
+			l2_caches[i].l2_inval = cgm_bt_l2_inval;
+			l2_caches[i].l2_inval_ack = cgm_bt_l2_inval_ack;
+		}
+		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l2_caches[i].l2_gets = cgm_mesi_l2_gets;
 			l2_caches[i].l2_get = cgm_mesi_l2_get;
@@ -2048,7 +2087,19 @@ int cache_finish_create(){
 		l3_caches[i].cache_io_down_tasks = create_task(l3_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_cache_protocol == cgm_protocol_mesi)
+		if(cgm_cache_protocol == cgm_protocol_bt)
+		{
+			l3_caches[i].l3_gets = cgm_bt_l3_gets;
+			l3_caches[i].l3_get = cgm_bt_l3_get;
+			l3_caches[i].l3_getx = cgm_bt_l3_getx;
+			l3_caches[i].l3_downgrade_ack = cgm_bt_l3_downgrade_ack;
+			l3_caches[i].l3_downgrade_nack = cgm_bt_l3_downgrade_nack;
+			l3_caches[i].l3_getx_fwd_nack = cgm_bt_l3_getx_fwd_nack;
+			l3_caches[i].l3_getx_fwd_ack = cgm_bt_l3_getx_fwd_ack;
+			l3_caches[i].l3_write_block = cgm_bt_l3_write_block;
+			l3_caches[i].l3_write_back = cgm_bt_l3_write_back;
+		}
+		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l3_caches[i].l3_gets = cgm_mesi_l3_gets;
 			l3_caches[i].l3_get = cgm_mesi_l3_get;
