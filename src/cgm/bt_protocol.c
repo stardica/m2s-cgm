@@ -943,14 +943,16 @@ void cgm_bt_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
 
-		/*fatal("l2 wb load delete me\n");*/
-
-		//printf("l2 WB found WB state %d cache state %d cycle %llu\n", write_back_packet->cache_block_state, *cache_block_state_ptr, P_TIME);
-
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
 
-		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		//write the block back into the cache
+
+		/*//find the LRU
+		message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);
+
+		//write the block
+		cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, write_back_packet->cache_block_state);*/
 
 		//set message size
 		message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
@@ -966,6 +968,9 @@ void cgm_bt_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->access_type = cgm_access_put_clnx;
 			message_packet->cache_block_state = cgm_cache_block_exclusive;
 		}
+
+		/*write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+		packet_destroy(write_back_packet);*/
 
 		cache_put_io_up_queue(cache, message_packet);
 		return;
@@ -1146,6 +1151,8 @@ int cgm_bt_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		//write the block back into the cache
 
 		//set message size
 		message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.

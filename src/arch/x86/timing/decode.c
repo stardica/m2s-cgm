@@ -20,7 +20,7 @@
 #include <m2s.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
-#include <mem-system/module.h>
+/*#include <mem-system/module.h>*/
 //#include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>

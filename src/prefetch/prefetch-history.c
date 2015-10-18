@@ -1,4 +1,5 @@
 /*
+
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -15,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+
 
 #include <assert.h>
 
@@ -38,7 +39,7 @@ int prefetch_history_is_redundant(struct prefetch_history_t *ph, struct mod_t *m
 		return 1;
 	}
 
-	/* A 0 sized table means do not track history. Always issue the prefetch. */
+	 A 0 sized table means do not track history. Always issue the prefetch.
 	if (ph->size == 0)
 		return 0;
 
@@ -47,7 +48,7 @@ int prefetch_history_is_redundant(struct prefetch_history_t *ph, struct mod_t *m
 		cache_decode_address(mod->cache, ph->table[i], &set1, &tag1, NULL);
 		cache_decode_address(mod->cache, phy_addr, &set2, &tag2, NULL);
 
-		/* If both accesses refer to the same block, return true */
+		 If both accesses refer to the same block, return true
 		if (set1 == set2 && tag1 == tag2)
 			return 1;
 	}
@@ -57,7 +58,7 @@ int prefetch_history_is_redundant(struct prefetch_history_t *ph, struct mod_t *m
 
 void prefetch_history_record(struct prefetch_history_t *ph, unsigned int phy_addr)
 {
-	/* A 0 sized table means do not track history. */
+	 A 0 sized table means do not track history.
 	if (ph->size == 0)
 		return;
 
@@ -70,7 +71,7 @@ struct prefetch_history_t *prefetch_history_create(void)
 {
 	struct prefetch_history_t *ph;
 
-	/* Initialize */
+	 Initialize
 	ph = xcalloc(1, sizeof(struct prefetch_history_t));
 	ph->hindex = -1;
 	assert(prefetch_history_size >= 0);
@@ -78,7 +79,7 @@ struct prefetch_history_t *prefetch_history_create(void)
 	if (prefetch_history_size > 0)
 		ph->table = xcalloc(prefetch_history_size, sizeof(unsigned));
 
-	/* Return */
+	 Return
 	return ph;
 }
 
@@ -88,3 +89,4 @@ void prefetch_history_free(struct prefetch_history_t *pf)
 	free(pf);
 }
 
+*/

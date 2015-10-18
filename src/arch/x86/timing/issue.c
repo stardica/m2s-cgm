@@ -24,7 +24,7 @@
 #include <mem-image/mmu.h>
 
 #include <cgm/cgm.h>
-#include <mem-system/module.h>
+/*#include <mem-system/module.h>*/
 
 //#include <instrumentation/stats.h>
 #include <arch/x86/timing/core.h>

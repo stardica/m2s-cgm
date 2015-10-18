@@ -1,4 +1,5 @@
 /*
+
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -15,13 +16,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+
 
 #ifndef MEM_SYSTEM_PREFETCH_HISTORY_H
 #define MEM_SYSTEM_PREFETCH_HISTORY_H
 
 
-/* 
+
  * This file specifies a prefetch history structure
  * that can be used by CPU/GPUs to keep track of
  * prefetches that they have initiated to the memory.
@@ -32,7 +33,7 @@
  * At present, the structure is a simple table that
  * remembers recent prefetches and suggests not to
  * prefetch them. This probably needs improvement.
- */
+
 
 struct mod_t;
 extern int prefetch_history_size;
@@ -50,3 +51,4 @@ struct prefetch_history_t *prefetch_history_create();
 void prefetch_history_free(struct prefetch_history_t *pf);
 
 #endif
+*/

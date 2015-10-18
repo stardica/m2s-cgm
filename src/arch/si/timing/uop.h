@@ -21,7 +21,8 @@
 #define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
 #include <arch/si/emu/work-item.h>
-#include <mem-system/module.h>
+#include <cgm/cgm.h>
+/*#include <mem-system/module.h>*/
 
 
 #define INST_NOT_FETCHED LLONG_MAX
@@ -43,7 +44,7 @@ struct si_work_item_uop_t
 
 	/* LDS accesses */
 	int lds_access_count;
-	enum mod_access_kind_t lds_access_kind[SI_MAX_LDS_ACCESSES_PER_INST];
+	enum cgm_access_kind_t lds_access_kind[SI_MAX_LDS_ACCESSES_PER_INST];
 	unsigned int lds_access_addr[SI_MAX_LDS_ACCESSES_PER_INST];
 	unsigned int lds_access_size[SI_MAX_LDS_ACCESSES_PER_INST];
 };

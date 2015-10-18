@@ -24,8 +24,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
-#include <mem-system/mem-system.h>
-#include <mem-system/module.h>
+/*#include <mem-system/mem-system.h>*/
+/*#include <mem-system/module.h>*/
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/mem-config.h>
@@ -196,14 +196,14 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 
 
 	/* Assign data module */
-	thread->data_mod = mem_system_get_mod(data_module_name);
+	/*thread->data_mod = mem_system_get_mod(data_module_name);
 	if (!thread->data_mod)
 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
 			"\tThe given module name must match a module declared in a section\n"
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, data_module_name);
 
-	/* Assign instruction module */
+	 Assign instruction module
 	thread->inst_mod = mem_system_get_mod(inst_module_name);
 	if (!thread->inst_mod)
 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
@@ -211,16 +211,16 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, inst_module_name);
 
-	/* Add modules to entry list */
+	 Add modules to entry list
 	linked_list_add(arch_x86->mem_entry_mod_list, thread->data_mod);
 	if (thread->data_mod != thread->inst_mod)
-	linked_list_add(arch_x86->mem_entry_mod_list, thread->inst_mod);
+	linked_list_add(arch_x86->mem_entry_mod_list, thread->inst_mod);*/
 
 	/* Debug */
-	mem_debug("\tx86 Core %d, Thread %d\n", core_index, thread_index);
+	/*mem_debug("\tx86 Core %d, Thread %d\n", core_index, thread_index);
 	mem_debug("\t\tEntry for instructions -> %s\n", thread->inst_mod->name);
 	mem_debug("\t\tEntry for data -> %s\n", thread->data_mod->name);
-	mem_debug("\n");
+	mem_debug("\n");*/
 
 	return;
 }

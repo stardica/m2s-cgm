@@ -47,7 +47,7 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 		self->threads[i] = new(X86Thread, self);
 
 	/* Prefetcher */
-	self->prefetch_history = prefetch_history_create();
+	//self->prefetch_history = prefetch_history_create();
 
 	/* Structures */
 	X86CoreInitROB(self);
@@ -69,7 +69,7 @@ void X86CoreDestroy(X86Core *self)
 	free(self->threads);
 
 	/* Prefetcher */
-	prefetch_history_free(self->prefetch_history);
+	//prefetch_history_free(self->prefetch_history);
 
 	/* Structures */
 	X86CoreFreeROB(self);

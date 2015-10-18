@@ -28,7 +28,7 @@
 
 #include <mem-image/mmu.h>
 
-#include <mem-system/module.h>
+/*#include <mem-system/module.h>*/
 
 //#include <instrumentation/stats.h>
 

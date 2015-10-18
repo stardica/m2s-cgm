@@ -982,8 +982,8 @@ void si_gpu_dump_report(void)
 		lds_mod = compute_unit->lds_module;
 
 		inst_per_cycle = compute_unit->cycle ? (double)(compute_unit->inst_count/compute_unit->cycle) : 0.0;
-		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
-		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
+		/*coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
+		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;*/
 
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
@@ -1003,12 +1003,12 @@ void si_gpu_dump_report(void)
 		fprintf(f, "VectorRegReads= %lld\n", compute_unit->vreg_read_count);
 		fprintf(f, "VectorRegWrites= %lld\n", compute_unit->vreg_write_count);
 		fprintf(f, "\n");
-		fprintf(f, "LDS.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
+		/*fprintf(f, "LDS.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
 		fprintf(f, "LDS.Reads = %lld\n", lds_mod->reads);
-		fprintf(f, "LDS.EffectiveReads = %lld\n", lds_mod->effective_reads);
+		fprintf(f, "LDS.EffectiveReads = %lld\n", lds_mod->effective_reads);*/
 		fprintf(f, "LDS.CoalescedReads = %lld\n", coalesced_reads);
-		fprintf(f, "LDS.Writes = %lld\n", lds_mod->writes);
-		fprintf(f, "LDS.EffectiveWrites = %lld\n", lds_mod->effective_writes);
+		/*fprintf(f, "LDS.Writes = %lld\n", lds_mod->writes);*/
+		/*fprintf(f, "LDS.EffectiveWrites = %lld\n", lds_mod->effective_writes);*/
 		fprintf(f, "LDS.CoalescedWrites = %lld\n", coalesced_writes);
 		fprintf(f, "\n\n");
 	}

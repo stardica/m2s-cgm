@@ -23,8 +23,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
-#include <mem-system/mem-system.h>
-#include <mem-system/module.h>
+/*#include <mem-system/mem-system.h>*/
+/*#include <mem-system/module.h>*/
 
 #include <arch/si/timing/mem-config.h>
 #include <arch/si/timing/gpu.h>
@@ -446,7 +446,7 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 	assert(scalar_module_name);
 	
 	/* Assign modules */
-	compute_unit->vector_cache = mem_system_get_mod(vector_module_name);
+	/*compute_unit->vector_cache = mem_system_get_mod(vector_module_name);
 	if (!compute_unit->vector_cache)
 	{
 		fatal(
@@ -467,15 +467,15 @@ void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *secti
 			file_name, section, scalar_module_name);
 	}
 	
-	/* Add modules to list of memory entries */
+	 Add modules to list of memory entries
 	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->vector_cache);
-	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);
+	linked_list_add(arch_southern_islands->mem_entry_mod_list, compute_unit->scalar_cache);*/
 	
 	/* Debug */
-	mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
+	/*mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
 	mem_debug("\t\tEntry for vector mem -> %s\n", compute_unit->vector_cache->name);
 	mem_debug("\t\tEntry for scalar mem -> %s\n", compute_unit->scalar_cache->name);
-	mem_debug("\n");
+	mem_debug("\n");*/
 }
 
 

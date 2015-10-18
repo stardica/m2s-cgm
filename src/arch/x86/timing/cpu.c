@@ -704,7 +704,7 @@ static void X86DumpCpuConfig(FILE *f)
 	fprintf(f, "RecoverKind = %s\n", x86_cpu_recover_kind_map[x86_cpu_recover_kind]);
 	fprintf(f, "RecoverPenalty = %d\n", x86_cpu_recover_penalty);
 	fprintf(f, "ProcessPrefetchHints = %d\n", x86_emu_process_prefetch_hints);
-	fprintf(f, "PrefetchHistorySize = %d\n", prefetch_history_size);
+	/*fprintf(f, "PrefetchHistorySize = %d\n", prefetch_history_size);*/
 	fprintf(f, "\n");
 
 	/* Pipeline */

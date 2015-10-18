@@ -1,4 +1,5 @@
 /*
+
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -15,17 +16,17 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+
 
 #ifndef MEM_SYSTEM_PREFETCHER_H
 #define MEM_SYSTEM_PREFETCHER_H
 
 
-/* 
+
  * This file implements a global history buffer
  * based prefetcher. Refer to the 2005 paper by
  * Nesbit and Smith. 
- */
+
 
 extern struct str_map_t prefetcher_type_map;
 
@@ -36,20 +37,20 @@ enum prefetcher_type_t
 	prefetcher_type_ghb_pc_dc,
 };
 
-/* Doesn't really make sense to have a big lookup depth */
+ Doesn't really make sense to have a big lookup depth
 #define PREFETCHER_LOOKUP_DEPTH_MAX 4
 
-/* Global history buffer. */
+ Global history buffer.
 struct prefetcher_ghb_t
 {
-	/* The global address miss this entry corresponds to */
+	 The global address miss this entry corresponds to
 	unsigned int addr;
-	/* Next element in the linked list : -1 implies none */
+	 Next element in the linked list : -1 implies none
 	int next;
-	/* Previous element in the linked list : -1 implies none */
+	 Previous element in the linked list : -1 implies none
 	int prev;
-	/* Whether the previous element is a GHB entry or a pointer
-	 * to the index table. */
+	 Whether the previous element is a GHB entry or a pointer
+	 * to the index table.
 	enum prefetcher_ptr_t
 	{
 		prefetcher_ptr_ghb = 0,
@@ -57,16 +58,16 @@ struct prefetcher_ghb_t
 	} prev_it_ghb;
 };
 
-/* Index table. */
+ Index table.
 struct prefetcher_it_t
 {
-	/* The tag to compare to before indexing into the table */
+	 The tag to compare to before indexing into the table
 	unsigned int tag;
-	/* Pointer into the GHB. -1 implies no entry in GHB. */
+	 Pointer into the GHB. -1 implies no entry in GHB.
    	int ptr;
 };
 
-/* The main prefetcher object */
+ The main prefetcher object
 struct prefetcher_t
 {
 	int ghb_size;
@@ -90,3 +91,4 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *mod);
 void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *mod);
 
 #endif
+*/
