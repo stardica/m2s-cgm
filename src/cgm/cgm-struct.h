@@ -125,6 +125,7 @@ struct cgm_packet_t{
 	unsigned int offset;
 	int size;
 	int coalesced;
+	int assoc_conflict;
 
 	//for evictions, write backs, downgrades, upgrades
 	int flush_pending;

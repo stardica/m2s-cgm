@@ -556,6 +556,71 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 	return size;
 }*/
 
+void ort_set_row(struct cache_t *cache, int tag, int set){
+
+	int i = 0;
+
+	//find an empty row
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+		{
+			//hit in the ORT table
+			break;
+		}
+	}
+
+	//set the row
+	ort_set(cache, i, tag, set);
+
+	return;
+}
+
+
+void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row_ptr, int *num_sets_ptr, int *ort_size_ptr){
+
+	int i = 0;
+	int j = 0;
+	int k = 0;
+
+	//first look for a matching tag and set
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		{
+			//hit in the ORT table
+			break;
+		}
+	}
+	*(hit_row_ptr) = i;
+
+
+	//next look for the number of outstanding set accesses for a given set
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		{
+			//hit in the ORT table
+			j ++;
+		}
+	}
+	*(num_sets_ptr) = j;
+
+
+	//get the size of the ORT
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] != -1 && cache->ort[i][1] != -1 && cache->ort[i][2] != -1)
+		{
+			k++;
+		}
+	}
+
+	*ort_size_ptr = k;
+
+	return;
+}
+
 int ort_search(struct cache_t *cache, int tag, int set){
 
 	int i = 0;
@@ -599,6 +664,7 @@ void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	cache->ort[row][0] = -1;
 	cache->ort[row][1] = -1;
 	cache->ort[row][2] = -1;
+
 	return;
 }
 
@@ -767,10 +833,16 @@ int cache_can_access_bottom(struct cache_t *cache){
 /* Return {tag, set, offset} for a given address */
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
-	//star i reworked this a little
 	*(tag_ptr) = (addr >> (cache->log_block_size + cache->log_set_size));//addr & ~(cache->block_mask);
 	*(set_ptr) =  (addr >> (cache->log_block_size) & (cache->set_mask));//(addr >> cache->log_block_size) % cache->num_sets;
 	*(offset_ptr) = addr & (cache->block_mask);
+
+	unsigned int tag_size = 0xFFFFFFFF;
+	tag_size = tag_size >> (cache->log_block_size + cache->log_set_size);
+
+	assert(*(tag_ptr) >= 0 && *(tag_ptr) < tag_size);
+	assert(*(set_ptr) >= 0 && *(set_ptr) < cache->num_sets);
+	assert(*(offset_ptr) >=0 && *(offset_ptr) <= cache->block_mask);
 }
 
 unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag){
@@ -2688,25 +2760,55 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	int i, row;
+	int hit_row = 0;
+	int num_sets = 0;
+	int ort_size = 0;
 
-	i = ort_search(cache, message_packet->tag, message_packet->set);
+	int *hit_row_ptr = &hit_row;
+	int *num_sets_ptr = &num_sets;
+	int *ort_size_ptr = &ort_size;
 
-	//unique memory accesses
-	if(i == cache->mshr_size)
+	/*int i, row;*/
+
+	//get the status of the ORT
+	ort_get_row_sets_size(cache, message_packet->tag, message_packet->set, hit_row_ptr, num_sets_ptr, ort_size_ptr);
+
+	//verify ort size
+	assert(*ort_size_ptr < cache->mshr_size);
+
+	//star todo need to merge assoc conflicts correctly
+	/*else if((*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size) && *num_sets_ptr >= cache->assoc)*/
+
+
+	if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc)
 	{
-		//find an empty row and add it
-		row = get_ort_status(cache);
-		assert(row < cache->mshr_size);
-		ort_set(cache, row, message_packet->tag, message_packet->set);
+		//unique access and number of outstanding accesses are less than cache associativity
+		//i.e. there IS a space in the cache for the block on return
+		ort_set_row(cache, message_packet->tag, message_packet->set);
 	}
-	//can be coalesced
-	else if(i >= 0 && i < cache->mshr_size)
+	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
-		//entry found in ORT so coalesce the packet
-		assert(cache->ort[i][0] == message_packet->tag && cache->ort[i][1] == message_packet->set && cache->ort[i][2] == 1);
+		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
+		//i.e. there IS NOT a space for the block in the cache on return
+		printf("access id %llu type %d assoc conflict tag %d set %d\n", message_packet->access_id, message_packet->access_type, message_packet->tag, message_packet->set);
+		//fatal("boom found one\n");
 
-		/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);*/
+		//set the row in the ORT
+		ort_set_row(cache, message_packet->tag, message_packet->set);
+
+		message_packet->coalesced = 1;
+		message_packet->assoc_conflict = 1;
+
+		list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->ort_list, message_packet);
+
+	}
+	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
+	{
+		//non unique access that can be coalesced.
+		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
+
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
 
 		message_packet->coalesced = 1;
 
@@ -2715,7 +2817,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 	else
 	{
-		fatal("cache_check_ORT(): %s i outside of bounds\n", cache->name);
+		fatal("cache_check_ORT(): %s invalid ORT status\n", cache->name);
 	}
 
 	return;
@@ -2802,6 +2904,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	struct cgm_packet_t *ort_packet;
 	int i = 0;
 
+
+	//first look for merged accesses
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
 		//get pointer to access in queue and check it's status.
@@ -2810,18 +2914,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 		if(ort_packet->tag == tag && ort_packet->set == set)
 		{
 			ort_packet = list_remove_at(cache->ort_list, i);
-
-			//set the correct retry type
-			//star todo retry types could be a potential problem.
-			/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
-			{
-				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-				//ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-			}
-			else if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-			{
-				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-			}*/
 
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
@@ -2834,7 +2926,30 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 		}
 	}
 
-	//no coalesced packets remaining.
+	//no coalesced packets remaining now check for packets with cache assoc conflicts
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
+		{
+			//clear the ORT entry for the assoc miss
+			ort_clear(cache, ort_packet);
+
+			ort_packet = list_remove_at(cache->ort_list, i);
+
+			ort_packet->coalesced = 0;
+			ort_packet->assoc_conflict = 0;
+			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+
+			list_enqueue(cache->retry_queue, ort_packet);
+			advance(cache->ec_ptr);
+
+			return;
+		}
+	}
+
 	return;
 }
 

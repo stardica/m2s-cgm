@@ -109,9 +109,6 @@ void cgm_bt_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 d %d loading\n", cache->id);*/
-	/*STOP;*/
-
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -119,42 +116,26 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
-	//enum cgm_cache_block_state_t transient_state = cgm_cache_block_invalid;
-
-	int upgrade = 0;
+	int upgrade_pending = 0;
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	/*if(message_packet->set == 11 && message_packet->tag == 66)
-	{
-		printf("access_id %llu access_type (%s) tag %d set %d cycle %llu\n",
-				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->tag, message_packet->set, P_TIME);
-
-	}*/
-
-
-	//search the WB buffer for the data
+	//search the WB buffer for the data if in WB the block is either in the E or M state so return
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	if(write_back_packet)
 	{
 		/*found the packet in the write back buffer
 		data should not be in the rest of the cache*/
-		//assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
-
-		//printf("l1 WB found WB state %d cache state %d\n", write_back_packet->cache_block_state, *cache_block_state_ptr);
+				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
 
 		message_packet->end_cycle = P_TIME;
 		cache_l1_d_return(cache, message_packet);
 		return;
 	}
-
-	//check for transient state
-	//transient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -206,11 +187,11 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			cache->hits++;
 
 			//check for pending upgrade before finishing
-			upgrade = ort_search(cache, message_packet->tag, message_packet->set);
+			upgrade_pending = ort_search(cache, message_packet->tag, message_packet->set);
 
 			/*star todo start separating out these kinds of things,
 			this should be done in parallel with the cache access.*/
-			if(upgrade < cache->mshr_size)
+			if(upgrade_pending < cache->mshr_size)
 			{
 				/*there is a pending upgrade this means we have a valid block
 				in the shared state, but an earlier store is waiting on an upgrade to modified.
@@ -802,7 +783,7 @@ int cgm_bt_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
 
-		//set the block and retry the access in the cache.
+	//set the block and retry the access in the cache.
 	/*cache_put_block(cache, message_packet);*/
 
 	//write the block
@@ -813,9 +794,6 @@ int cgm_bt_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
-	/*advance(cache->ec_ptr);*/
-
-	/*}*/
 
 	return 1;
 }

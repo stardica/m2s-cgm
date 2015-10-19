@@ -218,9 +218,13 @@ void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 int get_ort_status(struct cache_t *cache);
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int ort_search(struct cache_t *cache, int tag, int set);
-void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
+void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_dump(struct cache_t *cache);
+
+//new functions
+void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row_ptr, int *num_sets_ptr, int *ort_size_ptr);
+void ort_set_row(struct cache_t *cache, int tag, int set);
 
 /*int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);*/
 //void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);

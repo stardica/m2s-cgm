@@ -1,4 +1,75 @@
-	
+	void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int num_sets = -1;
+	int hit_row = -1;
+	int free_row = -1;
+
+	int *num_sets_ptr = &num_sets;
+	int *hit_row_ptr = &hit_row;
+	int *free_row_ptr = &free_row;
+
+	int i, row;
+
+	//i = ort_search(cache, message_packet->tag, message_packet->set);
+
+	//ort_search(cache, message_packet->tag, message_packet->set);
+
+	ort_search_for_row(cache, message_packet->tag, message_packet->set, hit_row_ptr);
+
+
+	//unique memory accesses
+	/*if(i == cache->mshr_size)
+	{
+		//find an empty row and add it
+		row = get_ort_status(cache);
+		assert(row < cache->mshr_size);
+		ort_set(cache, row, message_packet->tag, message_packet->set);
+	}
+	//can be coalesced
+	else if(i >= 0 && i < cache->mshr_size)
+	{
+		//entry found in ORT so coalesce the packet
+		assert(cache->ort[i][0] == message_packet->tag && cache->ort[i][1] == message_packet->set && cache->ort[i][2] == 1);
+
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
+
+		message_packet->coalesced = 1;
+
+		list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->ort_list, message_packet);
+	}
+	else
+	{
+		fatal("cache_check_ORT(): %s i outside of bounds\n", cache->name);
+	}*/
+
+	if(*hit_row_ptr == cache->mshr_size)
+	{
+		//find an empty row and add it
+		row = get_ort_status(cache);
+		assert(row < cache->mshr_size);
+		ort_set(cache, row, message_packet->tag, message_packet->set);
+	}
+	//can be coalesced
+	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
+	{
+		//entry found in ORT so coalesce the packet
+		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
+
+		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
+
+		message_packet->coalesced = 1;
+
+		list_remove(cache->last_queue, message_packet);
+		list_enqueue(cache->ort_list, message_packet);
+	}
+	else
+	{
+		fatal("cache_check_ORT(): %s i outside of bounds\n", cache->name);
+	}
+
+	return;
+}
 	
 	printf("here cycle %llu\n", P_TIME);
 	STOP;
