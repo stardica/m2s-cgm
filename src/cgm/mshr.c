@@ -182,7 +182,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 			list_enqueue(cache->mshrs[row].entires, miss_status_packet);
 
 			//stats
-			cache->mshr_entires++;
+			cache->mshr_entries++;
 			return 1;
 
 		}

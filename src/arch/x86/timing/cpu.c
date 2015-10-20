@@ -1031,11 +1031,7 @@ int X86CpuRun(Timing *self){
 	P_PAUSE(1);
 	self->cycle = P_TIME;
 	Current_Cycle++;
-
-	//located in cgm.h/c
-	fetches = 0;
-	loads = 0;
-	stores = 0;
+	/*advance(watchdog);*/
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

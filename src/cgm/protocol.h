@@ -41,6 +41,7 @@ void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int a
 void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 
+
 //////////////////////
 /////CPU BT protocol
 //////////////////////

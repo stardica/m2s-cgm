@@ -164,7 +164,10 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->l1_access_type = cgm_access_get;
 
 			//find victim
-			message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);
+			printf("%s load\n", cache->name);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+
+			/*	message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			cgm_L1_cache_evict_block(cache, message_packet->set, message_packet->l1_victim_way);
@@ -312,7 +315,9 @@ void cgm_bt_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->l1_access_type = cgm_access_getx;
 
 			//find victim
-			message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+
+			/*message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			cgm_L1_cache_evict_block(cache, message_packet->set, message_packet->l1_victim_way);
@@ -406,6 +411,8 @@ void cgm_bt_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			{
 				//charge the delay only if the retry state is set.
 				P_PAUSE(cache->latency);
+
+
 
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -866,17 +873,6 @@ void cgm_bt_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
-
-			/*star todo this is broken, try to fix this.
-			the I$ is accessing memory in the D$'s swim lane*/
-			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive)
-			{
-				message_packet->cache_block_state = cgm_cache_block_shared;
-			}
-			else
-			{
-				message_packet->cache_block_state = *cache_block_state_ptr;
-			}*/
 
 			//set block state
 			message_packet->cache_block_state = *cache_block_state_ptr;
@@ -2498,7 +2494,8 @@ int cgm_bt_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_pac
 					printf("L2 id %d WB received with block in shared state\n", cache->id);
 				}*/
 			/*printf("l2 %d write_back_id %llu access_type (%s) addr 0x%08x set %d tag %d cycle %llu\n",
-						cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);*/
+						cache->id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map,
+						message_packet->access_type), message_packet->address, message_packet->set, message_packet->tag, P_TIME);*/
 
 			fatal("cgm_mesi_l2_write_back(): L2 id %d invalid block state on write back as %s address 0x%08x\n",
 					cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
@@ -2642,6 +2639,8 @@ int cgm_bt_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_pac
 }
 
 void cgm_bt_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	fatal("L3 get\n");
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -3025,6 +3024,8 @@ void cgm_bt_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 }
 
 void cgm_bt_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	fatal("L3 getx\n");
 
 	int cache_block_hit;
 	int cache_block_state;

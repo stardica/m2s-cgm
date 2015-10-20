@@ -368,6 +368,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do.
 	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && write_back_queue_size > 0)
 	{
+		//printf("here 1\n");
+
 		new_message = list_get(cache->write_back_buffer, 0);
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
@@ -375,6 +377,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//schedule write back if the wb queue is full.
 	else if(write_back_queue_size >= QueueSize)
 	{
+		//printf("here 2\n");
+
 		new_message = list_get(cache->write_back_buffer, 0);
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
@@ -834,7 +838,7 @@ int cache_can_access_bottom(struct cache_t *cache){
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
 	*(tag_ptr) = (addr >> (cache->log_block_size + cache->log_set_size));//addr & ~(cache->block_mask);
-	*(set_ptr) =  (addr >> (cache->log_block_size) & (cache->set_mask));//(addr >> cache->log_block_size) % cache->num_sets;
+	*(set_ptr) =  ((addr >> cache->log_block_size) & (cache->set_mask));//(addr >> cache->log_block_size) % cache->num_sets;
 	*(offset_ptr) = addr & (cache->block_mask);
 
 	unsigned int tag_size = 0xFFFFFFFF;
@@ -939,6 +943,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
+
 	if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
 	{
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
@@ -946,6 +951,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
+	cache->sets[set].blocks[way].transient_state = cgm_cache_block_invalid;
 	return;
 }
 
@@ -1149,19 +1155,51 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 }
 
 
+int cgm_cache_get_victim(struct cache_t *cache, int set){
+
+	int way = -1;
+	int i = 0;
+
+	assert(set >= 0 && set < cache->num_sets);
+
+	printf("%s set %d\n", cache->name, set);
+
+	for(i = 0; i < cache->assoc; i++)
+	{
+		printf("cache->sets[%d].blocks[%d] state %d\n", set, i, cache->sets[set].blocks[i].transient_state);
+	}
+
+	for(i = 0; i < cache->assoc; i++)
+	{
+		assert(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid || cache->sets[set].blocks[i].transient_state == cgm_cache_block_transient);
+
+		if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid)
+		{
+			way = i;
+			cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
+		}
+	}
+
+	assert(way != -1);
+	if(way == -1)
+	{
+		getchar();
+	}
+
+	assert(way >= 0 && way < cache->assoc);
+	return way;
+}
+
 /* Return the way of the block to be replaced in a specific set,
  * depending on the replacement policy */
 int cgm_cache_replace_block(struct cache_t *cache, int set)
 {
-	/*struct cache_block_t *block;*/
 
-	/* Try to find an invalid block. Do this in the LRU order, to avoid picking the
-	 * MRU while its state has not changed to valid yet. */
+
 	assert(set >= 0 && set < cache->num_sets);
 
-	/*for (block = cache->sets[set].way_tail; block; block = block->way_prev)
-		if (!block->state)
-			return block->way;*/
+
+
 
 	/* LRU and FIFO replacement: return block at the
 	 * tail of the linked list */
@@ -1412,8 +1450,11 @@ void l1_d_cache_ctrl(void){
 			l1_d_caches[my_pid].stalls++;
 
 			/*printf("L1 D %d stalling\n", l1_d_caches[my_pid].id);*/
-			/*printf("L1 d id %d stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
-					l1_d_caches[my_pid].id, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l1_d_caches[my_pid].Tx_queue_bottom), list_count(l1_d_caches[my_pid].ort_list));*/
+			printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d cycle %llu\n",
+					l1_d_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top),
+					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
+					list_count(l1_d_caches[my_pid].ort_list),
+					P_TIME);
 
 			P_PAUSE(1);
 		}
@@ -1459,6 +1500,8 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_write_back)
 			{
+
+				//printf("here 3\n");
 
 				//Call back function (cgm_mesi_l1_d_write_back)
 				l1_d_caches[my_pid].l1_d_write_back(&(l1_d_caches[my_pid]), message_packet);
@@ -1545,7 +1588,8 @@ void l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			l2_caches[my_pid].stalls++;
-			/*printf("L2 id %d stalling\n", l2_caches[my_pid].id);*/
+			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
+					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
 
 			P_PAUSE(1);
 		}
@@ -2776,21 +2820,22 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
-	//star todo need to merge assoc conflicts correctly
-	/*else if((*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size) && *num_sets_ptr >= cache->assoc)*/
-
-
 	if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc)
 	{
+		printf("here\n");
+
+
+
+
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache for the block on return
 		ort_set_row(cache, message_packet->tag, message_packet->set);
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
+		//this is an associativity conflict
 		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
 		//i.e. there IS NOT a space for the block in the cache on return
-		printf("access id %llu type %d assoc conflict tag %d set %d\n", message_packet->access_id, message_packet->access_type, message_packet->tag, message_packet->set);
 		//fatal("boom found one\n");
 
 		//set the row in the ORT
@@ -2805,7 +2850,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
-		//non unique access that can be coalesced.
+		//non unique access that can be coalesced with a miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
 
 		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
@@ -2926,6 +2971,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 		}
 	}
 
+
 	//no coalesced packets remaining now check for packets with cache assoc conflicts
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
@@ -2939,6 +2985,9 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet = list_remove_at(cache->ort_list, i);
 
+			/*star todo find a better way to do this
+			Essentially we will just retry the access and it will be a hit then cause
+			coalescer to re-enter the set and tag.*/
 			ort_packet->coalesced = 0;
 			ort_packet->assoc_conflict = 0;
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
@@ -3243,7 +3292,6 @@ enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, in
 
 
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state){
-
 
 	cache->sets[set].blocks[way].transient_state = t_state;
 

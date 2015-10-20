@@ -1,3 +1,14 @@
+	/*star todo this is broken, try to fix this.
+			the I$ is accessing memory in the D$'s swim lane*/
+			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+			{
+				message_packet->cache_block_state = cgm_cache_block_shared;
+			}
+			else
+			{
+				message_packet->cache_block_state = *cache_block_state_ptr;
+			}*/
+	
 	void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int num_sets = -1;

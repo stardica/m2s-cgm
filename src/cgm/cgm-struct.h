@@ -369,10 +369,11 @@ struct cache_t{
 	long long hits;
 	long long invalid_hits;
 	long long misses;
+	long long assoc_conflict;
 	long long upgrade_misses;
 	long long retries;
 	long long coalesces;
-	long long mshr_entires;
+	long long mshr_entries;
 	long long stalls;
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;

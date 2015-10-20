@@ -132,6 +132,7 @@ extern unsigned long long Current_Cycle;
 
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
+extern eventcount volatile *watchdog;
 
 extern int protection_faults;
 extern int fetches;
@@ -146,6 +147,7 @@ void cgm_init(void);
 void cgm_configure(void);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
+void cgm_watchdog(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 

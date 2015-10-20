@@ -1520,12 +1520,6 @@ int cache_finish_create(){
 		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
 		l1_i_caches[i].set_mask = l1_i_caches[i].num_sets - 1;
-		l1_i_caches[i].hits = 0;
-		l1_i_caches[i].invalid_hits = 0;
-		l1_i_caches[i].misses = 0;
-		l1_i_caches[i].upgrade_misses = 0;
-		l1_i_caches[i].fetches = 0;
-		l1_i_caches[i].stalls = 0;
 
 		if(!l1_i_caches[i].policy)
 		{
@@ -1629,6 +1623,20 @@ int cache_finish_create(){
 			fatal("invalid protocol at i cache init\n");
 		}
 
+		//stats
+		l1_i_caches[i].fetches = 0;
+		l1_i_caches[i].stores = 0;
+		l1_i_caches[i].hits = 0;
+		l1_i_caches[i].invalid_hits = 0;
+		l1_i_caches[i].misses = 0;
+		l1_i_caches[i].assoc_conflict = 0;
+		l1_i_caches[i].upgrade_misses = 0;
+		l1_i_caches[i].retries = 0;
+		l1_i_caches[i].coalesces = 0;
+		l1_i_caches[i].mshr_entries = 0;
+		l1_i_caches[i].stalls = 0;
+
+
 		/////////////
 		//L1 D Cache
 		/////////////
@@ -1643,28 +1651,11 @@ int cache_finish_create(){
 		l1_d_caches[i].log_set_size = LOG2(l1_d_caches[i].num_sets);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].set_mask = l1_d_caches[i].num_sets - 1;
-		l1_d_caches[i].hits = 0;
-		l1_d_caches[i].invalid_hits = 0;
-		l1_d_caches[i].misses = 0;
-		l1_d_caches[i].upgrade_misses = 0;
-		l1_d_caches[i].loads = 0;
-		l1_d_caches[i].stores = 0;
-		l1_d_caches[i].stalls = 0;
-
 
 		if(!l1_d_caches[i].policy)
 		{
 			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
-
-		/*if(l1_d_caches[i].policy_type == 1)
-		{
-			l1_d_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid cache policy\n");
-		}*/
 
 		//pointer to my own event count
 		l1_d_caches[i].ec_ptr = &l1_d_cache[i];
@@ -1775,6 +1766,20 @@ int cache_finish_create(){
 			fatal("invalid protocol at d cache init\n");
 		}
 
+		//stats
+		l1_d_caches[i].fetches = 0;
+		l1_d_caches[i].loads = 0;
+		l1_d_caches[i].stores = 0;
+		l1_d_caches[i].hits = 0;
+		l1_d_caches[i].invalid_hits = 0;
+		l1_d_caches[i].misses = 0;
+		l1_d_caches[i].assoc_conflict = 0;
+		l1_d_caches[i].upgrade_misses = 0;
+		l1_d_caches[i].retries = 0;
+		l1_d_caches[i].coalesces = 0;
+		l1_d_caches[i].mshr_entries = 0;
+		l1_d_caches[i].stalls = 0;
+
 		/////////////
 		//L2 Cache
 		/////////////
@@ -1789,13 +1794,6 @@ int cache_finish_create(){
 		l2_caches[i].log_set_size = LOG2(l2_caches[i].num_sets);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].set_mask = l2_caches[i].num_sets - 1;
-		l2_caches[i].hits = 0;
-		l2_caches[i].invalid_hits = 0;
-		l2_caches[i].misses = 0;
-		l2_caches[i].upgrade_misses = 0;
-		l2_caches[i].loads = 0;
-		l2_caches[i].retries = 0;
-		l2_caches[i].stalls = 0;
 
 		if(!l2_caches[i].policy)
 		{
@@ -1944,6 +1942,19 @@ int cache_finish_create(){
 			fatal("invalid protocol at l2 cache init\n");
 		}
 
+		//stats
+		l2_caches[i].fetches = 0;
+		l2_caches[i].loads = 0;
+		l2_caches[i].stores = 0;
+		l2_caches[i].hits = 0;
+		l2_caches[i].invalid_hits = 0;
+		l2_caches[i].misses = 0;
+		l2_caches[i].assoc_conflict = 0;
+		l2_caches[i].upgrade_misses = 0;
+		l2_caches[i].retries = 0;
+		l2_caches[i].coalesces = 0;
+		l2_caches[i].mshr_entries = 0;
+		l2_caches[i].stalls = 0;
 
 		/////////////
 		//L3 Cache
@@ -1959,11 +1970,6 @@ int cache_finish_create(){
 		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
 		l3_caches[i].set_mask = l3_caches[i].num_sets - 1;
-		l3_caches[i].hits = 0;
-		l3_caches[i].invalid_hits = 0;
-		l3_caches[i].misses = 0;
-		l3_caches[i].upgrade_misses = 0;
-		l3_caches[i].stalls = 0;
 
 		//build the share_mask
 		for(l = 0; l < num_cores; l ++)
@@ -1978,15 +1984,6 @@ int cache_finish_create(){
 		{
 			fatal("cache_finish_create(): Invalid cache policy\n");
 		}
-
-		/*if(l3_caches[i].policy_type == 1)
-		{
-			l3_caches[i].policy = cache_policy_lru;
-		}
-		else
-		{
-			fatal("Invalid L3 cache policy\n");
-		}*/
 
 		//pointer to my own event counter
 		l3_caches[i].ec_ptr = &l3_cache[i];
@@ -2117,6 +2114,20 @@ int cache_finish_create(){
 			fatal("invalid protocol at l3 cache init\n");
 		}
 
+		//stats
+		l3_caches[i].fetches = 0;
+		l3_caches[i].loads = 0;
+		l3_caches[i].stores = 0;
+		l3_caches[i].hits = 0;
+		l3_caches[i].invalid_hits = 0;
+		l3_caches[i].misses = 0;
+		l3_caches[i].assoc_conflict = 0;
+		l3_caches[i].upgrade_misses = 0;
+		l3_caches[i].retries = 0;
+		l3_caches[i].coalesces = 0;
+		l3_caches[i].mshr_entries = 0;
+		l3_caches[i].stalls = 0;
+
 
 		//Initialize array of sets
 		//l1_i_caches[i].num_sets = (l1_i_caches[i].num_sets / l1_i_caches[i].assoc);
@@ -2209,11 +2220,6 @@ int cache_finish_create(){
 		gpu_s_caches[i].log_set_size = LOG2(gpu_s_caches[i].num_sets);
 		gpu_s_caches[i].block_mask = gpu_s_caches[i].block_size - 1;
 		gpu_s_caches[i].set_mask = gpu_s_caches[i].num_sets - 1;
-		gpu_s_caches[i].hits = 0;
-		gpu_s_caches[i].invalid_hits = 0;
-		gpu_s_caches[i].misses = 0;
-		gpu_s_caches[i].fetches = 0;
-		gpu_s_caches[i].stalls = 0;
 
 		if(!gpu_s_caches[i].policy)
 		{
@@ -2315,6 +2321,20 @@ int cache_finish_create(){
 			fatal("invalid protocol at GPU S cache init\n");
 		}
 
+		//stats
+		gpu_s_caches[i].fetches = 0;
+		gpu_s_caches[i].loads = 0;
+		gpu_s_caches[i].stores = 0;
+		gpu_s_caches[i].hits = 0;
+		gpu_s_caches[i].invalid_hits = 0;
+		gpu_s_caches[i].misses = 0;
+		gpu_s_caches[i].assoc_conflict = 0;
+		gpu_s_caches[i].upgrade_misses = 0;
+		gpu_s_caches[i].retries = 0;
+		gpu_s_caches[i].coalesces = 0;
+		gpu_s_caches[i].mshr_entries = 0;
+		gpu_s_caches[i].stalls = 0;
+
 		/////////////
 		//GPU V Cache
 		/////////////
@@ -2328,10 +2348,6 @@ int cache_finish_create(){
 		gpu_v_caches[i].log_set_size = LOG2(gpu_v_caches[i].num_sets);
 		gpu_v_caches[i].block_mask = gpu_v_caches[i].block_size - 1;
 		gpu_v_caches[i].set_mask = gpu_v_caches[i].num_sets - 1;
-		gpu_v_caches[i].hits = 0;
-		gpu_v_caches[i].invalid_hits = 0;
-		gpu_v_caches[i].misses = 0;
-		gpu_v_caches[i].stalls = 0;
 
 		if(!gpu_v_caches[i].policy)
 		{
@@ -2431,6 +2447,20 @@ int cache_finish_create(){
 		{
 			fatal("invalid protocol at GPU V cache init\n");
 		}
+
+		//stats
+		gpu_v_caches[i].fetches = 0;
+		gpu_v_caches[i].loads = 0;
+		gpu_v_caches[i].stores = 0;
+		gpu_v_caches[i].hits = 0;
+		gpu_v_caches[i].invalid_hits = 0;
+		gpu_v_caches[i].misses = 0;
+		gpu_v_caches[i].assoc_conflict = 0;
+		gpu_v_caches[i].upgrade_misses = 0;
+		gpu_v_caches[i].retries = 0;
+		gpu_v_caches[i].coalesces = 0;
+		gpu_v_caches[i].mshr_entries = 0;
+		gpu_v_caches[i].stalls = 0;
 
 
 		////////////
@@ -2542,11 +2572,6 @@ int cache_finish_create(){
 		gpu_l2_caches[i].log_set_size = LOG2(gpu_l2_caches[i].num_sets);
 		gpu_l2_caches[i].block_mask = gpu_l2_caches[i].block_size - 1;
 		gpu_l2_caches[i].set_mask = gpu_l2_caches[i].num_sets - 1;
-		gpu_l2_caches[i].hits = 0;
-		gpu_l2_caches[i].invalid_hits = 0;
-		gpu_l2_caches[i].misses = 0;
-		gpu_l2_caches[i].retries = 0;
-		gpu_l2_caches[i].stalls = 0;
 
 		if(!gpu_l2_caches[i].policy)
 		{
@@ -2662,6 +2687,20 @@ int cache_finish_create(){
 		{
 			fatal("invalid protocol at GPU L2 cache init\n");
 		}
+
+		//stats//stats
+		gpu_l2_caches[i].fetches = 0;
+		gpu_l2_caches[i].loads = 0;
+		gpu_l2_caches[i].stores = 0;
+		gpu_l2_caches[i].hits = 0;
+		gpu_l2_caches[i].invalid_hits = 0;
+		gpu_l2_caches[i].misses = 0;
+		gpu_l2_caches[i].assoc_conflict = 0;
+		gpu_l2_caches[i].upgrade_misses = 0;
+		gpu_l2_caches[i].retries = 0;
+		gpu_l2_caches[i].coalesces = 0;
+		gpu_l2_caches[i].mshr_entries = 0;
+		gpu_l2_caches[i].stalls = 0;
 
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));

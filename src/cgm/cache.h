@@ -207,6 +207,8 @@ int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int wa
 /*enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);*/
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
+
+int cgm_cache_get_victim(struct cache_t *cache, int set);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_dump_set(struct cache_t *cache, int set);
 
