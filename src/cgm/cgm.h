@@ -139,6 +139,7 @@ extern int fetches;
 extern int loads;
 extern int stores;
 extern int mem_system_off;
+extern int watch_dog;
 
 
 //set up related

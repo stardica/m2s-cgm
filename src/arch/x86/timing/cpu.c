@@ -1031,7 +1031,10 @@ int X86CpuRun(Timing *self){
 	P_PAUSE(1);
 	self->cycle = P_TIME;
 	Current_Cycle++;
-	/*advance(watchdog);*/
+	if(watch_dog == 1)
+	{
+		advance(watchdog);
+	}
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

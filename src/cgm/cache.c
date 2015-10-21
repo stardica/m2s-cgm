@@ -1088,8 +1088,8 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	//send eviction notices
 	/*star todo account for block sizes
-	for example, if the L3 cache is 64 bytes and L2 is 128 L2 should send two evicitons*/
-	for(i = 0; i < sharers; i++)
+	for example, if the L3 cache is 64 bytes and L2 is 128 L2 should send two evictions*/
+	for(i = 0; i < num_cores; i++)
 	{
 		//get the presence bits from the directory
 		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
@@ -1175,7 +1175,7 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 	{
 		assert(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid || cache->sets[set].blocks[i].transient_state == cgm_cache_block_transient);
 
-		if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid)
+		if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid && (cgm_cache_get_dir_pending_bit(cache, set, i) == 0))
 		{
 			way = i;
 			cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
@@ -1467,7 +1467,7 @@ void l1_d_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("load/store running access type %d cycle %llu\n", message_packet->access_type, P_TIME);*/
+			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			/*if (message_packet->address == (unsigned int) 0x0000cbc5)
 			{
@@ -1613,6 +1613,7 @@ void l2_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
@@ -1786,6 +1787,8 @@ void l3_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{

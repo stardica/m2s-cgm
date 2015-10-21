@@ -1,4 +1,15 @@
-	/*star todo this is broken, try to fix this.
+/*star todo this is broken, try to fix this.
+			the I$ is accessing memory in the D$'s swim lane*/
+			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive ||*cache_block_state_ptr == cgm_cache_block_modified)
+			{
+				message_packet->cache_block_state = cgm_cache_block_shared;
+			}
+			else
+			{
+				message_packet->cache_block_state = *cache_block_state_ptr;
+			}*/
+
+/*star todo this is broken, try to fix this.
 			the I$ is accessing memory in the D$'s swim lane*/
 			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 			{

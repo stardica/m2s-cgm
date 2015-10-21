@@ -361,6 +361,8 @@ struct cache_t{
 	void (*gpu_l2_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+	//watch dog
+	/*unsigned int *outstanding_addresses;*/
 
 	//statistics
 	long long fetches;

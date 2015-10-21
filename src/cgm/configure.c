@@ -300,6 +300,11 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 		cgm_debug_output_path = strdup(value);
 	}
 
+	if(MATCH("Debug", "Watch_Dog"))
+	{
+		watch_dog = atoi(value);
+	}
+
 	return 1;
 }
 
@@ -1737,6 +1742,9 @@ int cache_finish_create(){
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "cache_io_down_task");
 		l1_d_caches[i].cache_io_down_tasks = create_task(l1_d_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
+
+		//watch dog
+		/*l1_d_caches[i].outstanding_addresses = (unsigned int *) calloc(l1_d_caches[i].mshr_size, sizeof(task));*/
 
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_bt)

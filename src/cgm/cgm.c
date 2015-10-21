@@ -72,6 +72,7 @@ int fetches = 0;
 int loads = 0;
 int stores = 0;
 int mem_system_off = 0;
+extern int watch_dog = 0;
 
 void m2scgm_init(void){
 
@@ -172,32 +173,12 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-
-		if(l1_d_caches[0].sets[47].blocks[0].transient_state == cgm_cache_block_transient)
-		{
-			getchar();
-		}
-
-		printf("WD cycle %llu\n", P_TIME);
-		printf("\tstate 0 %d\n", l1_d_caches[0].sets[47].blocks[0].transient_state);
-		printf("\tstate 1 %d\n", l1_d_caches[0].sets[47].blocks[1].transient_state);
+		printf("WD: %s set %d way %d state %d cycle %llu\n", l2_caches[0].name, 52, 3, cgm_cache_get_block_transient_state(&l2_caches[0], 52, 3), P_TIME);
 		fflush(stdout);
 
-		/*printf("Cache queues:\n");
-		for(i = 0; i < num_cores; i++)
-		{
-			printf("%s %d\n", l1_d_caches[i].Rx_queue_top->name, list_count(l1_d_caches[i].Rx_queue_top));
-		}
+		assert(cgm_cache_get_block_transient_state(&l2_caches[0], 53, 3) == 0);
 
-		for(i = 0; i < num_cores; i++)
-		{
-			printf("%s %d\n", l1_d_caches[i].Rx_queue_bottom->name, list_count(l1_d_caches[i].Rx_queue_bottom));
-		}
 
-		for(i = 0; i < num_cores; i++)
-		{
-			printf("%s %d\n", l1_d_caches[i].Coherance_Rx_queue->name, list_count(l1_d_caches[i].Coherance_Rx_queue));
-		}*/
 	}
 
 	return;
@@ -610,6 +591,8 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		free(new_packet);
 		return;
 	}
+
+
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
