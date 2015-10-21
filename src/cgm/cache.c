@@ -574,6 +574,8 @@ void ort_set_row(struct cache_t *cache, int tag, int set){
 		}
 	}
 
+	assert(i >= 0 && i <cache->mshr_size);
+
 	//set the row
 	ort_set(cache, i, tag, set);
 
@@ -602,7 +604,7 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	//next look for the number of outstanding set accesses for a given set
 	for (i = 0; i < cache->mshr_size; i++)
 	{
-		if(cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		if(cache->ort[i][1] == set)
 		{
 			//hit in the ORT table
 			j ++;
@@ -1162,12 +1164,12 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 	assert(set >= 0 && set < cache->num_sets);
 
-	printf("%s set %d\n", cache->name, set);
+	//printf("%s set %d\n", cache->name, set);
 
-	for(i = 0; i < cache->assoc; i++)
+	/*for(i = 0; i < cache->assoc; i++)
 	{
 		printf("cache->sets[%d].blocks[%d] state %d\n", set, i, cache->sets[set].blocks[i].transient_state);
-	}
+	}*/
 
 	for(i = 0; i < cache->assoc; i++)
 	{
@@ -1177,14 +1179,17 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 		{
 			way = i;
 			cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
+			//printf("setting transient state cache->sets[%d].blocks[%d]\n", set, i);
+			/*ort_dump(cache);*/
+			break;
 		}
 	}
 
 	assert(way != -1);
-	if(way == -1)
+	/*if(way == -1)
 	{
 		getchar();
-	}
+	}*/
 
 	assert(way >= 0 && way < cache->assoc);
 	return way;
@@ -1449,12 +1454,12 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].stalls++;
 
-			/*printf("L1 D %d stalling\n", l1_d_caches[my_pid].id);*/
-			printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d cycle %llu\n",
+			/*printf("%s stalling\n", l1_d_caches[my_pid].name);*/
+			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d cycle %llu\n",
 					l1_d_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top),
 					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
 					list_count(l1_d_caches[my_pid].ort_list),
-					P_TIME);
+					P_TIME);*/
 
 			P_PAUSE(1);
 		}
@@ -1462,8 +1467,12 @@ void l1_d_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("load/store running cycle %llu\n", P_TIME);
-			STOP;*/
+			/*printf("load/store running access type %d cycle %llu\n", message_packet->access_type, P_TIME);*/
+
+			/*if (message_packet->address == (unsigned int) 0x0000cbc5)
+			{
+				printf("here 3\n");
+			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -2822,10 +2831,13 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc)
 	{
-		printf("here\n");
+		/*printf("here\n");
 
-
-
+		int i = 0;
+		for(i = 0; i < cache->assoc; i++)
+		{
+			printf("cache->sets[%d].blocks[%d] state %d num sets %d\n", 47, i, cache->sets[47].blocks[i].transient_state, *num_sets_ptr);
+		}*/
 
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache for the block on return
@@ -2837,6 +2849,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
 		//i.e. there IS NOT a space for the block in the cache on return
 		//fatal("boom found one\n");
+
+		/*printf("here 2\n");*/
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -2949,7 +2963,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	struct cgm_packet_t *ort_packet;
 	int i = 0;
 
-
 	//first look for merged accesses
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
@@ -2975,6 +2988,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	//no coalesced packets remaining now check for packets with cache assoc conflicts
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
+
 		//get pointer to access in queue and check it's status.
 		ort_packet = list_get(cache->ort_list, i);
 

@@ -133,9 +133,9 @@ void cgm_create_tasks(void){
 	snprintf(buff, 100, "sim_finish");
 	sim_finish = new_eventcount(strdup(buff));
 
-	/*memset(buff,'\0' , 100);
+	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "watchdog");
-	watchdog = new_eventcount(strdup(buff));*/
+	watchdog = new_eventcount(strdup(buff));
 
 
 	//tasks
@@ -147,9 +147,9 @@ void cgm_create_tasks(void){
 	snprintf(buff, 100, "cgm_start");
 	create_task(cgm_mem_run, DEFAULT_STACK_SIZE, strdup(buff));
 
-	/*memset(buff,'\0' , 100);
+	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "watchdog");
-	create_task(cgm_watchdog, DEFAULT_STACK_SIZE, strdup(buff));*/
+	create_task(cgm_watchdog, DEFAULT_STACK_SIZE, strdup(buff));
 
 	//create the task for future advance.
 	//this is specific to future_advance()
@@ -172,7 +172,18 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		printf("Cache queues:\n");
+
+		if(l1_d_caches[0].sets[47].blocks[0].transient_state == cgm_cache_block_transient)
+		{
+			getchar();
+		}
+
+		printf("WD cycle %llu\n", P_TIME);
+		printf("\tstate 0 %d\n", l1_d_caches[0].sets[47].blocks[0].transient_state);
+		printf("\tstate 1 %d\n", l1_d_caches[0].sets[47].blocks[1].transient_state);
+		fflush(stdout);
+
+		/*printf("Cache queues:\n");
 		for(i = 0; i < num_cores; i++)
 		{
 			printf("%s %d\n", l1_d_caches[i].Rx_queue_top->name, list_count(l1_d_caches[i].Rx_queue_top));
@@ -186,7 +197,7 @@ void cgm_watchdog(void){
 		for(i = 0; i < num_cores; i++)
 		{
 			printf("%s %d\n", l1_d_caches[i].Coherance_Rx_queue->name, list_count(l1_d_caches[i].Coherance_Rx_queue));
-		}
+		}*/
 	}
 
 	return;
@@ -418,14 +429,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//if(mem_system_off == 1 || mem_system_off == 3)
 
 	//////////////testing
-	if(new_packet->cpu_access_type == cgm_access_fetch)
+	/*if(new_packet->cpu_access_type == cgm_access_fetch)
 	{
 		//put back on the core event queue to end memory system access.
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
 		return access_id;
-	}
+	}*/
 	//////////////testing
 
 	//bad access address kill fetch

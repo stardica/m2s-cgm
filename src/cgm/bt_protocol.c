@@ -14,8 +14,8 @@
 
 void cgm_bt_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 i %d fetching\n", cache->id);*/
-	/*STOP;*/
+	/*printf("l1 i %d fetching\n", cache->id);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -137,6 +137,7 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		return;
 	}
 
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_owned:
@@ -163,8 +164,9 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->access_type = cgm_access_get;
 			message_packet->l1_access_type = cgm_access_get;
 
+
 			//find victim
-			printf("%s load\n", cache->name);
+			//printf("%s load addr 0x%08x cycle %llu\n", cache->name, message_packet->address, P_TIME);
 			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
 
 			/*	message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
@@ -191,6 +193,7 @@ void cgm_bt_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//check for pending upgrade before finishing
 			upgrade_pending = ort_search(cache, message_packet->tag, message_packet->set);
+
 
 			/*star todo start separating out these kinds of things,
 			this should be done in parallel with the cache access.*/
@@ -757,18 +760,21 @@ int cgm_bt_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	/*access_type = message_packet->access_type;*/
 	/*access_id = message_packet->access_id;*/
 
-
-	/*enum cgm_cache_block_state_t victim_trainsient_state;
-	long long t_state_id;*/
+	enum cgm_cache_block_state_t victim_trainsient_state;
+	long long t_state_id;
 
 	//check the transient state of the victim
 	//if the state is set, an earlier access is bringing the block
 	//if it is not set the victim is clear to evict
-	/*cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	/*cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);*/
 
-	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);*/
+	ort_clear(cache, message_packet);
 
-	//if the block is in the transient state there are stores waiting to write to the block.
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
+
+	//The block should be in the transient state.
+	assert(victim_trainsient_state == cgm_cache_block_transient);
+
 	/*if(victim_trainsient_state == cgm_cache_block_transient)
 	{
 
@@ -788,7 +794,7 @@ int cgm_bt_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	else
 	{*/
 		//find the access in the ORT table and clear it.
-	ort_clear(cache, message_packet);
+	//ort_clear(cache, message_packet);
 
 	//set the block and retry the access in the cache.
 	/*cache_put_block(cache, message_packet);*/
@@ -801,6 +807,7 @@ int cgm_bt_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
+	/*}*/
 
 	return 1;
 }
