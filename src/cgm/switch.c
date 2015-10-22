@@ -996,6 +996,12 @@ void switch_south_io_ctrl(void){
 
 		P_PAUSE(transfer_time);
 
+		if(message_packet->access_id == 19492)
+		{
+			printf("%s id %llu access type %d cycle %llu\n", switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+		}
+
 		//L3 caches
 		if(my_pid < num_cores)
 		{
@@ -1017,7 +1023,8 @@ void switch_south_io_ctrl(void){
 			}
 			else
 			{
-				fatal("switch_south_io_ctrl(): bad access_type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+					fatal("switch_south_io_ctrl(): bad access_type as %s access_id %llu cycle %llu\n",
+						str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id, P_TIME);
 			}
 
 			advance(&l3_cache[my_pid]);

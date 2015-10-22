@@ -127,8 +127,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	//write_back_packet->address = cache->sets[set].blocks[way].address;
 	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);
 	assert(write_back_packet->address != 0);
-	/*printf("address 0x%08x\n", write_back_packet->address);
-	STOP;*/
+	assert(cache->sets[set].id >=0 && cache->sets[set].id < cache->num_sets);
 
 	write_back_packet->set = cache->sets[set].id;
 	write_back_packet->tag = cache->sets[set].blocks[way].tag;
@@ -189,7 +188,6 @@ void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, un
 	upgrade_request_packet->upgrade = 1;
 	upgrade_request_packet->size = 1;
 	upgrade_request_packet->address = address;
-
 	return;
 }
 

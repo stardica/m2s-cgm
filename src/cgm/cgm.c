@@ -173,12 +173,6 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		printf("WD: %s set %d way %d state %d cycle %llu\n", l2_caches[0].name, 52, 3, cgm_cache_get_block_transient_state(&l2_caches[0], 52, 3), P_TIME);
-		fflush(stdout);
-
-		assert(cgm_cache_get_block_transient_state(&l2_caches[0], 53, 3) == 0);
-
-
 	}
 
 	return;

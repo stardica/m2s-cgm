@@ -1467,21 +1467,10 @@ void l1_d_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
-
-			/*if (message_packet->address == (unsigned int) 0x0000cbc5)
-			{
-				printf("here 3\n");
-			}*/
+			/*printf("%s load/store running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
-
-			/*if(message_packet->address == (unsigned int) 0x00004810)
-			{
-				printf("l1 D %d access_id %llu write_back_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
-						l1_d_caches[my_pid].id, message_packet->access_id, message_packet->write_back_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}*/
 
 			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
@@ -1605,15 +1594,16 @@ void l2_cache_ctrl(void){
 		else
 		{
 
-			/*printf("L2 running\n");
-			STOP;*/
+			/*printf("L2 running\n");*/
 
 			step++;
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
+			/*printf("%s load running access type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_type, P_TIME);*/
+
+
 
 			/*if(message_packet->address == (unsigned int) 0x00004810)
 			{
@@ -1630,6 +1620,8 @@ void l2_cache_ctrl(void){
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
+
+
 				//Call back function (cgm_mesi_l2_gets)
 				l2_caches[my_pid].l2_gets(&(l2_caches[my_pid]), message_packet);
 			}
@@ -1788,13 +1780,7 @@ void l3_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*printf("%s load running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
-
-			/*if(message_packet->address == (unsigned int) 0x00004810)
-			{
-				printf("l3 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
-						l3_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}*/
+			/*printf("%s load running access type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -1862,22 +1848,6 @@ void l3_cache_ctrl(void){
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
-
-			/*if(my_pid == 2 && message_packet->set == 390 && message_packet->tag)
-			{
-				for(i = 0; i < l3_caches[my_pid].assoc; i++)
-				{
-					printf("l3 id %d accessing cache\n", l3_caches[my_pid].id);
-
-					if(cgm_cache_get_block_state(&(l3_caches[my_pid]), message_packet->set, i) == 4)
-					{
-						printf("error detected access_id %llu access type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
-						STOP;
-					}
-				}
-				printf("\n\n");
-			}*/
-
 
 		}
 	}
@@ -2363,6 +2333,7 @@ void l3_cache_down_io_ctrl(void){
 		step++;
 
 		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_bottom);
+		/*printf("cycle %llu\n", P_TIME);*/
 		assert(message_packet);
 
 		/*access_id = message_packet->access_id;*/
@@ -2887,8 +2858,10 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu L1 bottom queue free size %d\n",
-			cache->name, access_id, P_TIME, list_count(l1_i_caches[cache->id].Rx_queue_bottom));*/
+	if(message_packet->access_id == 19492)
+	{
+		printf("%s transmitting\n", cache->name);
+	}
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->Tx_queue_top, message_packet);
@@ -2897,6 +2870,12 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 }
 
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+	if(message_packet->access_id == 19492)
+	{
+		printf("%s transmitting\n", cache->name);
+	}
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
