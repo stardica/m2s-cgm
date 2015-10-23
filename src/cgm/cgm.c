@@ -168,10 +168,20 @@ void cgm_watchdog(void){
 	int i = 0;
 	int num_cores = x86_cpu_num_cores;
 
+	int block_state = 0;
+
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
+
+
+		if(l2_caches[0].sets[31].blocks[0].state != block_state)
+		{
+			block_state = l2_caches[0].sets[31].blocks[0].state;
+		 	printf("WD: %s state %d cycle %llu\n", l2_caches[0].name, l2_caches[0].sets[31].blocks[0].state, P_TIME);
+		 	getchar();
+		}
 
 	}
 

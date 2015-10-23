@@ -356,13 +356,6 @@ void cgm_bt_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			return;*/
 
 
-			/*if(message_packet->address == (unsigned int) 0x00004810)
-			{
-				cgm_cache_dump_set(cache, message_packet->set);
-				printf("L1 D %d %s access_id %llu address 0x%08x set %d tag %d cycle %llu\n",
-						cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, P_TIME);
-			}*/
-
 			/*if(message_packet->access_type == cgm_access_store_retry)
 			{
 				printf("access_id %llu addr 0x%08x cycle %llu set %d tag %d way %d\n",
@@ -640,7 +633,7 @@ void cgm_bt_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *message_
 	if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 	{
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 	}
 	else if (message_packet->cache_block_state == cgm_cache_block_modified)
 	{
@@ -1508,7 +1501,7 @@ void cgm_bt_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 				//destroy the downgrade message because we don't need it anymore.
 				message_packet = list_remove(cache->last_queue, message_packet);
-				free(message_packet);
+				packet_destroy(message_packet);
 
 
 
@@ -1621,7 +1614,7 @@ void cgm_bt_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 			//destroy the downgrade message because we don't need it anymore.
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 
 			break;
 	}
@@ -1772,7 +1765,7 @@ void cgm_bt_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *me
 
 				//destroy the L1 D getx_fwd_inval_ack message because we don't need it anymore.
 				message_packet = list_remove(cache->last_queue, message_packet);
-				free(message_packet);
+				packet_destroy(message_packet);
 
 			}
 			else
@@ -1877,7 +1870,7 @@ void cgm_bt_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *me
 
 			//destroy the L1 D getx_fwd_inval_ack message because we don't need it anymore.
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 
 			break;
 	}
@@ -1997,7 +1990,7 @@ void cgm_bt_l2_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	//free the message packet (inval_ack)
 	message_packet = list_remove(cache->last_queue, message_packet);
-	free(message_packet);
+	packet_destroy(message_packet);
 
 	return;
 }
@@ -2661,7 +2654,7 @@ int cgm_bt_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_pac
 			if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 			{
 				message_packet = list_remove(cache->last_queue, message_packet);
-				free(message_packet);
+				packet_destroy(message_packet);
 			}
 			else if (message_packet->cache_block_state == cgm_cache_block_modified)
 			{
@@ -3551,7 +3544,7 @@ void cgm_bt_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 			//go ahead and destroy the downgrade message because we don't need it anymore.
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 			break;
 	}
 	return;
@@ -3701,7 +3694,7 @@ void cgm_bt_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_
 
 			//go ahead and destroy the getx_fwd_ack message because we don't need it anymore.
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 
 			break;
 	}

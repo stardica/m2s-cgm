@@ -184,7 +184,7 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 //block Manipulations
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
 enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);
-void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state);
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t t_state);
 void cgm_cache_set_block_address(struct cache_t *cache, int set, int way, unsigned int address);
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr);

@@ -1,3 +1,23 @@
+//set message size
+		message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+
+		//update message status
+		if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+		{
+			message_packet->access_type = cgm_access_putx;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+		}
+		else if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+		{
+			message_packet->access_type = cgm_access_put_clnx;
+			message_packet->cache_block_state = cgm_cache_block_exclusive;
+		}
+
+		/*write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+		packet_destroy(write_back_packet);*/
+
+		cache_put_io_up_queue(cache, message_packet);
+
 /*star todo this is broken, try to fix this.
 			the I$ is accessing memory in the D$'s swim lane*/
 			/*if(*cache_block_state_ptr == cgm_cache_block_exclusive ||*cache_block_state_ptr == cgm_cache_block_modified)
@@ -346,7 +366,7 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 
 		//free the upgrade_inval
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 
 		/*printf("size %d\n", list_count(cache->Coherance_Rx_queue));*/
 	}
@@ -356,7 +376,7 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 
 		//free the upgrade_inval
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 
 		/*printf("size %d\n", list_count(cache->Coherance_Rx_queue));*/
 	}
@@ -550,7 +570,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 			//free the L3's upgrade_ack message packet
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 		}
 		else if(message_packet->upgrade_ack < 0)
 		{
@@ -563,7 +583,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 			//free the other L2's upgrade_ack message packet
 			message_packet = list_remove(cache->last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 		}
 		else
 		{
@@ -830,7 +850,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 
 		//destroy the L1 D getx_fwd_inval_ack message because we don't need it anymore.
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 
 		/*printf("L2 id %d sent downgrade_ack to L3 id %d cycle %llu\n", l2_caches[my_pid].id, l3_map, P_TIME);*/
 	}
@@ -1196,7 +1216,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 		//destroy the downgrade message because we don't need it anymore.
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 
 		/*printf("L2 id %d sent downgrade_ack to L3 id %d cycle %llu\n", l2_caches[my_pid].id, l3_map, P_TIME);*/
 	}
@@ -1364,7 +1384,7 @@ if(message_packet->set == 320 && message_packet->tag == 8)
 
 		//go ahead and destroy the downgrade message because we don't need it anymore.
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 	}*/
 	//block was evicted while flush was in progress
 	else if(*cache_block_hit_ptr == 0)
@@ -1535,7 +1555,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		//destroy the L1 D inval_ack message because we don't need it anymore.
 		message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);
+		packet_destroy(message_packet);
 
 		printf("L2 id %d sent getx_fwd_ack to L3 id %d cycle %llu\n", cache->id, l3_map, P_TIME);
 	}
@@ -2066,7 +2086,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 		//destroy the L1 D inval_ack message because we don't need it anymore.
 		/*message_packet = list_remove(cache->last_queue, message_packet);
-		free(message_packet);*/
+		packet_destroy(message_packet);*/
 
 		/*printf("L2 id %d sent getx_fwd_ack to L3 id %d cycle %llu\n", cache->id, l3_map, P_TIME);*/
 	}
@@ -2945,7 +2965,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				/*//destroy the downgrade message because we don't need it anymore.
 				message_packet = list_remove(l2_caches[my_pid].last_queue, message_packet);
-				free(message_packet);*/
+				packet_destroy(message_packet);*/
 
 				printf("L2 id %d sent downgrade_ack to L3 id %d cycle %llu\n", l2_caches[my_pid].id, l3_map, P_TIME);
 
@@ -3935,7 +3955,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 							//message_packet->access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
 					message_packet = list_remove(cache->last_queue, message_packet); check here
-					free(message_packet);
+					packet_destroy(message_packet);
 					remove_from_global(access_id);
 
 				}
@@ -3946,7 +3966,7 @@ void cpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 					message_packet = list_remove(cache->last_queue, message_packet); check here
 					linked_list_add(message_packet->event_queue, message_packet->data);
-					free(message_packet);
+					packet_destroy(message_packet);
 
 					//retry coalesced packets.
 					cpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
@@ -6533,7 +6553,7 @@ if()
 
 				list_remove(l1_i_caches[my_pid].last_queue, message_packet);
 				remove_from_global(access_id);
-				free(message_packet);
+				packet_destroy(message_packet);
 
 			}
 			//L1 I Cache Miss!

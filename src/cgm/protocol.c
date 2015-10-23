@@ -91,7 +91,7 @@ void packet_destroy(struct cgm_packet_t *packet){
 
 	free(packet->name);
 	free(packet);
-	//dont' need to free these because we never malloc anything.
+	//dont' need to free these because we never malloc these.
 	//free(packet->l2_cache_name);
 	//free(packet->src_name);
 	//free(packet->dest_name);
@@ -1055,7 +1055,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 					(*message_packet->witness_ptr)++;
 					message_packet = list_remove(cache->last_queue, message_packet);
-					free(message_packet);
+					packet_destroy(message_packet);
 
 					//retry coalesced packets.
 					gpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);
@@ -1071,7 +1071,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 
 					(*message_packet->witness_ptr)++;
 					message_packet = list_remove(cache->last_queue, message_packet);
-					free(message_packet);
+					packet_destroy(message_packet);
 
 					//retry coalesced packets.
 					gpu_cache_coalesced_retry(cache, tag_ptr, set_ptr);

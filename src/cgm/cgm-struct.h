@@ -18,10 +18,10 @@ enum cgm_cache_block_state_t{
 
 	cgm_cache_block_invalid = 0,
 	cgm_cache_block_noncoherent,
-	cgm_cache_block_modified,
-	cgm_cache_block_owned,
-	cgm_cache_block_exclusive,
-	cgm_cache_block_shared,
+	cgm_cache_block_modified, /*2*/
+	cgm_cache_block_owned, /*3*/
+	cgm_cache_block_exclusive,/*4*/
+	cgm_cache_block_shared, /*5*/
 	cgm_cache_block_transient,
 	cgm_cache_block_null,
 	cgm_cache_block_state_num
@@ -96,7 +96,7 @@ enum cgm_access_kind_t {
 			cgm_access_load_retry,
 			cgm_access_store_retry,
 			cgm_access_write_back,
-			cgm_access_retry_i,//not used
+	/*50*/	cgm_access_retry_i,//not used
 			num_access_types
 };
 
@@ -329,7 +329,7 @@ struct cache_t{
 	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_putx_n)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	int (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 

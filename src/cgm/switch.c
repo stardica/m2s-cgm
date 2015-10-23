@@ -996,12 +996,6 @@ void switch_south_io_ctrl(void){
 
 		P_PAUSE(transfer_time);
 
-		if(message_packet->access_id == 19492)
-		{
-			printf("%s id %llu access type %d cycle %llu\n", switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-
-		}
-
 		//L3 caches
 		if(my_pid < num_cores)
 		{

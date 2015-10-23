@@ -1149,7 +1149,7 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i<cache->assoc; i++)
 	{
-		printf("set %d tag %d way %d state %s\n",
+		printf("set %d way %d tag %d state %s\n",
 				set, i, cache->sets[set].blocks[i].tag, str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state));
 	}
 
@@ -1593,9 +1593,6 @@ void l2_cache_ctrl(void){
 		}
 		else
 		{
-
-			/*printf("L2 running\n");*/
-
 			step++;
 
 			access_type = message_packet->access_type;
@@ -1603,25 +1600,8 @@ void l2_cache_ctrl(void){
 
 			/*printf("%s load running access type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
-
-
-			/*if(message_packet->address == (unsigned int) 0x00004810)
-			{
-				printf("l2 %d access_id %llu access_type (%s) addr 0x%08x cycle %llu\n",
-						l2_caches[my_pid].id, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, P_TIME);
-			}*/
-
-
-			//check for block each time I run...
-			//get the status of the cache block
-			/*cache_get_block_status(&(l2_caches[my_pid]), message_packet, cache_block_hit_ptr, cache_block_state_ptr);*/
-
-			//printf("%s request access type %s cycle %llu\n", l2_caches[my_pid].name, str_map_value(&cgm_mem_access_strn_map, access_type), P_TIME);
-
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
-
-
 				//Call back function (cgm_mesi_l2_gets)
 				l2_caches[my_pid].l2_gets(&(l2_caches[my_pid]), message_packet);
 			}
@@ -1888,7 +1868,7 @@ void gpu_s_cache_ctrl(void){
 			/*/////////testing
 			(*message_packet->witness_ptr)++;
 			list_remove(gpu_s_caches[my_pid].last_queue, message_packet);
-			free(message_packet);
+			packet_destroy(message_packet);
 			continue;
 			/////////testing*/
 
@@ -2291,9 +2271,6 @@ void l3_cache_up_io_ctrl(void){
 		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_top);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
-
-		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -2306,8 +2283,6 @@ void l3_cache_up_io_ctrl(void){
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].south_queue, message_packet);
 		advance(&switches_ec[my_pid]);
-
-		/*printf("l3 -> l2\n");*/
 	}
 	return;
 
@@ -2333,7 +2308,6 @@ void l3_cache_down_io_ctrl(void){
 		step++;
 
 		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_bottom);
-		/*printf("cycle %llu\n", P_TIME);*/
 		assert(message_packet);
 
 		/*access_id = message_packet->access_id;*/
@@ -2858,11 +2832,6 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	if(message_packet->access_id == 19492)
-	{
-		printf("%s transmitting\n", cache->name);
-	}
-
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);
@@ -2870,12 +2839,6 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 }
 
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
-
-	if(message_packet->access_id == 19492)
-	{
-		printf("%s transmitting\n", cache->name);
-	}
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
@@ -3287,14 +3250,14 @@ enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, in
 }
 
 
-void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, long long id, enum cgm_cache_block_state_t t_state){
+void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t t_state){
 
 	cache->sets[set].blocks[way].transient_state = t_state;
 
-	if(id)
+	/*if(id)
 	{
 		cache->sets[set].blocks[way].transient_access_id = id;
-	}
+	}*/
 
 	return;
 }
