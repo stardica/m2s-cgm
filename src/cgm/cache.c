@@ -491,7 +491,23 @@ int get_ort_status(struct cache_t *cache){
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set){
 
 	int i = 0;
-	struct cgm_packet_t *wb_packet;
+	int j = 0;
+	struct cgm_packet_t *wb_packet = NULL;
+
+	//error checking make sure there is only one matching wb in the buffer
+	LIST_FOR_EACH(cache->write_back_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		wb_packet = list_get(cache->write_back_buffer, i);
+
+		//found block in write back buffer
+		if(wb_packet->tag == tag && wb_packet->set == set)
+		{
+			j++;
+		}
+	}
+
+	assert(j == 0 || j == 1);
 
 	LIST_FOR_EACH(cache->write_back_buffer, i)
 	{
@@ -501,6 +517,8 @@ struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set){
 		//found block in write back buffer
 		if(wb_packet->tag == tag && wb_packet->set == set)
 		{
+			assert(j == 1 && wb_packet->tag == tag && wb_packet->set == set);
+
 			return wb_packet;
 		}
 	}
@@ -907,16 +925,12 @@ int cgm_cache_find_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsi
 			/* Block found */
 			*(way_ptr) = way;
 			*(state_ptr) = cache->sets[set].blocks[way].state;
-
-			/*if(*(state_ptr) == 5)
-			{
-				printf("bad block state cache %s cycle %llu\n", cache->name, P_TIME);
-			}*/
 			return 1;
 		}
 	}
 
 	assert(way == cache->assoc);
+
 	/* Block not found */
 	return 0;
 }
@@ -1156,6 +1170,28 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 	return;
 }
 
+int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
+
+	int way = -1;
+	int i = 0;
+
+	assert(set >= 0 && set < cache->num_sets);
+
+	for(i = 0; i < cache->assoc; i++)
+	{
+		assert(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid || cache->sets[set].blocks[i].transient_state == cgm_cache_block_transient);
+
+		if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid && (cgm_cache_get_dir_pending_bit(cache, set, i) == 0))
+		{
+			way = i;
+			break;
+		}
+	}
+
+	assert(way >= 0 && way <= cache->assoc);
+	return way;
+}
+
 
 int cgm_cache_get_victim(struct cache_t *cache, int set){
 
@@ -1163,13 +1199,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 	int i = 0;
 
 	assert(set >= 0 && set < cache->num_sets);
-
-	//printf("%s set %d\n", cache->name, set);
-
-	/*for(i = 0; i < cache->assoc; i++)
-	{
-		printf("cache->sets[%d].blocks[%d] state %d\n", set, i, cache->sets[set].blocks[i].transient_state);
-	}*/
 
 	for(i = 0; i < cache->assoc; i++)
 	{
@@ -1184,12 +1213,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 			break;
 		}
 	}
-
-	assert(way != -1);
-	/*if(way == -1)
-	{
-		getchar();
-	}*/
 
 	assert(way >= 0 && way < cache->assoc);
 	return way;
@@ -2928,7 +2951,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			return;
 		}
 	}
-
 
 	//no coalesced packets remaining now check for packets with cache assoc conflicts
 	LIST_FOR_EACH(cache->ort_list, i)

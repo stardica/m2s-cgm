@@ -95,11 +95,8 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 
 
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
