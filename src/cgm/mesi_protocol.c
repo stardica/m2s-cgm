@@ -541,7 +541,7 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	fatal("---L1 getx fwd\n");
+	/*fatal("---L1 getx fwd\n");*/
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -2284,6 +2284,9 @@ void cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
 	assert(victim_trainsient_state == cgm_cache_block_transient);
 
+
+		/*printf("%s set block mp_set %d mp_way %d state %d cycle %llu\n", cache->name, message_packet->set, message_packet->way, message_packet->cache_block_state, P_TIME);*/
+
 	//write the block
 	cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, message_packet->cache_block_state);
 
@@ -3316,7 +3319,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//check transient state
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(block_trainsient_state == cgm_cache_block_transient);
+	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	switch(*cache_block_state_ptr)
 	{
@@ -3430,7 +3433,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 	//check transient state
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(block_trainsient_state == cgm_cache_block_transient);
+	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -3529,7 +3532,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	//check transient state
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(block_trainsient_state == cgm_cache_block_transient);
+	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 
 	switch(*cache_block_state_ptr)
@@ -3621,7 +3624,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//check transient state
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(block_trainsient_state == cgm_cache_block_transient);
+	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -4006,9 +4009,10 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 	//charge latency
 	P_PAUSE(cache->latency);
 
-
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	printf("l2 upgrade mp_set %d mp_way %d cycle %llu\n", message_packet->set, message_packet->way, P_TIME);
 
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	assert(victim_trainsient_state != cgm_cache_block_transient);
@@ -4022,9 +4026,9 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_invalid:
 			cgm_cache_dump_set(cache, message_packet->set);
 
-			fatal("cgm_mesi_l2_upgrade(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x set %d tag %d way %d cycle %llu\n",
+			fatal("cgm_mesi_l2_upgrade(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-				message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+				message_packet->access_id, message_packet->address, message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 			break;
 
 			/*star todo block evicted by L2 and inval is on its way to L1
@@ -4067,11 +4071,6 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 			//send the upgrade request message to L3
 			list_enqueue(cache->Tx_queue_bottom, upgrade_request_packet);
 			advance(cache->cache_io_down_ec);
-
-			/*if(message_packet->access_id == 19505)
-			{
-				printf("%s upgrade miss BS %d id %llu cycle %llu\n", cache->name, *cache_block_state_ptr, message_packet->access_id, P_TIME);
-			}*/
 			break;
 	}
 	return;

@@ -166,25 +166,102 @@ void cgm_watchdog(void){
 
 	long long t_1 = 1;
 	int i = 0;
+	int j = 0;
+	int k = 0;
 	int num_cores = x86_cpu_num_cores;
+	int num_sets = 0;
+	int assoc = 0;
 
 	int block_state = 0;
+
+	int c0_tag;
+	int c1_tag;
 
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
+		num_sets = l1_d_caches[0].num_sets;
+		assoc = l1_d_caches[0].assoc;
 
-		if(l2_caches[0].sets[31].blocks[0].state != block_state)
+		for(i = 0; i < num_sets; i++)
 		{
-			block_state = l2_caches[0].sets[31].blocks[0].state;
-		 	printf("WD: %s state %d cycle %llu\n", l2_caches[0].name, l2_caches[0].sets[31].blocks[0].state, P_TIME);
-		 	getchar();
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l1_d_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l1_d_caches[1].sets[i].blocks[k].tag;
+
+					if((l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
 		}
 
-	}
+		num_sets = l2_caches[0].num_sets;
+		assoc = l2_caches[0].assoc;
 
+		for(i = 0; i < num_sets; i++)
+		{
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l2_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l2_caches[1].sets[i].blocks[k].tag;
+
+					if((l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
+		}
+
+		num_sets = l3_caches[0].num_sets;
+		assoc = l3_caches[0].assoc;
+
+		for(i = 0; i < num_sets; i++)
+		{
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l3_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l3_caches[1].sets[i].blocks[k].tag;
+
+					if((l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
+		}
+
+
+
+
+
+		/*if(l2_caches[0].sets[31].blocks[0].state == cgm_cache_block_modified && l2_caches[1].sets[31].blocks[0].state == cgm_cache_block_modified)
+		{
+			c0_tag = l2_caches[0].sets[31].blocks[0].tag;
+			c1_tag = l2_caches[1].sets[31].blocks[0].tag;
+
+			printf("c0_tag %d c1_tag %d\n", c0_tag, c1_tag);
+			getchar();
+			assert(c0_tag != c1_tag);
+		}*/
+	}
 	return;
 }
 
