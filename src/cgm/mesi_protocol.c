@@ -577,6 +577,10 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	message_packet->access_type = cgm_access_downgrade_ack;
 
 
+	//star todo bug is here. this is down grading blocks whether they are in the cache or not.
+	//fixme
+
+
 	printf("l1 down grade set %d way %d ptr  hit %d cycle %llu_\n", message_packet->set, message_packet->way, *cache_block_hit_ptr, P_TIME);
 	getchar();
 
