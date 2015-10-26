@@ -177,15 +177,55 @@ void cgm_watchdog(void){
 	int c0_tag;
 	int c1_tag;
 
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int cache_block_hit;
+	int cache_block_state;
+
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(&l1_d_caches[0], (unsigned int) 0x000047c0, set_ptr, tag_ptr, offset_ptr);
+
+
+
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-		num_sets = l1_d_caches[0].num_sets;
-		assoc = l1_d_caches[0].assoc;
 
-		for(i = 0; i < num_sets; i++)
+
+		if (P_TIME >= 120757 && P_TIME <= 122531)
+		{
+			cgm_cache_find_block(&l1_d_caches[0], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+			if(*cache_block_state_ptr != cgm_cache_block_modified)
+			{
+				printf("WD: state %d cycle %llu\n", *cache_block_state_ptr, P_TIME);
+				STOP;
+			}
+
+
+		}
+
+
+
+
+
+		/*num_sets = l1_d_caches[0].num_sets;
+		assoc = l1_d_caches[0].assoc;*/
+
+		/*for(i = 0; i < num_sets; i++)
 		{
 			for(j = 0; j < assoc; j++)
 			{
@@ -246,13 +286,9 @@ void cgm_watchdog(void){
 					}
 				}
 			}
-		}
+		}*/
 
-
-
-
-
-		/*if(l2_caches[0].sets[31].blocks[0].state == cgm_cache_block_modified && l2_caches[1].sets[31].blocks[0].state == cgm_cache_block_modified)
+		/*if(l2_caches[0].sets[31].blocks[0].state != cgm_cache_block_modified && l2_caches[1].sets[31].blocks[0].state == cgm_cache_block_modified)
 		{
 			c0_tag = l2_caches[0].sets[31].blocks[0].tag;
 			c1_tag = l2_caches[1].sets[31].blocks[0].tag;
@@ -559,6 +595,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
+
 	//////////////testing
 	/*if(mem_system_off == 2 || mem_system_off == 3)*/
 	/*if(new_packet->cpu_access_type == cgm_access_store)
@@ -587,6 +624,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		//printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
 		return;
 	}*/
+	if((addr & l1_d_caches[0].block_address_mask) == (unsigned int) 0x000047c0)
+	{
+		printf("block 0x%08x id %llu type %d start cycle %llu\n", (addr & l1_d_caches[0].block_address_mask), new_packet->access_id, new_packet->cpu_access_type, P_TIME);
+	}
+
 
 
 	//For memory system load store request
@@ -811,3 +853,4 @@ void PrintCycle(int skip){
 	return;
 
 }
+

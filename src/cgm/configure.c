@@ -1525,6 +1525,7 @@ int cache_finish_create(){
 		l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
 		l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
 		l1_i_caches[i].set_mask = l1_i_caches[i].num_sets - 1;
+		l1_i_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l1_i_caches[i].block_mask;
 
 		if(!l1_i_caches[i].policy)
 		{
@@ -1656,6 +1657,8 @@ int cache_finish_create(){
 		l1_d_caches[i].log_set_size = LOG2(l1_d_caches[i].num_sets);
 		l1_d_caches[i].block_mask = l1_d_caches[i].block_size - 1;
 		l1_d_caches[i].set_mask = l1_d_caches[i].num_sets - 1;
+		l1_d_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l1_d_caches[i].block_mask;
+
 
 		if(!l1_d_caches[i].policy)
 		{
@@ -1802,6 +1805,7 @@ int cache_finish_create(){
 		l2_caches[i].log_set_size = LOG2(l2_caches[i].num_sets);
 		l2_caches[i].block_mask = l2_caches[i].block_size - 1;
 		l2_caches[i].set_mask = l2_caches[i].num_sets - 1;
+		l2_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l2_caches[i].block_mask;
 
 		if(!l2_caches[i].policy)
 		{
@@ -1978,6 +1982,8 @@ int cache_finish_create(){
 		l3_caches[i].log_set_size = LOG2(l3_caches[i].num_sets);
 		l3_caches[i].block_mask = l3_caches[i].block_size - 1;
 		l3_caches[i].set_mask = l3_caches[i].num_sets - 1;
+		l3_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l3_caches[i].block_mask;
+
 
 		//build the share_mask
 		for(l = 0; l < num_cores; l ++)

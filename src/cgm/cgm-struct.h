@@ -119,6 +119,7 @@ struct cgm_packet_t{
 	long long access_id;
 	long long write_back_id;
 	unsigned int address;
+	unsigned int block_address;
 	int set;
 	int tag;
 	int way;
@@ -254,6 +255,7 @@ struct cache_t{
 	//cache data
 	struct cache_set_t *sets;
 	unsigned int block_mask;
+	unsigned int block_address_mask;
 	int log_block_size;
 	unsigned int set_mask;
 	int log_set_size;

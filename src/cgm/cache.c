@@ -959,7 +959,6 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-
 	if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
 	{
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
@@ -1040,7 +1039,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 		//move the block to the WB buffer
 		struct cgm_packet_t *write_back_packet = packet_create();
 
-		//star todo set flush pending bit back to 1 later
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
@@ -1490,6 +1488,8 @@ void l1_d_cache_ctrl(void){
 		{
 			step++;
 
+			/*printf("l1_d %llu\n", P_TIME);*/
+
 			/*printf("%s load/store running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
 			access_type = message_packet->access_type;
@@ -1499,11 +1499,15 @@ void l1_d_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_load)
 				l1_d_caches[my_pid].l1_d_load(&(l1_d_caches[my_pid]), message_packet);
+
+
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
 				//Call back function (cgm_mesi_store)
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
+
+
 			}
 			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx
 					|| access_type == cgm_access_upgrade_putx)
@@ -1514,6 +1518,8 @@ void l1_d_cache_ctrl(void){
 					step--;*/
 
 				l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet);
+
+
 
 				//entered retry state run again.
 				step--;
@@ -1527,6 +1533,8 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_write_back)
 				l1_d_caches[my_pid].l1_d_write_back(&(l1_d_caches[my_pid]), message_packet);
 
+
+
 				/*write backs are internally scheduled so decrement the counter*/
 				step--;
 			}
@@ -1534,27 +1542,37 @@ void l1_d_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l1_d_getx_fwd_inval)
 				l1_d_caches[my_pid].l1_d_getx_fwd_inval(&(l1_d_caches[my_pid]), message_packet);
+
+
 			}
 			else if (access_type == cgm_access_upgrade_inval)
 			{
 				//Call back function (cgm_mesi_l1_d_upgrade_inval)
 				l1_d_caches[my_pid].l1_d_upgrade_inval(&(l1_d_caches[my_pid]), message_packet);
+
+
 			}
 			else if (access_type == cgm_access_inv)
 			{
 				//Call back function (cgm_mesi_l1_d_inval)
 				l1_d_caches[my_pid].l1_d_inval(&(l1_d_caches[my_pid]), message_packet);
+
+
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{
 				//Call back function (cgm_mesi_l1_d_upgrade_ack)
 				l1_d_caches[my_pid].l1_d_upgrade_ack(&(l1_d_caches[my_pid]), message_packet);
 
+
+
 				//run again
 				step--;
 			}
 			else if (access_type == cgm_access_downgrade)
 			{
+				printf("l1_d %llu\n", P_TIME);
+
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_downgrade(&(l1_d_caches[my_pid]), message_packet);
 			}
@@ -2943,6 +2961,12 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
+			if((ort_packet->address & cache->block_address_mask) == (unsigned int) 0x000047c0)
+			{
+				printf("**block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+			}
+
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);
 
@@ -2972,6 +2996,13 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			ort_packet->coalesced = 0;
 			ort_packet->assoc_conflict = 0;
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+
+			if((ort_packet->address & cache->block_address_mask) == (unsigned int) 0x000047c0)
+			{
+				printf("****block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+				STOP;
+			}
 
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);
