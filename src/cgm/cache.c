@@ -343,7 +343,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
-	//pull from the retry queue if we have accesses waiting...
+
 	//pull from the coherence queue if there is a message waiting.
 	if(coherence_queue_size > 0)
 	{
@@ -351,7 +351,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		cache->last_queue = cache->Coherance_Rx_queue;
 		assert(new_message);
 	}
-
+	//pull from the retry queue if we have accesses waiting...
 	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
 	{
 		new_message = list_get(cache->retry_queue, 0);
@@ -365,21 +365,27 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		cache->last_queue = cache->Rx_queue_bottom;
 		assert(new_message);
 	}
-	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do.
+	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do AND the wb isn't pending a flush.
 	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && write_back_queue_size > 0)
 	{
-		//printf("here 1\n");
-
 		new_message = list_get(cache->write_back_buffer, 0);
+
+		//star todo check this
+		if(new_message->flush_pending == 1)
+			return NULL;
+
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
 	}
 	//schedule write back if the wb queue is full.
 	else if(write_back_queue_size >= QueueSize)
 	{
-		//printf("here 2\n");
-
 		new_message = list_get(cache->write_back_buffer, 0);
+
+		//star todo check this
+		if(new_message->flush_pending == 1)
+			return NULL;
+
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
 	}
@@ -447,12 +453,9 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		return NULL;
 	}
 
-	//if we made it here we better have a message.
-	assert(new_message);
-
 	//debugging
 	//if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	{
 		if(new_message->access_type == cgm_access_load || new_message->access_type == cgm_access_store || new_message->access_type == cgm_access_put_clnx)
 		{
@@ -468,7 +471,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	else
 	{
 		fatal("cache_get_message(): bad cache type\n");
-	}
+	}*/
+
+	//if we made it here we better have a message.
+	assert(new_message);
 	return new_message;
 }
 
@@ -1500,26 +1506,18 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_load)
 				l1_d_caches[my_pid].l1_d_load(&(l1_d_caches[my_pid]), message_packet);
 
-
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
 				//Call back function (cgm_mesi_store)
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 
-
 			}
 			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx
 					|| access_type == cgm_access_upgrade_putx)
 			{
 				//Call back function (cgm_mesi_l1_d_put)
-
-				/*if(!l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet))
-					step--;*/
-
 				l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet);
-
-
 
 				//entered retry state run again.
 				step--;
@@ -1527,13 +1525,8 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_write_back)
 			{
-
-				//printf("here 3\n");
-
 				//Call back function (cgm_mesi_l1_d_write_back)
 				l1_d_caches[my_pid].l1_d_write_back(&(l1_d_caches[my_pid]), message_packet);
-
-
 
 				/*write backs are internally scheduled so decrement the counter*/
 				step--;
@@ -1564,15 +1557,11 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_upgrade_ack)
 				l1_d_caches[my_pid].l1_d_upgrade_ack(&(l1_d_caches[my_pid]), message_packet);
 
-
-
 				//run again
 				step--;
 			}
 			else if (access_type == cgm_access_downgrade)
 			{
-				printf("l1_d %llu\n", P_TIME);
-
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_downgrade(&(l1_d_caches[my_pid]), message_packet);
 			}
@@ -2961,9 +2950,9 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
-			if((ort_packet->address & cache->block_address_mask) == (unsigned int) 0x000047c0)
+			if((ort_packet->address & cache->block_address_mask) == WATCHBLOCK)
 			{
-				printf("**block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 			}
 
@@ -2997,7 +2986,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			ort_packet->assoc_conflict = 0;
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
-			if((ort_packet->address & cache->block_address_mask) == (unsigned int) 0x000047c0)
+			if((ort_packet->address & cache->block_address_mask) == WATCHBLOCK)
 			{
 				printf("****block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);

@@ -129,7 +129,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	assert(write_back_packet->address != 0);
 	assert(cache->sets[set].id >=0 && cache->sets[set].id < cache->num_sets);
 
-	if((write_back_packet->address & cache->block_address_mask) == (unsigned int) 0x000047c0)
+	if((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK)
 	{
 		printf("block 0x%08x %s evicted ID cycle %llu\n",
 			(write_back_packet->address & cache->block_address_mask), cache->name, P_TIME);

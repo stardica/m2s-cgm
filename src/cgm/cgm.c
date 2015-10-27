@@ -194,7 +194,7 @@ void cgm_watchdog(void){
 	int *cache_block_state_ptr = &cache_block_state;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(&l1_d_caches[0], (unsigned int) 0x000047c0, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(&l1_d_caches[0], WATCHBLOCK, set_ptr, tag_ptr, offset_ptr);
 
 
 
@@ -624,10 +624,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		//printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
 		return;
 	}*/
-	if((addr & l1_d_caches[0].block_address_mask) == (unsigned int) 0x000047c0)
-	{
-		printf("block 0x%08x id %llu type %d start cycle %llu\n", (addr & l1_d_caches[0].block_address_mask), new_packet->access_id, new_packet->cpu_access_type, P_TIME);
-	}
+
 
 
 
@@ -637,6 +634,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		//get the core ID number should be <= number of cores
 		id = thread->core->id;
 		assert(id < num_cores);
+
+		if((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK)
+		{
+			printf("block 0x%08x %s id %llu type %d start cycle %llu\n", (addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
+		}
 
 		//Drop the packet into the L1 D Cache Rx queue
 		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
