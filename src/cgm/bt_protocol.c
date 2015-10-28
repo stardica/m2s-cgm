@@ -2835,7 +2835,7 @@ void cgm_bt_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 
 	//if access to the block is pending send nack back to requesting core.
-	if(pending_bit == 1)
+	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
 		/*there should be at least 1 or more sharers
 		and the requester should not be the owning core

@@ -1415,6 +1415,8 @@ void l1_i_cache_ctrl(void){
 		{
 			step++;
 
+			/*printf("%s running\n", l1_i_caches[my_pid].name);*/
+
 			/*printf("cpu fetch running cycle %llu\n", P_TIME);
 			STOP;*/
 
@@ -1494,7 +1496,7 @@ void l1_d_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("l1_d %llu\n", P_TIME);*/
+			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
 
 			/*printf("%s load/store running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
 
@@ -1588,20 +1590,10 @@ void l2_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
-	/*struct cgm_packet_t *reply_packet;
-	struct cgm_packet_t *wb_packet;
-	struct cgm_packet_t *downgrade_packet;
-	struct cgm_packet_t *pending_request;
-	int cache_block_hit;
-	int cache_block_state;
-	int *cache_block_hit_ptr = &cache_block_hit;
-	int *cache_block_state_ptr = &cache_block_state;*/
-
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
-	/*int l3_map;*/
-	/*int upgrade_ack_count = 0;*/
+	int cache_block_state = l2_caches[0].sets[31].blocks[0].state;
 
 	while(1)
 	{
@@ -1615,9 +1607,12 @@ void l2_cache_ctrl(void){
 				|| !cache_can_access_Tx_bottom(&(l2_caches[my_pid])) || !cache_can_access_Tx_top(&(l2_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
+			/*printf("%s stalling\n", l2_caches[my_pid].name);*/
 			l2_caches[my_pid].stalls++;
 			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
 					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
+
+
 
 			P_PAUSE(1);
 		}
@@ -1625,10 +1620,23 @@ void l2_cache_ctrl(void){
 		{
 			step++;
 
+			/*printf("%s running\n", l2_caches[my_pid].name);*/
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*printf("%s load running access type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_type, P_TIME);*/
+
+
+			/*printf("%s running id %llu type %s cycle %llu\n",
+					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
+
+				/*if(cache_block_state != l2_caches[0].sets[31].blocks[0].state)
+				{
+					printf("WD: state %d cycle access type %d %llu\n",l2_caches[0].sets[31].blocks[0].state, message_packet->access_type, P_TIME);
+
+					cache_block_state = l2_caches[0].sets[31].blocks[0].state;
+				}*/
+
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -1652,6 +1660,8 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_write_back)
 
+
+
 				//if the write back was internally scheduled decrement the counter.
 				if(!l2_caches[my_pid].l2_write_back(&(l2_caches[my_pid]), message_packet))
 					step--;
@@ -1666,6 +1676,8 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_downgrade_ack)
 			{
+
+
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
 			}
@@ -1717,11 +1729,19 @@ void l2_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_inv)
 			{
+						/*if(P_TIME == 224930)
+						{
+							printf("STOP\n");
+							STOP;
+						}*/
+
 				//Call back function (cgm_mesi_l2_inval)
 				l2_caches[my_pid].l2_inval(&(l2_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_inv_ack)
 			{
+
+
 				//Call back function (cgm_mesi_l2_inval_ack)
 				l2_caches[my_pid].l2_inval_ack(&(l2_caches[my_pid]), message_packet);
 			}
@@ -1731,6 +1751,7 @@ void l2_cache_ctrl(void){
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
+
 		//could potentially do some work here.
 	}
 
@@ -1778,6 +1799,7 @@ void l3_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 
+			printf("%s stalling\n", l3_caches[my_pid].name);
 			l3_caches[my_pid].stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
 
@@ -1787,10 +1809,13 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
+			/*printf("%s running\n", l3_caches[my_pid].name);*/
+
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*printf("%s load running access type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_type, P_TIME);*/
+			/*printf("%s running id %llu type %s cycle %llu\n",
+					l3_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -2950,7 +2975,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
-			if((ort_packet->address & cache->block_address_mask) == WATCHBLOCK)
+			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
 				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
@@ -2986,11 +3011,10 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			ort_packet->assoc_conflict = 0;
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
-			if((ort_packet->address & cache->block_address_mask) == WATCHBLOCK)
+			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
-				printf("****block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
-				STOP;
 			}
 
 			list_enqueue(cache->retry_queue, ort_packet);
@@ -3220,6 +3244,14 @@ int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
 }
 
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state){
+
+
+
+	if(set == 31 && way == 0 && cache->id == 0){
+
+	printf("%s set block %d cycle %llu\n", cache->name, state, P_TIME);
+
+	}
 
 	cache->sets[set].blocks[way].state = state;
 

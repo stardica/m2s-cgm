@@ -1,3 +1,96 @@
+/*if (P_TIME >= 120757 && P_TIME <= 122531)
+		{
+			cgm_cache_find_block(&l1_d_caches[0], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+			if(*cache_block_state_ptr != cgm_cache_block_modified)
+			{
+				printf("WD: state %d cycle %llu\n", *cache_block_state_ptr, P_TIME);
+				STOP;
+			}
+
+
+		}*/
+
+
+
+
+
+		/*num_sets = l1_d_caches[0].num_sets;
+		assoc = l1_d_caches[0].assoc;*/
+
+		/*for(i = 0; i < num_sets; i++)
+		{
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l1_d_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l1_d_caches[1].sets[i].blocks[k].tag;
+
+					if((l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
+		}
+
+		num_sets = l2_caches[0].num_sets;
+		assoc = l2_caches[0].assoc;
+
+		for(i = 0; i < num_sets; i++)
+		{
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l2_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l2_caches[1].sets[i].blocks[k].tag;
+
+					if((l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
+		}
+
+		num_sets = l3_caches[0].num_sets;
+		assoc = l3_caches[0].assoc;
+
+		for(i = 0; i < num_sets; i++)
+		{
+			for(j = 0; j < assoc; j++)
+			{
+				c0_tag = l3_caches[0].sets[i].blocks[j].tag;
+
+				for(k = 0; k < assoc; k++)
+				{
+					c1_tag = l3_caches[1].sets[i].blocks[k].tag;
+
+					if((l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
+							|| (l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
+					{
+						assert(c0_tag != c1_tag);
+					}
+				}
+			}
+		}*/
+
+		/*if(l2_caches[0].sets[31].blocks[0].state != cgm_cache_block_modified && l2_caches[1].sets[31].blocks[0].state == cgm_cache_block_modified)
+		{
+			c0_tag = l2_caches[0].sets[31].blocks[0].tag;
+			c1_tag = l2_caches[1].sets[31].blocks[0].tag;
+
+			printf("c0_tag %d c1_tag %d\n", c0_tag, c1_tag);
+			getchar();
+			assert(c0_tag != c1_tag);
+		}*/
+
 //set the block state to invalid
 			//evict the block
 			/*printf("%s victim state %d pending bit %d\n", cache->name,

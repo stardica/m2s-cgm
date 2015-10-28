@@ -36,6 +36,7 @@
 #include <arch/x86/timing/trace-cache.h>
 //#include <instrumentation/stats.h>
 
+#include <cgm/cgm.h>
 
 static char *err_commit_stall =
 	"\tThe CPU commit stage has not received any instruction for 1M\n"
@@ -62,7 +63,15 @@ int X86ThreadCanCommit(X86Thread *self)
 	if (asTiming(cpu)->cycle - self->last_commit_cycle > 1000000)
 	{
 		warning("thread %s: simulation ended due to commit stall.\n%s", self->name, err_commit_stall);
+
+
 		esim_finish = esim_finish_stall;
+
+		//star added this
+		fflush(stdout);
+		fflush(stderr);
+		printf("---Last cycle %llu---\n", P_TIME);
+		exit(0);
 	}
 
 	/* If there is no instruction in the ROB, or the instruction is not

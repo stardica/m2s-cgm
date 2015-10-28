@@ -194,9 +194,9 @@ void cgm_watchdog(void){
 	int *cache_block_state_ptr = &cache_block_state;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(&l1_d_caches[0], WATCHBLOCK, set_ptr, tag_ptr, offset_ptr);
+	//cgm_cache_probe_address(&l1_d_caches[0], WATCHBLOCK, set_ptr, tag_ptr, offset_ptr);
 
-
+	cache_block_state = l2_caches[0].sets[31].blocks[0].state;
 
 	while(1)
 	{
@@ -204,99 +204,14 @@ void cgm_watchdog(void){
 		t_1++;
 
 
-
-		if (P_TIME >= 120757 && P_TIME <= 122531)
+		if(cache_block_state != l2_caches[0].sets[31].blocks[0].state)
 		{
-			cgm_cache_find_block(&l1_d_caches[0], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+			printf("WD: state %d cycle %llu\n",l2_caches[0].sets[31].blocks[0].state, P_TIME);
 
-			if(*cache_block_state_ptr != cgm_cache_block_modified)
-			{
-				printf("WD: state %d cycle %llu\n", *cache_block_state_ptr, P_TIME);
-				STOP;
-			}
-
-
+			cache_block_state = l2_caches[0].sets[31].blocks[0].state;
 		}
 
 
-
-
-
-		/*num_sets = l1_d_caches[0].num_sets;
-		assoc = l1_d_caches[0].assoc;*/
-
-		/*for(i = 0; i < num_sets; i++)
-		{
-			for(j = 0; j < assoc; j++)
-			{
-				c0_tag = l1_d_caches[0].sets[i].blocks[j].tag;
-
-				for(k = 0; k < assoc; k++)
-				{
-					c1_tag = l1_d_caches[1].sets[i].blocks[k].tag;
-
-					if((l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
-							|| (l1_d_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l1_d_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
-					{
-						assert(c0_tag != c1_tag);
-					}
-				}
-			}
-		}
-
-		num_sets = l2_caches[0].num_sets;
-		assoc = l2_caches[0].assoc;
-
-		for(i = 0; i < num_sets; i++)
-		{
-			for(j = 0; j < assoc; j++)
-			{
-				c0_tag = l2_caches[0].sets[i].blocks[j].tag;
-
-				for(k = 0; k < assoc; k++)
-				{
-					c1_tag = l2_caches[1].sets[i].blocks[k].tag;
-
-					if((l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
-							|| (l2_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l2_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
-					{
-						assert(c0_tag != c1_tag);
-					}
-				}
-			}
-		}
-
-		num_sets = l3_caches[0].num_sets;
-		assoc = l3_caches[0].assoc;
-
-		for(i = 0; i < num_sets; i++)
-		{
-			for(j = 0; j < assoc; j++)
-			{
-				c0_tag = l3_caches[0].sets[i].blocks[j].tag;
-
-				for(k = 0; k < assoc; k++)
-				{
-					c1_tag = l3_caches[1].sets[i].blocks[k].tag;
-
-					if((l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_invalid && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_invalid)
-							|| (l3_caches[0].sets[i].blocks[j].state != cgm_cache_block_shared && l3_caches[1].sets[i].blocks[k].state != cgm_cache_block_shared))
-					{
-						assert(c0_tag != c1_tag);
-					}
-				}
-			}
-		}*/
-
-		/*if(l2_caches[0].sets[31].blocks[0].state != cgm_cache_block_modified && l2_caches[1].sets[31].blocks[0].state == cgm_cache_block_modified)
-		{
-			c0_tag = l2_caches[0].sets[31].blocks[0].tag;
-			c1_tag = l2_caches[1].sets[31].blocks[0].tag;
-
-			printf("c0_tag %d c1_tag %d\n", c0_tag, c1_tag);
-			getchar();
-			assert(c0_tag != c1_tag);
-		}*/
 	}
 	return;
 }
@@ -604,8 +519,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		linked_list_add(event_queue, event_queue_item);
 		packet_destroy(new_packet);
 		return;
-	}*/
-	/*if(new_packet->cpu_access_type == cgm_access_load)
+	}
+	if(new_packet->cpu_access_type == cgm_access_load)
 	{
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);
@@ -626,8 +541,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	}*/
 
 
-
-
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
@@ -635,9 +548,10 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		id = thread->core->id;
 		assert(id < num_cores);
 
-		if((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK)
+		if(((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE)
 		{
-			printf("block 0x%08x %s id %llu type %d start cycle %llu\n", (addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
+			printf("block 0x%08x %s id %llu type %d start cycle %llu\n",
+					(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
 		}
 
 		//Drop the packet into the L1 D Cache Rx queue
