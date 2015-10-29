@@ -180,7 +180,11 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		return;
 	}
 
-
+	/*if(message_packet->access_id == 42263)
+	{
+		printf("block 0x%08x %s id %llu type %d set %d way %d tag %d start cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->set, message_packet->way, message_packet->tag, message_packet->cpu_access_type, P_TIME);
+	}*/
 
 
 	switch(*cache_block_state_ptr)
@@ -614,6 +618,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			message_packet->access_type = cgm_access_downgrade_ack;
 
 			//downgrade the local block
+			/*printf("here cycle %llu\n", P_TIME);*/
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_shared);
 
 			//reply to the L2 cache
@@ -980,21 +985,11 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 				return;
 
 			//find victim, on return OK to just drop the block this is I$ traffic
-			/*message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
-			/*assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);*/
 
 			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
-			//evict the block
-			/*assert(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) == cgm_cache_block_shared
-					|| cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) == cgm_cache_block_invalid);*/
-
 			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
-
-
-			//cgm_cache_set_block_state(cache, message_packet->set, message_packet->l2_victim_way, cgm_cache_block_invalid);
-
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_gets;
@@ -1570,7 +1565,9 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				//downgrade the local block
 				assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
-				cgm_cache_set_block_state(cache, pending_request->set, pending_request->way, cgm_cache_block_shared);
+
+				//the line is invalid in the cache so don't set the line shared.
+				/*printf("%s downgrade_ack id %llu cycle %llu\n", cache->name, pending_request->access_id, P_TIME);*/
 
 				//prepare to forward the block
 				//set access type
@@ -2024,6 +2021,9 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	/*printf("l2 inval here\n");*/
+
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
@@ -2598,11 +2598,13 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		{
 			//if potentially merging in cache the block better not be transient, check that the tags don't match
 			//if they don't match the block is missing from both the cache and wb buffer
-			if(block_trainsient_state == cgm_cache_block_transient)
+			/*if(block_trainsient_state == cgm_cache_block_transient)
 			{
 				//tags match this is shouldn't happen as the request should have been coalesced at L1 D.
+
+				printf("here 0x%08x\n", message_packet->address);
 				assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
-			}
+			}*/
 
 			switch(*cache_block_state_ptr)
 			{
@@ -4260,9 +4262,13 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_invalid:
 			cgm_cache_dump_set(cache, message_packet->set);
 
-			fatal("cgm_mesi_l2_upgrade(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+			unsigned int temp = message_packet->address;
+			temp = temp & cache->block_address_mask;
+
+			fatal("cgm_mesi_l2_upgrade(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-				message_packet->access_id, (message_packet->address & cache->block_address_mask) , message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 			break;
 
 			/*star todo block evicted by L2 and inval is on its way to L1

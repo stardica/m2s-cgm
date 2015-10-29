@@ -1050,9 +1050,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-	//set the block state to invalid
-	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
-
 	//send eviction notices and flush the L1 cache
 
 	/*get the block flush_pending_bit
@@ -1064,13 +1061,16 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 
 		init_flush_packet(cache, flush_packet, set, way);
 
-		/*star todo fix this, this is only needed for correct routing from L2 to L1 D
+		/*needed for correct routing from L2 to L1 D
 		figure out another way to do this*/
 		flush_packet->cpu_access_type = cgm_access_load;
 
 		list_enqueue(cache->Tx_queue_top, flush_packet);
 		advance(cache->cache_io_up_ec);
 	}
+
+	//set the block state to invalid
+	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
 	return;
 }
@@ -1081,6 +1081,9 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	int i = 0;
 	unsigned char bit_vector;
 	int num_cores = x86_cpu_num_cores;
+
+	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *flush_packet = NULL;
 
 	assert(sharers >= 0 && sharers <= num_cores);
 	assert(cache->cache_type == l3_cache_t);
@@ -1093,22 +1096,19 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 	{
 		//move the block to the WB buffer
-		struct cgm_packet_t *write_back_packet = packet_create();
+		 write_back_packet = packet_create();
 
-		//star todo set flush pending bit back to 1 later
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
-
-	//set the block state to invalid
-	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
 	//send eviction notices
 	/*star todo account for block sizes
 	for example, if the L3 cache is 64 bytes and L2 is 128 L2 should send two evictions*/
 	for(i = 0; i < num_cores; i++)
 	{
+
 		//get the presence bits from the directory
 		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 		bit_vector = bit_vector & cache->share_mask;
@@ -1116,7 +1116,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		//for each core that has a copy of the cache block send the eviction
 		if((bit_vector & 1) == 1)
 		{
-			struct cgm_packet_t *flush_packet = packet_create();
+			flush_packet = packet_create();
 
 			init_flush_packet(cache, flush_packet, set, way);
 
@@ -1135,6 +1135,9 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		//shift the vector to the next position and continue
 		bit_vector = bit_vector >> 1;
 	}
+
+	//set the block state to invalid
+	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
 	return;
 }
@@ -1611,8 +1614,6 @@ void l2_cache_ctrl(void){
 			l2_caches[my_pid].stalls++;
 			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
 					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
-
-
 
 			P_PAUSE(1);
 		}
@@ -2574,9 +2575,9 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
 
-	enum cgm_access_kind_t access_type;
-	long long access_id = 0;
-	unsigned int addr = 0;
+	/*enum cgm_access_kind_t access_type;
+	long long access_id = 0;*/
+	/*unsigned int addr = 0;*/
 
 	int set = 0;
 	int tag = 0;
@@ -2589,166 +2590,28 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	unsigned int *offset_ptr = &offset;
 	int *way_ptr = &way;
 
-	//stats
-
 	//access information
-	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;
-	addr = message_packet->address;
+	/*access_type = message_packet->access_type;
+	access_id = message_packet->access_id;*/
+	/*addr = message_packet->address;*/
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
-
-	//store the decode
-	message_packet->tag = tag;
-	message_packet->set = set;
-	message_packet->offset = offset;
-
-	/*CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
-			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);*/
-
-	//////testing
-	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
-	}
-
-	/*if(l1_i_miss && cache->cache_type == l1_i_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
-	}*/
-
-
-	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-
-		if(message_packet->cpu_access_type == cgm_access_load)
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
-		}
-		if(message_packet->cpu_access_type == cgm_access_store)
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
-		}
-	}
-
-	/*if(l1_d_miss && cache->cache_type == l1_d_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
-	}*/
-
-
-	if(l2_inf && cache->cache_type == l2_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-
-		if(message_packet->cpu_access_type == cgm_access_fetch )
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
-		}
-		else if(message_packet->cpu_access_type == cgm_access_load) //message_packet->cpu_access_type == cgm_access_store
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
-		}
-		else if(message_packet->cpu_access_type == cgm_access_store)
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
-		}
-	}
-
-	/*if(message_packet->access_type ==  cgm_access_get_fwd && cache->cache_type == l2_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-
-		if(message_packet->cpu_access_type == cgm_access_load)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
-		}
-		else
-		{
-			fatal("uh-oh!\n");
-		}
-	}*/
-
-
-	if(l3_inf && cache->cache_type == l3_cache_t)
-	{
-		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-		assert(way >= 0 && way <cache->num_sets);
-
-		if(message_packet->cpu_access_type == cgm_access_fetch)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
-		}
-		else if(message_packet->cpu_access_type == cgm_access_load)
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
-		}
-		else if(message_packet->cpu_access_type == cgm_access_store)
-		{
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
-			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
-		}
-	}
-
-	/*if(message_packet->access_type ==  cgm_access_downgrade_nack && cache->cache_type == l3_cache_t)
-	{
-		if(message_packet->cpu_access_type == cgm_access_load)
-		{
-			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
-		}
-		else
-		{
-			fatal("uh-oh 3!\n");
-		}
-	}*/
-
-
-	/*if(l2_miss || l3_miss)
-	{
-		fatal("l2 and l3 caches set to miss");
-	}*/
-	//////testing
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
 
 	//get the block and the state of the block
 	*(cache_block_hit_ptr) = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
-	/*if(*cache_block_state_ptr == cgm_cache_block_shared)
-	{
-		printf("here\n");
-		STOP;
-	}*/
-
-	//store the way
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
 	message_packet->way = way;
 
 	//update way list for LRU if block is present.
-	if(*(cache_block_hit_ptr) == 1)
+	/*if(*(cache_block_hit_ptr) == 1)
 	{
 		cgm_cache_access_block(cache, set, way);
-	}
+	}*/
 
 	return;
 }
@@ -3247,11 +3110,11 @@ void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm
 
 
 
-	if(set == 31 && way == 0 && cache->id == 0){
+	/*if(set == 31 && way == 0 && cache->id == 0){
 
-	printf("%s set block %d cycle %llu\n", cache->name, state, P_TIME);
+	printf("%s set block state %d cycle %llu\n", cache->name, state, P_TIME);
 
-	}
+	}*/
 
 	cache->sets[set].blocks[way].state = state;
 

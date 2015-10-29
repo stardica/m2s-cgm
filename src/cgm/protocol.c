@@ -131,8 +131,8 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 
 	if(((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s evicted ID cycle %llu\n",
-			(write_back_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		printf("block 0x%08x %s evicted ID %llu cycle %llu\n",
+			(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
 	}
 
 	write_back_packet->set = cache->sets[set].id;
@@ -234,7 +234,8 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 	inval_packet->size = 1;
 
 	//reconstruct the address from the set and tag
-	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].blocks[way].set, cache->sets[set].blocks[way].tag);
+	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);
+
 	return;
 }
 

@@ -1,3 +1,138 @@
+
+/*if(*cache_block_state_ptr == cgm_cache_block_shared)
+	{
+		printf("here\n");
+		STOP;
+	}*/
+
+/*CGM_DEBUG(CPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);*/
+
+	//////testing
+	if(l1_i_inf && cache->cache_type == l1_i_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
+	}
+
+	/*if(l1_i_miss && cache->cache_type == l1_i_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
+	}*/
+
+
+	if(l1_d_inf && cache->cache_type == l1_d_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
+		if(message_packet->cpu_access_type == cgm_access_load)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
+		}
+		if(message_packet->cpu_access_type == cgm_access_store)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
+		}
+	}
+
+	/*if(l1_d_miss && cache->cache_type == l1_d_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_invalid);
+	}*/
+
+
+	if(l2_inf && cache->cache_type == l2_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
+		if(message_packet->cpu_access_type == cgm_access_fetch )
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
+		}
+		else if(message_packet->cpu_access_type == cgm_access_load) //message_packet->cpu_access_type == cgm_access_store
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
+		}
+		else if(message_packet->cpu_access_type == cgm_access_store)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);
+		}
+	}
+
+	/*if(message_packet->access_type ==  cgm_access_get_fwd && cache->cache_type == l2_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
+		if(message_packet->cpu_access_type == cgm_access_load)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
+		}
+		else
+		{
+			fatal("uh-oh!\n");
+		}
+	}*/
+
+
+	if(l3_inf && cache->cache_type == l3_cache_t)
+	{
+		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+		assert(way >= 0 && way <cache->num_sets);
+
+		if(message_packet->cpu_access_type == cgm_access_fetch)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
+		}
+		else if(message_packet->cpu_access_type == cgm_access_load)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
+		}
+		else if(message_packet->cpu_access_type == cgm_access_store)
+		{
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);*/
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_exclusive);
+			/*cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_modified);*/
+		}
+	}
+
+	/*if(message_packet->access_type ==  cgm_access_downgrade_nack && cache->cache_type == l3_cache_t)
+	{
+		if(message_packet->cpu_access_type == cgm_access_load)
+		{
+			cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_shared);
+		}
+		else
+		{
+			fatal("uh-oh 3!\n");
+		}
+	}*/
+
+
+	/*if(l2_miss || l3_miss)
+	{
+		fatal("l2 and l3 caches set to miss");
+	}*/
+	//////testing
+
 /*if (P_TIME >= 120757 && P_TIME <= 122531)
 		{
 			cgm_cache_find_block(&l1_d_caches[0], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
