@@ -328,7 +328,7 @@ struct cache_t{
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_putx_n)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);

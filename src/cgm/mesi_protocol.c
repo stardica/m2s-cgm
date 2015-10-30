@@ -527,8 +527,11 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(block_trainsient_state != cgm_cache_block_transient);
 
+	/*unsigned int temp = message_packet->address;
+	temp = temp & cache->block_address_mask;
+	printf("%s id %llu addr 0x%08x blk addr 0x%08x hit_ptr %d\n", cache->name, message_packet->access_id, message_packet->address, temp, *cache_block_hit_ptr);*/
+	assert((*cache_block_hit_ptr == 1 && block_trainsient_state != cgm_cache_block_transient) || (*cache_block_hit_ptr == 0));
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
@@ -2157,7 +2160,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	//make sure victim block isn't transient
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(victim_trainsient_state != cgm_cache_block_transient);
+	assert((*cache_block_hit_ptr == 1 && victim_trainsient_state != cgm_cache_block_transient) || *cache_block_hit_ptr == 0);
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -3351,9 +3354,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 		case cgm_cache_block_shared:
 
-			//delete me
-			fatal("L3 getx shared\n");
-
 			//stats
 			cache->upgrade_misses++;
 
@@ -4271,9 +4271,6 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 			break;
 
-			/*star todo block evicted by L2 and inval is on its way to L1
-			change upgrade request to GetX and send on to L3 cache.*/
-
 		case cgm_cache_block_shared:
 
 			//set block transient state, but don't evict because the block is valid and just needs to be upgraded
@@ -4287,7 +4284,6 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 			//set the upgrade_pending bit to 1 in the block
 			//maybe delete this? use transient
 			cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
-			//maybe delete this? use transient
 
 			//send upgrade request to L3 (home)
 			upgrade_request_packet = packet_create();
@@ -4313,6 +4309,7 @@ void cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pac
 			advance(cache->cache_io_down_ec);
 			break;
 	}
+
 	return;
 }
 
@@ -4475,9 +4472,22 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_invalid:
-			fatal("cgm_mesi_l2_upgrade_ack(): L2 id %d invalid block state on upgrade ack as %s access_id %llu address 0x%08x cycle %llu\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, P_TIME);
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			unsigned int temp = message_packet->address;
+			temp = temp & cache->block_address_mask;
+
+			fatal("cgm_mesi_l2_upgrade_ack(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 			break;
+
+
+		//case cgm_cache_block_invalid:
+
+
+
 
 		case cgm_cache_block_shared:
 			//it is possible that an upgrade_ack can be received from a responding L2 before the L3 cache.

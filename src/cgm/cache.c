@@ -339,7 +339,9 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//queues shouldn't exceed their sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
-	assert(write_back_queue_size <= (QueueSize +1));
+
+	//printf("%s size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
+	assert(write_back_queue_size <= (QueueSize +8));
 
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
