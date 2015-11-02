@@ -852,13 +852,14 @@ void switch_north_io_ctrl(void){
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
 			|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
-			|| message_packet->access_type == cgm_access_getx_nack)
+			|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd)
 			{
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
 			else if (message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv
-					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_upgrade_inval)
+					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_upgrade_inval
+					|| message_packet->access_type == cgm_access_upgrade_putx_n)
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);

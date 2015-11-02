@@ -196,19 +196,41 @@ void cgm_watchdog(void){
 	//probe the address for set, tag, and offset.
 	//cgm_cache_probe_address(&l1_d_caches[0], WATCHBLOCK, set_ptr, tag_ptr, offset_ptr);
 
-	cache_block_state = l2_caches[0].sets[31].blocks[0].state;
+	int size;
 
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-
-		if(cache_block_state != l2_caches[0].sets[31].blocks[0].state)
+		for(i = 0; i < num_cores; i++)
 		{
-			printf("WD: state %d cycle %llu\n",l2_caches[0].sets[31].blocks[0].state, P_TIME);
+			if(list_count(l1_d_caches[i].write_back_buffer) > QueueSize)
+			{
+				size = list_count(l1_d_caches[i].write_back_buffer);
+				printf("WD: %s WB queue size %d cycle %llu\n", l1_d_caches[i].name, size, P_TIME);
+				//getchar();
+			}
+		}
 
-			cache_block_state = l2_caches[0].sets[31].blocks[0].state;
+		for(i = 0; i < num_cores; i++)
+		{
+			if(list_count(l2_caches[i].write_back_buffer) > QueueSize)
+			{
+				size = list_count(l2_caches[i].write_back_buffer);
+				printf("WD: %s WB queue size %d cycle %llu\n", l2_caches[i].name, size, P_TIME);
+				//getchar();
+			}
+		}
+
+		for(i = 0; i < num_cores; i++)
+		{
+			if(list_count(l3_caches[i].write_back_buffer) > QueueSize)
+			{
+				size = list_count(l3_caches[i].write_back_buffer);
+				printf("WD: %s WB queue size %d cycle %llu\n", l3_caches[i].name, size, P_TIME);
+				//getchar();
+			}
 		}
 
 

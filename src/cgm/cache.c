@@ -340,8 +340,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
 
-	//printf("%s size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
-	assert(write_back_queue_size <= (QueueSize +8));
+
+	if(write_back_queue_size >= QueueSize + 100)
+	{
+		printf("%s size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
+	}
+	assert(write_back_queue_size <= (QueueSize + 100));
 
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
@@ -1663,8 +1667,6 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_write_back)
 
-
-
 				//if the write back was internally scheduled decrement the counter.
 				if(!l2_caches[my_pid].l2_write_back(&(l2_caches[my_pid]), message_packet))
 					step--;
@@ -1679,8 +1681,6 @@ void l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_downgrade_ack)
 			{
-
-
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
 			}
@@ -1699,8 +1699,7 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_get_fwd)
 				l2_caches[my_pid].l2_get_fwd(&(l2_caches[my_pid]), message_packet);
 			}
-
-			else if(access_type == cgm_access_getx_fwd)
+			else if(access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_upgrade_getx_fwd)
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd)
 				l2_caches[my_pid].l2_getx_fwd(&(l2_caches[my_pid]), message_packet);
@@ -1713,7 +1712,8 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_upgrade)
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
-				l2_caches[my_pid].l2_upgrade(&(l2_caches[my_pid]), message_packet);
+				if(!l2_caches[my_pid].l2_upgrade(&(l2_caches[my_pid]), message_packet))
+					step--;
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{

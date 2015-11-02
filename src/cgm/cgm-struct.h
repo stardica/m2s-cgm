@@ -76,7 +76,8 @@ enum cgm_access_kind_t {
 			cgm_access_upgrade, //upgrade request
 			cgm_access_upgrade_ack,
 			cgm_access_upgrade_putx_n,
-	/*30*/	cgm_access_upgrade_inval,
+	/*30*/		cgm_access_upgrade_getx_fwd,
+		cgm_access_upgrade_inval,
 			cgm_access_upgrade_inval_ack,
 			cgm_access_upgrade_putx,
 			cgm_access_downgrade, //downgrade request
@@ -85,18 +86,18 @@ enum cgm_access_kind_t {
 			cgm_access_mc_load,	//request sent to system agent/memory controller
 			cgm_access_mc_store,	//request sent to system agent/memory controller
 			cgm_access_mc_put,	//reply from system agent/memory controller
-			cgm_access_put_clnx, //put block in clean exclusive state
-	/*40*/	cgm_access_putx, //put block in modified state
+	/*40*/		cgm_access_put_clnx, //put block in clean exclusive state
+		cgm_access_putx, //put block in modified state
 			cgm_access_puts, //put block in shared state.
 			cgm_access_puto, //put block in owned state.
 			cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
 			cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
-			cgm_access_retry,
-	/*46*/	cgm_access_fetch_retry,
+	/*46*/		cgm_access_retry,
+		cgm_access_fetch_retry,
 			cgm_access_load_retry,
 			cgm_access_store_retry,
-			cgm_access_write_back,
-	/*50*/	cgm_access_retry_i,//not used
+	/*50*/		cgm_access_write_back,
+		cgm_access_retry_i,//not used
 			num_access_types
 };
 
@@ -141,6 +142,7 @@ struct cgm_packet_t{
 	int upgrade_ack;
 	int upgrade_pending;
 	int upgrade_inval_ack_count;
+	int upgrade_dirty;
 
 	//for victims
 	int l1_victim_way;
@@ -327,8 +329,8 @@ struct cache_t{
 	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	int (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_putx_n)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
