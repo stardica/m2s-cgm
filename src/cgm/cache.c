@@ -1867,6 +1867,12 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 				step--;
 			}
+			else if(access_type == cgm_access_getx_fwd_upgrade_nack)
+			{
+				//via call back function (cgm_mesi_l3_get_fwd_nack)
+				l3_caches[my_pid].l3_getx_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
+				//run again and pull the message_packet as a new access
+			}
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)

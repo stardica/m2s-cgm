@@ -920,6 +920,8 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 	ort_clear(cache, message_packet);
 
+
+
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 	//The block should be in the transient state.
 	assert(victim_trainsient_state == cgm_cache_block_transient);
@@ -2339,7 +2341,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-		case cgm_cache_block_shared:
+
 
 			cgm_cache_dump_set(cache, message_packet->set);
 
@@ -2350,6 +2352,33 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
 				message_packet->access_id, message_packet->address, temp,
 				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+			break;
+
+
+		case cgm_cache_block_shared:
+
+			/*star its possible to find the block in the shared state on the receipt of a getx_fwd
+			if this core is waiting on a join to finish. This occurs when the L3 cache changes an
+			upgrade to a getx_fwd. nack the request back to L3 and let L3 try this request again later.*/
+
+			//set cgm_access_getx_fwd_nack
+			message_packet->access_type = cgm_access_getx_fwd_upgrade_nack;
+
+			//fwd reply (downgrade_nack) to L3
+			l3_map = cgm_l3_cache_map(message_packet->set);
+
+			/*here send the nack down to the L3
+			don't change any of the source information
+
+			reply_packet->src_name = l2_caches[my_pid].name;
+			reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);*/
+
+			message_packet->dest_name = l3_caches[l3_map].name;
+			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+			//transmit block to L3
+			cache_put_io_down_queue(cache, message_packet);
+
 			break;
 
 		case cgm_cache_block_invalid:
@@ -2701,9 +2730,25 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				case cgm_cache_block_noncoherent:
 				case cgm_cache_block_owned:
 				case cgm_cache_block_shared:
-					fatal("cgm_mesi_l2_write_back(): L2 id %d invalid block state on write back as %s address 0x%08x\n",
-						cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+					cgm_cache_dump_set(cache, message_packet->set);
+
+					unsigned int temp = message_packet->address;
+					temp = temp & cache->block_address_mask;
+
+
+
+					fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s wb_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+						message_packet->write_back_id, message_packet->address, temp,
+						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 					break;
+
+				/*case cgm_cache_block_shared:
+
+					message_packet = list_remove(cache->last_queue, message_packet);
+					packet_destroy(message_packet);
+					break;*/
+
 
 				case cgm_cache_block_invalid:
 
@@ -2907,8 +2952,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		because the access should be coalesced.*/
 		//assert(sharers >= 1 &&  owning_core == 0);
 
-		printf("access id %llu hit_ptr %d address 0x%08x\n", message_packet->access_id, *cache_block_hit_ptr, message_packet->address);
-		getchar();
+		/*printf("access id %llu hit_ptr %d address 0x%08x\n", message_packet->access_id, *cache_block_hit_ptr, message_packet->address);
+		getchar();*/
 
 		//send the reply up as a NACK!
 		message_packet->access_type = cgm_access_get_nack;
@@ -3579,28 +3624,6 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->tag, message_packet->set, message_packet->way);
 			break;
 
-
-
-			//block should be in wb buffer waiting on flush
-
-			/*//check WB for line...
-			if(L3_write_back_packet)
-			{
-				found the packet in the write back buffer
-				data should not be in the rest of the cache
-
-				assert((L3_write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| L3_write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
-
-				fatal("l3 down grade ack in WB\n");
-			}
-			else
-			{
-				fatal("l3 miss on downgrade ack check this\n");
-			}
-
-			break;*/
-
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 
@@ -3852,6 +3875,78 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	return;
 }
+
+void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int num_sharers, owning_core, pending_bit, xowning_core;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the status of the cache block and try to find it in either the cache or wb buffer
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//block should be valid and not in a transient state
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	assert(victim_trainsient_state != cgm_cache_block_transient);
+
+	//get number of sharers
+	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	//check to see if access is from an already owning core
+	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+	//check pending state
+	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+	/*there should only be one core with the block and it shouldn't be the requesting core retry the GetX*/
+	assert(num_sharers == 1 && owning_core == 0 && pending_bit == 1 && *cache_block_hit_ptr == 1);
+
+	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+	{
+		printf("block 0x%08x %s getx_upgrade_nack ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+	}
+
+	//This is a nack to a GetX that found the block in in a pending state at the owning L2
+	//the local block should be in the pending state and there should only be one sharer
+
+	/*cgm_cache_dump_set(cache, message_packet->set);
+
+	unsigned int temp = message_packet->address;
+	temp = temp & cache->block_address_mask;
+
+	printf("set %d way %d tag %d\n", message_packet->set, message_packet->way, message_packet->tag);
+	getchar();*/
+
+	//assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) == 1);
+	//assert(cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way) == 0);
+
+	//add some routing/status data to the packet
+	message_packet->access_type = cgm_access_getx_fwd;
+
+	//get the id of the owning core L2
+	xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+
+	//owning node
+	message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
+	message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
+
+	//requesting node L2
+	//message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+	//message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
+
+	cache_put_io_up_queue(cache, message_packet);
+
+	return;
+
+}
+
 
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -4970,15 +5065,51 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	}
 
 
+	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
+	{
+
+		fatal("cgm_mesi_l3_upgrade(): pending_bit set check this\n");
+
+		/*there should be at least 1 or more sharers
+		and the requester should not be the owning core
+		because the access should be coalesced.
+		//assert(num_sharers >= 1 &&  owning_core == 0);
+
+		//send the reply up as a NACK!
+		message_packet->access_type = cgm_access_getx_nack;
+
+		//set message package size
+		message_packet->size = 1;
+
+		//update routing headers
+		message_packet->dest_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
+		message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
+		message_packet->src_name = cache->name;
+		message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+		//send the reply
+		cache_put_io_up_queue(cache, message_packet);
+		return;*/
+	}
+
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_invalid:
-			fatal("cgm_mesi_l3_upgrade(): L3 id %d invalid block state on upgrade as %s "
-					"access_id %llu address 0x%08x set %d and way %d sharers %d owning core %d\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-					message_packet->access_id, message_packet->address, message_packet->set, message_packet->way, num_sharers, owning_core);
+
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			unsigned int temp = message_packet->address;
+			temp = temp & cache->block_address_mask;
+
+
+			fatal("cgm_mesi_l3_upgrade(): %s invalid block state on upgrade as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d way %d tag %d state %d hit %d cycle %llu\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->way, message_packet->tag, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+
 			break;
 
 		case cgm_cache_block_modified:
@@ -5014,6 +5145,9 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//owning node
 			message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
 			message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
+
+			/*printf("name %s id %d\n", message_packet->l2_cache_name, message_packet->src_id);
+			getchar();*/
 
 			//requesting node L2
 			message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);

@@ -34,6 +34,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_get_fwd_nack", cgm_access_get_fwd_nack},
 		{"cgm_access_getx_fwd", cgm_access_getx_fwd},
 		{"cgm_access_getx_fwd_nack", cgm_access_getx_fwd_nack},
+		{"cgm_access_getx_fwd_upgrade_nack", cgm_access_getx_fwd_upgrade_nack},
 		{"cgm_access_getx_fwd_ack", cgm_access_getx_fwd_ack},
 		{"cgm_access_getx_fwd_inval", cgm_access_getx_fwd_inval},
 		{"cgm_access_getx_fwd_inval_ack", cgm_access_getx_fwd_inval_ack},
@@ -132,7 +133,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 
 	if(((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s evicted ID %llu cycle %llu\n",
+		printf("block 0x%08x %s downgrade_ack wb packet created ID %llu cycle %llu\n",
 			(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
 	}
 

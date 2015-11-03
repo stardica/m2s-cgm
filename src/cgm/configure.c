@@ -2118,6 +2118,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_downgrade_ack = cgm_mesi_l3_downgrade_ack;
 			l3_caches[i].l3_downgrade_nack = cgm_mesi_l3_downgrade_nack;
 			l3_caches[i].l3_getx_fwd_nack = cgm_mesi_l3_getx_fwd_nack;
+			l3_caches[i].l3_getx_fwd_upgrade_nack = cgm_mesi_l3_getx_fwd_upgrade_nack;
 			l3_caches[i].l3_getx_fwd_ack = cgm_mesi_l3_getx_fwd_ack;
 			l3_caches[i].l3_upgrade = cgm_mesi_l3_upgrade;
 			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
