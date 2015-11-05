@@ -220,6 +220,7 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set);
 void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
 int get_ort_status(struct cache_t *cache);
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cache_get_ORT_size(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);

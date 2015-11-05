@@ -335,6 +335,25 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
+
+	/*if(message_packet->set == 62)
+	{
+
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		ort_dump(cache);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		printf("access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+		getchar();
+
+	}*/
+
+
 	if(write_back_packet)
 	{
 		/*found the packet in the write back buffer
@@ -342,6 +361,8 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		assert(message_packet->access_type != cgm_access_store_retry || message_packet->coalesced != 1);
 
 		if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 		{
@@ -1295,6 +1316,8 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		data should not be in the rest of the cache*/
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+		assert(message_packet->access_type != cgm_access_store_retry || message_packet->coalesced != 1);
 
 		if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
 		{
@@ -3244,8 +3267,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
 
-		/*printf("***l3 getx wb\n");
-		STOP;*/
+		assert(message_packet->access_type != cgm_access_store_retry || message_packet->coalesced != 1);
 
 		if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
 		{

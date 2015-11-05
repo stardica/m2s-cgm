@@ -203,7 +203,35 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		for(i = 0; i < num_cores; i++)
+		/*if(list_count(l1_d_caches[0].Rx_queue_top) > QueueSize)
+		{
+			printf("%s Rx_top %d cycle %llu\n", l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), P_TIME);
+			getchar();
+		}*/
+
+/*
+		if(P_TIME > 41970)
+		{
+			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
+					l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), list_count(l1_d_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l1_d_caches[0])), P_TIME);
+			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
+					l2_caches[0].name, list_count(l2_caches[0].Rx_queue_top), list_count(l2_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l2_caches[0])), P_TIME);
+			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
+					l3_caches[0].name, list_count(l3_caches[0].Rx_queue_top), list_count(l3_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l3_caches[0])), P_TIME);
+
+			printf("WD: %s tx_n %d tx_e %d tx_s %d tx_w %d cycle %llu\n",
+					switches[0].name, list_count(switches[0].Tx_north_queue), list_count(list_count(switches[0].), cache_get_ORT_size(&(l3_caches[0])), P_TIME);
+
+		}*/
+
+		/*if(P_TIME > 53000)
+		{
+			STOP;
+		}*/
+
+
+
+		/*for(i = 0; i < num_cores; i++)
 		{
 			if(list_count(l1_d_caches[i].write_back_buffer) > QueueSize)
 			{
@@ -231,7 +259,7 @@ void cgm_watchdog(void){
 				printf("WD: %s WB queue size %d cycle %llu\n", l3_caches[i].name, size, P_TIME);
 				//getchar();
 			}
-		}
+		}*/
 
 
 	}
@@ -362,22 +390,30 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	int i = 0;
 	//int j = 0;
 
+
+
 	//check if mshr/ort queue is full
-	for (i = 0; i < thread->d_cache_ptr[thread->core->id].mshr_size; i++)
+	/*for (i = 0; i < thread->d_cache_ptr[thread->core->id].mshr_size; i++)
 	{
 		if(thread->d_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][2] == -1)
 		{
 			//hit in the ORT table
+
+
+
 			break;
 		}
 	}
 
 	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
 	{
-		/*printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
-		printf("return 0 cycle %llu\n", P_TIME);*/
+		printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
+		printf("return 0 cycle %llu\n", P_TIME);
+
+		printf("here\n");
+
 		return 0;
-	}
+	}*/
 
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue_top))
@@ -575,10 +611,15 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 					(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
 		}
 
-		/*if(new_packet->access_id == 42263)
+		printf("%s id %llu type %d start cycle %llu\n", l1_d_caches[id].name, new_packet->access_id, new_packet->access_type, P_TIME);
+
+		/*if(new_packet->access_id == 106789)
 		{
-			printf("block 0x%08x %s id %llu type %d start cycle %llu\n",
-						(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
+
+			unsigned int temp = new_packet->address;
+			temp = temp & l1_d_caches[id].block_address_mask;
+
+			fatal("address 0x%08x blk_addr 0x%08x\n", new_packet->address, temp);
 		}*/
 
 		//Drop the packet into the L1 D Cache Rx queue

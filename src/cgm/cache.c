@@ -345,10 +345,9 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	{
 		printf("%s size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
 	}
+
 	assert(write_back_queue_size <= (QueueSize + 100));
-
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
-
 
 	//pull from the coherence queue if there is a message waiting.
 	if(coherence_queue_size > 0)
@@ -458,26 +457,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		//ORT is full and there are no retry or bottom queue messages so stall
 		return NULL;
 	}
-
-	//debugging
-	//if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	{
-		if(new_message->access_type == cgm_access_load || new_message->access_type == cgm_access_store || new_message->access_type == cgm_access_put_clnx)
-		{
-			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu (%s) pulled from %s queue size %d cycle %llu\n",
-					cache->name, new_message->access_id, str_map_value(&cgm_mem_access_strn_map, new_message->access_type), cache->last_queue->name, list_count(cache->last_queue), P_TIME);
-		}
-	}
-	else if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
-	{
-		CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu pulled from %s queue size %d cycle %llu\n",
-				cache->name, new_message->access_id, cache->last_queue->name, list_count(cache->last_queue), P_TIME);
-	}
-	else
-	{
-		fatal("cache_get_message(): bad cache type\n");
-	}*/
 
 	//if we made it here we better have a message.
 	assert(new_message);
@@ -642,12 +621,12 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	}
 	*(num_sets_ptr) = j;
 
-
 	//get the size of the ORT
 	for (i = 0; i < cache->mshr_size; i++)
 	{
-		if(cache->ort[i][0] != -1 && cache->ort[i][1] != -1 && cache->ort[i][2] != -1)
+		if(cache->ort[i][0] != -1)
 		{
+			assert(cache->ort[i][0] != -1 && cache->ort[i][1] != -1 && cache->ort[i][2] != -1);
 			k++;
 		}
 	}
@@ -1176,7 +1155,7 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i<cache->assoc; i++)
 	{
-		printf("set %d way %d tag %d state %s\n",
+		printf("cache set %d way %d tag %d state %s\n",
 				set, i, cache->sets[set].blocks[i].tag, str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state));
 	}
 
@@ -1470,11 +1449,6 @@ void l1_d_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
-	/*int cache_block_hit;
-	int cache_block_state;*/
-	/*int *cache_block_hit_ptr = &cache_block_hit;
-	int *cache_block_state_ptr = &cache_block_state;*/
-
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
@@ -1492,12 +1466,20 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].stalls++;
 
-			/*printf("%s stalling\n", l1_d_caches[my_pid].name);*/
-			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d cycle %llu\n",
+			/*printf("%s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);*/
+			/*printf("%s stalling: l2 rx_t %d, rx_b %d, cx_b %d tx_b %d, ort size %d ORT coal size %d cycle %llu\n",
 					l1_d_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top),
+					list_count(l1_d_caches[my_pid].Rx_queue_bottom),
+					list_count(l1_d_caches[my_pid].Coherance_Rx_queue),
 					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
+					cache_get_ORT_size(&(l1_d_caches[my_pid])),
 					list_count(l1_d_caches[my_pid].ort_list),
 					P_TIME);*/
+
+			/*if(P_TIME > 326207)
+			{
+				STOP;
+			}*/
 
 			P_PAUSE(1);
 		}
@@ -1507,7 +1489,19 @@ void l1_d_cache_ctrl(void){
 
 			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
 
-			/*printf("%s load/store running access type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_type, P_TIME);*/
+			/*if(message_packet->access_id == 91067)
+			{
+				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+				printf("%s queue size %d, Tx bottom queue size %d, ort size %d  ORT coal size %d cycle %llu\n",
+					l1_d_caches[my_pid].name, list_count(l1_d_caches[my_pid].Rx_queue_top),
+					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
+					cache_get_ORT_size(&(l1_d_caches[my_pid])),
+					list_count(l1_d_caches[my_pid].ort_list),
+					P_TIME);
+
+				getchar();
+			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -1520,6 +1514,10 @@ void l1_d_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
+
+
+
+
 				//Call back function (cgm_mesi_store)
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 
@@ -1602,8 +1600,6 @@ void l2_cache_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
-	int cache_block_state = l2_caches[0].sets[31].blocks[0].state;
-
 	while(1)
 	{
 		/*wait here until there is a job to do.*/
@@ -1627,23 +1623,20 @@ void l2_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("%s running\n", l2_caches[my_pid].name);*/
+			/*printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
 
+			if(message_packet->access_id == 90960)
+			{
+				STOP;
+				/*printf("%s id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
+			}
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
-
-				/*if(cache_block_state != l2_caches[0].sets[31].blocks[0].state)
-				{
-					printf("WD: state %d cycle access type %d %llu\n",l2_caches[0].sets[31].blocks[0].state, message_packet->access_type, P_TIME);
-
-					cache_block_state = l2_caches[0].sets[31].blocks[0].state;
-				}*/
-
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -1802,7 +1795,7 @@ void l3_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 
-			printf("%s stalling\n", l3_caches[my_pid].name);
+			/*printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);*/
 			l3_caches[my_pid].stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
 
@@ -1811,6 +1804,11 @@ void l3_cache_ctrl(void){
 		else
 		{
 			step++;
+
+			if(message_packet->access_id == 91067)
+			{
+				printf("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+			}
 
 			/*printf("%s running\n", l3_caches[my_pid].name);*/
 
@@ -2675,6 +2673,15 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//debug
 	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
 
+	/*if(message_packet->access_id == 1759)
+	{*/
+	if(message_packet->set == 62)
+	{
+		printf("%s id %llu type %d tag %d set %d FINISHED cycle %llu\n",
+				cache->name, message_packet->access_id, message_packet->access_type, message_packet->tag, message_packet->set, P_TIME);
+	}
+	/*}*/
+
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
 	linked_list_add(message_packet->event_queue, message_packet->data);
@@ -2683,6 +2690,26 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	packet_destroy(message_packet);
 	return;
+}
+
+int cache_get_ORT_size(struct cache_t *cache){
+
+	int size = 0;
+	int i = 0;
+
+	for (i = 0; i < cache->mshr_size; i++)
+	{
+		if(cache->ort[i][0] != -1)
+		{
+			assert(cache->ort[i][0] != -1 && cache->ort[i][1] != -1 && cache->ort[i][2] != -1);
+
+			//hit in the ORT table
+			size++;
+		}
+	}
+
+
+	return size;
 }
 
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet){
@@ -2705,26 +2732,23 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc)
 	{
-		/*printf("here\n");
-
-		int i = 0;
-		for(i = 0; i < cache->assoc; i++)
-		{
-			printf("cache->sets[%d].blocks[%d] state %d num sets %d\n", 47, i, cache->sets[47].blocks[i].transient_state, *num_sets_ptr);
-		}*/
-
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache for the block on return
 		ort_set_row(cache, message_packet->tag, message_packet->set);
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
+
 		//this is an associativity conflict
 		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
 		//i.e. there IS NOT a space for the block in the cache on return
-		//fatal("boom found one\n");
 
-		/*printf("here 2\n");*/
+		if(message_packet->set == 62 && message_packet->tag == 90)
+		{
+			printf("packet access id %llu assoc coal cycle %llu\n", message_packet->access_id, P_TIME);
+			getchar();
+
+		}
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -2732,12 +2756,35 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		message_packet->coalesced = 1;
 		message_packet->assoc_conflict = 1;
 
+		if(message_packet->access_id == 91067)
+		{
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			ort_dump(cache);
+
+			unsigned int temp = message_packet->address;
+			temp = temp & cache->block_address_mask;
+
+			printf("coal: access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+		}
+
 		list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
 
 	}
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
+
+		if(message_packet->set == 62 && message_packet->tag == 90)
+		{
+			printf("packet access id %llu coal cycle %llu\n", message_packet->access_id, P_TIME);
+			getchar();
+
+		}
+
+
 		//non unique access that can be coalesced with a miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
 
@@ -2864,7 +2911,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 	//no coalesced packets remaining now check for packets with cache assoc conflicts
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
-
 		//get pointer to access in queue and check it's status.
 		ort_packet = list_get(cache->ort_list, i);
 
@@ -2875,8 +2921,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet = list_remove_at(cache->ort_list, i);
 
-			/*star todo find a better way to do this
-			Essentially we will just retry the access and it will be a hit then cause
+			/*retry the access and it will be a hit then cause
 			coalescer to re-enter the set and tag.*/
 			ort_packet->coalesced = 0;
 			ort_packet->assoc_conflict = 0;
@@ -2886,6 +2931,12 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			{
 				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+			}
+
+			if(ort_packet->access_id == 91067)
+			{
+				fatal("ort pulled 91067\n");
+
 			}
 
 			list_enqueue(cache->retry_queue, ort_packet);
