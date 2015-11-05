@@ -1629,11 +1629,11 @@ void l2_cache_ctrl(void){
 			access_id = message_packet->access_id;
 
 
-			if(message_packet->access_id == 90960)
+			/*if(message_packet->access_id == 90960)
 			{
 				STOP;
-				/*printf("%s id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
-			}
+				printf("%s id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+			}*/
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
@@ -1805,10 +1805,10 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
-			if(message_packet->access_id == 91067)
+			/*if(message_packet->access_id == 91067)
 			{
 				printf("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-			}
+			}*/
 
 			/*printf("%s running\n", l3_caches[my_pid].name);*/
 
@@ -2675,11 +2675,11 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	/*if(message_packet->access_id == 1759)
 	{*/
-	if(message_packet->set == 62)
+	/*if(message_packet->set == 62)
 	{
 		printf("%s id %llu type %d tag %d set %d FINISHED cycle %llu\n",
 				cache->name, message_packet->access_id, message_packet->access_type, message_packet->tag, message_packet->set, P_TIME);
-	}
+	}*/
 	/*}*/
 
 	//remove packet from cache queue, global queue, and simulator memory
@@ -2730,7 +2730,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
-	if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc)
+	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache for the block on return
@@ -2743,12 +2743,16 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
 		//i.e. there IS NOT a space for the block in the cache on return
 
-		if(message_packet->set == 62 && message_packet->tag == 90)
+		/*if(message_packet->set == 62 && message_packet->tag == 90)
 		{
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			ort_dump(cache);
+
 			printf("packet access id %llu assoc coal cycle %llu\n", message_packet->access_id, P_TIME);
 			getchar();
 
-		}
+		}*/
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -2756,7 +2760,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		message_packet->coalesced = 1;
 		message_packet->assoc_conflict = 1;
 
-		if(message_packet->access_id == 91067)
+		/*if(message_packet->access_id == 91067)
 		{
 			cgm_cache_dump_set(cache, message_packet->set);
 
@@ -2768,7 +2772,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			printf("coal: access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
 				message_packet->access_id, message_packet->address, temp,
 				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
-		}
+		}*/
 
 		list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
@@ -2777,18 +2781,22 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
 
-		if(message_packet->set == 62 && message_packet->tag == 90)
+		/*if(message_packet->set == 62 && message_packet->tag == 90)
 		{
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			ort_dump(cache);
+
 			printf("packet access id %llu coal cycle %llu\n", message_packet->access_id, P_TIME);
 			getchar();
 
-		}
+		}*/
 
 
 		//non unique access that can be coalesced with a miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
 
-		CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);
+		/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);*/
 
 		message_packet->coalesced = 1;
 
@@ -2921,10 +2929,16 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet = list_remove_at(cache->ort_list, i);
 
+			/*if(ort_packet->access_id == 90960)
+			{
+				printf("pulled from ort_assoc\n");
+				getchar();
+			}*/
+
 			/*retry the access and it will be a hit then cause
 			coalescer to re-enter the set and tag.*/
 			ort_packet->coalesced = 0;
-			ort_packet->assoc_conflict = 0;
+			ort_packet->assoc_conflict = 1;
 			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
 
 			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
@@ -2933,11 +2947,11 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 			}
 
-			if(ort_packet->access_id == 91067)
+			/*if(ort_packet->access_id == 91067)
 			{
 				fatal("ort pulled 91067\n");
 
-			}
+			}*/
 
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);

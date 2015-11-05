@@ -611,7 +611,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 					(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
 		}
 
-		printf("%s id %llu type %d start cycle %llu\n", l1_d_caches[id].name, new_packet->access_id, new_packet->access_type, P_TIME);
+		//printf("%s id %llu type %d start cycle %llu\n", l1_d_caches[id].name, new_packet->access_id, new_packet->access_type, P_TIME);
 
 		/*if(new_packet->access_id == 106789)
 		{

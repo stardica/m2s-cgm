@@ -398,6 +398,12 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
+				/*if(message_packet->access_id == 90960 || message_packet->access_id == 90961)
+				{
+					printf("cache miss invalid\n");
+					getchar();
+				}*/
+
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
 					printf("block 0x%08x %s store miss coalesce ID %llu type %d state %d cycle %llu\n",
@@ -461,6 +467,14 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
+
+				if(message_packet->access_id == 90960)
+				{
+					printf("upgrade miss\n");
+					getchar();
+				}
+
+
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
 					printf("block 0x%08x %s upgrade miss coalesce ID %llu type %d state %d cycle %llu\n",
