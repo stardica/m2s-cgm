@@ -29,6 +29,7 @@ struct str_map_t cgm_cache_policy_map =
 		{ "LRU", cache_policy_lru },
 		{ "FIFO", cache_policy_fifo },
 		{ "Random", cache_policy_random },
+		{ "FA" , cache_policy_first_available},
 		}
 };
 
@@ -1190,36 +1191,67 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 	int way = -1;
 	int i = 0;
 
+	struct cache_block_t *block;
+
 	assert(set >= 0 && set < cache->num_sets);
 
-	for(i = 0; i < cache->assoc; i++)
+	if(cache->policy == cache_policy_first_available)
 	{
-		assert(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid || cache->sets[set].blocks[i].transient_state == cgm_cache_block_transient);
-
-		if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid && (cgm_cache_get_dir_pending_bit(cache, set, i) == 0))
+		for(i = 0; i < cache->assoc; i++)
 		{
-			way = i;
-			cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
-			//printf("setting transient state cache->sets[%d].blocks[%d]\n", set, i);
-			/*ort_dump(cache);*/
-			break;
+			assert(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid || cache->sets[set].blocks[i].transient_state == cgm_cache_block_transient);
+
+			if(cache->sets[set].blocks[i].transient_state == cgm_cache_block_invalid && (cgm_cache_get_dir_pending_bit(cache, set, i) == 0))
+			{
+				way = i;
+				cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
+				break;
+			}
 		}
+
+		assert(way >= 0 && way < cache->assoc);
+		return way;
+	}
+	else if(cache->policy == cache_policy_lru)
+	{
+		//get the tail block.
+		block = cache->sets[set].way_tail;
+
+		//the block should not be in the transient state.
+		assert(block->way >= 0 && block->way < cache->assoc);
+
+		for(i = 0; i < cache->assoc; i++)
+		{
+			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
+
+			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)
+			{
+				way = block->way;
+				block->transient_state = cgm_cache_block_transient;
+				break;
+			}
+
+			block = block->way_prev;
+		}
+
+		//now make this block the MRU
+		cgm_cache_update_waylist(&cache->sets[set], cache->sets[set].way_tail, cache_waylist_head);
+
+		return way;
+	}
+	else
+	{
+		fatal("cgm_cache_get_victim(): %s invalid cache eviction policy\n", cache->name);
 	}
 
-	assert(way >= 0 && way < cache->assoc);
-	return way;
+	return -1;
 }
 
 /* Return the way of the block to be replaced in a specific set,
  * depending on the replacement policy */
 int cgm_cache_replace_block(struct cache_t *cache, int set)
 {
-
-
 	assert(set >= 0 && set < cache->num_sets);
-
-
-
 
 	/* LRU and FIFO replacement: return block at the
 	 * tail of the linked list */
@@ -1230,18 +1262,6 @@ int cgm_cache_replace_block(struct cache_t *cache, int set)
 
 		assert(way >= 0 && way <= cache->num_sets);
 		return way;
-
-		//star changed this to give last way if block isn't present
-		/*if(way >= cache->assoc)
-		{
-			printf("here t %d \n", way);
-			return (cache->assoc - 1);
-		}
-		else if (way >= 0 && way < cache->assoc)
-		{
-			printf("here b %d \n", way);
-			return way;
-		}*/
 	}
 
 	fatal("cgm_cache_replace_block(): should not reach here\n");
@@ -1253,9 +1273,10 @@ int cgm_cache_replace_block(struct cache_t *cache, int set)
 	return random() % cache->assoc;
 }
 
+
 void cgm_cache_access_block(struct cache_t *cache, int set, int way)
 {
-	int move_to_head;
+	/*int move_to_head;*/
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -1263,8 +1284,8 @@ void cgm_cache_access_block(struct cache_t *cache, int set, int way)
 	/* A block is moved to the head of the list for LRU policy.
 	 * It will also be moved if it is its first access for FIFO policy, i.e., if the
 	 * state of the block was invalid. */
-	move_to_head = cache->policy == cache_policy_lru || (cache->policy == cache_policy_fifo && !cache->sets[set].blocks[way].state);
-	if (move_to_head && cache->sets[set].blocks[way].way_prev)
+	/*move_to_head = cache->policy == cache_policy_lru || (cache->policy == cache_policy_fifo && !cache->sets[set].blocks[way].state);*/
+	if (/*move_to_head && */cache->sets[set].blocks[way].way_prev)
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
 }
 
@@ -1272,12 +1293,13 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 
 	if (!blk->way_prev && !blk->way_next)
 	{
+		//star note: for associativity of 1 i.e. no other block in this set.
 		assert(set->way_head == blk && set->way_tail == blk);
 		return;
-
 	}
 	else if (!blk->way_prev)
 	{
+		//star note: case block is already at the head
 		assert(set->way_head == blk && set->way_tail != blk);
 		if (where == cache_waylist_head)
 			return;
@@ -1287,22 +1309,23 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 	}
 	else if (!blk->way_next)
 	{
+		//star note: case block is already at the tail
 		assert(set->way_head != blk && set->way_tail == blk);
 		if (where == cache_waylist_tail)
 			return;
 		set->way_tail = blk->way_prev;
 		blk->way_prev->way_next = NULL;
-
 	}
 	else
 	{
+		//star note: case block is somewhere in between head and tail
 		assert(set->way_head != blk && set->way_tail != blk);
 		blk->way_prev->way_next = blk->way_next;
 		blk->way_next->way_prev = blk->way_prev;
 	}
-
 	if (where == cache_waylist_head)
 	{
+		//star note: put the block at the head of the list
 		blk->way_next = set->way_head;
 		blk->way_prev = NULL;
 		set->way_head->way_prev = blk;
@@ -1310,6 +1333,7 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 	}
 	else
 	{
+		//star note: put the block at the tail of the list
 		blk->way_prev = set->way_tail;
 		blk->way_next = NULL;
 		set->way_tail->way_next = blk;

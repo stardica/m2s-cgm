@@ -230,6 +230,7 @@ enum cache_policy_t{
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random,
+	cache_policy_first_available,
 	cache_policy_num
 };
 

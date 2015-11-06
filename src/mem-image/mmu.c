@@ -63,9 +63,10 @@ struct mmu_page_t
 	unsigned int vtl_addr;  /* Virtual address of page */
 	unsigned int phy_addr;  /* Physical address */
 
-	enum mmu_page_type_t page_type; /*type of page either .text or data segments
+	enum mmu_page_type_t page_type; /*type of page either .text or data segments*/
 
-	/* Statistics */
+	/*Statistics*/
+
 	long long num_read_accesses;
 	long long num_write_accesses;
 	long long num_execute_accesses;
@@ -93,7 +94,7 @@ static struct mmu_t *mmu;
  * Private Functions
  */
 
-static struct mmu_page_t *mmu_page_access(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type){
+struct mmu_page_t *mmu_page_access(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type){
 
 	struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
@@ -178,7 +179,7 @@ int mmu_search_page(struct mmu_page_t *page, unsigned int vtl_addr, int address_
 }
 
 
-static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
+struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
 {
 	//struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;

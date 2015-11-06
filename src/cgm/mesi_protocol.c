@@ -102,6 +102,9 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			message_packet->end_cycle = P_TIME;
 			cache_l1_i_return(cache,message_packet);
 			break;
@@ -306,6 +309,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			message_packet->end_cycle = P_TIME;
 			cache_l1_d_return(cache,message_packet);
 
@@ -334,24 +340,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
-
-
-	/*if(message_packet->set == 62)
-	{
-
-		cgm_cache_dump_set(cache, message_packet->set);
-
-		ort_dump(cache);
-
-		unsigned int temp = message_packet->address;
-		temp = temp & cache->block_address_mask;
-
-		printf("access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
-				message_packet->access_id, message_packet->address, temp,
-				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
-		getchar();
-
-	}*/
 
 
 	if(write_back_packet)
@@ -398,12 +386,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
-				/*if(message_packet->access_id == 90960 || message_packet->access_id == 90961)
-				{
-					printf("cache miss invalid\n");
-					getchar();
-				}*/
-
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
 					printf("block 0x%08x %s store miss coalesce ID %llu type %d state %d cycle %llu\n",
@@ -423,7 +405,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			/*message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
+			//evict the block is the data is valid
 			cgm_L1_cache_evict_block(cache, message_packet->set, message_packet->l1_victim_way);
+
+			//set the block order
+
 
 			//transmit to L2
 			cache_put_io_down_queue(cache, message_packet);
@@ -439,7 +425,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_shared:
 
 			//this is an upgrade_miss
-			/*fatal("L1 D upgrade delete me\n");*/
 
 			//charge delay
 			P_PAUSE(cache->latency);
@@ -468,11 +453,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->coalesced == 1)
 			{
 
-				if(message_packet->access_id == 90960)
+				/*if(message_packet->access_id == 90960)
 				{
 					printf("upgrade miss\n");
 					getchar();
-				}
+				}*/
 
 
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
@@ -486,6 +471,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//set block transient state, but don't evict because the block is valid and just needs to be upgraded
 			cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_transient);
+
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			//set access type
 			message_packet->access_type = cgm_access_upgrade;
@@ -527,6 +515,8 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			message_packet->end_cycle = P_TIME;
 			cache_l1_d_return(cache,message_packet);
@@ -1066,8 +1056,8 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//set message size
 			message_packet->size = l1_i_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
 
-			//update message status
-			/*message_packet->cache_block_state = *cache_block_state_ptr;*/
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			message_packet->access_type = cgm_access_puts;
 			cache_put_io_up_queue(cache, message_packet);
@@ -1234,6 +1224,9 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				printf("block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
+
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -1447,6 +1440,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->access_type = cgm_access_putx;
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			//send up to L1 D cache
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -1467,6 +1463,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				printf("block 0x%08x %s upgrade miss ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
+
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			//access was a miss in L1 D but a hit in the shared state at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
@@ -2688,6 +2687,9 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			cache_put_io_up_queue(cache, message_packet);
 
 			break;
@@ -3094,6 +3096,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
@@ -3232,6 +3237,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -3436,6 +3444,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
 
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
@@ -3603,6 +3614,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//set the sharer bit for the upgraded node
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+			//make this block the MRU
+			cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
 
 	return;

@@ -631,6 +631,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			{
 				l1_d_caches[i].policy = cache_policy_lru;
 			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				l1_d_caches[i].policy = cache_policy_first_available;
+			}
 			else
 			{
 				fatal("cache_read_config(): invalid cache policy, check config file\n");
@@ -757,6 +761,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			{
 				l1_i_caches[i].policy = cache_policy_lru;
 			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				l1_i_caches[i].policy = cache_policy_first_available;
+			}
 			else
 			{
 				fatal("cache_read_config(): invalid cache policy, check config file\n");
@@ -871,6 +879,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			if(strcmp(Policy, "LRU") == 0)
 			{
 				l2_caches[i].policy = cache_policy_lru;
+			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				l2_caches[i].policy = cache_policy_first_available;
 			}
 			else
 			{
@@ -1023,6 +1035,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			{
 				l3_caches[i].policy = cache_policy_lru;
 			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				l3_caches[i].policy = cache_policy_first_available;
+			}
 			else
 			{
 				fatal("cache_read_config(): invalid cache policy, check config file\n");
@@ -1160,6 +1176,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			{
 				gpu_s_caches[i].policy = cache_policy_lru;
 			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				gpu_s_caches[i].policy = cache_policy_first_available;
+			}
 			else
 			{
 				fatal("cache_read_config(): invalid cache policy, check config file\n");
@@ -1269,6 +1289,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			if(strcmp(Policy, "LRU") == 0)
 			{
 				gpu_v_caches[i].policy = cache_policy_lru;
+			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				gpu_v_caches[i].policy = cache_policy_first_available;
 			}
 			else
 			{
@@ -1404,6 +1428,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			if(strcmp(Policy, "LRU") == 0)
 			{
 				gpu_l2_caches[i].policy = cache_policy_lru;
+			}
+			else if(strcmp(Policy, "FA") == 0)
+			{
+				gpu_l2_caches[i].policy = cache_policy_first_available;
 			}
 			else
 			{
@@ -2197,7 +2225,6 @@ int cache_finish_create(){
 				block->way_prev = way ? &l2_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l2_caches[i].assoc - 1 ? &l2_caches[i].sets[set].blocks[way + 1] : NULL;
 			}
-
 		}
 
 		l3_caches[i].sets = calloc(l3_caches[i].num_sets, sizeof(struct cache_set_t));

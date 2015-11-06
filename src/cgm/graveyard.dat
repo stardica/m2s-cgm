@@ -1,4 +1,37 @@
 
+do
+		{
+			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)
+			{
+				way = i;
+				cache->sets[set].blocks[i].transient_state = cgm_cache_block_transient;
+				break;
+			}
+
+			if(!block->way_prev)
+				fatal("cgm_cache_get_victim(): search for LRU didn't find a block\n");
+
+			block = block->way_prev;
+
+		} while(way == -1);
+
+/*if(message_packet->set == 62)
+	{
+
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		ort_dump(cache);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		printf("access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+		getchar();
+
+	}*/
+
 //debugging
 	//if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
