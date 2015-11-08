@@ -1,4 +1,10 @@
 
+/*if(message_packet->access_id == 42263)
+	{
+		printf("block 0x%08x %s id %llu type %d set %d way %d tag %d start cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->set, message_packet->way, message_packet->tag, message_packet->cpu_access_type, P_TIME);
+	}*/
+
 do
 		{
 			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)

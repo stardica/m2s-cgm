@@ -1156,8 +1156,9 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i<cache->assoc; i++)
 	{
-		printf("cache set %d way %d tag %d state %s\n",
-				set, i, cache->sets[set].blocks[i].tag, str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state));
+		printf("cache %s set %d way %d tag %d state %s t_state %s\n",
+				cache->name, set, i, cache->sets[set].blocks[i].tag,
+				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state), str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state));
 	}
 
 	return;
@@ -1218,7 +1219,7 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 		block = cache->sets[set].way_tail;
 
 		//the block should not be in the transient state.
-		assert(block->way >= 0 && block->way < cache->assoc);
+		/*assert(block->transient_state == cgm_cache_block_invalid);*/
 
 		for(i = 0; i < cache->assoc; i++)
 		{
@@ -1226,7 +1227,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)
 			{
-				way = block->way;
 				block->transient_state = cgm_cache_block_transient;
 				break;
 			}
@@ -1234,10 +1234,20 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 			block = block->way_prev;
 		}
 
-		//now make this block the MRU
-		cgm_cache_update_waylist(&cache->sets[set], cache->sets[set].way_tail, cache_waylist_head);
+		/*if(block->transient_state == cgm_cache_block_transient)
+		{
+			cgm_cache_dump_set(cache, set);
+			getchar();
+		}*/
 
-		return way;
+		//set the block transient and bring in the new block
+		/*block->transient_state = cgm_cache_block_transient;*/
+
+		//set this block the MRU
+		cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
+
+		assert(block->way >= 0 && block->way < cache->assoc);
+		return block->way;
 	}
 	else
 	{
@@ -1513,7 +1523,7 @@ void l1_d_cache_ctrl(void){
 
 			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
 
-			/*if(message_packet->access_id == 91067)
+			/*if(message_packet->access_id == 87630)
 			{
 				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 
@@ -1524,6 +1534,12 @@ void l1_d_cache_ctrl(void){
 					list_count(l1_d_caches[my_pid].ort_list),
 					P_TIME);
 
+				getchar();
+			}*/
+
+			/*if(message_packet->access_id == 87630)
+			{
+				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				getchar();
 			}*/
 
@@ -1538,10 +1554,6 @@ void l1_d_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_store || access_type == cgm_access_store_retry)
 			{
-
-
-
-
 				//Call back function (cgm_mesi_store)
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 
@@ -2605,30 +2617,20 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
 
-	/*enum cgm_access_kind_t access_type;
-	long long access_id = 0;*/
-	/*unsigned int addr = 0;*/
-
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
 	int way = 0;
-	/*int state = 0;*/
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
 	int *way_ptr = &way;
 
-	//access information
-	/*access_type = message_packet->access_type;
-	access_id = message_packet->access_id;*/
-	/*addr = message_packet->address;*/
-
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
 
-	//get the block and the state of the block
+	//lock for the block in the cache
 	*(cache_block_hit_ptr) = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
 	//store the decode in the packet for now.
@@ -2636,12 +2638,6 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	message_packet->set = set;
 	message_packet->offset = offset;
 	message_packet->way = way;
-
-	//update way list for LRU if block is present.
-	/*if(*(cache_block_hit_ptr) == 1)
-	{
-		cgm_cache_access_block(cache, set, way);
-	}*/
 
 	return;
 }
@@ -3287,11 +3283,6 @@ enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, in
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t t_state){
 
 	cache->sets[set].blocks[way].transient_state = t_state;
-
-	/*if(id)
-	{
-		cache->sets[set].blocks[way].transient_access_id = id;
-	}*/
 
 	return;
 }
