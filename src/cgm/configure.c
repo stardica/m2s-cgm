@@ -2353,7 +2353,7 @@ int cache_finish_create(){
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			gpu_s_caches[i].gpu_s_load = gpu_l1_cache_access_load;
-			/*gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_load;*/
+			/*gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_s_load;*/
 
 			gpu_s_caches[i].gpu_s_put = gpu_cache_access_put;
 			gpu_s_caches[i].gpu_s_retry = gpu_cache_access_retry;
@@ -2481,9 +2481,13 @@ int cache_finish_create(){
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			gpu_v_caches[i].gpu_v_load = gpu_l1_cache_access_load;
+			/*gpu_v_caches[i].gpu_v_load = cgm_nc_gpu_v_load;*/
 			gpu_v_caches[i].gpu_v_store = gpu_l1_cache_access_store;
+			/*gpu_v_caches[i].gpu_v_store = cgm_nc_gpu_v_store;*/
 			gpu_v_caches[i].gpu_v_retry = gpu_cache_access_retry;
 			gpu_v_caches[i].gpu_v_put = gpu_cache_access_put;
+			/*gpu_v_caches[i].gpu_v_put = cgm_nc_gpu_v_write_block;*/
+
 		}
 		else
 		{
@@ -2722,6 +2726,8 @@ int cache_finish_create(){
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			gpu_l2_caches[i].gpu_l2_get = gpu_cache_access_get;
+			/*gpu_l2_caches[i].gpu_l2_get = cgm_nc_gpu_l2_get;*/
+
 			gpu_l2_caches[i].gpu_l2_put = gpu_cache_access_put;
 			gpu_l2_caches[i].gpu_l2_retry = gpu_cache_access_retry;
 		}

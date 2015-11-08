@@ -1973,11 +1973,12 @@ void gpu_s_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if (access_type == cgm_access_load_s)
+			if (access_type == cgm_access_load_s || access_type == cgm_access_load_retry)
 			{
-				//Call back function (gpu_l1_cache_access_load)
+				//Call back function (cgm_nc_gpu_s_load)
 				gpu_s_caches[my_pid].gpu_s_load(&(gpu_s_caches[my_pid]), message_packet);
 			}
+			//star todo this is wrong change this to put NOT puts
 			else if (access_type == cgm_access_puts)
 			{
 				//Call back function (gpu_cache_access_put)
@@ -2998,17 +2999,6 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			ort_packet = list_remove_at(cache->ort_list, i);
 
 			//set the correct retry type
-			//star todo retry types could be a potential problem.
-			/*if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t)
-			{
-				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-				//ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-			}
-			else if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-			{
-				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
-			}*/
-
 			ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
 
 			list_enqueue(cache->retry_queue, ort_packet);
@@ -3019,8 +3009,6 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			return;
 		}
 	}
-
-
 
 	return;
 }
@@ -3200,14 +3188,6 @@ int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
 }
 
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state){
-
-
-
-	/*if(set == 31 && way == 0 && cache->id == 0){
-
-	printf("%s set block state %d cycle %llu\n", cache->name, state, P_TIME);
-
-	}*/
 
 	cache->sets[set].blocks[way].state = state;
 

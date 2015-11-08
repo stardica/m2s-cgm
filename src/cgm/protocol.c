@@ -319,7 +319,6 @@ void cgm_nc_gpu_load(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cache_gpu_S_return(cache, message_packet);
 			break;
 	}
-
 	return;
 }
 
@@ -371,14 +370,14 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	if(gpu_l1_inf && (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t))
+	/*if(gpu_l1_inf && (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t))
 	{
 		if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}
+	}*/
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -553,18 +552,18 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->offset = offset;
 
 	//////testing
-	if(gpu_l1_inf && cache->cache_type == gpu_v_cache_t)
+	/*if(gpu_l1_inf && cache->cache_type == gpu_v_cache_t)
 	{
 		if(cache->cache_type == gpu_v_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}
+	}*/
 	//////testing
 
-	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
-			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
+	/*CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);*/
 
 
 	//get the block and the state of the block and charge cycles
@@ -719,14 +718,14 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	if(gpu_l2_inf && cache->cache_type == gpu_l2_cache_t)
+	/*if(gpu_l2_inf && cache->cache_type == gpu_l2_cache_t)
 	{
 		if(cache->cache_type == gpu_l2_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}
+	}*/
 	//////testing
 
 	//look up, and charge a cycle.
@@ -836,19 +835,19 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			assert(row < cache->mshr_size);
 			ort_set(cache, row, tag, set);
 
-			while(!hub_iommu_can_access(hub_iommu->Rx_queue_top[cache->id]))
+			/*while(!hub_iommu_can_access(hub_iommu->Rx_queue_top[cache->id]))
 			{
 				printf("%s stalled cycle %llu\n", cache->name, P_TIME);
 				P_PAUSE(1);
-			}
+			}*/
 
-			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss %s size %d\n",
+			/*CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss %s size %d\n",
 					cache->name, access_id, P_TIME, hub_iommu->Rx_queue_top[cache->id]->name, list_count(hub_iommu->Rx_queue_top[cache->id]));
 
 			P_PAUSE(cache->latency);
-			//P_PAUSE(hub_iommu->wire_latency);
+			//P_PAUSE(hub_iommu->wire_latency);*/
 
-			message_packet->l1_access_type = message_packet->access_type;
+			//message_packet->l1_access_type = message_packet->access_type;
 
 			//changes start here
 			//message_packet->access_type = cgm_access_gets;
@@ -930,7 +929,7 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
+	/*CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);*/
 
 	//block is returned so find it in the ORT
 	//clear the entry from the ort
