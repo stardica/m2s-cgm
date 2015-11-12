@@ -245,7 +245,7 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 ////////////////////////////
 //GPU non coherent functions
 ////////////////////////////
-void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
+/*void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//struct cgm_packet_t *ort_packet;
 	//struct cgm_packet_t *miss_status_packet;
@@ -557,8 +557,8 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 			P_PAUSE(cache->latency);
 			//P_PAUSE(gpu_l2_caches[cgm_gpu_cache_map(cache->id)].wire_latency);
 
-			/*change the access type for the coherence protocol and drop into the L2's queue
-			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue*/
+			change the access type for the coherence protocol and drop into the L2's queue
+			remove the access from the l1 cache queue and place it in the l2 cache ctrl queue
 
 			message_packet = list_remove(cache->last_queue, message_packet);
 			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu removed from %s size %d\n",
@@ -1122,4 +1122,4 @@ void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr
 	}
 	//no coalesced packets remaining.
 	return;
-}
+}*/

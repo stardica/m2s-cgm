@@ -329,6 +329,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	struct cgm_packet_t *new_message;
 
+	int wb_q = 0;
+
 	//get various cache statuses
 	int ort_status = get_ort_status(cache);
 	int ort_coalesce_size = list_count(cache->ort_list);
@@ -340,35 +342,26 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//queues shouldn't exceed their sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
+	assert(write_back_queue_size <= (QueueSize + 1000));
 
 
-	if(write_back_queue_size >= QueueSize + 100)
+	if(write_back_queue_size >= (QueueSize + 1))
 	{
-		printf("%s size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
+		printf("%s check size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
 	}
 
-	assert(write_back_queue_size <= (QueueSize + 100));
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
-	//pull from the coherence queue if there is a message waiting.
-	if(coherence_queue_size > 0)
+	//schedule write back if the wb queue is full.
+	if(write_back_queue_size >= QueueSize)
 	{
-		new_message = list_get(cache->Coherance_Rx_queue, 0);
-		cache->last_queue = cache->Coherance_Rx_queue;
-		assert(new_message);
-	}
-	//pull from the retry queue if we have accesses waiting...
-	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
-	{
-		new_message = list_get(cache->retry_queue, 0);
-		cache->last_queue = cache->retry_queue;
-		assert(new_message);
-	}
-	//pull from the bottom queue if the retry queue is empty...
-	else if ((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && bottom_queue_size > 0)
-	{
-		new_message = list_get(cache->Rx_queue_bottom, 0);
-		cache->last_queue = cache->Rx_queue_bottom;
+		new_message = list_get(cache->write_back_buffer, 0);
+
+		//star todo check this
+		if(new_message->flush_pending == 1)
+			return NULL;
+
+		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
 	}
 	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do AND the wb isn't pending a flush.
@@ -383,16 +376,25 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		cache->last_queue = cache->write_back_buffer;
 		assert(new_message);
 	}
-	//schedule write back if the wb queue is full.
-	else if(write_back_queue_size >= QueueSize)
+	//pull from the retry queue if we have retry accesses waiting.
+	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
 	{
-		new_message = list_get(cache->write_back_buffer, 0);
-
-		//star todo check this
-		if(new_message->flush_pending == 1)
-			return NULL;
-
-		cache->last_queue = cache->write_back_buffer;
+		new_message = list_get(cache->retry_queue, 0);
+		cache->last_queue = cache->retry_queue;
+		assert(new_message);
+	}
+	//pull from the coherence queue if there is a coherence message waiting.
+	else if(coherence_queue_size > 0)
+	{
+		new_message = list_get(cache->Coherance_Rx_queue, 0);
+		cache->last_queue = cache->Coherance_Rx_queue;
+		assert(new_message);
+	}
+	//last pull from the bottom queue if no of the others have messages.
+	else if ((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && bottom_queue_size > 0)
+	{
+		new_message = list_get(cache->Rx_queue_bottom, 0);
+		cache->last_queue = cache->Rx_queue_bottom;
 		assert(new_message);
 	}
 
