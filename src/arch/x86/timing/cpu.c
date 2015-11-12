@@ -1030,7 +1030,8 @@ int X86CpuRun(Timing *self){
 	//star added for instrumentation
 	P_PAUSE(1);
 	self->cycle = P_TIME;
-	Current_Cycle++;
+
+	//star added a watch dog thread and can watch things of interest cycle by cycle
 	if(watch_dog == 1)
 	{
 		advance(watchdog);
@@ -1062,14 +1063,12 @@ void X86CpuRunStages(X86Cpu *self)
 	X86CpuSchedule(self);
 
 	/* Stages */
-
 	X86CpuCommit(self);
 	X86CpuWriteback(self);
 	X86CpuIssue(self);
 	X86CpuDispatch(self);
 	X86CpuDecode(self);
 	X86CpuFetch(self);
-
 
 	/* Update stats for structures occupancy */
 	if (x86_cpu_occupancy_stats)

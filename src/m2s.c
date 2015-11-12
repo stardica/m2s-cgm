@@ -1144,6 +1144,7 @@ static void m2s_load_programs(int argc, char **argv)
 	{
 		/* Load program depending on architecture */
 		//star >> returns valid loaded sturct with ELF header info (elf-format.c).
+
 		elf_file_read_header(argv[1], &ehdr);
 
 		//star >> e_machine contains architecture type i.e. Intel 80386 (EM_386) for x86 simulation
@@ -1618,7 +1619,7 @@ int main(int argc, char **argv)
 
 	//CGM is the replacement memory system.
 #if CGM
-	cgm_init();
+	cgm_init(argv);
 	cgm_configure();
 
 #else

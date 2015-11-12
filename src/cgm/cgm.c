@@ -20,8 +20,6 @@ long long access_id = 0;
 struct list_t *cgm_access_record;
 char *cgm_config_file_name_and_path;
 
-unsigned long long Current_Cycle = 0;
-
 //files for debugging and stats;
 FILE *CPU_cache_debug_file;
 int CPU_cache_debug = 0;
@@ -72,7 +70,12 @@ int fetches = 0;
 int loads = 0;
 int stores = 0;
 int mem_system_off = 0;
-extern int watch_dog = 0;
+int watch_dog = 0;
+
+//stats
+long long cpu_rob_stalls = 0;
+long long cpu_fetch_stalls = 0;
+long long cpu_load_store_stalls = 0;
 
 void m2scgm_init(void){
 
@@ -85,9 +88,15 @@ void m2scgm_init(void){
 	return;
 }
 
-void cgm_init(void){
+void cgm_init(char **argv){
 
+	//bring the benchmark name
+	benchmark_name = strdup(argv[1]);
+
+	//set up internal structures
 	cgm_access_record = list_create();
+
+	//set up the threads
 	cgm_create_tasks();
 
 	//init interrupt support
@@ -97,7 +106,6 @@ void cgm_init(void){
 	cache_init();
 	switch_init();
 	hub_iommu_init();
-	//directory_init();
 	sys_agent_init();
 	memctrl_init();
 
@@ -137,7 +145,6 @@ void cgm_create_tasks(void){
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "watchdog");
 	watchdog = new_eventcount(strdup(buff));
-
 
 	//tasks
 	memset(buff,'\0' , 100);
@@ -274,12 +281,32 @@ void cgm_watchdog(void){
 	return;
 }
 
+void cgm_dump_stats(void){
+
+	int num_cores = x86_cpu_num_cores;
+	int num_threads = x86_cpu_num_threads;
+
+	CGM_STATS(cgm_stats_file, "[General]\n");
+	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", benchmark_name);
+	CGM_STATS(cgm_stats_file, "\n");
+	CGM_STATS(cgm_stats_file, "[CPU]\n");
+	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
+	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
+	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "ROBStalls %llu\n", cpu_rob_stalls);
+	CGM_STATS(cgm_stats_file, "FetchStalls %llu\n", cpu_fetch_stalls);
+	CGM_STATS(cgm_stats_file, "LoadStoreStalls %llu\n", cpu_load_store_stalls);
+	CGM_STATS(cgm_stats_file, "\n");
+
+	return;
+}
+
 
 void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats---\n");
 
-	//star todo, dump stat files here.
+	cgm_dump_stats();
 	cache_dump_stats();
 
 	CLOSE_FILES;
@@ -361,75 +388,30 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-	/*int i = 0;
-	int j = 0;
-
-	//check if mshr/ort queue is full
-	for (i = 0; i < thread->i_cache_ptr[thread->core->id].mshr_size; i++)
-	{
-		if(thread->i_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->i_cache_ptr[thread->core->id].ort[i][2] == -1)
-		{
-			//hit in the ORT table
-			break;
-		}
-	}
-
-	if(i == thread->i_cache_ptr[thread->core->id].mshr_size)
-	{
-		return 0;
-	}*/
-
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
 	{
+		cpu_fetch_stalls++;
 		return 0;
 	}
 
-	//i_cache is accessible.
+	//cache queue is accessible.
 	return 1;
 }
 
 int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 
-
 	X86Thread *thread;
 	thread = self;
-
-	int i = 0;
-	//int j = 0;
-
-
-
-	//check if mshr/ort queue is full
-	/*for (i = 0; i < thread->d_cache_ptr[thread->core->id].mshr_size; i++)
-	{
-		if(thread->d_cache_ptr[thread->core->id].ort[i][0] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][1] == -1 && thread->d_cache_ptr[thread->core->id].ort[i][2] == -1)
-		{
-			//hit in the ORT table
-
-
-
-			break;
-		}
-	}
-
-	if(i == thread->d_cache_ptr[thread->core->id].mshr_size)
-	{
-		printf("issue access ort row number %d cycle %llu\n", i, P_TIME);
-		printf("return 0 cycle %llu\n", P_TIME);
-
-		printf("here\n");
-
-		return 0;
-	}*/
 
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue_top))
 	{
+		cpu_load_store_stalls++;
+
 		return 0;
 	}
-
-	// d_cache queue is accessible.
+	//cache queue is accessible.
 	return 1;
 }
 
@@ -843,13 +825,11 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 
 void PrintCycle(int skip){
 
-	if((Current_Cycle % skip) == 0)
+	if((P_TIME % skip) == 0)
 	{
-		printf("---Cycles %llu---\n", Current_Cycle);
+		printf("---Cycles %llu---\n", P_TIME);
 		fflush(stdout);
 	}
-
 	return;
-
 }
 

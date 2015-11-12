@@ -30,7 +30,8 @@
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/trace-cache.h>
-//#include <instrumentation/stats.h>
+
+#include <cgm/cgm.h>
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,
@@ -44,17 +45,31 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
 	if (!uop)
+	{
 		return !self->ctx || !X86ContextGetState(self->ctx, X86ContextRunning) ? x86_dispatch_stall_ctx : x86_dispatch_stall_uop_queue;
+	}
 
 	/* If iq/lq/sq/rob full, done */
 	if (!X86CoreCanEnqueueInROB(core, uop))
+	{
+		cpu_rob_stalls++;
 		return x86_dispatch_stall_rob;
+	}
+
 	if (!(uop->flags & X86_UINST_MEM) && !X86ThreadCanInsertInIQ(self, uop))
+	{
 		return x86_dispatch_stall_iq;
+	}
+
 	if ((uop->flags & X86_UINST_MEM) && !X86ThreadCanInsertInLSQ(self, uop))
+	{
 		return x86_dispatch_stall_lsq;
+	}
+
 	if (!X86ThreadCanRenameUop(self, uop))
+	{
 		return x86_dispatch_stall_rename;
+	}
 	
 	return x86_dispatch_stall_used;
 }
@@ -71,8 +86,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 	while (quantum)
 	{
-
-
 		/* Check if we can decode */
 		stall = X86ThreadCanDispatch(self);
 		if (stall != x86_dispatch_stall_used)
@@ -86,7 +99,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
-		//star >> added instrumentation here
 		/* Rename */
 		X86ThreadRenameUop(self, uop);
 		

@@ -147,7 +147,6 @@ void cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 /*void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);*/
 
-
 //--------------------------
 
 /*void cgm_nc_gpu_put(struct cache_t *cache, struct cgm_packet_t *message_packet);

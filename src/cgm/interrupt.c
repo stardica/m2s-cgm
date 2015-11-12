@@ -157,8 +157,6 @@ void interrupt_service_request(void){
 				//decrement the counter
 				interrupt_cores[id]--;
 
-
-
 				isr = list_dequeue(interrupt_list);
 				assert(isr);
 
@@ -178,7 +176,7 @@ void interrupt_service_request(void){
 
 					if(uop->interrupt == 2) //GPU malloc
 					{
-						lat = 1000;
+						lat = 10000;
 
 					}
 					else if(uop->interrupt == 4) //GPU memcpy
@@ -189,22 +187,22 @@ void interrupt_service_request(void){
 						assert(uop->int_size);
 
 						//printf("interrupt memcpy size %d src 0x%08X dest 0x%08X\n", uop->int_size, uop->int_src_ptr, uop->int_dest_ptr);
-						lat = 1000;
+						lat = 10000;
 					}
 					else //others we don't care about
 					{
-						lat = 1000;
+						lat = 10000;
 					}
 				}
 				else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 				{
 					//printf(" sys interrupt %d\n", uop->interrupt );
-					lat = 1000;
+					lat = 10000;
 				}
 				else //everything else
 				{
 					//this is what m2s originally had for all system interrupts
-					lat = 1000;
+					lat = 10000;
 				}
 
 				//set when the interrupt should complete

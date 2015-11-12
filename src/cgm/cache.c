@@ -1352,12 +1352,6 @@ void cache_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int i = 0;
 
-	CGM_STATS(cgm_stats_file, "[General]\n");
-	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
-	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
-	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
-	CGM_STATS(cgm_stats_file, "\n");
-
 	for(i = 0; i < num_cores; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);

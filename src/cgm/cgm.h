@@ -130,8 +130,6 @@ extern char *cgm_stats_output_path;
 //global access record
 extern struct list_t *cgm_access_record;
 
-extern unsigned long long Current_Cycle;
-
 extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 extern eventcount volatile *watchdog;
@@ -143,16 +141,22 @@ extern int stores;
 extern int mem_system_off;
 extern int watch_dog;
 
+//stats
+char *benchmark_name;
+extern long long cpu_rob_stalls;
+extern long long cpu_fetch_stalls;
+extern long long cpu_load_store_stalls;
 
 //set up related
 void m2scgm_init(void);
-void cgm_init(void);
+void cgm_init(char **argv);
 void cgm_configure(void);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cgm_watchdog(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
+void cgm_dump_stats(void);
 
 //cache access related
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr);
@@ -164,10 +168,6 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 int remove_from_global(long long id);
-
-//interrupts
-//#include <arch/x86/timing/uop.h>
-/*void cgm_interrupt(X86Thread *self, struct x86_uop_t *uop);*/
 
 //debugging and stats related
 void PrintCycle(int skip);
