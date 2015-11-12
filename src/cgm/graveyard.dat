@@ -1,4 +1,59 @@
 
+/*if(access_type == cgm_access_load_v)
+			{
+				//Call back function (gpu_cache_access_load)
+				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
+			{
+				//Call back function (gpu_l1_cache_access_store)
+				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				//Call back function (gpu_cache_access_retry)
+				gpu_v_caches[my_pid].gpu_v_retry(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_puts)
+			{
+				//Call back function (gpu_cache_access_put)
+				gpu_v_caches[my_pid].gpu_v_put(&(gpu_v_caches[my_pid]), message_packet);
+			}*/
+
+/*if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
+			{
+				//Call back function (gpu_cache_access_get)
+				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				//Call back function (gpu_cache_access_retry)
+				gpu_l2_caches[my_pid].gpu_l2_retry(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_mc_put)
+			{
+				//Call back function (gpu_cache_access_put)
+				gpu_l2_caches[my_pid].gpu_l2_put(&gpu_l2_caches[my_pid], message_packet);
+			}*/
+
+/*if (access_type == cgm_access_load_s || access_type == cgm_access_load_retry)
+			{
+				//Call back function (cgm_nc_gpu_s_load)
+				gpu_s_caches[my_pid].gpu_s_load(&(gpu_s_caches[my_pid]), message_packet);
+			}
+			//star todo this is wrong change this to put NOT puts
+			else if (access_type == cgm_access_puts)
+			{
+				//Call back function (gpu_cache_access_put)
+				gpu_s_caches[my_pid].gpu_s_put(&(gpu_s_caches[my_pid]), message_packet);
+
+			}
+			else if (access_type == cgm_access_retry)
+			{
+				//Call back function (gpu_cache_access_retry)
+				gpu_s_caches[my_pid].gpu_s_retry(&(gpu_s_caches[my_pid]), message_packet);
+			}*/
+
 /*if(message_packet->access_id == 42263)
 	{
 		printf("block 0x%08x %s id %llu type %d set %d way %d tag %d start cycle %llu\n",

@@ -354,19 +354,23 @@ struct cache_t{
 
 	//GPU S cache protocol virtual functions
 	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_s_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_s_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_s_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	/*void (*gpu_s_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
+	/*void (*gpu_s_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 	//GPU V cache protocol virtual functions
 	void (*gpu_v_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_v_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	/*void (*gpu_v_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 	//GPU L2 cache protocol virtual functions
 	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	/*void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 	//watch dog
 	/*unsigned int *outstanding_addresses;*/

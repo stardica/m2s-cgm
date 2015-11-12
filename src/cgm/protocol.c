@@ -245,85 +245,6 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 ////////////////////////////
 //GPU non coherent functions
 ////////////////////////////
-void cgm_nc_gpu_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
-	enum cgm_access_kind_t access_type;
-	/*long long access_id = 0;*/
-	int cache_block_hit;
-	int cache_block_state;
-	int *cache_block_hit_ptr = &cache_block_hit;
-	int *cache_block_state_ptr = &cache_block_state;
-
-	access_type = message_packet->access_type;
-	/*access_id = message_packet->access_id;*/
-
-	//get the status of the cache block
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-	switch(*cache_block_state_ptr)
-	{
-		case cgm_cache_block_exclusive:
-		case cgm_cache_block_shared:
-		case cgm_cache_block_modified:
-		case cgm_cache_block_owned:
-			fatal("gpu_s_cache_ctrl(): Invalid block state on hit as %s\n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
-			break;
-
-		//miss or invalid cache block states
-		case cgm_cache_block_invalid:
-
-			/*printf("I$ miss fetch\n");*/
-
-			//stats
-			cache->misses++;
-
-			//check ORT for coalesce
-			cache_check_ORT(cache, message_packet);
-
-			if(message_packet->coalesced == 1)
-				return;
-
-			//add some routing/status data to the packet
-			message_packet->gpu_access_type = cgm_access_load;
-			message_packet->gpu_cache_id = cache->id;
-
-			message_packet->access_type = cgm_access_gets_s;
-			message_packet->l1_access_type = cgm_access_gets_s;
-
-			//find victim and evict on return l1_i_cache just drops the block on return
-			message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);
-
-			//charge delay
-			P_PAUSE(cache->latency);
-
-			//transmit to L2
-			cache_put_io_down_queue(cache, message_packet);
-			break;
-
-		case cgm_cache_block_noncoherent:
-
-			//stats
-			cache->hits++;
-
-			//set retry state and delay
-			if(access_type == cgm_access_load_retry || message_packet->coalesced == 1)
-			{
-				P_PAUSE(cache->latency);
-
-				//enter retry state.
-				gpu_cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
-			}
-
-			/*printf("fetch id %llu set %d tag %d complete cycle %llu\n", message_packet->access_id, message_packet->tag, message_packet->set, P_TIME);*/
-			message_packet->end_cycle = P_TIME;
-			cache_gpu_S_return(cache, message_packet);
-			break;
-	}
-	return;
-}
-
-
-
 void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//struct cgm_packet_t *ort_packet;
@@ -370,14 +291,14 @@ void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *messag
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(gpu_l1_inf && (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t))
+	if(gpu_l1_inf && (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t))
 	{
 		if(cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_s_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}*/
+	}
 	//////testing
 
 	//get the block and the state of the block and charge cycles
@@ -552,18 +473,18 @@ void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->offset = offset;
 
 	//////testing
-	/*if(gpu_l1_inf && cache->cache_type == gpu_v_cache_t)
+	if(gpu_l1_inf && cache->cache_type == gpu_v_cache_t)
 	{
 		if(cache->cache_type == gpu_v_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}*/
+	}
 	//////testing
 
-	/*CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
-			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);*/
+	CGM_DEBUG(GPU_cache_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u, tag %d, set %d, offset %u\n",
+			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 
 	//get the block and the state of the block and charge cycles
@@ -701,7 +622,7 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//int mshr_status = 0;
 	//int l3_map = -1;
 
-	/*int i = 0;*/
+	int i = 0;
 	int row = 0;
 
 	access_type = message_packet->access_type;
@@ -718,14 +639,14 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			cache->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr, *tag_ptr, *set_ptr, *offset_ptr);
 
 	//////testing
-	/*if(gpu_l2_inf && cache->cache_type == gpu_l2_cache_t)
+	if(gpu_l2_inf && cache->cache_type == gpu_l2_cache_t)
 	{
 		if(cache->cache_type == gpu_l2_cache_t)
 		{
 		cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, state_ptr);
 		cgm_cache_set_block(cache, *set_ptr, *way_ptr, *tag_ptr, cgm_cache_block_noncoherent);
 		}
-	}*/
+	}
 	//////testing
 
 	//look up, and charge a cycle.
@@ -835,17 +756,17 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 			assert(row < cache->mshr_size);
 			ort_set(cache, row, tag, set);
 
-			/*while(!hub_iommu_can_access(hub_iommu->Rx_queue_top[cache->id]))
+			while(!hub_iommu_can_access(hub_iommu->Rx_queue_top[cache->id]))
 			{
 				printf("%s stalled cycle %llu\n", cache->name, P_TIME);
 				P_PAUSE(1);
-			}*/
+			}
 
-			/*CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss %s size %d\n",
+			CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu miss %s size %d\n",
 					cache->name, access_id, P_TIME, hub_iommu->Rx_queue_top[cache->id]->name, list_count(hub_iommu->Rx_queue_top[cache->id]));
 
 			P_PAUSE(cache->latency);
-			//P_PAUSE(hub_iommu->wire_latency);*/
+			//P_PAUSE(hub_iommu->wire_latency);
 
 			//message_packet->l1_access_type = message_packet->access_type;
 
@@ -896,8 +817,8 @@ void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*struct cgm_packet_t *ort_packet;
-	enum cgm_access_kind_t access_type;*/
+	struct cgm_packet_t *ort_packet;
+	enum cgm_access_kind_t access_type;
 	unsigned int addr = 0;
 	long long access_id = 0;
 	int set = 0;
@@ -912,24 +833,24 @@ void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	/*int mshr_row = -1;
+	int mshr_row = -1;
 
 	int i = 0;
-	int adv = 0;*/
+	int adv = 0;
 	int row = 0;
 
 
 	assert(message_packet != NULL);
 
 	//the packet is from the L2 cache
-	/*access_type = message_packet->access_type;*/
+	access_type = message_packet->access_type;
 	addr = message_packet->address;
 	access_id = message_packet->access_id;
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, addr, set_ptr, tag_ptr, offset_ptr);
 
-	/*CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);*/
+	CGM_DEBUG(GPU_cache_debug_file, "%s access_id %llu cycle %llu puts\n", cache->name, access_id, P_TIME);
 
 	//block is returned so find it in the ORT
 	//clear the entry from the ort
@@ -1020,7 +941,7 @@ void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_
 	int *way_ptr = &way;
 	int *state_ptr = &state;
 
-	/*int i = 0;*/
+	int i = 0;
 
 	access_type = message_packet->access_type;
 	access_id = message_packet->access_id;

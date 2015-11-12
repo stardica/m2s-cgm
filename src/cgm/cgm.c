@@ -203,6 +203,14 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
+		if(P_TIME >= 1454200 && P_TIME <= 1500000)
+		{
+			printf("%s ort %d cycle %llu\n", gpu_s_caches[0].name, list_count(gpu_s_caches[0].ort_list), P_TIME);
+			printf("%s ort %d cycle %llu\n", gpu_s_caches[1].name, list_count(gpu_s_caches[1].ort_list), P_TIME);
+			printf("%s ort %d cycle %llu\n", gpu_s_caches[2].name, list_count(gpu_s_caches[2].ort_list), P_TIME);
+			printf("%s ort %d cycle %llu\n", gpu_s_caches[3].name, list_count(gpu_s_caches[3].ort_list), P_TIME);
+		}
+
 		/*if(list_count(l1_d_caches[0].Rx_queue_top) > QueueSize)
 		{
 			printf("%s Rx_top %d cycle %llu\n", l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), P_TIME);
@@ -690,6 +698,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
+	new_packet->gpu_access_type = new_packet->access_type;
 
 	//leave for debugging purposes
 	if(mem_system_off == 3)
@@ -699,14 +708,17 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
-
-
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = vector_mem_ptr->compute_unit->id;
 		assert( id < num_cus);
+
+		unsigned int temp = addr;
+		temp = temp & gpu_v_caches[id].block_address_mask;
+
+		//printf("%s id %llu type %d address 0x%08x blk_addr 0x%08x start cycle %llu\n", gpu_v_caches[id].name, new_packet->access_id, new_packet->access_type, addr, temp, P_TIME);
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
@@ -743,7 +755,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->name = strdup(buff);
 
 	new_packet->start_cycle = P_TIME;
-	new_packet->gpu_access_type = cgm_access_load;
+	new_packet->gpu_access_type = new_packet->access_type;
 
 	//leave for debugging purposes
 	if(mem_system_off == 3)
@@ -760,10 +772,13 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		id = scalar_unit_ptr->compute_unit->id;
 		assert(id < num_cus);
 
+		unsigned int temp = addr;
+		temp = temp & gpu_s_caches[id].block_address_mask;
+
+		//printf("%s id %llu type %d address 0x%08x blk_addr 0x%08x start cycle %llu\n", gpu_s_caches[id].name, new_packet->access_id, new_packet->access_type, addr, temp, P_TIME);
+
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
-
-		/*printf("advace gpu s cache access_id %llu cycle %llu list size %d\n", new_packet->access_id,  P_TIME, list_count(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top));*/
 
 		//advance the L1 I Cache Ctrl task
 		advance(&gpu_s_cache[id]);

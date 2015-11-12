@@ -150,7 +150,7 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
@@ -226,8 +226,6 @@ int ort_search(struct cache_t *cache, int tag, int set);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_dump(struct cache_t *cache);
-
-//new functions
 void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row_ptr, int *num_sets_ptr, int *ort_size_ptr);
 void ort_set_row(struct cache_t *cache, int tag, int set);
 

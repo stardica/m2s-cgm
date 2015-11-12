@@ -132,9 +132,9 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 
 
-//////////////////
+/////////////////////
 /////GPU NC protocol
-//////////////////
+/////////////////////
 void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_nc_gpu_s_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
@@ -145,23 +145,24 @@ void cgm_nc_gpu_v_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+/*void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);*/
 
 
 //--------------------------
 
-void cgm_nc_gpu_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*void cgm_nc_gpu_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_nc_gpu_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_nc_gpu_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-void cgm_nc_gpu_coalesced_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_nc_gpu_coalesced_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 
-void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*void gpu_l1_cache_access_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_l1_cache_access_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void gpu_cache_access_put(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void gpu_cache_access_retry(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
-void gpu_cache_coalesced_retry(struct cache_t *cache, int *tag_ptr, int *set_ptr);
+
 
 #endif /*PROTOCOL_H_*/

@@ -951,10 +951,10 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-	if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
+	/*if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
 	{
 		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
-	}
+	}*/
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
@@ -1234,14 +1234,7 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 			block = block->way_prev;
 		}
 
-		/*if(block->transient_state == cgm_cache_block_transient)
-		{
-			cgm_cache_dump_set(cache, set);
-			getchar();
-		}*/
-
 		//set the block transient and bring in the new block
-		/*block->transient_state = cgm_cache_block_transient;*/
 
 		//set this block the MRU
 		cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
@@ -1476,6 +1469,7 @@ void l1_d_cache_ctrl(void){
 
 	int my_pid = l1_d_pid++;
 	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
@@ -1520,6 +1514,17 @@ void l1_d_cache_ctrl(void){
 		else
 		{
 			step++;
+
+			/*if(P_TIME > 1457968)
+			{
+				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+				int i = 0;
+				for(i=0; i<num_cus; i++)
+				{
+					printf("%s ort %d $id %d cycle %llu\n", gpu_s_caches[i].name, list_count(gpu_s_caches[i].ort_list), gpu_s_caches[i].id, P_TIME);
+				}
+			}*/
 
 			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
 
@@ -1664,6 +1669,10 @@ void l2_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+			/*if(P_TIME > 1457968)
+			{
+				printf("l2 running\n");
+			}*/
 
 			/*if(message_packet->access_id == 90960)
 			{
@@ -1841,6 +1850,11 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
+			/*if(P_TIME > 1457968)
+			{
+				printf("l3 running\n");
+			}*/
+
 			/*if(message_packet->access_id == 91067)
 			{
 				printf("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -1957,18 +1971,20 @@ void gpu_s_cache_ctrl(void){
 
 		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
+			printf("%s stalling\n", gpu_s_caches[my_pid].name);
+
 			P_PAUSE(1);
 		}
 		else
 		{
 			step++;
 
-			/*/////////testing
-			(*message_packet->witness_ptr)++;
+			/////////testing
+			/*(*message_packet->witness_ptr)++;
 			list_remove(gpu_s_caches[my_pid].last_queue, message_packet);
 			packet_destroy(message_packet);
-			continue;
-			/////////testing*/
+			continue;*/
+			/////////testing
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -1982,13 +1998,10 @@ void gpu_s_cache_ctrl(void){
 			else if (access_type == cgm_access_puts)
 			{
 				//Call back function (gpu_cache_access_put)
-				gpu_s_caches[my_pid].gpu_s_put(&(gpu_s_caches[my_pid]), message_packet);
+				gpu_s_caches[my_pid].gpu_s_write_block(&(gpu_s_caches[my_pid]), message_packet);
 
-			}
-			else if (access_type == cgm_access_retry)
-			{
-				//Call back function (gpu_cache_access_retry)
-				gpu_s_caches[my_pid].gpu_s_retry(&(gpu_s_caches[my_pid]), message_packet);
+				//entered retry state run again.
+				step--;
 			}
 			else
 			{
@@ -2029,6 +2042,7 @@ void gpu_v_cache_ctrl(void){
 
 		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
+			/*printf("%s stalling\n", gpu_v_caches[my_pid].name);*/
 			P_PAUSE(1);
 			//printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
 			//future_advance(&gpu_v_cache[my_pid], etime.count + 2);
@@ -2037,34 +2051,32 @@ void gpu_v_cache_ctrl(void){
 		{
 			step++;
 
-			/*/////////testing
-			(*message_packet->witness_ptr)++;
+			/////////testing
+			/*(*message_packet->witness_ptr)++;
 			list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
-			continue;
-			/////////testing*/
+			continue;*/
+			/////////testing
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(access_type == cgm_access_load_v)
+			if(access_type == cgm_access_load_v || access_type == cgm_access_load_retry)
 			{
 				//Call back function (gpu_cache_access_load)
 				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store)
+			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store || access_type == cgm_access_store_retry)
 			{
 				//Call back function (gpu_l1_cache_access_store)
 				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_retry)
-			{
-				//Call back function (gpu_cache_access_retry)
-				gpu_v_caches[my_pid].gpu_v_retry(&(gpu_v_caches[my_pid]), message_packet);
-			}
 			else if (access_type == cgm_access_puts)
 			{
 				//Call back function (gpu_cache_access_put)
-				gpu_v_caches[my_pid].gpu_v_put(&(gpu_v_caches[my_pid]), message_packet);
+				gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet);
+
+				//entered retry state run again.
+				step--;
 			}
 			else
 			{
@@ -2107,32 +2119,32 @@ void gpu_l2_cache_ctrl(void){
 		if (message_packet == NULL || !hub_iommu_can_access(hub_iommu->Rx_queue_top[my_pid]))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
-			printf("stalling\n");
-			future_advance(&gpu_l2_cache[my_pid], etime.count + 2);
+			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+			/*printf("stalling\n");*/
+			/*future_advance(&gpu_l2_cache[my_pid], etime.count + 2);*/
 			P_PAUSE(1);
 		}
 		else
 		{
+
 			step++;
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v)
+			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v
+					|| access_type == cgm_access_load_retry || access_type == cgm_access_store_retry)
 			{
 				//Call back function (gpu_cache_access_get)
 				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
 			}
-			else if (access_type == cgm_access_retry)
-			{
-				//Call back function (gpu_cache_access_retry)
-				gpu_l2_caches[my_pid].gpu_l2_retry(&gpu_l2_caches[my_pid], message_packet);
-			}
 			else if(access_type == cgm_access_mc_put)
 			{
 				//Call back function (gpu_cache_access_put)
-				gpu_l2_caches[my_pid].gpu_l2_put(&gpu_l2_caches[my_pid], message_packet);
+				gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet);
+
+				//entered retry state run again.
+				step--;
 			}
 			else
 			{
@@ -2299,7 +2311,7 @@ void l2_cache_up_io_ctrl(void){
 		}
 		else
 		{
-			fatal("l2_cache_up_io_ctrl(): bad cpu access type\n");// str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			fatal("l2_cache_up_io_ctrl(): bad cpu access type\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
 	}
 	return;
@@ -2551,19 +2563,21 @@ void gpu_l2_cache_up_io_ctrl(void){
 		//drop into the correct l1 cache queue.
 		if(message_packet->gpu_access_type == cgm_access_load_s)
 		{
+
+
+
 			list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
 			advance(&gpu_s_cache[message_packet->gpu_cache_id]);
 		}
-		else if(message_packet->gpu_access_type == cgm_access_load_v ||
-						message_packet->gpu_access_type == cgm_access_store_v ||
-						message_packet->gpu_access_type == cgm_access_nc_store)
+		else if(message_packet->gpu_access_type == cgm_access_load_v || message_packet->gpu_access_type == cgm_access_store_v
+				|| message_packet->gpu_access_type == cgm_access_nc_store)
 		{
 			list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
 			advance(&gpu_v_cache[message_packet->gpu_cache_id]);
 		}
 		else
 		{
-			fatal("gpu_l2_cache_up_io_ctrl(): bad gpu access type\n");// str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			fatal("gpu_l2_cache_up_io_ctrl(): bad gpu access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->gpu_access_type));
 		}
 
 	}
@@ -2663,9 +2677,15 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 	return;
 }
 
-void cache_gpu_S_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
+void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//remove packet from cache queue, global queue, and simulator memory
+
+	/*if(cache->id == 0)
+	{
+		printf("%s access_id %llu finished cycle %llu \n", cache->name, message_packet->access_id, P_TIME);
+	}*/
+
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
 	packet_destroy(message_packet);
@@ -2755,6 +2775,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	{
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache for the block on return
+
 		ort_set_row(cache, message_packet->tag, message_packet->set);
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
@@ -2774,6 +2795,13 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			getchar();
 
 		}*/
+
+		/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
+		{
+			printf("here\n");
+
+		}*/
+
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -2795,7 +2823,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
 		}*/
 
-		list_remove(cache->last_queue, message_packet);
+		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
 
 	}
@@ -2821,7 +2849,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		message_packet->coalesced = 1;
 
-		list_remove(cache->last_queue, message_packet);
+		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
 	}
 	else
@@ -3001,6 +3029,11 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			//set the correct retry type
 			ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
 
+			/*if(cache->id == 0)
+			{
+				printf("%s ort pull access id %llu cycle %llu\n", cache->name, ort_packet->access_id, P_TIME);
+			}*/
+
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);
 
@@ -3009,6 +3042,41 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			return;
 		}
 	}
+
+	//no coalesced packets remaining now check for packets with cache assoc conflicts
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
+		{
+			//clear the ORT entry for the assoc miss
+			ort_clear(cache, ort_packet);
+
+			fatal("GPU assoc conflict this is just a check ok to delete\n");
+
+			ort_packet = list_remove_at(cache->ort_list, i);
+
+			/*retry the access and it will be a hit then cause
+			coalescer to re-enter the set and tag.*/
+			ort_packet->coalesced = 0;
+			ort_packet->assoc_conflict = 1;
+			ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
+
+			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+			{
+				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+			}
+
+			list_enqueue(cache->retry_queue, ort_packet);
+			advance(cache->ec_ptr);
+
+			return;
+		}
+	}
+
 
 	return;
 }
@@ -3297,17 +3365,17 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 
 	enum cgm_access_kind_t retry_state = cgm_access_invalid;
 
-	if(r_state == cgm_access_load)
+	if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
 	{
 		retry_state = cgm_access_load_retry;
 	}
-	else if(r_state == cgm_access_store)
+	else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
 	{
 		retry_state = cgm_access_store_retry;
 	}
 	else
 	{
-		fatal("cgm_cache_get_retry_state(): unrecognized state\n");
+		fatal("cgm_cache_get_retry_state(): unrecognized state as %s\n", str_map_value(&cgm_mem_access_strn_map, r_state));
 	}
 
 	return retry_state;
