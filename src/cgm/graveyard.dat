@@ -1,4 +1,6 @@
 
+
+
 /*if(access_type == cgm_access_load_v)
 			{
 				//Call back function (gpu_cache_access_load)
