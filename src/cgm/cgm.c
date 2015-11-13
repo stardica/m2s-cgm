@@ -293,9 +293,9 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
-	CGM_STATS(cgm_stats_file, "ROBStalls %llu\n", cpu_rob_stalls);
-	CGM_STATS(cgm_stats_file, "FetchStalls %llu\n", cpu_fetch_stalls);
-	CGM_STATS(cgm_stats_file, "LoadStoreStalls %llu\n", cpu_load_store_stalls);
+	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cpu_rob_stalls);
+	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cpu_fetch_stalls);
+	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cpu_load_store_stalls);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
