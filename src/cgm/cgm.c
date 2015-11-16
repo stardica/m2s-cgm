@@ -285,6 +285,9 @@ void cgm_dump_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
+	int num_cus = si_gpu_num_compute_units;
+
+
 
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", benchmark_name);
@@ -296,6 +299,10 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cpu_rob_stalls);
 	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cpu_fetch_stalls);
 	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cpu_load_store_stalls);
+	CGM_STATS(cgm_stats_file, "\n");
+	CGM_STATS(cgm_stats_file, "[GPU]\n");
+	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
+	/*CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n",;*/
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;

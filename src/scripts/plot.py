@@ -29,7 +29,11 @@ Config.read(stats_file_path)
 #get specific values
 benchmark_path = Config.get('General', 'Benchmark')
 total_cycles = Config.getint('CPU', 'TotalCycles')
+
+
 ROBstalls = Config.getint('CPU', 'ROBStalls')
+busy_cycles = total_cycles - ROBstalls 
+
 
 #printing values
 #print(benchmark_path)
@@ -38,34 +42,52 @@ ROBstalls = Config.getint('CPU', 'ROBStalls')
 #print("Total cycles blah blah " + repr(total_cycles))
 
 #set the number of benchmark results
-number_of_benchmarks = 2
+number_of_benchmarks = 1
 
-bench_total_cycles = (total_cycles, 900000)
-ROBstalls_array = (ROBstalls, 450000)
+#ROBstalls_array = (ROBstalls, 450000)
+#busy_cycles = (busy_cycles, 900000)
+
+ROBstalls_array = (ROBstalls)
+busy_cycles_array = (busy_cycles)
+
+#set graph title
+plt.title('Test Plot')
+
+#set ledgend array names
+LedgendArray = ('ROB Stalls', 'Busy')
 
 # the x locations for the groups
 index = np.arange(number_of_benchmarks)
 
-# the width of the bars: can also be len(x) sequence
-width = 0.125       
-
+left = 0.375
+width = 0.25       
 opacity = 1
 
-p1 = plt.bar(index, bench_total_cycles, width, alpha=opacity,  color = "w", hatch = 'x',)
-p2 = plt.bar(index + width, ROBstalls_array, width, alpha=opacity, color = 'w', hatch = '/')
+
+
+p1 = plt.bar(left, ROBstalls_array, width, bottom = busy_cycles, alpha=opacity, color = 'w', edgecolor = 'r', hatch= "/")
+p2 = plt.bar(left, busy_cycles_array, width, bottom = 0, alpha=opacity, color = "w", edgecolor = 'black', hatch= "x")
 
 #place the data
-plt.xticks(index + width, ('OpenCL 64x64 MM', 'OpenCL 32x32 MM'))
-plt.xlim([0,2])
-plt.yticks(np.arange(0, total_cycles, 500000))
+#plt.xticks(index + width/2.0, ('OpenCL 64x64 MM', 'OpenCL 32x32 MM'))
+#plt.xticks('OpenCL 64x64 MM')
+
+#x labels
+plt.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+plt.xlim([0,1])
+plt.xlabel('OpenCL 64x64 MM')
+
+plt.plot([0, busy_cycles], [0, busy_cycles], 'k-')
+
+#y labels
+y_labels = ('0', '0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0')
+plt.yticks(np.arange(0, (total_cycles * 2), (total_cycles-1)/5), y_labels)
+plt.ylabel('Normalized Runtime')
 
 
-#write the labels and ledgend
-plt.ylabel('Cycles')
-plt.xlabel('Benchmark')
-plt.title('Test Plot')
-plt.legend((p1[0], p2[0]), ('Total Cycles', 'ROB Stalls'))
 
+#set 
+plt.legend((p1[0], p2[0]), LedgendArray)
 
 #show the plot
 plt.show()

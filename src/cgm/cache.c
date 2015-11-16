@@ -1233,15 +1233,16 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 				break;
 			}
 
+			assert(block->way_prev != NULL);
 			block = block->way_prev;
 		}
 
-		//set the block transient and bring in the new block
+		assert(block->way >= 0 && block->way < cache->assoc);
 
 		//set this block the MRU
 		cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
 
-		assert(block->way >= 0 && block->way < cache->assoc);
+
 		return block->way;
 	}
 	else
@@ -3050,7 +3051,7 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			//clear the ORT entry for the assoc miss
 			ort_clear(cache, ort_packet);
 
-			fatal("GPU assoc conflict this is just a check ok to delete\n");
+			//fatal("GPU assoc conflict this is just a check ok to delete\n");
 
 			ort_packet = list_remove_at(cache->ort_list, i);
 
