@@ -1233,9 +1233,14 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 				break;
 			}
 
-			assert(block->way_prev != NULL);
+			if(block->way_prev == NULL)
+			{
+				printf("%s problem here\n", cache->name);
+				assert(block->way_prev != NULL);
+			}
 			block = block->way_prev;
 		}
+
 
 		assert(block->way >= 0 && block->way < cache->assoc);
 
@@ -1968,7 +1973,7 @@ void gpu_s_cache_ctrl(void){
 
 		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
 		{
-			printf("%s stalling\n", gpu_s_caches[my_pid].name);
+			//printf("%s stalling\n", gpu_s_caches[my_pid].name);
 
 			P_PAUSE(1);
 		}

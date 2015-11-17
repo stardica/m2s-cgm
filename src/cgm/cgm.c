@@ -693,9 +693,13 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	if(mem_system_off == 3)
 	{
 		(*witness_ptr)++;
-		free(new_packet);
+		packet_destroy(new_packet);
 		return;
 	}
+
+	/*(*witness_ptr)++;
+	packet_destroy(new_packet);
+	return;*/
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
@@ -750,9 +754,13 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	if(mem_system_off == 3)
 	{
 		(*witness_ptr)++;
-		free(new_packet);
+		packet_destroy(new_packet);
 		return;
 	}
+
+	/*(*witness_ptr)++;
+	packet_destroy(new_packet);
+	return;*/
 
 	//Add to the target cache Rx queue
 	if(access_kind == cgm_access_load_s)
