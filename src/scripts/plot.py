@@ -1,3 +1,6 @@
+import subprocess
+import sys
+import time
 import ConfigParser
 import numpy as np
 import matplotlib as mpl
@@ -10,6 +13,71 @@ np.random.seed(sum(map(ord, "aesthetics")))
 # changes text to int with repr()
 # get all sections from config file with Config.sections()
 
+#ini file paths
+m2s_cgm_x86config = "/home/stardica/Desktop/m2s-cgm/src/config/Intel-i7-4790k-CPU-Config.ini"
+m2s_cgm_siconfig = "/home/stardica/Desktop/m2s-cgm/src/config/Radeon-HD-7870-GPU-Config.ini"
+m2s_cgm_memconfig = "/home/stardica/Desktop/m2s-cgm/src/config/cgm-config.ini"
+
+#ms2-cgm paths
+m2s_cgm_path = "/home/stardica/Desktop/m2s-cgm/Release/m2s-cgm "
+m2s_cgm_x86args = "--x86-sim detailed --x86-config /home/stardica/Desktop/m2s-cgm/src/config/Intel-i7-4790k-CPU-Config.ini "
+m2s_cgm_siargs = "--si-sim detailed --si-config /home/stardica/Desktop/m2s-cgm/src/config/Radeon-HD-7870-GPU-Config.ini " 
+m2s_cgm_memargs ="--mem-config /home/stardica/Desktop/m2s-cgm/src/config/cgm-config.ini "
+m2s_cgm = m2s_cgm_path + m2s_cgm_x86args + m2s_cgm_siargs + m2s_cgm_memargs
+
+#benmark paths
+num_benchmarks = 2
+benchmark_name = np.empty(num_benchmarks, dtype=object)
+benchmark_path = np.empty(num_benchmarks, dtype=object)
+benchmark_args = np.empty(num_benchmarks, dtype=object)
+benchmark_make = np.empty(num_benchmarks, dtype=object)
+benchmark_name[0] = "KmeansCL"
+benchmark_path[0] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Rodinia_Benchmarks/OpenCL/kmeans/kmeans "
+benchmark_args[0] = "-o -i /home/stardica/Dropbox/CDA7919DoctoralResearch/Rodinia_Benchmarks/data/kmeans/100"
+benchmark_make[0] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Rodinia_Benchmarks/OpenCL/kmeans"
+
+benchmark_name[1] = "MMCL"
+benchmark_path[1] = "/home/stardica/Desktop/MatrixMultiply/Release/MatrixMultiply "
+benchmark_args[1] = ""
+benchmark_make[1] = "/home/stardica/Desktop/MatrixMultiply/Release"
+
+siconfig = ConfigParser.ConfigParser()
+siconfig.read(m2s_cgm_siconfig)
+
+
+
+#run benchmarks
+#build the benchmark
+for i in range(0, num_benchmarks):
+    benchmark_build = subprocess.Popen(["make clean all -C " + benchmark_make[i]], shell = True)
+    benchmark_build.wait()
+    
+    #set the benchmark path and args
+    benchmark = m2s_cgm + benchmark_path[i] + benchmark_args[i]
+    
+    #set benchmark name
+    memconfig = ConfigParser.ConfigParser()
+    memconfig.read(m2s_cgm_memconfig)
+    memconfig.set("Stats", "File_Name", benchmark_name[i])
+    with open(m2s_cgm_memconfig, 'wb') as memconfigfile:
+        memconfig.write(memconfigfile)
+    
+    time.sleep(1)
+        
+    #set number of cores
+    cores = [1, 2, 4]
+    for i in cores:
+        #get the config file paths
+        x86config = ConfigParser.ConfigParser()
+        x86config.read(m2s_cgm_x86config)
+        x86config.set("General", "Cores", i)
+        with open(m2s_cgm_x86config, 'wb') as x86configfile:
+            x86config.write(x86configfile)
+            
+        #run the benchmarks
+        benchmark_run = subprocess.call(benchmark, shell=True)
+
+sys.exit()
 #variables
 stats_file_path = "/home/stardica/Desktop/m2s-cgm/Release/cgm_stats.out"
 benchmark_path = ""
