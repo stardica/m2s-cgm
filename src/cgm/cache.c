@@ -1676,11 +1676,6 @@ void l2_cache_ctrl(void){
 				printf("l2 running\n");
 			}*/
 
-			/*if(message_packet->access_id == 90960)
-			{
-				STOP;
-				printf("%s id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-			}*/
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
@@ -1857,9 +1852,9 @@ void l3_cache_ctrl(void){
 				printf("l3 running\n");
 			}*/
 
-			/*if(message_packet->access_id == 91067)
+			/*if(message_packet->access_id == 1215957)
 			{
-				printf("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				fatal("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 			}*/
 
 			/*printf("%s running\n", l3_caches[my_pid].name);*/

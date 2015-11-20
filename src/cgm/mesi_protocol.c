@@ -2108,6 +2108,8 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
+	struct cgm_packet_t *write_back_packet = NULL;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -2116,8 +2118,8 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
-	/*printf("l2 inval here\n");*/
-
+	//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
@@ -2146,6 +2148,17 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 				/*find and invalidate the block
 				if the block is missing at L2, the block has previously
 				been removed from the L1 D cache as well, so we can ignore*/
+
+				if(write_back_packet)
+				{
+					printf("found a wb packet on l2 inval id %llu\n", write_back_packet->write_back_id);
+
+				}
+
+				assert(!write_back_packet);
+
+
+
 
 				//free the message packet
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -2238,7 +2251,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
-	struct cgm_packet_t *downgrade_packet;
+	struct cgm_packet_t *downgrade_packet = NULL;
 	struct cgm_packet_t *write_back_packet = NULL;
 
 	int l3_map;
@@ -2794,8 +2807,6 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					unsigned int temp = message_packet->address;
 					temp = temp & cache->block_address_mask;
-
-
 
 					fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s wb_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
@@ -3561,6 +3572,12 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//stats
 			cache->upgrade_misses++;
 
+			if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+			{
+				printf("block 0x%08x %s hit shared ID %llu type %d state %d num_shares %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, sharers, P_TIME);
+			}
+
 			/*access was a miss at the L1 and L2 but hit as shared in L3
 			we need to process an upgrade as a putx with n number of invals*/
 
@@ -3581,9 +3598,14 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			}
 			else
 			{
-				/*set the number of inval_acks expected to receive
-				number of sharers minus your self*/
-				message_packet->upgrade_ack = (sharers - 1);
+				/*set the number of inval_acks expected to receive*/
+				message_packet->upgrade_ack = sharers;
+
+				/*subtract 1 if the core is already marked as owning*/
+				if(owning_core == 1)
+				{
+					message_packet->upgrade_ack--;
+				}
 			}
 
 			//initialize the ack counter
@@ -4228,8 +4250,16 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				case cgm_cache_block_noncoherent:
 				case cgm_cache_block_owned:
 				case cgm_cache_block_shared:
-				fatal("cgm_mesi_l3_write_back(): L3 id %d invalid block state on write back as %s address %u\n",
-						cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+					cgm_cache_dump_set(cache, message_packet->set);
+
+					unsigned int temp = message_packet->address;
+					temp = temp & cache->block_address_mask;
+
+					fatal("cgm_mesi_l3_write_back(): %s invalid block state on write back as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+						message_packet->access_id, message_packet->address, temp,
+						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+
 					break;
 
 				case cgm_cache_block_invalid:
@@ -4623,6 +4653,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_exclusive:
+		case cgm_cache_block_modified:
 			fatal("cgm_mesi_l2_upgrade_inval(): L2 id %d invalid block state on upgrade inval as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
@@ -4662,7 +4693,6 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_modified:
 
 			//if the block is in the cache invalidate it
 
@@ -4982,6 +5012,17 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_shared:
+
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			unsigned int temp = message_packet->address;
+			temp = temp & cache->block_address_mask;
+
+			fatal("cgm_mesi_l2_upgrade_putx_n(): %s invalid block state as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->access_id, message_packet->address, temp,
+				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+
 			fatal("cgm_mesi_l2_upgrade_putx_n(): L2 id %d invalid block state on upgrade putx n as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
@@ -4989,10 +5030,10 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 		case cgm_cache_block_invalid:
 
 			/*putx_n occurs when a miss in L2 is a hit in L3 as shared
-			the line come from L3, and invalidation acks come from the other L2 caches
+			the line comes from L3, and invalidation acks come from the other L2 caches
 			we need to process a join. messages can be received in any order.*/
 
-			//it is possible that an upgrade_ack can be received from a responding L2 before the L3 cache.
+			//it is possible that an upgrade_inval_ack can be received from a responding L2 before the L3 cache.
 
 			//check if we have already stored a pending request
 			pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
@@ -5015,10 +5056,9 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				else if(message_packet->upgrade_ack < 0)
 				{
 					//L2 ack beat the L3 reply
-
 					pending_packet = list_remove(cache->last_queue, message_packet);
 
-					pending_packet->upgrade_inval_ack_count = -1;
+					pending_packet->upgrade_inval_ack_count--;
 
 					list_enqueue(cache->pending_request_buffer, pending_packet);
 				}
@@ -5040,7 +5080,7 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					message_packet->upgrade_inval_ack_count = pending_packet->upgrade_inval_ack_count + message_packet->upgrade_ack;
 
 					//free the l2 ack message
-					free(pending_packet);
+					packet_destroy(pending_packet);
 
 					//now wait for L2 replies
 					message_packet = list_remove(cache->last_queue, message_packet);
@@ -5059,7 +5099,7 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					message_packet = list_remove(cache->last_queue, message_packet);
 					packet_destroy(message_packet);
 
-					//assign the point so we can check the total below.
+					//assign the pointer so we can check the total below.
 					putx_n_coutner = pending_packet;
 				}
 				else
@@ -5068,34 +5108,37 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				}
 
 
-				if(putx_n_coutner->upgrade_inval_ack_count == 0)
-				{
-					//we have received the L3 reply and the reply(s) from the other L2(s)
+			if(putx_n_coutner->upgrade_inval_ack_count == 0)
+			{
+				//we have received the L3 reply and the reply(s) from the other L2(s)
 
-					//find the access in the ORT table and clear it.
-					ort_clear(cache, putx_n_coutner);
+				//find the access in the ORT table and clear it.
+				ort_clear(cache, putx_n_coutner);
 
-					//set local cache block to modified.
-					cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, cgm_cache_block_modified);
+				//set local cache block to modified.
+				cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, cgm_cache_block_modified);
 
-					//clear the upgrade_pending bit in the block
-					cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
+				//clear the upgrade_pending bit in the block
+				cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
-					//pull the pending request from the pending request buffer
-					putx_n_coutner = list_remove(cache->pending_request_buffer, putx_n_coutner);
+				//pull the pending request from the pending request buffer
+				putx_n_coutner = list_remove(cache->pending_request_buffer, putx_n_coutner);
 
-					//set access type, block state,
-					putx_n_coutner->access_type = cgm_access_upgrade_ack;
-					putx_n_coutner->cache_block_state = cgm_cache_block_modified;
+				//set access type, block state,
+				putx_n_coutner->access_type = cgm_access_upgrade_ack;
+				putx_n_coutner->cache_block_state = cgm_cache_block_modified;
 
-					list_enqueue(cache->Tx_queue_top, putx_n_coutner);
-					advance(cache->cache_io_up_ec);
-				}
+				list_enqueue(cache->Tx_queue_top, putx_n_coutner);
+				advance(cache->cache_io_up_ec);
+			}
+
+
 			}
 			else
 			{
 				fatal("cgm_mesi_l2_upgrade_putx_n(): putx n packet trouble\n");
 			}
+
 
 			break;
 	}
@@ -5263,7 +5306,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 					message_packet->upgrade_ack = (num_sharers - 1);
 				}
 				//star todo look into this I had shared below... however I think this is right.
-				else if(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified)
+				else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 				{
 					//fatal("l3 upgrade in exclusive state check this\n");
 					/*another core has gained control. */
@@ -5271,6 +5314,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 					/*should only be one other core*/
 					assert(message_packet->upgrade_ack == 1);
+				}
+				else
+				{
+					fatal("check this\n");
 				}
 			}
 

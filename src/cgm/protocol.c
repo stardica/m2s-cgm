@@ -133,7 +133,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 
 	if(((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s downgrade_ack wb packet created ID %llu cycle %llu\n",
+		printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
 			(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
 	}
 

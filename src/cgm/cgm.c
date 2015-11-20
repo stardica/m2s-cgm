@@ -59,6 +59,7 @@ int load_store_debug = 0;
 
 char *cgm_debug_output_path = "";
 char *cgm_stats_output_path = "";
+char *cgm_stats_file_name = "";
 
 //globals for tasking
 eventcount volatile *sim_start;

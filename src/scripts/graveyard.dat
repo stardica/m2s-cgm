@@ -1,0 +1,8 @@
+#with sns.axes_style("darkgrid"):
+#    plt.subplot(211)
+#    sinplot()
+#plt.subplot(212)
+#sinplot(-1)
+
+#main()
+#sinplot()

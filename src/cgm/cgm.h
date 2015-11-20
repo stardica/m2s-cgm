@@ -46,8 +46,8 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x00045ac0
-#define WATCHLINE 0
+#define WATCHBLOCK (unsigned int) 0x00038f80
+#define WATCHLINE 1
 
 
 //config file
@@ -92,6 +92,7 @@ extern int load_store_debug;
 
 extern char *cgm_debug_output_path;
 extern char *cgm_stats_output_path;
+extern char *cgm_stats_file_name;
 
 //memctrl_debug || sysagent_debug switch_debug )
 

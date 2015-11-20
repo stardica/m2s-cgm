@@ -1447,7 +1447,7 @@ void sim_end(void){
 
 	/* Dump statistics summary */
 	cgm_dump_summary();
-	m2s_dump_summary(stdout);
+	//m2s_dump_summary(stdout);
 
 	fflush(stdout);
 	fflush(stderr);
@@ -1476,10 +1476,10 @@ void sim_end(void){
 	debug_done();
 	mhandle_done();
 
+	printf("---Simulation End---\n\n");
+
 	fflush(stdout);
 	fflush(stderr);
-
-	printf("---Simulation End---\n");
 
 	return;
 }
@@ -1646,7 +1646,6 @@ int main(int argc, char **argv)
 #if CGM
 
 	simulate(sim_end);
-
 	/* End */
 	//return 0;
 

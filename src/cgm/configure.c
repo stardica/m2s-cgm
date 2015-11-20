@@ -412,18 +412,24 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats_output_path = strdup(value);
 	}
 
+	if(MATCH("Stats", "File_Name"))
+	{
+		cgm_stats_file_name = strdup(value);
+	}
+
 	return 1;
 }
 
 int stats_finish_create(void){
 
 	char buff[250];
+	int num_cores = x86_cpu_num_cores;
 
 	if (cgm_stats == 1)
 	{
 		memset (buff,'\0' , 250);
 		sprintf(buff, "%s", cgm_stats_output_path);
-		sprintf(buff + strlen(buff), "/cgm_stats.out");
+		sprintf(buff + strlen(buff), "%s_p%d", cgm_stats_file_name, num_cores);
 		cgm_stats_file = fopen (buff, "w+");
 	}
 
