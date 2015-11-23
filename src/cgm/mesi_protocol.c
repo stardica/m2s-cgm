@@ -2149,14 +2149,18 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 				if the block is missing at L2, the block has previously
 				been removed from the L1 D cache as well, so we can ignore*/
 
-				if(write_back_packet)
+				/*if(write_back_packet)
 				{
 					printf("found a wb packet on l2 inval id %llu\n", write_back_packet->write_back_id);
 
 				}
 
-				assert(!write_back_packet);
+				assert(!write_back_packet);*/
 
+				/*if(write_back_packet)
+				{
+					printf("found a wb packet on l2 inval id %llu\n", write_back_packet->write_back_id);
+				}*/
 
 
 

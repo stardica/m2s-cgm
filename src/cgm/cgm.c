@@ -670,7 +670,6 @@ int remove_from_global(long long id){
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
 
-
 	struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
 	struct cgm_packet_t *new_packet = packet_create();
 	char buff[100];
@@ -697,6 +696,8 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		packet_destroy(new_packet);
 		return;
 	}
+
+	/*printf("access address 0x%08x\n", addr);*/
 
 	/*(*witness_ptr)++;
 	packet_destroy(new_packet);

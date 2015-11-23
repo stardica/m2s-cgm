@@ -342,13 +342,13 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//queues shouldn't exceed their sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
-	assert(write_back_queue_size <= (QueueSize + 1000));
+	assert(write_back_queue_size <= QueueSize);
 
 
-	if(write_back_queue_size >= (QueueSize + 1))
+	/*if(write_back_queue_size >= (QueueSize + 1))
 	{
 		printf("%s check size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
-	}
+	}*/
 
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
@@ -1223,6 +1223,13 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 		//the block should not be in the transient state.
 		/*assert(block->transient_state == cgm_cache_block_invalid);*/
 
+		/*if(P_TIME == 7530381)
+		{
+			cgm_cache_dump_set(cache, set);
+			getchar();
+
+		}*/
+
 		for(i = 0; i < cache->assoc; i++)
 		{
 			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
@@ -1233,11 +1240,15 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 				break;
 			}
 
-			if(block->way_prev == NULL)
+			/*if(block->way_prev == NULL)
 			{
-				printf("%s problem here\n", cache->name);
-				assert(block->way_prev != NULL);
-			}
+				cgm_cache_dump_set(cache, set);
+
+				printf("%s problem here cycle %llu\n", cache->name, P_TIME);
+
+			}*/
+
+			assert(block->way_prev != NULL);
 			block = block->way_prev;
 		}
 
@@ -1670,12 +1681,6 @@ void l2_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
-
-			/*if(P_TIME > 1457968)
-			{
-				printf("l2 running\n");
-			}*/
-
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
@@ -2128,6 +2133,16 @@ void gpu_l2_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			/*if(P_TIME == 7530357)
+			{
+				printf("%s running id %llu type %s assoc %d cycle %llu\n",
+						gpu_l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->assoc_conflict, P_TIME);
+
+				cgm_cache_dump_set(&(gpu_l2_caches[my_pid]), 0);
+				ort_dump(&(gpu_l2_caches[my_pid]));
+
+			}*/
 
 			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v
 					|| access_type == cgm_access_load_retry || access_type == cgm_access_store_retry)
@@ -2768,37 +2783,34 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
-	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
+	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || (message_packet->assoc_conflict == 1 && *hit_row_ptr == cache->mshr_size))
 	{
 		//unique access and number of outstanding accesses are less than cache associativity
-		//i.e. there IS a space in the cache for the block on return
+		//i.e. there IS a space in the cache's set and ways for the block on return
+		assert(*hit_row_ptr >= 0 && *hit_row_ptr <= cache->mshr_size);
+
+
+		//we are about to send the packet out, set the assoc conflict flag back to 0.
+		if(message_packet->assoc_conflict == 1)
+		{
+			message_packet->assoc_conflict = 0;
+		}
 
 		ort_set_row(cache, message_packet->tag, message_packet->set);
+
+		if(message_packet->access_id == 1623278 && cache->cache_type == gpu_l2_cache_t)
+		{
+			ort_dump(cache);
+			cgm_cache_dump_set(cache, message_packet->set);
+			fatal("ort pass id %llu assoc %d addr 0x%08x set %d tag %d *hit_row_ptr %d *num_sets_ptr %d cycle %llu\n",
+					message_packet->access_id, message_packet->assoc_conflict, message_packet->address, message_packet->set, message_packet->tag, *hit_row_ptr, *num_sets_ptr, P_TIME);
+		}
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
-
 		//this is an associativity conflict
-		//unique access, but number of outstanding accesses are greater than or equal to cache associativity
-		//i.e. there IS NOT a space for the block in the cache on return
-
-		/*if(message_packet->set == 62 && message_packet->tag == 90)
-		{
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			ort_dump(cache);
-
-			printf("packet access id %llu assoc coal cycle %llu\n", message_packet->access_id, P_TIME);
-			getchar();
-
-		}*/
-
-		/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
-		{
-			printf("here\n");
-
-		}*/
-
+		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
+		//i.e. there IS NOT a space for the block in the cache set and ways on return
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -2806,43 +2818,14 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		message_packet->coalesced = 1;
 		message_packet->assoc_conflict = 1;
 
-		/*if(message_packet->access_id == 91067)
-		{
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			ort_dump(cache);
-
-			unsigned int temp = message_packet->address;
-			temp = temp & cache->block_address_mask;
-
-			printf("coal: access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
-				message_packet->access_id, message_packet->address, temp,
-				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
-		}*/
-
 		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
 
 	}
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
-
-		/*if(message_packet->set == 62 && message_packet->tag == 90)
-		{
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			ort_dump(cache);
-
-			printf("packet access id %llu coal cycle %llu\n", message_packet->access_id, P_TIME);
-			getchar();
-
-		}*/
-
-
-		//non unique access that can be coalesced with a miss
+		//non unique access that can be coalesced with another miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
-
-		/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu coalesced\n", cache->name, message_packet->access_id, P_TIME);*/
 
 		message_packet->coalesced = 1;
 
