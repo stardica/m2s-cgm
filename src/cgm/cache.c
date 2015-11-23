@@ -1221,14 +1221,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 		block = cache->sets[set].way_tail;
 
 		//the block should not be in the transient state.
-		/*assert(block->transient_state == cgm_cache_block_invalid);*/
-
-		/*if(P_TIME == 7530381)
-		{
-			cgm_cache_dump_set(cache, set);
-			getchar();
-
-		}*/
 
 		for(i = 0; i < cache->assoc; i++)
 		{
@@ -1239,14 +1231,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 				block->transient_state = cgm_cache_block_transient;
 				break;
 			}
-
-			/*if(block->way_prev == NULL)
-			{
-				cgm_cache_dump_set(cache, set);
-
-				printf("%s problem here cycle %llu\n", cache->name, P_TIME);
-
-			}*/
 
 			assert(block->way_prev != NULL);
 			block = block->way_prev;
@@ -2783,12 +2767,11 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
-	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || (message_packet->assoc_conflict == 1 && *hit_row_ptr == cache->mshr_size))
+	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache's set and ways for the block on return
 		assert(*hit_row_ptr >= 0 && *hit_row_ptr <= cache->mshr_size);
-
 
 		//we are about to send the packet out, set the assoc conflict flag back to 0.
 		if(message_packet->assoc_conflict == 1)
@@ -2798,13 +2781,13 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		ort_set_row(cache, message_packet->tag, message_packet->set);
 
-		if(message_packet->access_id == 1623278 && cache->cache_type == gpu_l2_cache_t)
+		/*if(message_packet->access_id == 1623278 && cache->cache_type == gpu_l2_cache_t)
 		{
 			ort_dump(cache);
 			cgm_cache_dump_set(cache, message_packet->set);
 			fatal("ort pass id %llu assoc %d addr 0x%08x set %d tag %d *hit_row_ptr %d *num_sets_ptr %d cycle %llu\n",
 					message_packet->access_id, message_packet->assoc_conflict, message_packet->address, message_packet->set, message_packet->tag, *hit_row_ptr, *num_sets_ptr, P_TIME);
-		}
+		}*/
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
@@ -2828,6 +2811,11 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
 
 		message_packet->coalesced = 1;
+
+		if(message_packet->assoc_conflict == 1)
+		{
+			fatal("mp assoc conflict check this, may need to set assoc_conflict to 0\n");
+		}
 
 		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->ort_list, message_packet);
