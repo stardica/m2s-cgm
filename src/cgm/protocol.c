@@ -46,6 +46,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_inv_ack", cgm_access_inv_ack},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
+		{"cgm_access_upgrade_nack", cgm_access_upgrade_nack},
 		{"cgm_access_upgrade_putx_n", cgm_access_upgrade_putx_n},
 		{"cgm_access_upgrade_getx_fwd", cgm_access_upgrade_getx_fwd},
 		{"cgm_access_upgrade_inval", cgm_access_upgrade_inval},

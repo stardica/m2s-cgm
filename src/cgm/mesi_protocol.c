@@ -1394,6 +1394,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
+
 			if(message_packet->coalesced == 1)
 			{
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
@@ -4760,6 +4761,44 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
+void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int l3_map;
+
+	struct cgm_packet_t *pending_packet;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+
+	fatal("here\n");
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//we have permission to upgrade the block state and retry access
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//block should be in the transient state
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	assert(victim_trainsient_state == cgm_cache_block_transient);
+
+	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+	{
+		printf("block 0x%08x %s upgrade ack ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+	}
+
+
+
+}
+
 void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
@@ -4783,6 +4822,12 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 	//block should be in the transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	/*if(victim_trainsient_state != cgm_cache_block_transient)
+	{
+		printf("crash here access id %llu\n", message_packet->access_id);
+	}
+*/
 	assert(victim_trainsient_state == cgm_cache_block_transient);
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
@@ -4864,7 +4909,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 					//clear the block's transient state
 					cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
-
 					//set local cache block and directory to modified.
 					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
@@ -4911,7 +4955,8 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 					{
 						printf("block 0x%08x %s store miss ID %llu type %d state %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+							message_packet->access_type, *cache_block_state_ptr, P_TIME);
 					}
 				}
 			}
@@ -5193,18 +5238,29 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	}
 
 
-	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
+	if(pending_bit == 1)
 	{
+		/*if pending another core is trying to get the block
+		and has beaten us to it. A nack is required and a fwd
+		of some kind has already gone out to the L2 requesting.*/
 
-		fatal("cgm_mesi_l3_upgrade(): pending_bit set check this\n");
+		/*there should only be one core with the block and it shouldn't be the requesting core process nack this*/
+		assert(num_sharers == 1 && owning_core == 0 && pending_bit == 1 && *cache_block_hit_ptr == 1);
 
-		/*there should be at least 1 or more sharers
-		and the requester should not be the owning core
-		because the access should be coalesced.
-		//assert(num_sharers >= 1 &&  owning_core == 0);
+		/*block should be in the exclusive or modified state*/
+		assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
+
+		/*cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		fatal("cgm_mesi_l3_upgrade(): pending_bit set access id %llu type %d block state %d set %d tag %d pending_bit %d block_addr 0x%08x cycle %llu\n",
+				message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, message_packet->set, message_packet->tag,
+				cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way), temp, P_TIME);*/
 
 		//send the reply up as a NACK!
-		message_packet->access_type = cgm_access_getx_nack;
+		message_packet->access_type = cgm_access_upgrade_nack;
 
 		//set message package size
 		message_packet->size = 1;
@@ -5217,7 +5273,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
-		return;*/
+
+		return 1;
 	}
 
 
@@ -5243,7 +5300,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		case cgm_cache_block_modified:
 
 			/*if the block is modified this means an upgrade
-			request just be this one to the L3 cache*/
+			request just beat this one to the L3 cache*/
 
 			/*there should only be one core with the block and it shouldn't
 			be the requesting core process as a GetX*/
