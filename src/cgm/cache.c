@@ -1741,13 +1741,13 @@ void l2_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_upgrade_ack)
 			{
-				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
-				l2_caches[my_pid].l2_upgrade_nack(&(l2_caches[my_pid]), message_packet);
+				//Call back function (cgm_mesi_l2_upgrade_nack)
+				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_upgrade_nack)
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
-				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
+				l2_caches[my_pid].l2_upgrade_nack(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_upgrade_putx_n)
 			{
@@ -1915,7 +1915,8 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
-				l3_caches[my_pid].l3_upgrade(&(l3_caches[my_pid]), message_packet);
+				if(!l3_caches[my_pid].l3_upgrade(&(l3_caches[my_pid]), message_packet))
+					step--;
 			}
 
 			else if (access_type == cgm_access_mc_put)
