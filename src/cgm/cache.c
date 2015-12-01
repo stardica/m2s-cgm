@@ -1042,6 +1042,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	/*get the block flush_pending_bit
 	if the pending bit is set a flush was previously sent*/
+	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);*/
 	if(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0)
 	{
 		//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
@@ -1156,11 +1157,12 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	int i = 0;
 
-	for(i=0; i<cache->assoc; i++)
+	for(i=0; i < cache->assoc; i++)
 	{
-		printf("cache %s set %d way %d tag %d state %s t_state %s\n",
+		printf("cache %s set %d way %d tag %d state %s t_state %s cycle %llu\n",
 				cache->name, set, i, cache->sets[set].blocks[i].tag,
-				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state), str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state));
+				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state),
+				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state), P_TIME);
 	}
 
 	return;
@@ -1222,6 +1224,9 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 		//the block should not be in the transient state.
 
+		/*if(P_TIME == 13687603)
+			cgm_cache_dump_set(cache, set);*/
+
 		for(i = 0; i < cache->assoc; i++)
 		{
 			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
@@ -1231,6 +1236,9 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 				block->transient_state = cgm_cache_block_transient;
 				break;
 			}
+
+			if(block->way_prev == NULL)
+				cgm_cache_dump_set(cache, set);
 
 			assert(block->way_prev != NULL);
 			block = block->way_prev;
@@ -1910,6 +1918,12 @@ void l3_cache_ctrl(void){
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_getx_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
+				//run again and pull the message_packet as a new access
+			}
+			else if(access_type == cgm_access_get_fwd_upgrade_nack)
+			{
+				//via call back function (cgm_mesi_l3_get_fwd_nack)
+				l3_caches[my_pid].l3_get_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
 				//run again and pull the message_packet as a new access
 			}
 			else if(access_type == cgm_access_upgrade)
@@ -2773,6 +2787,18 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
+
+	if(message_packet->access_id == 7101547 && cache->cache_type == l2_cache_t)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+		printf("\n");
+		ort_dump(cache);
+		printf("id %llu type %d set %d tag %d way %d assoc_flag %d cycle %llu\n",
+				message_packet->access_id, message_packet->access_type, message_packet->set,
+				message_packet->tag, message_packet->way, message_packet->assoc_conflict, P_TIME);
+	}
+
+
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
 		//unique access and number of outstanding accesses are less than cache associativity
@@ -3305,6 +3331,18 @@ enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, in
 void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t t_state){
 
 	cache->sets[set].blocks[way].transient_state = t_state;
+
+	if(cache->cache_type == l2_cache_t && set == 172 && t_state == cgm_cache_block_transient)
+	{
+		cgm_cache_dump_set(cache, set);
+
+		printf("setting t state set %d way %d\n", set, way);
+
+	}
+	else if(cache->cache_type == l2_cache_t && set == 172 && t_state == cgm_cache_block_invalid)
+	{
+		printf("clear t state set %d way %d\n", set, way);
+	}
 
 	return;
 }

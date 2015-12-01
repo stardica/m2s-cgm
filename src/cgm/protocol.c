@@ -32,6 +32,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_get_nack", cgm_access_get_nack},
 		{"cgm_access_get_fwd", cgm_access_get_fwd},
 		{"cgm_access_get_fwd_nack", cgm_access_get_fwd_nack},
+		{"cgm_access_get_fwd_upgrade_nack", cgm_access_get_fwd_upgrade_nack},
 		{"cgm_access_getx_fwd", cgm_access_getx_fwd},
 		{"cgm_access_getx_fwd_nack", cgm_access_getx_fwd_nack},
 		{"cgm_access_getx_fwd_upgrade_nack", cgm_access_getx_fwd_upgrade_nack},

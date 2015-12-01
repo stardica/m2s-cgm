@@ -1013,7 +1013,7 @@ void switch_south_io_ctrl(void){
 			}
 			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
-					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack)
+					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack)
 			{
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}
