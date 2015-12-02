@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <cgm/cgm.h>
 
@@ -73,6 +74,9 @@ int stores = 0;
 int mem_system_off = 0;
 int watch_dog = 0;
 
+double start_wall_time = 0;
+double end_wall_time = 0;
+
 //stats
 long long cpu_rob_stalls = 0;
 long long cpu_fetch_stalls = 0;
@@ -85,6 +89,9 @@ void m2scgm_init(void){
 	printf("---A x86 Based CPU-GPU Heterogeneous Computing Simulator---\n");
 	printf("\n");
 	printf("---Simulator Init---\n");
+
+	//set the start time.
+	start_wall_time = get_wall_time();
 
 	return;
 }
@@ -288,10 +295,15 @@ void cgm_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
 
+	long long time_in_sec;
 
+	//get the time
+	end_wall_time = get_wall_time();
 
+	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", benchmark_name);
+	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2f [s]\n", (end_wall_time - start_wall_time));
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
@@ -489,14 +501,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->cpu_access_type = cgm_access_fetch;
 
 
-/*	#include <mem-image/memory.h>
-	printf("%d\n", MEM_PAGE_SHIFT);
-	printf("%d\n", MEM_PAGE_MASK);
-	STOP;*/
-
-	//this can remove the memory system for testing purposes
-	//if(mem_system_off == 1 || mem_system_off == 3)
-
 	//////////////testing
 	/*if(new_packet->cpu_access_type == cgm_access_fetch)
 	{
@@ -508,16 +512,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	}*/
 	//////////////testing
 
-	//bad access address kill fetch
-	/*if(addr == 0)
+	//this can remove the memory system for testing purposes
+	if(mem_system_off == 1)
 	{
-		protection_faults++;
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
-		printf("bad fetch\n");
 		return access_id;
-	}*/
+	}
 
 
 	//Add (2) to the target L1 I Cache Rx Queue
@@ -568,8 +570,15 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 
 	//////////////testing
-	/*if(mem_system_off == 2 || mem_system_off == 3)*/
-	/*if(new_packet->cpu_access_type == cgm_access_store)
+	if(mem_system_off == 1)
+	{
+		//put back on the core event queue to end memory system access.
+		linked_list_add(event_queue, event_queue_item);
+		packet_destroy(new_packet);
+		return;
+	}
+
+		/*if(new_packet->cpu_access_type == cgm_access_store)
 	{
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);
@@ -584,17 +593,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		return;
 	}*/
 	//////////////testing
-
-
-	/*if(addr == 0)
-	{
-		protection_faults++;
-
-		linked_list_add(event_queue, event_queue_item);
-		packet_destroy(new_packet);
-		//printf("load protection fault access uop_id %llu type %d (2 = load, 3 = store)\n", uop_id, access_kind);
-		return;
-	}*/
 
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
@@ -690,7 +688,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->gpu_access_type = new_packet->access_type;
 
 	//leave for debugging purposes
-	if(mem_system_off == 3)
+	if(mem_system_off == 1)
 	{
 		(*witness_ptr)++;
 		packet_destroy(new_packet);
@@ -753,7 +751,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->gpu_access_type = new_packet->access_type;
 
 	//leave for debugging purposes
-	if(mem_system_off == 3)
+	if(mem_system_off == 1)
 	{
 		(*witness_ptr)++;
 		packet_destroy(new_packet);
@@ -840,13 +838,34 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	return;
 }
 
-void PrintCycle(int skip){
+void PrintCycle(void){
 
-	if((P_TIME % skip) == 0)
+	if((P_TIME % SKIP) == 0)
 	{
-		printf("---Cycles %llu---\n", P_TIME);
+		printf("---Cycles %lluM---\n", (P_TIME)/1000000);
 		fflush(stdout);
 	}
+
 	return;
+}
+
+double get_wall_time(void){
+	struct timeval time;
+	gettimeofday(&time, NULL);
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
+
+double get_cpu_time(void){
+	return (double)clock() / CLOCKS_PER_SEC;
+}
+
+long long cgm_get_time(void)
+{
+	struct timeval tv;
+	long long value;
+
+	gettimeofday(&tv, NULL);
+	value = (long long) tv.tv_sec * 1000000 + tv.tv_usec;
+	return value;
 }
 

@@ -1403,7 +1403,7 @@ void m2s_loop(void){
 		m2s_loop_iter++;
 
 		//star >> added this to get some status output while running long benchmarks.
-		PrintCycle(SKIP);
+		PrintCycle();
 
 
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)

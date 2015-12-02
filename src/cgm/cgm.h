@@ -49,6 +49,8 @@
 #define WATCHBLOCK (unsigned int) 0x00026f00
 #define WATCHLINE 1
 
+#define SKIP 1000000
+
 
 //config file
 extern char *cgm_config_file_name_and_path;
@@ -148,6 +150,10 @@ extern long long cpu_rob_stalls;
 extern long long cpu_fetch_stalls;
 extern long long cpu_load_store_stalls;
 
+double start_wall_time;
+double end_wall_time;
+
+
 //set up related
 void m2scgm_init(void);
 void cgm_init(char **argv);
@@ -171,6 +177,9 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 int remove_from_global(long long id);
 
 //debugging and stats related
-void PrintCycle(int skip);
+void PrintCycle(void);
+
+double get_wall_time(void);
+double get_cpu_time(void);
 
 #endif /* CGM_H_ */
