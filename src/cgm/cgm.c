@@ -179,7 +179,7 @@ void cgm_create_tasks(void){
 
 void cgm_watchdog(void){
 
-	long long t_1 = 1;
+	/*long long t_1 = 1;
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -226,13 +226,13 @@ void cgm_watchdog(void){
 			printf("%s ort %d cycle %llu\n", gpu_s_caches[3].name, list_count(gpu_s_caches[3].ort_list), P_TIME);
 		}
 
-		/*if(list_count(l1_d_caches[0].Rx_queue_top) > QueueSize)
+		if(list_count(l1_d_caches[0].Rx_queue_top) > QueueSize)
 		{
 			printf("%s Rx_top %d cycle %llu\n", l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), P_TIME);
 			getchar();
-		}*/
+		}
 
-/*
+
 		if(P_TIME > 41970)
 		{
 			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
@@ -245,16 +245,16 @@ void cgm_watchdog(void){
 			printf("WD: %s tx_n %d tx_e %d tx_s %d tx_w %d cycle %llu\n",
 					switches[0].name, list_count(switches[0].Tx_north_queue), list_count(list_count(switches[0].), cache_get_ORT_size(&(l3_caches[0])), P_TIME);
 
-		}*/
+		}
 
-		/*if(P_TIME > 53000)
+		if(P_TIME > 53000)
 		{
 			STOP;
-		}*/
+		}
 
 
 
-		/*for(i = 0; i < num_cores; i++)
+		for(i = 0; i < num_cores; i++)
 		{
 			if(list_count(l1_d_caches[i].write_back_buffer) > QueueSize)
 			{
@@ -282,10 +282,10 @@ void cgm_watchdog(void){
 				printf("WD: %s WB queue size %d cycle %llu\n", l3_caches[i].name, size, P_TIME);
 				//getchar();
 			}
-		}*/
+		}
 
 
-	}
+	}*/
 	return;
 }
 
@@ -295,20 +295,24 @@ void cgm_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
 
-	long long time_in_sec;
+	double sim_time = 0;
 
 	//get the time
 	end_wall_time = get_wall_time();
 
+	//calculate simulation runtime (wall clock)
+	sim_time = (end_wall_time - start_wall_time);
+
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", benchmark_name);
-	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2f [s]\n", (end_wall_time - start_wall_time));
+	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2fs\n", sim_time);
+	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/sim_time);
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
-	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
 	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cpu_rob_stalls);
 	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cpu_fetch_stalls);
 	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cpu_load_store_stalls);
