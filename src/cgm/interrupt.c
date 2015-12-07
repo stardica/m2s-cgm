@@ -24,6 +24,8 @@
 #include <lib/util/debug.h>
 
 
+#define OCLLAT 1000
+#define SYSLAT 1000
 
 //global flags
 //catching the interrupts is a little challenging.
@@ -33,6 +35,8 @@ unsigned int int_src_ptr = 0;
 unsigned int int_dest_ptr = 0;
 unsigned int int_size = 0;
 int *interrupt_cores;
+
+
 
 struct list_t *interrupt_list;
 
@@ -176,7 +180,7 @@ void interrupt_service_request(void){
 
 					if(uop->interrupt == 2) //GPU malloc
 					{
-						lat = 10000;
+						lat = OCLLAT;
 
 					}
 					else if(uop->interrupt == 4) //GPU memcpy
@@ -187,22 +191,22 @@ void interrupt_service_request(void){
 						assert(uop->int_size);
 
 						//printf("interrupt memcpy size %d src 0x%08X dest 0x%08X\n", uop->int_size, uop->int_src_ptr, uop->int_dest_ptr);
-						lat = 10000;
+						lat = OCLLAT;
 					}
 					else //others we don't care about
 					{
-						lat = 10000;
+						lat = OCLLAT;
 					}
 				}
 				else if(uop->interrupt > 0 && uop->interrupt_type == system_interrupt)
 				{
 					//printf(" sys interrupt %d\n", uop->interrupt );
-					lat = 10000;
+					lat = SYSLAT;
 				}
 				else //everything else
 				{
 					//this is what m2s originally had for all system interrupts
-					lat = 10000;
+					lat = SYSLAT;
 				}
 
 				//set when the interrupt should complete

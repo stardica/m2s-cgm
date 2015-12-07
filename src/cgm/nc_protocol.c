@@ -14,8 +14,8 @@
 
 void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("%s load\n", cache->name);
-	STOP;
+	/*printf("%s load\n", cache->name);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -111,8 +111,8 @@ void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-		printf("%s load\n", cache->name);
-	STOP;
+	/*printf("%s load\n", cache->name);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -200,8 +200,8 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("%s store\n", cache->name);
-	STOP;
+	/*printf("%s store\n", cache->name);
+	STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
