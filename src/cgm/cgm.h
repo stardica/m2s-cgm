@@ -130,6 +130,29 @@ extern char *cgm_stats_file_name;
 #define STOP 	CLOSE_FILES;\
 				exit(0);
 
+//for general stats
+struct cgm_stats_t{
+
+	char *benchmark_name;
+
+	/*int protection_faults;*/
+	int fetches;
+	int loads;
+	int stores;
+
+	long long cpu_rob_stalls;
+	long long cpu_fetch_stalls;
+	long long cpu_ls_stalls;
+
+	double start_wall_time;
+	double end_wall_time;
+	double sim_time;
+
+};
+
+extern struct cgm_stats_t *cgm_stat;
+
+
 //global access record
 extern struct list_t *cgm_access_record;
 
@@ -137,21 +160,9 @@ extern eventcount volatile *sim_start;
 extern eventcount volatile *sim_finish;
 extern eventcount volatile *watchdog;
 
-extern int protection_faults;
-extern int fetches;
-extern int loads;
-extern int stores;
 extern int mem_system_off;
 extern int watch_dog;
 
-//stats
-char *benchmark_name;
-extern long long cpu_rob_stalls;
-extern long long cpu_fetch_stalls;
-extern long long cpu_load_store_stalls;
-
-double start_wall_time;
-double end_wall_time;
 
 
 //set up related

@@ -139,6 +139,7 @@ void gpu_v_cache_down_io_ctrl(void);
 void gpu_l2_cache_up_io_ctrl(void);
 void gpu_l2_cache_down_io_ctrl(void);
 
+
 //Cache Access Functions
 int cgm_l3_cache_map(int set);
 int cache_can_access_top(struct cache_t *cache);

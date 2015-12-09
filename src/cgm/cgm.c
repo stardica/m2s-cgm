@@ -13,9 +13,6 @@
 
 #include <cgm/cgm.h>
 
-
-
-
 long long access_id = 0;
 //long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
@@ -67,20 +64,24 @@ eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
 eventcount volatile *watchdog;
 
-int protection_faults = 0;
-int fetches = 0;
-int loads = 0;
-int stores = 0;
 int mem_system_off = 0;
 int watch_dog = 0;
 
-double start_wall_time = 0;
+struct cgm_stats_t *cgm_stat;
+
+
+/*int protection_faults = 0;
+int fetches = 0;
+int loads = 0;
+int stores = 0;*/
+
+/*double start_wall_time = 0;
 double end_wall_time = 0;
 
 //stats
 long long cpu_rob_stalls = 0;
 long long cpu_fetch_stalls = 0;
-long long cpu_load_store_stalls = 0;
+long long cpu_load_store_stalls = 0;*/
 
 void m2scgm_init(void){
 
@@ -90,16 +91,19 @@ void m2scgm_init(void){
 	printf("\n");
 	printf("---Simulator Init---\n");
 
-	//set the start time.
-	start_wall_time = get_wall_time();
-
 	return;
 }
 
 void cgm_init(char **argv){
 
+
+	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
+
+	//set the start time.
+	cgm_stat->start_wall_time = get_wall_time();
+
 	//bring the benchmark name
-	benchmark_name = strdup(argv[1]);
+	cgm_stat->benchmark_name = strdup(argv[1]);
 
 	//set up internal structures
 	cgm_access_record = list_create();
@@ -295,27 +299,25 @@ void cgm_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
 
-	double sim_time = 0;
-
 	//get the time
-	end_wall_time = get_wall_time();
+	cgm_stat->end_wall_time = get_wall_time();
 
 	//calculate simulation runtime (wall clock)
-	sim_time = (end_wall_time - start_wall_time);
+	cgm_stat->sim_time = (cgm_stat->end_wall_time - cgm_stat->start_wall_time);
 
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
-	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", benchmark_name);
-	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2fs\n", sim_time);
+	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
+	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2fs\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
-	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/sim_time);
+	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
-	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cpu_rob_stalls);
-	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cpu_fetch_stalls);
-	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cpu_load_store_stalls);
+	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->cpu_rob_stalls);
+	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat->cpu_fetch_stalls);
+	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat->cpu_ls_stalls);
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[GPU]\n");
 	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
@@ -415,7 +417,6 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
 	{
-		cpu_fetch_stalls++;
 		return 0;
 	}
 
@@ -431,8 +432,6 @@ int cgm_can_issue_access(X86Thread *self, unsigned int addr){
 	//check if request queue is full
 	if(QueueSize <= list_count(thread->d_cache_ptr[thread->core->id].Rx_queue_top))
 	{
-		cpu_load_store_stalls++;
-
 		return 0;
 	}
 	//cache queue is accessible.
@@ -671,7 +670,6 @@ int remove_from_global(long long id){
 
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
-
 	struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
 	struct cgm_packet_t *new_packet = packet_create();
 	char buff[100];
@@ -853,15 +851,18 @@ void PrintCycle(void){
 	return;
 }
 
+
 double get_wall_time(void){
 	struct timeval time;
 	gettimeofday(&time, NULL);
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
+
 double get_cpu_time(void){
 	return (double)clock() / CLOCKS_PER_SEC;
 }
+
 
 long long cgm_get_time(void)
 {

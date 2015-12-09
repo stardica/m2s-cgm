@@ -52,7 +52,6 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 	/* If iq/lq/sq/rob full, done */
 	if (!X86CoreCanEnqueueInROB(core, uop))
 	{
-		cpu_rob_stalls++;
 		return x86_dispatch_stall_rob;
 	}
 
@@ -88,11 +87,32 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 	{
 		/* Check if we can decode */
 		stall = X86ThreadCanDispatch(self);
+
 		if (stall != x86_dispatch_stall_used)
 		{
+			//star taking some stats here
+			if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
+			{
+				//no uop
+				cgm_stat->cpu_fetch_stalls++;
+			}
+			else if(stall == x86_dispatch_stall_rob)
+			{
+				//ROB is full
+				cgm_stat->cpu_rob_stalls++;
+			}
+			else if(stall == x86_dispatch_stall_lsq)
+			{
+				cgm_stat->cpu_ls_stalls++;
+			}
+
+
 			core->dispatch_stall[stall] += quantum;
 			break;
 		}
+
+
+
 	
 		/* Get entry from uop queue */
 		uop = list_remove_at(self->uop_queue, 0);
@@ -137,7 +157,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n", uop->id_in_core, core->id);
-
 	}
 
 	return quantum;
