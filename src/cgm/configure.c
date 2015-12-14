@@ -2999,7 +2999,6 @@ int switch_finish_create(void){
 			//configure cross bar
 			switches[i].crossbar = switch_crossbar_create();
 
-
 			//Rx queues
 			switches[i].north_queue = list_create();
 			switches[i].east_queue = list_create();

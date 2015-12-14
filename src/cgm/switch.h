@@ -180,6 +180,7 @@ enum arbitrate{
 struct crossbar_t{
 
 	int num_ports;
+	int num_pairs;
 
 	//in queues
 	struct list_t *north_in_queue;
