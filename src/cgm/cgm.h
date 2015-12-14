@@ -168,6 +168,7 @@ extern int watch_dog;
 //set up related
 void m2scgm_init(void);
 void cgm_init(char **argv);
+void cgm_check_config_files(char **argv);
 void cgm_configure(void);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);

@@ -16,7 +16,7 @@
 long long access_id = 0;
 //long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
-char *cgm_config_file_name_and_path;
+char *cgm_config_file_name_and_path = "";
 
 //files for debugging and stats;
 FILE *CPU_cache_debug_file;
@@ -94,8 +94,25 @@ void m2scgm_init(void){
 	return;
 }
 
-void cgm_init(char **argv){
+void cgm_check_config_files(char **argv){
 
+	if(!strcmp(x86_config_file_name, ""))
+	{
+		fatal("cgm_init(): x86 config file not specified\n");
+	}
+	else if(!strcmp(si_gpu_config_file_name, ""))
+	{
+		fatal("cgm_init(): si config file not specified\n");
+	}
+	else if(!strcmp(cgm_config_file_name_and_path, ""))
+	{
+		fatal("cgm_init(): mem config file not specified\n");
+	}
+
+	return;
+}
+
+void cgm_init(char **argv){
 
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
 

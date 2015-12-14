@@ -933,9 +933,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 #if CGM
 			cgm_config_file_name_and_path = argv[++argi];
-			//printf("\nconfig file name is %s\n", cgm_config_file_name_and_path);
-			//fflush(stdout);
-			//getchar();
 			continue;
 		}
 #else
@@ -1131,6 +1128,25 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	for (argi = 1; argi < argc - arg_discard; argi++)
 		argv[argi] = argv[argi + arg_discard];
 	*argc_ptr = argc - arg_discard;
+
+
+/*	printf("%s\n", argv[1]);
+	fflush(stdout);
+
+	printf("%s\n", argv[1]);
+	fflush(stdout);
+
+	printf("%s\n", argv[2]);
+	fflush(stdout);
+
+	printf("%s\n", argv[3]);
+	fflush(stdout);
+
+	printf("%s\n", argv[4]);
+	fflush(stdout);
+
+	printf("%s\n", argv[5]);
+	fflush(stdout);*/
 }
 
 
@@ -1501,6 +1517,10 @@ int main(int argc, char **argv)
 
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
+
+
+	//star check for configuration files
+	cgm_check_config_files(argv);
 
 	//star >> given command line "--x86-disasm" this will output a disassembly in formatted text then exit.
 	/* x86 disassembler tool */
