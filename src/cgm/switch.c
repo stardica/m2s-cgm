@@ -239,6 +239,16 @@ void switch_create_tasks(void){
 	return;
 }
 
+struct crossbar_t *switch_crossbar_create(){
+
+	struct crossbar_t *crossbar;
+
+	crossbar = (void *) malloc(sizeof(struct crossbar_t));
+
+	return crossbar;
+}
+
+
 int switch_can_access(struct list_t *queue){
 
 	//check if target queue is full

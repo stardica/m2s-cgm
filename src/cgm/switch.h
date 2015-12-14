@@ -176,6 +176,26 @@ enum arbitrate{
 
 };
 
+//star todo this is currently only programmed for a 4 port switch
+struct crossbar_t{
+
+	int num_ports;
+
+	//in queues
+	struct list_t *north_in_queue;
+	struct list_t *east_in_queue;
+	struct list_t *south_in_queue;
+	struct list_t *west_in_queue;
+
+	//out queues
+	struct list_t *north_out_queue;
+	struct list_t *east_out_queue;
+	struct list_t *south_out_queue;
+	struct list_t *west_out_queue;
+
+
+};
+
 struct switch_t{
 
 	char *name;
@@ -191,6 +211,10 @@ struct switch_t{
 	enum port_name queue;
 	enum arbitrate arb_style;
 	unsigned int wire_latency;
+
+	//crossbar
+	struct crossbar_t *crossbar;
+
 
 	//for switches with 4 ports
 	struct list_t *north_queue;
@@ -277,6 +301,7 @@ void switch_south_io_ctrl(void);
 
 float switch_get_distance(int dest_node, int src_node);
 int switch_can_access(struct list_t *queue);
+struct crossbar_t *switch_crossbar_create(void);
 enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);

@@ -277,7 +277,7 @@ struct cache_t{
 	int max_coal;
 
 	//cache queues
-	//star todo rewrite all of this queues should be inboxes
+	//star todo rewrite all of this queues should be in-boxes
 	//buffers are internal buffers
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
