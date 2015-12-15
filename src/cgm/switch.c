@@ -21,31 +21,7 @@ int switch_east_io_pid = 0;
 int switch_south_io_pid = 0;
 int switch_west_io_pid = 0;
 
-/*eventcount volatile *switches_io_ec;
-task *switches_io_tasks;
-int switch_io_pid = 0;*/
-
-/*int *ring_adj_mat[node_number][node_number] =
-{
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-{0,	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-};*/
-
 //supports quad core with ring bus
-
 struct str_map_t l1_strn_map =
 { 	l1_number, {
 		{ "l1_i_caches[0]", l1_i_cache_0},
@@ -245,7 +221,250 @@ struct crossbar_t *switch_crossbar_create(){
 
 	crossbar = (void *) malloc(sizeof(struct crossbar_t));
 
+	//set up the cross bar variables
+	crossbar->num_ports = 4;
+	crossbar->num_pairs = 0;
+
+	crossbar->north_in_out_linked_queue = invalid_queue;
+	crossbar->east_in_out_linked_queue = invalid_queue;
+	crossbar->south_in_out_linked_queue = invalid_queue;
+	crossbar->west_in_out_linked_queue = invalid_queue;
+
 	return crossbar;
+}
+
+void switch_crossbar_clear_state(struct switch_t *switches){
+
+	//clear the cross bar state
+	switches->crossbar->num_pairs = 0;
+
+	switches->crossbar->north_in_out_linked_queue = invalid_queue;
+	switches->crossbar->east_in_out_linked_queue = invalid_queue;
+	switches->crossbar->south_in_out_linked_queue = invalid_queue;
+	switches->crossbar->west_in_out_linked_queue = invalid_queue;
+
+	return;
+}
+
+switch_set_link(struct switch_t *switches, enum port_name tx_queue){
+
+	/*we have the in queue with switches->queue and the tx_queue
+	try to link them...*/
+
+	//check if the out on the cross bar is busy if not assign the link
+	if(tx_queue == north_queue)
+	{
+		if(switches->crossbar->north_in_out_linked_queue == invalid_queue)
+		{
+			switches->crossbar->north_in_out_linked_queue = switches->queue;
+			switches->crossbar->num_pairs++;
+		}
+	}
+	else if(tx_queue == east_queue)
+	{
+		if(switches->crossbar->east_in_out_linked_queue == invalid_queue)
+		{
+			switches->crossbar->east_in_out_linked_queue = switches->queue;
+			switches->crossbar->num_pairs++;
+		}
+	}
+	else if(tx_queue == south_queue)
+	{
+		if(switches->crossbar->south_in_out_linked_queue == invalid_queue)
+		{
+			switches->crossbar->south_in_out_linked_queue = switches->queue;
+			switches->crossbar->num_pairs++;
+		}
+	}
+	else if(tx_queue == west_queue)
+	{
+		if(switches->crossbar->west_in_out_linked_queue == invalid_queue)
+		{
+			switches->crossbar->west_in_out_linked_queue = switches->queue;
+			switches->crossbar->num_pairs++;
+		}
+	}
+	else
+	{
+		fatal("switch_set_link(): invalid switch link\n");
+	}
+
+	return;
+}
+
+enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *message_packet){
+
+	enum port_name tx_port = invalid_queue;
+
+	int dest_node;
+	int src_node;
+	int switch_node = switches->switch_node_number;
+	float distance;
+
+	//send the packet to it's destination OR on to the next hop
+	//look up the node number of the destination
+	dest_node = message_packet->dest_id;
+	src_node = message_packet->src_id;
+
+	//if dest is an L2/L3/HUB-IOMMU/SA connected to this switch.
+	if(dest_node == (switch_node - 1) || dest_node == (switch_node + 1))
+	{
+		//if the node number is lower this means it is an L2 cache or HUB IOMMU
+		if(dest_node < switch_node)
+		{
+			tx_port = north_queue; //switches[switches->switch_id].Tx_north_queue;
+		}
+		//if the node number is high this means it is an L3 cache or the SYS Agent
+		else if(dest_node > switch_node)
+		{
+			tx_port = south_queue; //switches[switches->switch_id].Tx_south_queue;
+		}
+	}
+	else
+	{
+		//send packet to adjacent switch
+		//there is no transfer direction established.
+		if(switches[switches->switch_id].queue == north_queue || switches[switches->switch_id].queue == south_queue)
+		{
+			//new packets from connected L2 or L3 cache.
+			if(dest_node > src_node)
+			{
+				distance = switch_get_distance(dest_node, src_node);
+
+				//go in the direction with the shortest number of hops.
+				if(distance <= switches[switches->switch_id].switch_median_node)
+				{//go east
+
+					tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
+				}
+				else
+				{//go west
+					tx_port = west_queue; //switches[switches->switch_id].Tx_west_queue;
+				}
+			}
+			else if(dest_node < src_node)
+			{
+				distance = switch_get_distance(dest_node, src_node);
+
+				//go in the direction with the shortest number of hops.
+				if(distance <= switches[switches->switch_id].switch_median_node)
+				{//go west
+					tx_port = west_queue; //switches[switches->switch_id].Tx_west_queue;
+				}
+				else
+				{//go east
+					tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
+				}
+			}
+		}
+		else if(switches[switches->switch_id].queue == east_queue || switches[switches->switch_id].queue == west_queue)
+		{
+			//packet came from another switch, but needs to continue on.
+			if(switches[switches->switch_id].queue == east_queue)
+			{//continue going west
+				tx_port = west_queue; //switches[switches->switch_id].Tx_west_queue;
+			}
+			else if(switches[switches->switch_id].queue == west_queue)
+			{//continue going east
+				tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
+			}
+		}
+		else
+		{
+			fatal("switch_ctrl() directional queue error.\n");
+		}
+	}
+
+	assert(tx_port != invalid_queue);
+	return tx_port;
+}
+
+
+void switch_crossbar_link(struct switch_t *switches){
+
+	struct cgm_packet_t *packet = NULL;
+	enum port_name tx_queue = invalid_queue;
+	int i = 0;
+
+	if(switches->arb_style == round_robin)
+	{
+		printf("start queue %d\n", switches->queue);
+
+		for(i = 0; i < switches->crossbar->num_ports; i++)
+		{
+			//try to form link pairs
+			if(switches->queue == north_queue)
+			{
+				//see if there is a packet waiting...
+				packet = list_get(switches->north_queue, 0);
+
+				//found a new packet, try to link it...
+				if(packet)
+				{
+					tx_queue = switch_get_route(switches, packet);
+
+					//try to assign the link
+					switch_set_link(switches, tx_queue);
+				}
+			}
+			else if(switches->queue == east_queue)
+			{
+				//see if there is a packet waiting...
+				packet = list_get(switches->east_queue, 0);
+
+				//found a new packet, try to link it...
+				if(packet)
+				{
+					tx_queue = switch_get_route(switches, packet);
+
+					//try to assign the link
+					switch_set_link(switches, tx_queue);
+				}
+			}
+			else if(switches->queue == south_queue)
+			{
+				//see if there is a packet waiting...
+				packet = list_get(switches->south_queue, 0);
+
+				//found a new packet, try to link it...
+				if(packet)
+				{
+					tx_queue = switch_get_route(switches, packet);
+
+					//try to assign the link
+					switch_set_link(switches, tx_queue);
+				}
+			}
+			else if(switches->queue == west_queue)
+			{
+				//see if there is a packet waiting...
+				packet = list_get(switches->west_queue, 0);
+
+				//found a new packet, try to link it...
+				if(packet)
+				{
+					tx_queue = switch_get_route(switches, packet);
+
+					//try to assign the link
+					switch_set_link(switches, tx_queue);
+				}
+			}
+			else
+			{
+				fatal("switch_crossbar_link(): Invalid queue\n");
+			}
+
+			//advance the queue ptr to prevent starvation and or deadlocks.
+			switches->queue = get_next_queue_rb(switches->queue);
+		}
+	}
+
+	//advance the queue ptr to prevent starvation and or deadlocks.
+	switches->queue = get_next_queue_rb(switches->queue);
+
+	//we should have at least one pair, but no more than the number of ports on the switch.
+	assert(switches->crossbar->num_pairs > 0 && switches->crossbar->num_pairs <= switches->crossbar->num_ports);
+	return;
 }
 
 
@@ -287,9 +506,33 @@ void switch_ctrl(void){
 	while(1)
 	{
 
-		//we have received a packet
+		/*we have been advanced. Note that it's possible for a
+		switch to be advanced by more than once per cycle*/
 		await(&switches_ec[my_pid], step);
 		step++;
+
+
+		/*switches model a std cross bar.
+		link as many inputs to outputs as possible*/
+		switch_crossbar_link(&switches[my_pid]);
+
+
+
+		/*here down changes.
+		need to put packets in the correct tx queue
+		clear crossbar state
+		adjust number of advances.*/
+
+		printf("here links %d\n", switches[my_pid].crossbar->num_pairs);
+		exit(0);
+
+
+		//star todo use this down below.
+		switch_crossbar_clear_state(&switches[my_pid]);
+
+
+
+		/*=====*/
 
 		//if we made it here we should have a packet.
 		message_packet = get_from_queue(&switches[my_pid]);

@@ -2996,6 +2996,8 @@ int switch_finish_create(void){
 			snprintf(buff, 100, "switch[%d]", i);
 			switches[i].name = strdup(buff);
 
+			switches[i].switch_id = i;
+
 			//configure cross bar
 			switches[i].crossbar = switch_crossbar_create();
 
