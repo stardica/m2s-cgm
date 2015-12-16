@@ -302,6 +302,7 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 void switch_set_link(struct switch_t *switches, enum port_name tx_queue);
 enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
+struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
 
 //void route_create(void);

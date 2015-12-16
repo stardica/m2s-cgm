@@ -246,14 +246,15 @@ void switch_crossbar_clear_state(struct switch_t *switches){
 	return;
 }
 
-switch_set_link(struct switch_t *switches, enum port_name tx_queue){
+void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 
 	/*we have the in queue with switches->queue and the tx_queue
 	try to link them...*/
 
-	//check if the out on the cross bar is busy if not assign the link
+	//check if the out on the cross bar is busy. If not assign the link.
 	if(tx_queue == north_queue)
 	{
+		assert(switches->queue != north_queue);
 		if(switches->crossbar->north_in_out_linked_queue == invalid_queue)
 		{
 			switches->crossbar->north_in_out_linked_queue = switches->queue;
@@ -262,6 +263,7 @@ switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	}
 	else if(tx_queue == east_queue)
 	{
+		assert(switches->queue != east_queue);
 		if(switches->crossbar->east_in_out_linked_queue == invalid_queue)
 		{
 			switches->crossbar->east_in_out_linked_queue = switches->queue;
@@ -270,6 +272,7 @@ switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	}
 	else if(tx_queue == south_queue)
 	{
+		assert(switches->queue != south_queue);
 		if(switches->crossbar->south_in_out_linked_queue == invalid_queue)
 		{
 			switches->crossbar->south_in_out_linked_queue = switches->queue;
@@ -278,6 +281,7 @@ switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	}
 	else if(tx_queue == west_queue)
 	{
+		assert(switches->queue != west_queue);
 		if(switches->crossbar->west_in_out_linked_queue == invalid_queue)
 		{
 			switches->crossbar->west_in_out_linked_queue = switches->queue;
@@ -324,7 +328,7 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	{
 		//send packet to adjacent switch
 		//there is no transfer direction established.
-		if(switches[switches->switch_id].queue == north_queue || switches[switches->switch_id].queue == south_queue)
+		if(switches->queue == north_queue || switches->queue == south_queue)
 		{
 			//new packets from connected L2 or L3 cache.
 			if(dest_node > src_node)
@@ -332,7 +336,7 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 				distance = switch_get_distance(dest_node, src_node);
 
 				//go in the direction with the shortest number of hops.
-				if(distance <= switches[switches->switch_id].switch_median_node)
+				if(distance <= switches->switch_median_node)
 				{//go east
 
 					tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
@@ -347,7 +351,7 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 				distance = switch_get_distance(dest_node, src_node);
 
 				//go in the direction with the shortest number of hops.
-				if(distance <= switches[switches->switch_id].switch_median_node)
+				if(distance <= switches->switch_median_node)
 				{//go west
 					tx_port = west_queue; //switches[switches->switch_id].Tx_west_queue;
 				}
@@ -357,21 +361,21 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 				}
 			}
 		}
-		else if(switches[switches->switch_id].queue == east_queue || switches[switches->switch_id].queue == west_queue)
+		else if(switches->queue == east_queue || switches->queue == west_queue)
 		{
 			//packet came from another switch, but needs to continue on.
-			if(switches[switches->switch_id].queue == east_queue)
+			if(switches->queue == east_queue)
 			{//continue going west
 				tx_port = west_queue; //switches[switches->switch_id].Tx_west_queue;
 			}
-			else if(switches[switches->switch_id].queue == west_queue)
+			else if(switches->queue == west_queue)
 			{//continue going east
 				tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
 			}
 		}
 		else
 		{
-			fatal("switch_ctrl() directional queue error.\n");
+			fatal("switch_get_route(): directional queue error as %d.\n", switches->queue);
 		}
 	}
 
@@ -388,10 +392,12 @@ void switch_crossbar_link(struct switch_t *switches){
 
 	if(switches->arb_style == round_robin)
 	{
-		printf("start queue %d\n", switches->queue);
+		/*printf("start_2 queue %d\n", switches->queue);*/
 
 		for(i = 0; i < switches->crossbar->num_ports; i++)
 		{
+			/*printf("\tChecking queue %d\n", switches->queue);*/
+
 			//try to form link pairs
 			if(switches->queue == north_queue)
 			{
@@ -401,13 +407,16 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
+					/*printf("\tnorth hit\n");*/
+
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 				}
 			}
-			else if(switches->queue == east_queue)
+
+			if(switches->queue == east_queue)
 			{
 				//see if there is a packet waiting...
 				packet = list_get(switches->east_queue, 0);
@@ -415,13 +424,15 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
+					/*printf("\teast hit\n");*/
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 				}
 			}
-			else if(switches->queue == south_queue)
+
+			if(switches->queue == south_queue)
 			{
 				//see if there is a packet waiting...
 				packet = list_get(switches->south_queue, 0);
@@ -429,13 +440,15 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
+					/*printf("\tsouth hit\n");*/
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 				}
 			}
-			else if(switches->queue == west_queue)
+
+			if(switches->queue == west_queue)
 			{
 				//see if there is a packet waiting...
 				packet = list_get(switches->west_queue, 0);
@@ -443,24 +456,40 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
+					/*printf("\twest hit\n");*/
+
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 				}
 			}
-			else
+			/*else
 			{
 				fatal("switch_crossbar_link(): Invalid queue\n");
-			}
+			}*/
 
-			//advance the queue ptr to prevent starvation and or deadlocks.
+			assert(switches->queue >= 1 && switches->queue <= switches->crossbar->num_ports);
+
+			//advance the queue pointer.
 			switches->queue = get_next_queue_rb(switches->queue);
 		}
 	}
+	else
+	{
+		fatal("switch_crossbar_link(): Invalid ARB set\n");
+	}
+
+	/*if(switches->crossbar->num_pairs > 1)
+		printf("switches->crossbar->num_pairs %d\n", switches->crossbar->num_pairs);*/
 
 	//advance the queue ptr to prevent starvation and or deadlocks.
+
+	/*printf("next_1 queue %d\n", switches->queue);*/
+
 	switches->queue = get_next_queue_rb(switches->queue);
+
+	/*printf("next_2 queue %d\n", switches->queue);*/
 
 	//we should have at least one pair, but no more than the number of ports on the switch.
 	assert(switches->crossbar->num_pairs > 0 && switches->crossbar->num_pairs <= switches->crossbar->num_ports);
@@ -485,10 +514,8 @@ void switch_ctrl(void){
 	int my_pid = switch_pid++;
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	struct cgm_packet_t *message_packet;
+	struct cgm_packet_t *message_packet = NULL;
 	long long step = 1;
-	/*int next_switch = 0;*/
-	/*int queue_status;*/
 
 	char *dest_name;
 	int dest_node;
@@ -496,6 +523,8 @@ void switch_ctrl(void){
 	int src_node;
 	int switch_node = switches[my_pid].switch_node_number;
 	float distance;
+
+	enum port_name next_queue = west_queue;
 
 	/*long long access_id = 0;*/
 
@@ -505,395 +534,81 @@ void switch_ctrl(void){
 
 	while(1)
 	{
-
 		/*we have been advanced. Note that it's possible for a
-		switch to be advanced by more than once per cycle*/
+		switch to be advanced more than once per cycle*/
 		await(&switches_ec[my_pid], step);
-		step++;
-
-
-		/*switches model a std cross bar.
-		link as many inputs to outputs as possible*/
-		switch_crossbar_link(&switches[my_pid]);
-
-
-
-		/*here down changes.
-		need to put packets in the correct tx queue
-		clear crossbar state
-		adjust number of advances.*/
-
-		printf("here links %d\n", switches[my_pid].crossbar->num_pairs);
-		exit(0);
-
-
-		//star todo use this down below.
-		switch_crossbar_clear_state(&switches[my_pid]);
-
-
-
-		/*=====*/
-
-		//if we made it here we should have a packet.
-		message_packet = get_from_queue(&switches[my_pid]);
-
-		assert(message_packet);
-
-		//send the packet to it's destination OR on to the next hop
-		//look up the node number of the destination
-		dest_name = message_packet->dest_name;
-		dest_node = message_packet->dest_id;
-
-		src_name = message_packet->src_name;
-		src_node = message_packet->src_id;
-
-		/*access_id = message_packet->access_id;*/
-
-		CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu src %s %d dest %s %d \n",
-			switches[my_pid].name, message_packet->access_id, P_TIME, src_name, src_node, dest_name, dest_node);
 
 		P_PAUSE(switches[my_pid].latency);
 
-		//if dest is the L2/L3/HUB-IOMMU/SA connected to this switch.
-		if(dest_node == (switch_node - 1) || dest_node == (switch_node +1))
+		assert(next_queue == switches[my_pid].queue);
+
+		/*printf("start_1 queue %d\n", switches[my_pid].queue);*/
+
+		/*switches models a std cross bar.
+		link as many inputs to outputs as possible*/
+		switch_crossbar_link(&switches[my_pid]);
+
+		/*crossbar state is set. now run through and move each packet as required.*/
+		if(switches[my_pid].crossbar->north_in_out_linked_queue != invalid_queue)
 		{
-			//if the node number is lower this means it is an L2 cache
-			if(dest_node < switch_node)
-			{
-				//for CPU L2s
-				if(my_pid < num_cores)
-				{
-					//make sure we can access the cache
-					//star todo add the ability to do something else if we can access the target cache
+			/*the north out queue is linked to an input queue
+			move the packet from the input queue to the correct output queue*/
+			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
+			assert(message_packet);
 
-					//check the dest queue, if it is busy try another packet
-					if(!cache_can_access_bottom(&l2_caches[my_pid]))
-					{
-						//printf("entered switch\n");
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-					}
-					else
-					{
-						//route the packet
-						P_PAUSE(l2_caches[my_pid].wire_latency);
+			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
+			advance(switches[my_pid].switches_north_io_ec);
 
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
-						advance(switches[my_pid].switches_north_io_ec);
-
-						//done with this access
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-				}
-				//GPU hub_iommu
-				else if(my_pid >= num_cores)
-				{
-					if(!hub_iommu_can_access(hub_iommu->Rx_queue_bottom))
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-					}
-					else
-					{
-						P_PAUSE(hub_iommu->wire_latency);
-
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
-						advance(switches[my_pid].switches_north_io_ec);
-
-						//done with this access
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-				}
-			}
-			//if the node number is high this means it is an L3 cache or the sys agent
-			else if(dest_node > switch_node)
-			{
-				//for CPU L3 caches
-				if(my_pid < num_cores)
-				{
-					//make sure we can access the cache
-					//star todo add the ability to do something else if we can access the target cache
-					/*divert to correct input queue based on access type
-					if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
-					|| message_packet->access_type == cgm_access_upgrade)
-					{*/
-
-					if(!cache_can_access_top(&l3_caches[my_pid]))
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-					}
-					else
-					{
-						P_PAUSE(l3_caches[my_pid].wire_latency);
-
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
-						advance(switches[my_pid].switches_south_io_ec);
-
-						//done with this access
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-					/*}
-					else if(message_packet->access_type == cgm_access_mc_put)
-					{
-						if(!cache_can_access_bottom(&l3_caches[my_pid]))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(l3_caches[my_pid].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
-							advance(switches[my_pid].switches_south_io_ec);
-
-							//future_advance(&l3_cache[my_pid], WIRE_DELAY(l3_caches[my_pid].wire_latency));
-							//done with this access
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
-					}*/
-				}
-				//for the system agent
-				else if(my_pid >= num_cores)
-				{
-					if(!sys_agent_can_access_top())
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-					}
-					else
-					{
-						P_PAUSE(system_agent->wire_latency);
-
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
-						advance(switches[my_pid].switches_south_io_ec);
-
-						//future_advance(system_agent_ec, WIRE_DELAY(system_agent->wire_latency));
-						//done with this access
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-				}
-			}
-			else
-			{
-				fatal("switch_ctrl() switch % d: Invalid dest_node_number \n", my_pid);
-			}
-
+			message_packet = NULL;
 		}
-		else
+
+		if(switches[my_pid].crossbar->east_in_out_linked_queue != invalid_queue)
 		{
-			//send packet to adjacent switch
-			//there is no transfer direction established.
-			if(switches[my_pid].queue == north_queue || switches[my_pid].queue == south_queue)
-			{
-				//new packets from connected L2 or L3 cache.
-				if(dest_node > src_node)
-				{
-					distance = switch_get_distance(dest_node, src_node);
+			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->east_in_out_linked_queue), 0);
+			assert(message_packet);
 
-					//go in the direction with the shortest number of hops.
-					if(distance <= switches[my_pid].switch_median_node)
-					{//go east
+			list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
+			advance(switches[my_pid].switches_east_io_ec);
 
-						if(!switch_can_access(switches[my_pid].next_east))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							//drop the packet into the next switche's queue
-							//list_enqueue(switches[my_pid].next_east, message_packet);
-							//advance(&switches_ec[switches[my_pid].next_east_id]);
-							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-
-							list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
-							advance(switches[my_pid].switches_east_io_ec);
-
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
-
-					}
-					else
-					{//go west
-
-						if(!switch_can_access(switches[my_pid].next_west))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							//drop the packet into the next switche's queue
-							//list_enqueue(switches[my_pid].next_west, message_packet);
-							//advance(&switches_ec[switches[my_pid].next_west_id]);
-							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-
-							list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
-							advance(switches[my_pid].switches_west_io_ec);
-
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
-					}
-				}
-				else if(src_node > dest_node)
-				{
-
-					distance = switch_get_distance(dest_node, src_node);
-
-					//go in the direction with the shortest number of hops.
-					if(distance <= switches[my_pid].switch_median_node)
-					{//go west
-
-						if(!switch_can_access(switches[my_pid].next_west))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							//drop the packet into the next switche's queue
-							//list_enqueue(switches[my_pid].next_west, message_packet);
-							//advance(&switches_ec[switches[my_pid].next_west_id]);
-							//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-
-							list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
-							advance(switches[my_pid].switches_west_io_ec);
-
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
-
-					}
-					else
-					{//go east
-
-						if (!switch_can_access(switches[my_pid].next_east))
-						{
-							future_advance(&switches_ec[my_pid], etime.count + 2);
-						}
-						else
-						{
-
-							P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
-
-							//success, remove packet from the switche's queue
-							remove_from_queue(&switches[my_pid], message_packet);
-
-							//drop the packet into the next switche's queue
-							//list_enqueue(switches[my_pid].next_east, message_packet);
-							//advance(&switches_ec[switches[my_pid].next_east_id]);
-							//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-
-							list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
-							advance(switches[my_pid].switches_east_io_ec);
-
-							CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-						}
-					}
-				}
-			}
-			else if(switches[my_pid].queue == east_queue || switches[my_pid].queue == west_queue)
-			{
-				//packet came from another switch, but needs to continue on.
-
-				if(switches[my_pid].queue == east_queue)
-				{//go west
-
-
-
-					if(!switch_can_access(switches[my_pid].next_west))
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-
-					}
-					else
-					{
-						P_PAUSE(switches[switches[my_pid].next_west_id].wire_latency);
-
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						//drop the packet into the next switche's queue
-						//list_enqueue(switches[my_pid].next_west, message_packet);
-						//advance(&switches_ec[switches[my_pid].next_west_id]);
-						//future_advance(&switches_ec[switches[my_pid].next_west_id], WIRE_DELAY(switches[switches[my_pid].next_west_id].wire_latency));
-
-						list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
-						advance(switches[my_pid].switches_west_io_ec);
-
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-
-				}
-				else if(switches[my_pid].queue == west_queue)
-				{//go east
-
-
-					if(!switch_can_access(switches[my_pid].next_east))
-					{
-						future_advance(&switches_ec[my_pid], etime.count + 2);
-
-					}
-					else
-					{
-
-						P_PAUSE(switches[switches[my_pid].next_east_id].wire_latency);
-
-						//success, remove packet from the switche's queue
-						remove_from_queue(&switches[my_pid], message_packet);
-
-						//drop the packet into the next switche's queue
-						//list_enqueue(switches[my_pid].next_east, message_packet);
-						//advance(&switches_ec[switches[my_pid].next_east_id]);
-						//future_advance(&switches_ec[switches[my_pid].next_east_id], WIRE_DELAY(switches[switches[my_pid].next_east_id].wire_latency));
-
-						list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
-						advance(switches[my_pid].switches_east_io_ec);
-
-						CGM_DEBUG(switch_debug_file,"%s access_id %llu cycle %llu delivered to next hop\n", switches[my_pid].name, message_packet->access_id, P_TIME);
-					}
-
-				}
-				else
-				{
-					fatal("switch_ctrl() directional queue error.\n");
-
-				}
-
-			}
-
+			message_packet = NULL;
 		}
-		//end, clear the message_packet ptr
-		//this should be getting set up above in list_get(), but just for safe measure.
+
+		if(switches[my_pid].crossbar->south_in_out_linked_queue != invalid_queue)
+		{
+			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->south_in_out_linked_queue), 0);
+			assert(message_packet);
+
+			list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
+			advance(switches[my_pid].switches_south_io_ec);
+
+			message_packet = NULL;
+		}
+
+		if(switches[my_pid].crossbar->west_in_out_linked_queue != invalid_queue)
+		{
+			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->west_in_out_linked_queue), 0);
+			assert(message_packet);
+
+			list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
+			advance(switches[my_pid].switches_west_io_ec);
+
+			message_packet = NULL;
+		}
+
+
+		//increase step by number of pairs formed
+		step += switches[my_pid].crossbar->num_pairs;
+
+		//clear the current cross bar state
+		switch_crossbar_clear_state(&switches[my_pid]);
+
+		//set message_paket null
 		message_packet = NULL;
+
+		/*printf("next_3 queue %d\n", switches[my_pid].queue);*/
+
+		next_queue = switches[my_pid].queue;
+
 	}
 
 	fatal("switch_ctrl() quit\n");
@@ -1006,6 +721,34 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 }
 
 
+struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue){
+
+	struct list_t *in_queue = NULL;
+
+	if(queue == north_queue)
+	{
+		in_queue = switches->north_queue;
+	}
+	else if(queue == east_queue)
+	{
+		in_queue = switches->east_queue;
+	}
+	else if(queue == south_queue)
+	{
+		in_queue = switches->south_queue;
+	}
+	else if(queue == west_queue)
+	{
+		in_queue = switches->west_queue;
+	}
+	else
+	{
+		fatal("switche_get_out_queue() invalid port name\n");
+	}
+
+	assert(in_queue != NULL);
+	return in_queue;
+}
 
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet){
 

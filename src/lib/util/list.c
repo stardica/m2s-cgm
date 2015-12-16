@@ -220,9 +220,7 @@ int list_index_of(struct list_t *list, void *elem)
 	
 	/* Search element */
 	list->error_code = LIST_ERR_OK;
-	for (i = 0, pos = list->head;
-		i < list->count;
-		i++, pos = (pos + 1) % list->size)
+	for (i = 0, pos = list->head; i < list->count; i++, pos = (pos + 1) % list->size)
 	{
 		if (list->elem[pos] == elem)
 			return i;

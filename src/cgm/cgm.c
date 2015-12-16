@@ -200,113 +200,17 @@ void cgm_create_tasks(void){
 
 void cgm_watchdog(void){
 
-	/*long long t_1 = 1;
-	int i = 0;
-	int j = 0;
-	int k = 0;
-	int num_cores = x86_cpu_num_cores;
-	int num_sets = 0;
-	int assoc = 0;
-
-	int block_state = 0;
-
-	int c0_tag;
-	int c1_tag;
-
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
-
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
-
-	int cache_block_hit;
-	int cache_block_state;
-
-	int *cache_block_hit_ptr = &cache_block_hit;
-	int *cache_block_state_ptr = &cache_block_state;
-
-	//probe the address for set, tag, and offset.
-	//cgm_cache_probe_address(&l1_d_caches[0], WATCHBLOCK, set_ptr, tag_ptr, offset_ptr);
-
-	int size;
+	long long t_1 = 1;
 
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-		if(P_TIME >= 1454200 && P_TIME <= 1500000)
-		{
-			printf("%s ort %d cycle %llu\n", gpu_s_caches[0].name, list_count(gpu_s_caches[0].ort_list), P_TIME);
-			printf("%s ort %d cycle %llu\n", gpu_s_caches[1].name, list_count(gpu_s_caches[1].ort_list), P_TIME);
-			printf("%s ort %d cycle %llu\n", gpu_s_caches[2].name, list_count(gpu_s_caches[2].ort_list), P_TIME);
-			printf("%s ort %d cycle %llu\n", gpu_s_caches[3].name, list_count(gpu_s_caches[3].ort_list), P_TIME);
-		}
 
-		if(list_count(l1_d_caches[0].Rx_queue_top) > QueueSize)
-		{
-			printf("%s Rx_top %d cycle %llu\n", l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), P_TIME);
-			getchar();
-		}
+		printf("WD: queue %d cycle %llu\n", switches[0].queue, P_TIME);
 
-
-		if(P_TIME > 41970)
-		{
-			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
-					l1_d_caches[0].name, list_count(l1_d_caches[0].Rx_queue_top), list_count(l1_d_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l1_d_caches[0])), P_TIME);
-			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
-					l2_caches[0].name, list_count(l2_caches[0].Rx_queue_top), list_count(l2_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l2_caches[0])), P_TIME);
-			printf("WD: %s Rx_top %d Rx_bottom %d ORT %d cycle %llu\n",
-					l3_caches[0].name, list_count(l3_caches[0].Rx_queue_top), list_count(l3_caches[0].Rx_queue_bottom), cache_get_ORT_size(&(l3_caches[0])), P_TIME);
-
-			printf("WD: %s tx_n %d tx_e %d tx_s %d tx_w %d cycle %llu\n",
-					switches[0].name, list_count(switches[0].Tx_north_queue), list_count(list_count(switches[0].), cache_get_ORT_size(&(l3_caches[0])), P_TIME);
-
-		}
-
-		if(P_TIME > 53000)
-		{
-			STOP;
-		}
-
-
-
-		for(i = 0; i < num_cores; i++)
-		{
-			if(list_count(l1_d_caches[i].write_back_buffer) > QueueSize)
-			{
-				size = list_count(l1_d_caches[i].write_back_buffer);
-				printf("WD: %s WB queue size %d cycle %llu\n", l1_d_caches[i].name, size, P_TIME);
-				//getchar();
-			}
-		}
-
-		for(i = 0; i < num_cores; i++)
-		{
-			if(list_count(l2_caches[i].write_back_buffer) > QueueSize)
-			{
-				size = list_count(l2_caches[i].write_back_buffer);
-				printf("WD: %s WB queue size %d cycle %llu\n", l2_caches[i].name, size, P_TIME);
-				//getchar();
-			}
-		}
-
-		for(i = 0; i < num_cores; i++)
-		{
-			if(list_count(l3_caches[i].write_back_buffer) > QueueSize)
-			{
-				size = list_count(l3_caches[i].write_back_buffer);
-				printf("WD: %s WB queue size %d cycle %llu\n", l3_caches[i].name, size, P_TIME);
-				//getchar();
-			}
-		}
-
-
-	}*/
+	}
 	return;
 }
 
