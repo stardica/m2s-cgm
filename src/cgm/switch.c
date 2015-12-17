@@ -517,12 +517,12 @@ void switch_ctrl(void){
 	struct cgm_packet_t *message_packet = NULL;
 	long long step = 1;
 
-	char *dest_name;
+	/*char *dest_name;
 	int dest_node;
 	char *src_name;
 	int src_node;
 	int switch_node = switches[my_pid].switch_node_number;
-	float distance;
+	float distance;*/
 
 	enum port_name next_queue = west_queue;
 

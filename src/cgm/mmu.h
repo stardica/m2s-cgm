@@ -19,7 +19,7 @@
 
 
 
-
+void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 
 
 

@@ -946,8 +946,8 @@ void si_gpu_dump_report(void)
 
 	double inst_per_cycle;
 
-	long long coalesced_reads;
-	long long coalesced_writes;
+	/*long long coalesced_reads;
+	long long coalesced_writes;*/
 
 	/* Open file */
 	f = file_open_for_write(si_gpu_report_file_name);
@@ -1006,10 +1006,10 @@ void si_gpu_dump_report(void)
 		/*fprintf(f, "LDS.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
 		fprintf(f, "LDS.Reads = %lld\n", lds_mod->reads);
 		fprintf(f, "LDS.EffectiveReads = %lld\n", lds_mod->effective_reads);*/
-		fprintf(f, "LDS.CoalescedReads = %lld\n", coalesced_reads);
+		//fprintf(f, "LDS.CoalescedReads = %lld\n", coalesced_reads);
 		/*fprintf(f, "LDS.Writes = %lld\n", lds_mod->writes);*/
 		/*fprintf(f, "LDS.EffectiveWrites = %lld\n", lds_mod->effective_writes);*/
-		fprintf(f, "LDS.CoalescedWrites = %lld\n", coalesced_writes);
+		//fprintf(f, "LDS.CoalescedWrites = %lld\n", coalesced_writes);
 		fprintf(f, "\n\n");
 	}
 

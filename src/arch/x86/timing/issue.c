@@ -330,7 +330,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 #endif
 
 		/* Record prefetched address */
-		prefetch_history_record(core->prefetch_history, prefetch->phy_addr);
+		//prefetch_history_record(core->prefetch_history, prefetch->phy_addr);
 
 		/* The cache system will place the prefetch at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to

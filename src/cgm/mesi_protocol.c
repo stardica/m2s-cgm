@@ -1265,13 +1265,13 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
-	int way = 0;
+	/*int way = 0;*/
 	int l3_map = 0;
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
+	/*int *way_ptr = &way;*/
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -1520,13 +1520,13 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
-	int way = 0;
+	/*int way = 0;*/
 	int l3_map = 0;
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
+	/*int *way_ptr = &way;*/
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -1579,7 +1579,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	struct cgm_packet_t *reply_packet;
 	struct cgm_packet_t *pending_request;
 
-	enum cgm_cache_block_state_t victim_trainsient_state;
+	/*enum cgm_cache_block_state_t victim_trainsient_state;*/
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
@@ -2270,7 +2270,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	enum cgm_cache_block_state_t victim_trainsient_state;
+	/*enum cgm_cache_block_state_t victim_trainsient_state;*/
 
 	struct cgm_packet_t *downgrade_packet = NULL;
 	struct cgm_packet_t *write_back_packet = NULL;
@@ -2616,7 +2616,7 @@ void cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 	struct cgm_packet_t *pending_getx_fwd_request;
-	int pending_bit;
+	/*int pending_bit;*/
 
 	//find the access in the ORT table and clear it.
 
@@ -2691,7 +2691,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int num_cores = x86_cpu_num_cores;
+	/*int num_cores = x86_cpu_num_cores;*/
 	int sharers, owning_core, pending_bit;
 	struct cgm_packet_t *write_back_packet = NULL;
 
@@ -4971,7 +4971,6 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 		fatal("cgm_mesi_l2_upgrade_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
 			cache->name, message_packet->access_id, message_packet->address, temp,
 			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
-
 	}
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
