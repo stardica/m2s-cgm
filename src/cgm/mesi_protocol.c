@@ -2127,6 +2127,7 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
