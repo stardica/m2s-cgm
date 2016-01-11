@@ -2335,7 +2335,6 @@ void l2_cache_up_io_ctrl(void){
 
 void l2_cache_down_io_ctrl(void){
 
-
 	int my_pid = l2_down_io_pid++;
 	long long step = 1;
 

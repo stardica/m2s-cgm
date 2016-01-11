@@ -210,9 +210,9 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 
 		/*printf("hub_iommu ctrl send size %d\n", list_count(hub_iommu->Tx_queue_bottom));*/
 
-		CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu delivered\n",
+		/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu delivered\n",
 				hub_iommu->name, message_packet->access_id, P_TIME);
-
+*/
 	}
 	//if we are pointing to the bottom queue route to the correct GPU l2 cache
 	else if(last_queue_num == Rx_queue_bottom)
@@ -223,7 +223,7 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 		//star todo fix this
 		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
 		{
-			printf("hub stalling up\n");
+			fatal("hub_iommu_put_next_queue(): hub stalling on return\n");
 			P_PAUSE(1);
 		}
 
@@ -266,6 +266,7 @@ void hub_iommu_ctrl(void){
 		if(!switch_can_access(hub_iommu->switch_queue))// && !cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
 		{
 			P_PAUSE(1);
+			fatal("hub_iommu_ctrl(): hub stalled\n");
 		}
 		else
 		{
@@ -275,13 +276,13 @@ void hub_iommu_ctrl(void){
 			message_packet = hub_iommu_get_from_queue();
 			assert(message_packet);
 
-			CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-					hub_iommu->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
+			/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
+					hub_iommu->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);*/
 
 			//star todo add GPU virtual to physical translation here
 			P_PAUSE(hub_iommu->latency);
 
-			//star the hub mostly multiplexes GPU memory requests.
+			//star the hub multiplexes GPU memory requests.
 			hub_iommu_put_next_queue(message_packet);
 		}
 	}
@@ -317,6 +318,11 @@ void hub_iommu_io_up_ctrl(void){
 		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/hub_iommu->bus_width);
 
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
+
 		P_PAUSE(transfer_time);
 
 		list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
@@ -350,6 +356,11 @@ void hub_iommu_io_down_ctrl(void){
 
 		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/hub_iommu->bus_width);
+
+		if(transfer_time == 0)
+		{
+			transfer_time = 1;
+		}
 
 		P_PAUSE(transfer_time);
 
