@@ -2787,7 +2787,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	assert(*ort_size_ptr < cache->mshr_size);
 
 
-	if(message_packet->access_id == 7101547 && cache->cache_type == l2_cache_t)
+	/*if(message_packet->access_id == 7101547 && cache->cache_type == l2_cache_t)
 	{
 		cgm_cache_dump_set(cache, message_packet->set);
 		printf("\n");
@@ -2795,7 +2795,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		printf("id %llu type %d set %d tag %d way %d assoc_flag %d cycle %llu\n",
 				message_packet->access_id, message_packet->access_type, message_packet->set,
 				message_packet->tag, message_packet->way, message_packet->assoc_conflict, P_TIME);
-	}
+	}*/
 
 
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
@@ -3331,7 +3331,7 @@ void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way
 
 	cache->sets[set].blocks[way].transient_state = t_state;
 
-	if(cache->cache_type == l2_cache_t && set == 172 && t_state == cgm_cache_block_transient)
+	/*if(cache->cache_type == l2_cache_t && set == 172 && t_state == cgm_cache_block_transient)
 	{
 		cgm_cache_dump_set(cache, set);
 
@@ -3341,7 +3341,7 @@ void cgm_cache_set_block_transient_state(struct cache_t *cache, int set, int way
 	else if(cache->cache_type == l2_cache_t && set == 172 && t_state == cgm_cache_block_invalid)
 	{
 		printf("clear t state set %d way %d\n", set, way);
-	}
+	}*/
 
 	return;
 }

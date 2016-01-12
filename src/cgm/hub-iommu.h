@@ -85,7 +85,10 @@ struct hub_iommu_t{
 	eventcount volatile *hub_iommu_io_down_ec;
 	task *hub_iommu_io_down_tasks;
 
-	//star todo add something here for the GPU virtual to physical address translation.
+	unsigned int **translation_table;
+	int translation_table_size;
+
+	void (*hub_iommu_translate)(struct cgm_packet_t *message_packet);
 };
 
 extern struct hub_iommu_t *hub_iommu;
@@ -104,9 +107,19 @@ void hub_iommu_ctrl(void);
 void hub_iommu_io_up_ctrl(void);
 void hub_iommu_io_down_ctrl(void);
 
-
 struct cgm_packet_t *hub_iommu_get_from_queue(void);
 void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
 int hub_iommu_can_access(struct list_t *queue);
+
+
+//iommu functions
+
+void iommu_translate(struct cgm_packet_t *message_packet);
+unsigned int iommu_get_phy_address(unsigned int address);
+unsigned int iommu_get_vtl_address(unsigned int address, int id);
+
+int iommu_translation_table_insert_address(unsigned int address);
+unsigned int iommu_translation_table_get_address(int id);
+int iommu_get_translation_table_size(void);
 
 #endif /* __IOMMU_H__ */

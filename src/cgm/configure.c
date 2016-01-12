@@ -577,6 +577,11 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 			cgm_gpu_cache_protocol = cgm_protocol_non_coherent;
 			printf("---GPU memory protocol is NC---\n");
 		}
+		else if(strcmp(temp_strn, "MESI") == 0)
+		{
+			cgm_cache_protocol = cgm_protocol_mesi;
+			printf("---GPU memory protocol is MESI---\n");
+		}
 		else if(strcmp(temp_strn, "GMESI") == 0)
 		{
 			fatal("cache_read_config(): GMESI protocol not yet supported, check config file\n");
@@ -2359,7 +2364,7 @@ int cache_finish_create(){
 		gpu_s_caches[i].cache_io_down_tasks = create_task(gpu_s_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_s_load;
 			gpu_s_caches[i].gpu_s_write_block = cgm_nc_gpu_s_write_block;
@@ -2491,7 +2496,7 @@ int cache_finish_create(){
 		gpu_v_caches[i].cache_io_down_tasks = create_task(gpu_v_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_v_caches[i].gpu_v_load = cgm_nc_gpu_v_load;
 			gpu_v_caches[i].gpu_v_store = cgm_nc_gpu_v_store;
@@ -2738,7 +2743,7 @@ int cache_finish_create(){
 		gpu_l2_caches[i].cache_io_down_tasks = create_task(gpu_l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_l2_caches[i].gpu_l2_get = cgm_nc_gpu_l2_get;
 			gpu_l2_caches[i].gpu_l2_write_block = cgm_nc_gpu_l2_write_block;
@@ -3157,7 +3162,7 @@ int switch_finish_create(void){
 	//GPU hub-iommu
 	////////////
 
-	//configure the gpu hub-iommu here (its pretty much a big switch).
+	//configure the gpu hub-iommu here (its a multiplexer).
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "hub_iommu");
 	hub_iommu->name = strdup(buff);
@@ -3228,6 +3233,44 @@ int switch_finish_create(void){
 	hub_iommu->switch_id = (num_cores + extras - 1);
 	//hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
+
+	//set up translation table
+	assert(gpu_l2_caches[0].mshr_size);
+	int table_size = gpu_group_cache_num * gpu_l2_caches[0].mshr_size;
+
+	//store table size
+	hub_iommu->translation_table_size = table_size;
+
+	//initialize 2D array pointer
+	hub_iommu->translation_table = (unsigned int **) malloc(table_size * sizeof(unsigned int *));
+
+	//initialize rows and columns
+	for(i = 0; i < table_size; i++)
+	{
+		hub_iommu->translation_table[i] = (unsigned int *) malloc(2 * sizeof(unsigned int));
+	}
+
+	//initialize the ID and address columns
+	for(i = 0; i < table_size; i++)
+	{
+		hub_iommu->translation_table[i][0] = i;
+		hub_iommu->translation_table[i][1] = -1;
+	}
+
+	//configure hub-iommu virtual functions
+	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+	{
+		hub_iommu->hub_iommu_translate = NULL;
+	}
+	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+	{
+		hub_iommu->hub_iommu_translate = iommu_translate;
+
+	}
+	else
+	{
+		fatal("invalid protocol at hub-iommu init\n");
+	}
 
 	return 0;
 }

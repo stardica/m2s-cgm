@@ -50,7 +50,7 @@ int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group, in
 	int work_groups_per_wavefront_pool;
 
 
-	printf("si_calc_get_work_groups_per_wavefront_pool(): %d %d %d\n", work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): %d %d %d\n", work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
 
 
 	/* Get maximum number of work-groups per SIMD as limited by the 
@@ -58,9 +58,9 @@ int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group, in
 	 * work-group in the NDRange */
 	assert(si_emu_wavefront_size > 0);
 	wavefronts_per_work_group = (work_items_per_work_group + si_emu_wavefront_size - 1) / si_emu_wavefront_size;
-	printf("si_calc_get_work_groups_per_wavefront_pool(): wavefronts_per_work_group %d (si_emu_wavefront_size %d)\n", wavefronts_per_work_group, si_emu_wavefront_size);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): wavefronts_per_work_group %d (si_emu_wavefront_size %d)\n", wavefronts_per_work_group, si_emu_wavefront_size);
 	max_work_groups_limitted_by_max_wavefronts = si_gpu_max_wavefronts_per_wavefront_pool / wavefronts_per_work_group;
-	printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_max_wavefronts %d\n", max_work_groups_limitted_by_max_wavefronts);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_max_wavefronts %d\n", max_work_groups_limitted_by_max_wavefronts);
 
 	/* Get maximum number of work-groups per SIMD as limited by the number 
 	 * of available registers, given the number of registers used per 
@@ -73,18 +73,18 @@ int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group, in
 	{
 		registers_per_work_group = ROUND_UP(registers_per_work_item * work_items_per_work_group, si_gpu_register_alloc_size);
 	}
-	printf("si_calc_get_work_groups_per_wavefront_pool(): registers_per_work_group %d\n", max_work_groups_limitted_by_max_wavefronts);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): registers_per_work_group %d\n", max_work_groups_limitted_by_max_wavefronts);
 
 	/* FIXME need to account for scalar registers */
 	max_work_groups_limitted_by_num_registers = registers_per_work_group ? si_gpu_num_vector_registers / registers_per_work_group : si_gpu_max_work_groups_per_wavefront_pool;
-	printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_num_registers %d\n", max_work_groups_limitted_by_num_registers);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_num_registers %d\n", max_work_groups_limitted_by_num_registers);
 
 	/* Get maximum number of work-groups per SIMD as limited by the 
 	 * amount of available local memory, given the local memory used 
 	 * by each work-group in the NDRange */
 	local_mem_per_work_group = ROUND_UP(local_mem_per_work_group, si_gpu_lds_alloc_size);
 	max_work_groups_limitted_by_local_mem = local_mem_per_work_group ? si_gpu_lds_size / local_mem_per_work_group : si_gpu_max_work_groups_per_wavefront_pool;
-	printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_local_mem %d\n", max_work_groups_limitted_by_local_mem);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): max_work_groups_limitted_by_local_mem %d\n", max_work_groups_limitted_by_local_mem);
 
 	/* Based on the limits above, calculate the actual limit of work-groups 
 	 * per SIMD. */
@@ -93,7 +93,7 @@ int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group, in
 	work_groups_per_wavefront_pool = MIN(work_groups_per_wavefront_pool, max_work_groups_limitted_by_num_registers);
 	work_groups_per_wavefront_pool = MIN(work_groups_per_wavefront_pool, max_work_groups_limitted_by_local_mem);
 
-	printf("si_calc_get_work_groups_per_wavefront_pool(): work_groups_per_wavefront_pool %d\n", work_groups_per_wavefront_pool);
+	//printf("si_calc_get_work_groups_per_wavefront_pool(): work_groups_per_wavefront_pool %d\n", work_groups_per_wavefront_pool);
 
 	/* Return */
 	return work_groups_per_wavefront_pool;

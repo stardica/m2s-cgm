@@ -502,7 +502,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		return;
 	}
 
-		/*if(new_packet->cpu_access_type == cgm_access_store)
+	/*if(new_packet->cpu_access_type == cgm_access_store)
 	{
 		//put back on the core event queue to end memory system access.
 		linked_list_add(event_queue, event_queue_item);

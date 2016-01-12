@@ -488,6 +488,9 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	//unsigned int tag;
 	//unsigned int index;
 
+	//star added this check. The address space doesn't change for 1 CPU.
+	assert(address_space_index == 0);
+
 	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 

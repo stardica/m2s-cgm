@@ -132,6 +132,7 @@ struct cgm_packet_t{
 	int size;
 	int coalesced;
 	int assoc_conflict;
+	int translation_id;
 
 	//for evictions, write backs, downgrades, upgrades
 	int flush_pending;

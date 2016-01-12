@@ -276,11 +276,16 @@ void hub_iommu_ctrl(void){
 			message_packet = hub_iommu_get_from_queue();
 			assert(message_packet);
 
-			/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-					hub_iommu->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);*/
-
-			//star todo add GPU virtual to physical translation here
 			P_PAUSE(hub_iommu->latency);
+
+			//virtual to physical or physical to virtual translation is here
+			//star todo this needs to allow for setting this on and off.
+			if(hub_iommu->hub_iommu_translate != NULL)
+				hub_iommu->hub_iommu_translate(message_packet);
+
+			/*iommu_translate(message_packet);*/
+
+			//printf("hub-iommu address 0x%08x\n", message_packet->address);
 
 			//star the hub multiplexes GPU memory requests.
 			hub_iommu_put_next_queue(message_packet);
@@ -291,7 +296,99 @@ void hub_iommu_ctrl(void){
 	return;
 }
 
+unsigned int iommu_get_phy_address(unsigned int address){
 
+	unsigned int phy_addr = 0xFFFFFFFF;
+
+	//star todo add the actual physical address translation here
+
+	return phy_addr;
+}
+
+int iommu_get_translation_table_size(void){
+
+	int i = 0;
+	int j = 0;
+
+	//get the size of the ORT
+	for (i = 0; i < hub_iommu->translation_table_size; i++)
+	{
+		if(hub_iommu->translation_table[i][1] != -1)
+		{
+			j++;
+		}
+	}
+
+	return j;
+}
+
+int iommu_translation_table_insert_address(unsigned int address){
+
+	int i = 0;
+	int size = 0;
+
+	//check that the table is not full
+	size = iommu_get_translation_table_size();
+	assert(size >= 0 && size < hub_iommu->translation_table_size);
+
+	/*insert the record into the first available slot in the table
+	Order doesn't matter here*/
+	for(i = 0; i < hub_iommu->translation_table_size; i++)
+	{
+		if(hub_iommu->translation_table[i][1] == -1)
+		{
+			//empty slot found
+			hub_iommu->translation_table[i][1] = address;
+			break;
+		}
+	}
+
+	assert(i != hub_iommu->translation_table_size);
+
+	return i;
+}
+
+unsigned int iommu_translation_table_get_address(int id){
+
+	unsigned int vtl_address = -1;
+
+	/*pull the address from the look up table*/
+	vtl_address = hub_iommu->translation_table[id][1];
+	assert(vtl_address != -1);
+
+	//clear the table entry
+	hub_iommu->translation_table[id][1] = -1;
+
+	return vtl_address;
+}
+
+void iommu_translate(struct cgm_packet_t *message_packet){
+
+	//check to see if the packet is inbound or outbound
+	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
+	{
+		/*load and stores are heading to the system agent.*/
+
+		/*store the vtrl address in the translation lookup table and get the translation id*/
+		message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);
+
+		/*Translate the vtl address to a phy address*/
+		message_packet->address = iommu_get_phy_address(message_packet->address);
+
+	}
+	else if(message_packet->access_type == cgm_access_mc_put)
+	{
+		/*put coming from the system agent.*/
+
+		/*find the virtual address in the translation lookup table*/
+		message_packet->address = iommu_translation_table_get_address(message_packet->translation_id);
+
+	}
+	else
+	{
+		fatal("iommu_translate(): invalid message_packet access type\n");
+	}
+}
 
 void hub_iommu_io_up_ctrl(void){
 
