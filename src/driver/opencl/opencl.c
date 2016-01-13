@@ -182,7 +182,7 @@ struct opencl_version_t
 	int minor;
 };
 
-
+/*ABI 1*/
 static int opencl_abi_init_impl(X86Context *ctx)
 {
 
@@ -196,6 +196,11 @@ static int opencl_abi_init_impl(X86Context *ctx)
 
 	unsigned int version_ptr;
 	struct opencl_version_t version;
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_init_impl() code 1\n");
+	}
 
 	/* Arguments */
 	version_ptr = regs->ecx;
@@ -244,14 +249,6 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	size = regs->ecx;
 	opencl_debug("\tsize = %u\n", size);
 
-	/*if(INT == 1)
-	{
-		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u\n", size);
-	}
-
-	printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u\n", size);
-	getchar();*/
-
 	/* For now, memory allocation in device memory is done by just 
 	 * incrementing a pointer to the top of the global memory space. 
 	 * Since memory deallocation is not implemented, "holes" in the 
@@ -259,6 +256,11 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	device_ptr = si_emu->video_mem_top;
 	si_emu->video_mem_top += size;
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
+
+	if(INT == 1)
+	{
+		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u device_ptr 0x%08x\n", size, device_ptr);
+	}
 
 	/* Return device pointer */
 	return device_ptr;
@@ -304,6 +306,11 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	host_ptr = regs->ecx;
 	device_ptr = regs->edx;
 	size = regs->esi;
+
+	if(INT == 1)
+	{
+		printf("ABI opencl_abi_si_mem_read_impl() code 3 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
+	}
 
 
 	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n", host_ptr, device_ptr, size);
@@ -371,10 +378,11 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n", device_ptr, host_ptr, size);
 
-	/*if(INT == 1)
+	if(INT == 1)
 	{
-		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
-	}*/
+		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
+		getchar();
+	}
 
 	/*printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
 	getchar();*/
@@ -435,6 +443,11 @@ static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 	size = regs->esi;
 	opencl_debug("\tdest_ptr = 0x%x, src_ptr = 0x%x, size = %d bytes\n", dest_ptr, src_ptr, size);
 
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_mem_copy_impl() code 5 size\n");
+	}
+
 	/* Check memory range */
 	if (src_ptr + size > si_emu->video_mem_top || dest_ptr + size > si_emu->video_mem_top)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
@@ -475,6 +488,11 @@ static int opencl_abi_si_mem_free_impl(X86Context *ctx)
 	device_ptr = regs->ecx;
 	opencl_debug("\tdevice_ptr = %u\n", device_ptr);
 
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_mem_free_impl() code 6 size\n");
+	}
+
 	/* For now, this call is ignored. No deallocation of global memory can
 	 * happen. */
 
@@ -502,6 +520,11 @@ static int opencl_abi_si_program_create_impl(X86Context *ctx)
 	/* Create program */
 	program = opencl_si_program_create();
 	opencl_debug("\tnew program ID = %d\n", program->id);
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_program_create_impl() code 7 size\n");
+	}
 
 	/* Return program ID */
 
@@ -553,6 +576,11 @@ static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
 	bin_ptr = regs->edx;
 	bin_size = regs->esi;
 	opencl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n", program_id, bin_ptr, bin_size);
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_program_set_binary_impl() code 8 size\n");
+	}
 
 	/* Get program */
 	program = list_get(opencl_si_program_list, program_id);
@@ -609,6 +637,11 @@ static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 	program_id = regs->ecx;
 	func_name_ptr = regs->edx;
 	opencl_debug("\tprogram_id=%d, func_name_ptr=0x%x\n", program_id, func_name_ptr);
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_kernel_create_impl() code 9 size\n");
+	}
 
 	/* Read function name */
 	size = mem_read_string(mem, func_name_ptr, sizeof func_name, func_name);
@@ -680,6 +713,11 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 	size = regs->edi;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
 	opencl_debug("\thost_ptr=0x%x, size=%u\n", host_ptr, size);
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_kernel_set_arg_value_impl() code 10 size\n");
+	}
 
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
@@ -765,6 +803,11 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 	size = regs->edi;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
 	opencl_debug("\tdevice_ptr=0x%x, size=%u\n", device_ptr, size);
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_kernel_set_arg_pointer_impl() code 11 size\n");
+	}
 
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
@@ -932,6 +975,11 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	if (si_gpu_fused_device)
 		si_emu->global_mem = ctx->mem;
 
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_ndrange_initialize_impl() code 14 size\n");
+	}
+
 	/* Arguments */
 	kernel_id = regs->ecx;
 	work_dim = regs->edx;
@@ -1028,8 +1076,7 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
  */
 
 
-static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
-	X86Context *ctx)
+static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1037,6 +1084,11 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 	unsigned int host_ptr;
 
 	int available_buffer_entries;
+
+	if(INT == 1)
+	{
+		printf("opencl_abi_si_ndrange_get_num_buffer_entries_impl() code 15 size\n");
+	}
 
 	/* Arguments */
 	host_ptr = regs->ecx;

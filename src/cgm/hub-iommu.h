@@ -88,6 +88,7 @@ struct hub_iommu_t{
 	unsigned int **translation_table;
 	int translation_table_size;
 
+	//virtual functions that support multiple simulator configurations
 	void (*hub_iommu_translate)(struct cgm_packet_t *message_packet);
 };
 

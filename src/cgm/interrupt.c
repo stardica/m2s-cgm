@@ -175,7 +175,7 @@ void interrupt_service_request(void){
 				{
 					if(INT == 1)
 					{
-						printf("interrupt_service_request() Caught OpenCL interrupt code %d in issue at cycle %llu!\n", uop->interrupt, P_TIME);
+						printf("interrupt_service_request() Caught OpenCL interrupt code %d in issue at cycle %llu\n", uop->interrupt, P_TIME);
 					}
 
 					if(uop->interrupt == 2) //GPU malloc
