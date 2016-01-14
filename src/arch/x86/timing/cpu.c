@@ -1026,8 +1026,7 @@ int X86CpuRun(Timing *self){
 	if (esim_finish)
 		return TRUE;
 
-
-	//star added for instrumentation
+	//star added for thread control.
 	P_PAUSE(1);
 	self->cycle = P_TIME;
 

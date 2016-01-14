@@ -18,6 +18,10 @@
 #include <cgm/cgm.h>
 #include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
+
+
+
+/*#include <mem-image/memory.h>*/
 /*#include <cgm/cache.h>*/
 
 
@@ -41,6 +45,9 @@ struct mem_ctrl_t{
 	int wire_latency;
 	int DRAM_latency;
 	int latency;
+
+	//pointer to memory image.
+	struct mem_t *mem;
 
 	struct list_t *Rx_queue_top;
 	struct list_t *Tx_queue;

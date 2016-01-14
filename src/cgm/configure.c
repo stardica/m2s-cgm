@@ -6,6 +6,7 @@
  */
 
 #include <cgm/configure.h>
+#include <mem-image/memory.h>
 
 /*
 
@@ -20,7 +21,7 @@
 
 int cgmmem_check_config = 0;
 
-int cgm_mem_configure(void){
+int cgm_mem_configure(struct mem_t *mem){
 
 	int error = 0;
 
@@ -89,7 +90,7 @@ int cgm_mem_configure(void){
 		return 1;
 	}
 
-	mem_ctrl_finish_create();
+	mem_ctrl_finish_create(mem);
 
 	return 0;
 
@@ -3412,7 +3413,7 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	return 0;
 }
 
-int mem_ctrl_finish_create(void){
+int mem_ctrl_finish_create(struct mem_t *mem){
 
 	char buff[100];
 
@@ -3434,6 +3435,9 @@ int mem_ctrl_finish_create(void){
 	mem_ctrl->Tx_queue->name = strdup(buff);
 
 	mem_ctrl->system_agent_queue = system_agent->Rx_queue_bottom;
+
+	//link the memory controller to the simulated memory image
+	mem_ctrl->mem = mem;
 
 	return 0;
 }

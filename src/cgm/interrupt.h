@@ -19,7 +19,7 @@
 
 #include <arch/x86/timing/cpu.h>
 #include <lib/util/list.h>
-#include <lib/util/debug.h>
+/*#include <lib/util/debug.h>*/
 
 
 enum interrupt_type_t

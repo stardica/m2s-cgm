@@ -1632,44 +1632,45 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 
-	//star >> added instrumentation
-	//instrumentation_init();
-
-	/* Network and memory system */
-
-	//CGM is the replacement memory system.
-#if CGM
-	cgm_init(argv);
-	cgm_configure();
-
-#else
-	//this is old m2s code for the memory system and network.
-	net_init();
-	mem_system_init();
-#endif
-
-	mmu_init();
-
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
 	//Commented these out for testing purposes.
 	//if (x86_load_checkpoint_file_name[0])
 	//	X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
+	mmu_init();
+
 	/* Load programs */
 	//star >> loads the ELF parsing work.
+
 	m2s_load_programs(argc, argv);
 
 
-	//run ends here if CGM is running.
-	//sim_send() contains all of the "done" functions.
+	//CGM is the replacement memory system.
 #if CGM
 
+	/* Network and memory system */
+	cgm_init(argv);
+
+
+	/*struct mem_t *new_mem = */
+	x86_emu->context_list_head->mem->num_links = 5;
+
+	//passing point to the memory image so I can link it with the memory controller.
+	cgm_configure(x86_emu->context_list_head->mem);
+
+	/*run ends here if CGM is running.
+	sim_send() contains all of the "done" functions.*/
 	simulate(sim_end);
 	/* End */
 	//return 0;
 
 #else
+
+	//this is old m2s code for the memory system and network.
+	net_init();
+	mem_system_init();
+
 
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();

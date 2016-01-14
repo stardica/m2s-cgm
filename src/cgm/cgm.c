@@ -13,6 +13,8 @@
 
 #include <cgm/cgm.h>
 
+
+
 long long access_id = 0;
 //long long lspq_access_id = 0;
 struct list_t *cgm_access_record;
@@ -141,12 +143,11 @@ void cgm_init(char **argv){
 	return;
 }
 
-void cgm_configure(void){
+void cgm_configure(struct mem_t *mem){
 
 	int error = 0;
 
-	//star todo add error checking.
-	error = cgm_mem_configure();
+	error = cgm_mem_configure(mem);
 	if (error) {fatal("cgm_mem_configure() failed\n");}
 
 	cgm_cpu_configure();

@@ -21,7 +21,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
-#include <lib/util/debug.h>
+/*#include <lib/util/debug.h>*/
 
 #include <cgm/cgm.h>
 
@@ -267,13 +267,10 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int s
 	 * or create page with full privileges for writes in unsafe mode. */
 	if (!page)
 	{
-
-
 		//printf("going to crash 0x%x\n", addr);
 
-
 		if (mem->safe)
-			fatal("illegal access at 0x%x: page not allocated cycle %llu", addr, P_TIME);
+			fatal("illegal access at 0x%08x: page not allocated cycle %llu", addr, P_TIME);
 
 		if (access == mem_access_read || access == mem_access_exec)
 		{

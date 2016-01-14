@@ -8,6 +8,8 @@
 
 #include <cgm/mem-ctrl.h>
 
+#include <mem-image/memory.h>
+
 
 /*
 #include <stdio.h>
@@ -149,6 +151,12 @@ void memctrl_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	unsigned int addr;
 
+	//for accessing the memory image.
+	unsigned char buffer[20];
+	unsigned char *buffer_ptr;
+
+	int i = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
@@ -191,6 +199,40 @@ void memctrl_ctrl(void){
 			{
 				/*This is a L3 load request (cached memory system miss)
 				charge the latency for the load, then, reply with data*/
+
+				/*mem_access();*/
+
+				unsigned int address = 134520104;
+
+				printf("mem ctrl data %d\n", mem_ctrl->mem->num_links);
+
+				printf("address 0x%08x\n", address),
+
+				buffer_ptr = mem_get_buffer(mem_ctrl->mem, address, 20, mem_access_read);
+
+				if (!buffer_ptr)
+				{
+					/* Disable safe mode. If a part of the 20 read bytes does not belong to the
+					 * actual instruction, and they lie on a page with no permissions, this would
+					 * generate an undesired protection fault. */
+					mem_ctrl->mem->safe = 0;
+					buffer_ptr = buffer;
+					//printf("Buffer %s\n", buffer_ptr);
+					//fflush(stdout);
+					//getchar();
+					mem_access(mem_ctrl->mem, address, 20, buffer_ptr, mem_access_read);
+				}
+
+				mem_ctrl->mem->safe = mem_safe_mode;
+
+				for(i = 0; i < 20; i++)
+				{
+					printf("buffer 0x%02x\n", *buffer_ptr);
+					buffer_ptr++;
+				}
+				printf(" blah blah blah!!! address 0x%08x\n", address),
+				getchar();
+
 
 				//set the access type
 				message_packet->access_type = cgm_access_mc_put;

@@ -31,6 +31,7 @@
 
 
 /* Macros defined to prevent accidental use of 'mem_<xx>' instructions */
+/*
 #define mem_access __COMPILATION_ERROR__
 #define mem_read __COMPILATION_ERROR__
 #define mem_write __COMPILATION_ERROR__
@@ -45,6 +46,7 @@
 #undef assert
 #endif
 #define assert __COMPILATION_ERROR__
+*/
 
 
 void x86_isa_bound_r16_rm32_impl(X86Context *ctx)

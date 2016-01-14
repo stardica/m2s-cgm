@@ -812,14 +812,12 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
 	if (!kernel)
-		fatal("%s: invalid kernel ID (%d)",
-				__FUNCTION__, kernel_id);
+		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
 	/* Get argument */
 	arg = list_get(kernel->arg_list, index);
 	if (!arg || arg->type != si_arg_pointer)
-		fatal("%s: invalid argument %d type",
-				__FUNCTION__, index);
+		fatal("%s: invalid argument %d type", __FUNCTION__, index);
 
 	/* Record size and value */
 	arg->set = 1;

@@ -243,6 +243,8 @@ void X86ContextExecute(X86Context *self){
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
 
+	int i = 0;
+
 	int spec_mode;
 
 	//star >> entered
@@ -270,6 +272,20 @@ void X86ContextExecute(X86Context *self){
 	}
 
 	mem->safe = mem_safe_mode;
+
+	for(i = 0; i < 20; i++)
+	{
+		printf("buffer 0x%02x\n", *buffer_ptr);
+		buffer_ptr++;
+	}
+
+	for(i = 0; i < 20; i++)
+	{
+		buffer_ptr--;
+
+	}
+	printf("address 0x%08x\n", regs->eip),
+
 
 
 	/* Disassemble */

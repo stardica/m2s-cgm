@@ -20,6 +20,8 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 
+#include <mem-image/memory.h>
+
 #include <cgm/cache.h>
 #include <cgm/directory.h>
 #include <cgm/mem-ctrl.h>
@@ -39,6 +41,8 @@
 #include <arch/si/timing/scalar-unit.h>
 #include <arch/si/timing/lds-unit.h>
 #include <arch/si/timing/compute-unit.h>
+
+
 
 
 #define P_TIME (etime.count >> 1)
@@ -169,7 +173,7 @@ extern int watch_dog;
 void m2scgm_init(void);
 void cgm_init(char **argv);
 void cgm_check_config_files(char **argv);
-void cgm_configure(void);
+void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cgm_watchdog(void);
