@@ -273,7 +273,7 @@ void X86ContextExecute(X86Context *self){
 
 	mem->safe = mem_safe_mode;
 
-	for(i = 0; i < 20; i++)
+	/*for(i = 0; i < 20; i++)
 	{
 		printf("buffer 0x%02x\n", *buffer_ptr);
 		buffer_ptr++;
@@ -284,7 +284,7 @@ void X86ContextExecute(X86Context *self){
 		buffer_ptr--;
 
 	}
-	printf("address 0x%08x\n", regs->eip),
+	printf("address 0x%08x\n", regs->eip),*/
 
 
 

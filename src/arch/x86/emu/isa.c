@@ -868,16 +868,9 @@ void X86ContextExecuteInst(X86Context *self)
 		{
 			//the value of the flag is the OpenCL ABI code.
 			opencl_syscall_flag = regs->ebx;
+			printf("fetch ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);
 		}
 	}
-
-	/*if(self->inst.eip == (unsigned int)0x8049528)
-	{
-		printf("***** self->inst.opcode %d\n",self->inst.opcode);
-		//printf("%s", self->inst.format);
-		exit(0);
-	}*/
-
 
 	//this runs the correct function from the machine files.
 	if (self->inst.opcode)

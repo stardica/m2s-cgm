@@ -1029,6 +1029,8 @@ void SIGpuCreate(SIGpu *self)
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
+	printf("cu id %d\n", compute_unit_id);
+
 	/* Parent */
 	TimingCreate(asTiming(self));
 	

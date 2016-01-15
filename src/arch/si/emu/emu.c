@@ -33,7 +33,6 @@
 #include <arch/si/emu/wavefront.h>
 #include <arch/si/emu/work-group.h>
 
-
 /*
  * Class 'SIEmu'
  */
@@ -44,6 +43,9 @@ void SIEmuCreate(SIEmu *self)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "SouthernIslands");
+
+	//give this emulator a unique id so we can tie it to memory pages.
+	self->pid = 200;
 
 	/* Initialize */
 	self->video_mem = mem_create();

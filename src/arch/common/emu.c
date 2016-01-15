@@ -38,6 +38,7 @@ void EmuCreate(Emu *self, char *name)
 	self->name = xstrdup(name);
 	self->timer = m2s_timer_create(name);
 
+
 	//self->Run = EmuRun();
 	//self->Run = EmuRun(Emu *self);
 

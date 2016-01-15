@@ -10,6 +10,8 @@
 
 #include <mem-image/memory.h>
 
+#include <mem-image/mmu.h>
+
 
 /*
 #include <stdio.h>
@@ -187,6 +189,12 @@ void memctrl_ctrl(void){
 
 			P_PAUSE(mem_ctrl->DRAM_latency);
 
+			/*****NOTE!!*****/
+			/*the memory image is entirely based on the ELF's provided virtual addresses
+			to access the memory image from the memory controller you first have to do a quick
+			swap back to the virtual address. This is just a simulator-ism. In the real world
+			the real physical address would be used at this point to gather data.*/
+
 			if(message_packet->access_type == cgm_access_mc_store)
 			{
 				/*the message is a store message (Write Back) from a L3 cache
@@ -200,27 +208,16 @@ void memctrl_ctrl(void){
 				/*This is a L3 load request (cached memory system miss)
 				charge the latency for the load, then, reply with data*/
 
-				/*mem_access();*/
-
-				unsigned int address = 134520104;
-
-				printf("mem ctrl data %d\n", mem_ctrl->mem->num_links);
-
-				printf("address 0x%08x\n", address),
-
-				buffer_ptr = mem_get_buffer(mem_ctrl->mem, address, 20, mem_access_read);
+				/*buffer_ptr = mem_get_buffer(mem_ctrl->mem, mmu_get_vtladdr(0, message_packet->address), 20, mem_access_read);
 
 				if (!buffer_ptr)
 				{
-					/* Disable safe mode. If a part of the 20 read bytes does not belong to the
-					 * actual instruction, and they lie on a page with no permissions, this would
-					 * generate an undesired protection fault. */
+					 Disable safe mode. If a part of the 20 read bytes does not belong to the
+					 actual instruction, and they lie on a page with no permissions, this would
+					 generate an undesired protection fault.
 					mem_ctrl->mem->safe = 0;
 					buffer_ptr = buffer;
-					//printf("Buffer %s\n", buffer_ptr);
-					//fflush(stdout);
-					//getchar();
-					mem_access(mem_ctrl->mem, address, 20, buffer_ptr, mem_access_read);
+					mem_access(mem_ctrl->mem, mmu_get_vtladdr(0, message_packet->address), 20, buffer_ptr, mem_access_read);
 				}
 
 				mem_ctrl->mem->safe = mem_safe_mode;
@@ -230,8 +227,8 @@ void memctrl_ctrl(void){
 					printf("buffer 0x%02x\n", *buffer_ptr);
 					buffer_ptr++;
 				}
-				printf(" blah blah blah!!! address 0x%08x\n", address),
-				getchar();
+				printf(" blah blah blah!!! address 0x%08x\n", mmu_get_vtladdr(0, message_packet->address)),
+				getchar();*/
 
 
 				//set the access type

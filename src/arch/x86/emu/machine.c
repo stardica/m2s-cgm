@@ -1091,6 +1091,8 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 	if (num != 0x80)
 		X86ContextError(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
+	printf("imm8 ecx %u edx %u esi %u\n", ctx->regs->ecx, ctx->regs->edx, ctx->regs->esi);
+
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)

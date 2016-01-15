@@ -580,7 +580,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 		else if(strcmp(temp_strn, "MESI") == 0)
 		{
-			cgm_cache_protocol = cgm_protocol_mesi;
+			cgm_gpu_cache_protocol = cgm_protocol_mesi;
 			printf("---GPU memory protocol is MESI---\n");
 		}
 		else if(strcmp(temp_strn, "GMESI") == 0)
@@ -3235,6 +3235,7 @@ int switch_finish_create(void){
 	//hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
 
+
 	//set up translation table
 	assert(gpu_l2_caches[0].mshr_size);
 	int table_size = gpu_group_cache_num * gpu_l2_caches[0].mshr_size;
@@ -3248,7 +3249,7 @@ int switch_finish_create(void){
 	//initialize rows and columns
 	for(i = 0; i < table_size; i++)
 	{
-		hub_iommu->translation_table[i] = (unsigned int *) malloc(2 * sizeof(unsigned int));
+		hub_iommu->translation_table[i] = (unsigned int *) malloc(3 * sizeof(unsigned int));
 	}
 
 	//initialize the ID and address columns
@@ -3256,6 +3257,7 @@ int switch_finish_create(void){
 	{
 		hub_iommu->translation_table[i][0] = i;
 		hub_iommu->translation_table[i][1] = -1;
+		hub_iommu->translation_table[i][2] = -1;
 	}
 
 	//configure hub-iommu virtual functions
@@ -3265,6 +3267,8 @@ int switch_finish_create(void){
 	}
 	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
+		//fatal("here\n");
+
 		hub_iommu->hub_iommu_translate = iommu_translate;
 
 	}

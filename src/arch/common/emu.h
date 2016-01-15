@@ -115,4 +115,3 @@ void EmuDumpSummary(Emu *self, FILE *f);
 
 
 #endif
-

@@ -38,6 +38,9 @@
 
 #include <cgm/interrupt.h>
 
+#include <mem-image/mmu.h>
+#include <cgm/protocol.h>
+
 
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
@@ -128,6 +131,8 @@ int opencl_abi_call(X86Context *ctx)
 	/* Debug */
 	opencl_debug("OpenCL ABI call '%s' (code %d)\n", opencl_abi_call_name[code], code);
 
+	printf("ocl abi call ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);
+
 	/* Call OpenCL Runtime function */
 	assert(opencl_abi_call_table[code]);
 	ret = opencl_abi_call_table[code](ctx);
@@ -185,12 +190,6 @@ struct opencl_version_t
 /*ABI 1*/
 static int opencl_abi_init_impl(X86Context *ctx)
 {
-
-	//star >> instrumenting.
-	//printf("opencl_abi_init\n");
-	//fflush(stdout);
-	//getchar();
-
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -381,10 +380,10 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	if(INT == 1)
 	{
 		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
-		getchar();
 	}
 
-	/*printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u\n", size);
+	//ABI opencl_abi_si_mem_write_impl() code 4 size 4100 device vtl_ptr 0x00000000 host vtl_ptr 0x08132830 host phy_ptr 0x0002b830
+	/*printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device vtl_ptr 0x%08x host vtl_ptr 0x%08x host phy_ptr 0x%08x\n", size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
 	getchar();*/
 
 	/* Check memory range */
@@ -393,11 +392,23 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 	}
 
-	/* Write memory from host to device */
-	buf = xmalloc(size);
-	mem_read(mem, host_ptr, size, buf);
-	mem_write(si_emu->video_mem, device_ptr, size, buf);
-	free(buf);
+	printf("ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);
+	fatal("here\n");
+
+	//this will turn shared memory on and off as set in the ini file.
+	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+	{
+		si_emu->pid;
+
+	}
+	else
+	{
+		/* Write memory from host to device */
+		buf = xmalloc(size);
+		mem_read(mem, host_ptr, size, buf);
+		mem_write(si_emu->video_mem, device_ptr, size, buf);
+		free(buf);
+	}
 
 	/* Return */
 	return 0;
@@ -527,11 +538,6 @@ static int opencl_abi_si_program_create_impl(X86Context *ctx)
 	}
 
 	/* Return program ID */
-
-	//printf("Prgoram ID created %ld\n", program->id);
-	//fflush(stdout);
-	//getchar();
-
 	return program->id;
 }
 

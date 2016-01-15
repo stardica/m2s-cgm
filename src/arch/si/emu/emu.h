@@ -32,6 +32,8 @@
 
 CLASS_BEGIN(SIEmu, Emu)
 
+	int pid;
+
 	/* Memory */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;
@@ -66,8 +68,6 @@ void SIEmuDumpSummary(Emu *self, FILE *f);
 
 /* Virtual function from class 'Emu' */
 int SIEmuRun(Emu *self);
-
-
 
 
 /*
@@ -254,4 +254,3 @@ void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
 #endif
-

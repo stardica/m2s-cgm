@@ -653,6 +653,7 @@ void esim_process_events(int forward)
 		event_info = list_get(esim_event_info_list, event->id);
 		assert(event_info && event_info->handler);
 		//printf("ID: %d\n", event->id);
+		printf("running\n");
 		event_info->handler(event->id, event->data);
 		esim_event_free(event);
 	}

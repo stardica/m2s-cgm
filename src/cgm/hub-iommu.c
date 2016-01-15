@@ -278,6 +278,8 @@ void hub_iommu_ctrl(void){
 
 			P_PAUSE(hub_iommu->latency);
 
+			fatal("here\n");
+
 			/*virtual to physical or physical to virtual translation is here
 			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
 			if(hub_iommu->hub_iommu_translate != NULL)
