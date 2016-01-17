@@ -1,3 +1,65 @@
+/*printf("phy_addr is 0x%08x\n", phy_addr);
+	printf("starting reverse translation...\n");
+	printf("mask out the vtl_addr offset from the physical address...\n");
+
+	offset_2 = phy_addr & mmu_page_mask;
+	phy_addr_2 = phy_addr & ~mmu_page_mask;
+
+	printf("offset is 0x%08x\n", offset_2);
+	printf("phy_addr_2 is 0x%08x\n", phy_addr_2);
+
+	printf("search for page...\n");
+
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		//pull a page
+		page = list_get(mmu->page_list, i);
+
+		//check to see if it is a hit and look for both text and data page types
+		if(mmu_search_page(page, mmu_addr_phy, phy_addr, address_space_index, phy_addr_2))
+		{
+			printf("found the page...\n");
+			break;
+		}
+	}
+
+	vtl_addr_2 = page->vtl_addr | offset_2;
+	printf("vtl addr in 0x%08x vtl addr out 0x%08x\n", vtl_addr, vtl_addr_2);
+	getchar();*/
+
+
+/*page = mmu->page_hash_table[index];*/
+
+	//this searches the page list for an existing page.
+	//page = mmu_search_page(page, vtladdr, address_space_index, tag, access_type, page_type);
+
+	/*while(page)
+	{
+		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
+		{
+			break;
+		}
+
+		prev = page;
+		page = page->next;
+	}*/
+	
+	/* Not found */
+	/*if (!page)// == NULL || found == 0)
+	{
+		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
+	}*/
+
+	/* Locate page at the head of the hash table for faster subsequent lookup */
+	/*if (prev)
+	{
+		prev->next = page->next;
+		page->next = mmu->page_hash_table[index];
+		mmu->page_hash_table[index] = page;
+	}*/
+
+	/* Return it */
+	/*return page;*/
 
 ////////////////////////////
 //GPU non coherent functions

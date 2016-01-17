@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -52,6 +53,15 @@ unsigned int max_1 = 0;
 #define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
 #define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
 
+struct page_guest_t{
+
+	int guest_pid;	/*guest process id*/
+	unsigned int guest_vtl_tag; /*guest virtual address*/
+	unsigned int host_vtl_offset; /*offset of host*/ //not needed?
+};
+
+
+
 /* Physical memory page */
 struct mmu_page_t
 {
@@ -63,11 +73,11 @@ struct mmu_page_t
 	unsigned int vtl_addr;  /* Virtual address of hostpage */
 	unsigned int phy_addr;  /* Physical address */
 
-	/*NOTE! to allow multiple links to this page this should be an array of guest virtual addresses and or quest ID.*/
-	int guest_id;
-	unsigned int guest_vtl_addr; /*Virtual address of guest page*/
-
 	enum mmu_page_type_t page_type; /*type of page either .text or data segments*/
+
+	/*star added this*/
+	int link; /*bit indicating if this page is linked with a quest(s)*/
+	struct list_t *guest_list; /*list of guests with permission to access this page*/
 
 	/*Statistics*/
 	long long num_read_accesses;
@@ -255,41 +265,6 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		return mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
-
-	/*page = mmu->page_hash_table[index];*/
-
-
-
-	//this searches the page list for an existing page.
-	//page = mmu_search_page(page, vtladdr, address_space_index, tag, access_type, page_type);
-
-	/*while(page)
-	{
-		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
-		{
-			break;
-		}
-
-		prev = page;
-		page = page->next;
-	}*/
-	
-	/* Not found */
-	/*if (!page)// == NULL || found == 0)
-	{
-		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
-	}*/
-
-	/* Locate page at the head of the hash table for faster subsequent lookup */
-	/*if (prev)
-	{
-		prev->next = page->next;
-		page->next = mmu->page_hash_table[index];
-		mmu->page_hash_table[index] = page;
-	}*/
-
-	/* Return it */
-	/*return page;*/
 }
 
 
@@ -324,10 +299,6 @@ void mmu_init()
 	/* Variables derived from page size */
 	mmu_log_page_size = log_base2(mmu_page_size);
 	mmu_page_mask = mmu_page_size - 1;
-
-	/*printf("%d\n", mmu_log_page_size);
-	printf("%d\n", mmu_page_mask);
-	getchar();*/
 
 	/* Initialize */
 	mmu = xcalloc(1, sizeof(struct mmu_t));
@@ -482,10 +453,155 @@ enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type){
 }
 
 
+void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_ptr, unsigned int host_ptr){
+
+	struct mmu_page_t *page;
+	struct page_guest_t *guest;
+	unsigned int guest_vtl_tag;
+	unsigned int host_vtl_offset;
+
+	/*get the page*/
+	page = mmu_get_page(address_space_index, host_ptr, mmu_access_load_store);
+	assert(page);
+
+	/*printf("page %d\n", page->id);
+	printf("%d 0x%08x 0x%08x\n", guest_pid, guest_ptr, host_ptr);*/
+
+	/*get the guest vtl tag and host vtl offset*/
+	guest_vtl_tag = guest_ptr & ~mmu_page_mask;
+	host_vtl_offset = host_ptr & mmu_page_mask;
+
+	/*add the guest (GPU etc) to the page guest list*/
+	guest = mmu_create_guest();
+	guest->guest_pid = guest_pid;
+	guest->guest_vtl_tag = guest_vtl_tag;
+	guest->host_vtl_offset = host_vtl_offset;
+
+	/*printf("%d 0x%08x 0x%08x\n", guest_pid, guest->guest_vtl_tag, guest->host_vtl_offset);*/
+
+	/*set the linked bit*/
+	page->link = 1;
+
+	/*insert the quest into the guest page list*/
+	list_enqueue(page->guest_list, guest);
+
+	return;
+}
+
+void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr, unsigned int *quest_vtl_tag_ptr, unsigned int *host_vtl_offset_ptr, unsigned int *page_phy_addr_ptr){
+
+	struct mmu_page_t *page = NULL;
+	struct page_guest_t *guest = NULL;
+
+	unsigned int guest_vtl_tag;
+	int i = 0;
+	int j = 0;
+
+	/*get guest vtl tag*/
+	guest_vtl_tag = vtl_addr & ~mmu_page_mask;
+
+	/*search the page list for a page hit.*/
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		//pull a page
+		page = list_get(mmu->page_list, i);
+
+		//check to see if page is linked to a quest
+		if(page->link == 1)
+		{
+			printf("page found id %d\n", page->id);
+
+			/*check the guest's vtl tag*/
+			LIST_FOR_EACH(page->guest_list, j)
+			{
+				//pull a guest
+				guest = list_get(page->guest_list, j);
+
+				//check to see if page is linked to a quest
+				if(guest->guest_pid == guest_pid && guest->guest_vtl_tag == guest_vtl_tag)
+				{
+					printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+					*(page_id_ptr) = page->id;
+					*(page_phy_addr_ptr) = page->phy_addr;
+					*(quest_vtl_tag_ptr) = guest->guest_vtl_tag;
+					*(host_vtl_offset_ptr) = guest->host_vtl_offset;
+
+					//this stops the outer loop from running.
+					i = (list_count(mmu->page_list) + 1) ;
+					break;
+				}
+			}
+		}
+	}
+
+
+	assert(page != NULL);
+	assert(guest != NULL);
+
+	//printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+
+	return;
+}
+
+
+unsigned int mmu_translate_guest(int address_space_index, int guest_pid, unsigned int vtl_addr){
+
+	unsigned int phy_addr;
+
+	int page_id = 0;
+	unsigned int quest_vtl_tag = 0;
+	unsigned int host_vtl_offset = 0;
+	unsigned int page_phy_addr = 0;
+
+	int * page_id_ptr = &page_id;
+	unsigned int *quest_vtl_tag_ptr = &quest_vtl_tag;
+	unsigned int *host_vtl_offset_ptr = &host_vtl_offset;
+	unsigned int *page_phy_addr_ptr = &page_phy_addr;
+
+
+	assert(address_space_index == 0);
+
+	printf("here_2\n");
+
+	mmu_link_guest_page(guest_pid, vtl_addr, page_id_ptr, quest_vtl_tag_ptr, host_vtl_offset_ptr, page_phy_addr_ptr);
+
+
+	printf("here_3\n");
+
+	printf("page %d guest %d tag 0x%08x\n", page_id, quest_vtl_tag, host_vtl_offset);
+
+	/*now build the physical address*/
+	phy_addr = page_phy_addr | host_vtl_offset;
+
+
+
+	fatal("address is 0x%08x\n", phy_addr);
+	return phy_addr;
+}
+
+
+void mmu_guest_insert(struct page_guest_t *guest, struct mmu_page_t *page){
+
+	list_enqueue(page->guest_list, guest);
+
+	return;
+}
+
+struct page_guest_t *mmu_create_guest(void){
+
+	struct page_guest_t *new_guest;
+
+	new_guest = xcalloc(1, sizeof(struct page_guest_t));
+
+	return new_guest;
+
+}
+
 struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, enum mmu_access_t access_type, int index, unsigned int vtl_addr){
 
 	struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
+	char buff[100];
 
 	/* Initialize */
 	page = xcalloc(1, sizeof(struct mmu_page_t));
@@ -493,6 +609,12 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	//assign page id
 	page->id = page_number;
 	page_number++;
+
+	//star added this
+	page->guest_list = list_create();
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "page[%d].guest_list", page->id);
+	page->guest_list->name = xstrdup(buff);
 
 	/*printf("---page created %d\n", page_number);*/
 
@@ -534,13 +656,6 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	unsigned int offset;
 	unsigned int phy_addr;
-	/*unsigned int phy_addr_2;
-	unsigned int offset_2;
-	unsigned int vtl_addr_2;
-	unsigned int tag;
-	unsigned int index;
-	int i = 0;*/
-
 
 	/*printf("translating vtl_addr 0x%08x\n", vtl_addr);*/
 
@@ -556,35 +671,6 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
-
-	/*printf("phy_addr is 0x%08x\n", phy_addr);
-	printf("starting reverse translation...\n");
-	printf("mask out the vtl_addr offset from the physical address...\n");
-
-	offset_2 = phy_addr & mmu_page_mask;
-	phy_addr_2 = phy_addr & ~mmu_page_mask;
-
-	printf("offset is 0x%08x\n", offset_2);
-	printf("phy_addr_2 is 0x%08x\n", phy_addr_2);
-
-	printf("search for page...\n");
-
-	LIST_FOR_EACH(mmu->page_list, i)
-	{
-		//pull a page
-		page = list_get(mmu->page_list, i);
-
-		//check to see if it is a hit and look for both text and data page types
-		if(mmu_search_page(page, mmu_addr_phy, phy_addr, address_space_index, phy_addr_2))
-		{
-			printf("found the page...\n");
-			break;
-		}
-	}
-
-	vtl_addr_2 = page->vtl_addr | offset_2;
-	printf("vtl addr in 0x%08x vtl addr out 0x%08x\n", vtl_addr, vtl_addr_2);
-	getchar();*/
 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)

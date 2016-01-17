@@ -131,7 +131,7 @@ int opencl_abi_call(X86Context *ctx)
 	/* Debug */
 	opencl_debug("OpenCL ABI call '%s' (code %d)\n", opencl_abi_call_name[code], code);
 
-	printf("ocl abi call ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);
+	/*printf("ocl abi call ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);*/
 
 	/* Call OpenCL Runtime function */
 	assert(opencl_abi_call_table[code]);
@@ -383,8 +383,8 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	}
 
 	//ABI opencl_abi_si_mem_write_impl() code 4 size 4100 device vtl_ptr 0x00000000 host vtl_ptr 0x08132830 host phy_ptr 0x0002b830
-	/*printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device vtl_ptr 0x%08x host vtl_ptr 0x%08x host phy_ptr 0x%08x\n", size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
-	getchar();*/
+	printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device vtl_ptr 0x%08x host vtl_ptr 0x%08x host phy_ptr 0x%08x\n",
+		size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
@@ -392,14 +392,22 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 	}
 
-	printf("ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);
-	fatal("here\n");
-
+	//star should this be a system call and not an ABI (driver) function?
 	//this will turn shared memory on and off as set in the ini file.
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
-		si_emu->pid;
+		/*link this GPU to requested host memory page*/
+		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr);
 
+		unsigned int phy_addr;
+		printf("here\n");
+
+		//pull the correct physical address
+		phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);
+
+
+		fatal("here address is 0x%08x\n");
+		si_emu->pid;
 	}
 	else
 	{

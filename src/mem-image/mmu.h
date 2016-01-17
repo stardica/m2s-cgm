@@ -26,7 +26,6 @@ enum mmu_access_t
 	mmu_access_invalid = 0,
 	mmu_access_fetch,
 	mmu_access_load_store,
-
 	mmu_access_read,
 	mmu_access_write,
 	mmu_access_execute
@@ -44,7 +43,8 @@ enum mmu_address_type_t
 {
 	mmu_addr_invalid = 0,
 	mmu_addr_vtl,
-	mmu_addr_phy
+	mmu_addr_phy,
+	mmu_addr_guest
 };
 
 extern char *mmu_report_file_name;
@@ -70,9 +70,14 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type);
 int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, unsigned int addr, int address_space_index, int tag);
 struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type);
-
 int mmu_valid_phy_addr(unsigned int phy_addr);
-
 void mmu_access_stats(unsigned int phy_addr, enum mmu_access_t access);
+
+void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr);
+struct page_guest_t *mmu_create_guest(void);
+void mmu_guest_insert(struct page_guest_t *guest, struct mmu_page_t *page);
+unsigned int mmu_translate_guest(int address_space_index, int guest_pid, unsigned int vtl_addr);
+void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr, unsigned int *quest_vtl_tag_ptr, unsigned int *host_vtl_offset_ptr, unsigned int *page_phy_addr_ptr);
+
 
 #endif
