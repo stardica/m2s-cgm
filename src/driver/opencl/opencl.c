@@ -311,13 +311,11 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 		printf("ABI opencl_abi_si_mem_read_impl() code 3 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
 	}
 
-
 	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n", host_ptr, device_ptr, size);
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
-		fatal("%s: accessing device memory not allocated",
-				__FUNCTION__);
+		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 
 	/* Read memory from device to host */
 	buf = xmalloc(size);
@@ -394,20 +392,20 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	//star should this be a system call and not an ABI (driver) function?
 	//this will turn shared memory on and off as set in the ini file.
+
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
 		/*link this GPU to requested host memory page*/
 		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr);
 
-		unsigned int phy_addr;
-		printf("here\n");
+		/*unsigned int phy_addr;*/
 
-		//pull the correct physical address
-		phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);
-
-
-		fatal("here address is 0x%08x\n");
-		si_emu->pid;
+		//star todo, this need to be deleted.
+		/* Write memory from host to device */
+		buf = xmalloc(size);
+		mem_read(mem, host_ptr, size, buf);
+		mem_write(si_emu->video_mem, device_ptr, size, buf);
+		free(buf);
 	}
 	else
 	{
@@ -532,8 +530,8 @@ static int opencl_abi_si_mem_free_impl(X86Context *ctx)
  *	Unique program ID.
  */
 
-static int opencl_abi_si_program_create_impl(X86Context *ctx)
-{
+static int opencl_abi_si_program_create_impl(X86Context *ctx){
+
 	struct opencl_si_program_t *program;
 
 	/* Create program */
@@ -574,8 +572,9 @@ static int opencl_abi_si_program_create_impl(X86Context *ctx)
  *	No return value.
  */
 
-static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
-{
+static int opencl_abi_si_program_set_binary_impl(X86Context *ctx){
+
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_program_t *program;
 
@@ -632,8 +631,8 @@ static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
-{
+static int opencl_abi_si_kernel_create_impl(X86Context *ctx){
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -661,6 +660,7 @@ static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 	size = mem_read_string(mem, func_name_ptr, sizeof func_name, func_name);
 	if (size == sizeof func_name)
 		fatal("%s: buffer too small", __FUNCTION__);
+
 	opencl_debug("\tfunc_name='%s'\n", func_name);
 
 	/* Get program object */

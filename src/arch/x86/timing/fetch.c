@@ -260,14 +260,12 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			int_src_ptr = 0;
 			int_dest_ptr=0;
 			int_size=0;
-
 		}
 		else
 		{
 			uop->interrupt = 0;
 			uop->interrupt_type = non_interrupt;
 		}
-
 
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */

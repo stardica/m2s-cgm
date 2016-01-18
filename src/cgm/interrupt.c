@@ -173,10 +173,10 @@ void interrupt_service_request(void){
 				//star todo advance the memory system with ISR related accesses.
 				if(uop->interrupt > 0 && uop->interrupt_type == opencl_interrupt) //an OpenCL related syscall occurred
 				{
-					if(INT == 1)
+					/*if(INT == 1)
 					{
 						printf("interrupt_service_request() Caught OpenCL interrupt code %d in issue at cycle %llu\n", uop->interrupt, P_TIME);
-					}
+					}*/
 
 					if(uop->interrupt == 2) //GPU malloc
 					{

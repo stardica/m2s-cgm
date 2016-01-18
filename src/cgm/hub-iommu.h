@@ -12,21 +12,22 @@
 #include <stdlib.h>
 
 #include <arch/si/timing/gpu.h>
+#include <arch/si/emu/emu.h>
 
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-/*#include <lib/util/debug.h>*/
 
-/*#include <cgm/cgm.h>*/
-/*#include <cgm/protocol.h>*/
+#include <mem-image/mmu.h>
+
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
 
-/*
-#include <lib/util/list.h>
 
-#include <cgm/tasking.h>
-*/
+/*#include <lib/util/debug.h>
+#include <cgm/cgm.h>
+#include <cgm/protocol.h>
+#include <lib/util/list.h>
+#include <cgm/tasking.h>*/
 
 
 enum Rx_queue_name

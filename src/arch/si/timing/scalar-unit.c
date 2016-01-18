@@ -354,6 +354,9 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			//memctrl_scalar_access(struct list_t *request_queue, enum mem_ctrl_access_kind_t access_kind, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item);
 			/*printf("witness pointer value %d\n", uop->global_mem_witness);
 			getchar();*/
+			printf("scalar uop id %llu %s\n", uop->id, uop->inst.info->name);
+			getchar();
+
 			cgm_scalar_access(scalar_unit, cgm_access_load_s, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
 			mod_access(scalar_unit->compute_unit->scalar_cache, mod_access_load, uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);

@@ -236,13 +236,10 @@ int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg)
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_read_buf_res(struct si_work_item_t *work_item, 
-	struct si_buffer_desc_t *buf_desc, int sreg)
-{
-	assert(buf_desc);
+void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_desc_t *buf_desc, int sreg){
 
-	memcpy(buf_desc, &work_item->wavefront->sreg[sreg].as_uint, 
-		sizeof(unsigned int)*4);
+	assert(buf_desc);
+	memcpy(buf_desc, &work_item->wavefront->sreg[sreg].as_uint, sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */

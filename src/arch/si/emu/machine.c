@@ -19,6 +19,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdio.h>
 
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
@@ -37,19 +38,17 @@ char *err_si_isa_note =
 	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
 	"\tplease email development@multi2sim.org' to request support for it.\n";
 
-#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
-	inst->info->name, err_si_isa_note)
+#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", inst->info->name, err_si_isa_note)
 
 /*
  * SMRD
  */
 
 #define INST SI_INST_SMRD
-void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
-{
-	union si_reg_t value;
+void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si_inst_t *inst){
 
+
+	union si_reg_t value;
 	unsigned int m_offset;
 	unsigned int m_base;
 	unsigned int addr;
@@ -87,14 +86,17 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
 	/* FIXME Set value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf%d: S%u<=(%u)(%u,%gf)", 
-			work_item->wavefront->id, INST.sdst, addr, 
-			value.as_uint, value.as_float);
+		si_isa_debug("wf%d: S%u<=(%u)(%u,%gf)", work_item->wavefront->id, INST.sdst, addr, value.as_uint, value.as_float);
 	}
 
 	/* Record last memory access for the detailed simulator. */
 	work_item->global_mem_access_addr = addr;
 	work_item->global_mem_access_size = 4;
+
+	printf("here pointer values... work_item_mem 0x%08x\n", work_item->global_mem_access_addr);
+	getchar();
+
+
 }
 #undef INST
 
@@ -155,8 +157,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 #undef INST
 
 #define INST SI_INST_SMRD
-void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
-	struct si_inst_t *inst)
+void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[4];
 
@@ -487,6 +488,8 @@ void si_isa_S_MAX_I32_impl(struct si_work_item_t *work_item,
 		max.as_int = s1.as_int;
 		s0_max.as_uint = 0;
 	}
+
+	printf("here\n");
 
 	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, max.as_uint);

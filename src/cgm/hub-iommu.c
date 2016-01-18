@@ -9,7 +9,6 @@
 
 #include <cgm/hub-iommu.h>
 
-
 /*
 #include <stdio.h>
 #include <stdlib.h>
@@ -278,12 +277,14 @@ void hub_iommu_ctrl(void){
 
 			P_PAUSE(hub_iommu->latency);
 
-			fatal("here\n");
-
 			/*virtual to physical or physical to virtual translation is here
 			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
 			if(hub_iommu->hub_iommu_translate != NULL)
 				hub_iommu->hub_iommu_translate(message_packet);
+
+			//pull the correct physical address
+			/*phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);*/
+			/*printf("here address is 0x%08x\n", phy_addr);*/
 
 			/*iommu_translate(message_packet);*/
 
@@ -364,19 +365,29 @@ unsigned int iommu_translation_table_get_address(int id){
 	return vtl_address;
 }
 
+
+
 void iommu_translate(struct cgm_packet_t *message_packet){
+
+	unsigned int phy_addr = 0;
 
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 	{
 		/*load and stores are heading to the system agent.*/
 
+		printf("hub-iommu gpu vtl address in 0x%08x\n", message_packet->address);
+
+		phy_addr = mmu_translate_guest(0, si_emu->pid, message_packet->address);
+
+		printf("hub-iommu gpu phy address out 0x%08x\n", phy_addr);
+		getchar();
+
 		/*store the vtrl address in the translation lookup table and get the translation id*/
 		message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);
 
 		/*Translate the vtl address to a phy address*/
 		message_packet->address = iommu_get_phy_address(message_packet->address);
-
 	}
 	else if(message_packet->access_type == cgm_access_mc_put)
 	{
