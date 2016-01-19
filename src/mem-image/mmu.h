@@ -21,6 +21,8 @@
 #define MEM_SYSTEM_MMU_H
 
 
+#define mmu_page_mask 4095
+
 enum mmu_access_t
 {
 	mmu_access_invalid = 0,
@@ -30,7 +32,6 @@ enum mmu_access_t
 	mmu_access_write,
 	mmu_access_execute
 };
-
 
 enum mmu_page_type_t
 {
@@ -73,9 +74,10 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 int mmu_valid_phy_addr(unsigned int phy_addr);
 void mmu_access_stats(unsigned int phy_addr, enum mmu_access_t access);
 
-void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr);
+void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr, unsigned int size);
 struct page_guest_t *mmu_create_guest(void);
 void mmu_guest_insert(struct page_guest_t *guest, struct mmu_page_t *page);
+int mmu_check_page_boundary(void);
 unsigned int mmu_translate_guest(int address_space_index, int guest_pid, unsigned int vtl_addr);
 void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr, unsigned int *quest_vtl_tag_ptr, unsigned int *host_vtl_offset_ptr, unsigned int *page_phy_addr_ptr);
 

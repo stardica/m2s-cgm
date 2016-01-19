@@ -355,7 +355,6 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			/*printf("witness pointer value %d\n", uop->global_mem_witness);
 			getchar();*/
 			printf("scalar uop id %llu %s\n", uop->id, uop->inst.info->name);
-			getchar();
 
 			cgm_scalar_access(scalar_unit, cgm_access_load_s, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else

@@ -56,7 +56,7 @@ unsigned int max_1 = 0;
 struct page_guest_t{
 
 	int guest_pid;	/*guest process id*/
-	unsigned int guest_vtl_tag; /*guest virtual address*/
+	unsigned int guest_vtl_addr; /*base guest virtual address*/
 	unsigned int host_vtl_offset; /*offset of host*/ //not needed?
 };
 
@@ -453,39 +453,69 @@ enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type){
 }
 
 
-void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_ptr, unsigned int host_ptr){
+void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_ptr, unsigned int host_ptr, unsigned int size){
 
 	struct mmu_page_t *page;
 	struct page_guest_t *guest;
 	unsigned int guest_vtl_tag;
 	unsigned int host_vtl_offset;
+	unsigned int guest_vtl_offset;
 
-	/*get the page*/
-	page = mmu_get_page(address_space_index, host_ptr, mmu_access_load_store);
-	assert(page);
+	unsigned int host_sum;
+	unsigned int guest_sum;
+	unsigned int delta;
 
-	printf("page quest added page id %d gpu vtl address 0x%08x\n", page->id, guest_ptr);
-
-	/*printf("page %d\n", page->id);
-	printf("%d 0x%08x 0x%08x\n", guest_pid, guest_ptr, host_ptr);*/
+	int i = 0;
 
 	/*get the guest vtl tag and host vtl offset*/
 	guest_vtl_tag = guest_ptr & ~mmu_page_mask;
+	guest_vtl_offset = guest_ptr & mmu_page_mask;
 	host_vtl_offset = host_ptr & mmu_page_mask;
 
-	/*add the guest device to the page guest list*/
-	guest = mmu_create_guest();
-	guest->guest_pid = guest_pid;
-	guest->guest_vtl_tag = guest_vtl_tag;
-	guest->host_vtl_offset = host_vtl_offset;
+	/*determine the number of pages the data spans on the host...*/
+	host_sum = host_vtl_offset + size;
+	host_sum = host_sum >> LOG2(mmu_page_mask);
 
-	/*printf("%d 0x%08x 0x%08x\n", guest_pid, guest->guest_vtl_tag, guest->host_vtl_offset);*/
+	/*determine the number of TAGS the data spans on the guest...*/
+	guest_sum = guest_vtl_offset + size;
+	guest_sum = guest_sum >> LOG2(mmu_page_mask);
+	/*printf("host sum %u\n", host_sum);
+	printf("guest sum %u 0x%08x size %u\n", guest_sum, guest_vtl_offset, size);
+	getchar();*/
 
-	/*set the linked bit*/
-	page->link = 1;
+	for(i = 0; i <= host_sum; i++)
+	{
+		printf("adding page host_ptr 0x%08x\n", host_ptr);
+		/*get the page*/
+		page = mmu_page_access(address_space_index, host_ptr, mmu_access_load_store);
+		assert(page);
 
-	/*insert the quest into the guest page list*/
-	list_enqueue(page->guest_list, guest);
+		printf("page guest added page id %d gpu vtl address 0x%08x\n", page->id, guest_ptr);
+		getchar();
+
+		/*add the guest device to the page guest list*/
+		guest = mmu_create_guest();
+		guest->guest_pid = guest_pid;
+		guest->guest_vtl_addr = guest_ptr;
+		guest->host_vtl_offset = host_vtl_offset;
+
+		/*insert the quest into the guest page list*/
+		page->link = 1;
+		list_enqueue(page->guest_list, guest);
+
+
+		//if the loop is going to run again adjust the addresses...
+		host_ptr = & ~mmu_page_mask; //increments the host page tag
+		host_ptr = host_ptr + (mmu_page_mask + 1);
+		host_vtl_offset = 0;
+
+
+
+		/*guest_ptr =*/
+
+	}
+
+	/*printf("%d 0x%08x 0x%08x\n", guest_pid, guest_ptr, host_ptr);*/
 
 	return;
 }
@@ -511,7 +541,7 @@ void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr
 		//check to see if page is linked to a quest
 		if(page->link == 1)
 		{
-			//printf("page found id %d\n", page->id);
+			printf("page found id %d\n", page->id);
 
 			/*check the guest's vtl tag*/
 			LIST_FOR_EACH(page->guest_list, j)
@@ -519,10 +549,12 @@ void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr
 				//pull a guest
 				guest = list_get(page->guest_list, j);
 
+				printf("quest found tag %d\n", guest->guest_vtl_tag);
+
 				//check to see if page is linked to a quest
 				if(guest->guest_pid == guest_pid && guest->guest_vtl_tag == guest_vtl_tag)
 				{
-					//printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+					printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
 					*(page_id_ptr) = page->id;
 					*(page_phy_addr_ptr) = page->phy_addr;
 					*(quest_vtl_tag_ptr) = guest->guest_vtl_tag;
@@ -536,9 +568,7 @@ void mmu_link_guest_page(int guest_pid, unsigned int vtl_addr, int * page_id_ptr
 		}
 	}
 
-	assert(page != NULL);
-	assert(guest != NULL);
-	//printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+	printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
 
 	return;
 }
@@ -564,13 +594,14 @@ unsigned int mmu_translate_guest(int address_space_index, int guest_pid, unsigne
 
 	mmu_link_guest_page(guest_pid, vtl_addr, page_id_ptr, quest_vtl_tag_ptr, host_vtl_offset_ptr, page_phy_addr_ptr);
 
+	assert(page_id != -1);
+
 	if(page_id == -1)
 	{
 		misses ++;
 		printf("translation miss in hub-iommu %d\n", misses);
-
+		getchar();
 	}
-
 
 
 	printf("mmu trans page %d guest id %d quest vtl_addr 0x%08x\n", page_id, guest_pid, vtl_addr);

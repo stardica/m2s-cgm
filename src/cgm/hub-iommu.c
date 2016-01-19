@@ -381,7 +381,6 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 		phy_addr = mmu_translate_guest(0, si_emu->pid, message_packet->address);
 
 		printf("hub-iommu gpu phy address out 0x%08x\n", phy_addr);
-		getchar();
 
 		/*store the vtrl address in the translation lookup table and get the translation id*/
 		message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);

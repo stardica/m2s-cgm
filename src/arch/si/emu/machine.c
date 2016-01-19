@@ -93,8 +93,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 	work_item->global_mem_access_addr = addr;
 	work_item->global_mem_access_size = 4;
 
-	printf("here pointer values... work_item_mem 0x%08x\n", work_item->global_mem_access_addr);
-	getchar();
+	/*printf("here pointer values... work_item_mem 0x%08x\n", work_item->global_mem_access_addr);*/
 
 
 }

@@ -243,22 +243,38 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 
 	unsigned int size;
 	unsigned int device_ptr;
+	unsigned int host_ptr;
 
 	/* Arguments */
 	size = regs->ecx;
+	host_ptr = regs->edx;
 	opencl_debug("\tsize = %u\n", size);
 
-	/* For now, memory allocation in device memory is done by just 
-	 * incrementing a pointer to the top of the global memory space. 
-	 * Since memory deallocation is not implemented, "holes" in the 
-	 * memory space are not considered. */
-	device_ptr = si_emu->video_mem_top;
-	si_emu->video_mem_top += size;
-	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
+	//star should this be a system call? I.e the driver runs a system call to do the link?
+	//this will turn shared memory on and off as set in the ini file.
+	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+	{
+		device_ptr = si_emu->video_mem_top;
+		si_emu->video_mem_top += size;
+		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
+
+		/*link this GPU memory segment to the corresponding host memory page*/
+		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
+	}
+	else
+	{
+		/* For now, memory allocation in device memory is done by just
+		 * incrementing a pointer to the top of the global memory space.
+		 * Since memory deallocation is not implemented, "holes" in the
+		 * memory space are not considered. */
+		device_ptr = si_emu->video_mem_top;
+		si_emu->video_mem_top += size;
+		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
+	}
 
 	if(INT == 1)
 	{
-		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u device_ptr 0x%08x\n", size, device_ptr);
+		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u device_ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
 	}
 
 	/* Return device pointer */
@@ -390,31 +406,11 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
 	}
 
-	//star should this be a system call and not an ABI (driver) function?
-	//this will turn shared memory on and off as set in the ini file.
-
-	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
-	{
-		/*link this GPU to requested host memory page*/
-		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr);
-
-		/*unsigned int phy_addr;*/
-
-		//star todo, this need to be deleted.
-		/* Write memory from host to device */
-		buf = xmalloc(size);
-		mem_read(mem, host_ptr, size, buf);
-		mem_write(si_emu->video_mem, device_ptr, size, buf);
-		free(buf);
-	}
-	else
-	{
-		/* Write memory from host to device */
-		buf = xmalloc(size);
-		mem_read(mem, host_ptr, size, buf);
-		mem_write(si_emu->video_mem, device_ptr, size, buf);
-		free(buf);
-	}
+	/* Write memory from host to device */
+	buf = xmalloc(size);
+	mem_read(mem, host_ptr, size, buf);
+	mem_write(si_emu->video_mem, device_ptr, size, buf);
+	free(buf);
 
 	/* Return */
 	return 0;
