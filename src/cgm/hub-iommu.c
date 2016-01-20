@@ -174,6 +174,8 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 	int last_queue_num = -1;
 	int l2_src_id = -1;
 
+	int l3_map;
+
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
 
@@ -189,6 +191,15 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 
 		//switch queue has a slot
 
+		//update routing headers for the packet
+		l3_map = cgm_l3_cache_map(message_packet->set);
+
+		//set access type
+		message_packet->access_type = cgm_access_getx;
+
+		message_packet->dest_name = l3_caches[l3_map].name;
+		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
 		//save the gpu l2 cache id
 		message_packet->l2_cache_id = message_packet->src_id;
 		message_packet->l2_cache_name = message_packet->src_name;
@@ -200,6 +211,11 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
 
+		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
+				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
+		getchar();
+
+
 		//list_enqueue(hub_iommu->switch_queue, message_packet);
 		//advance(&switches_ec[hub_iommu->switch_id]);
 		//future_advance(&switches_ec[hub_iommu->switch_id], WIRE_DELAY(switches[hub_iommu->switch_id].wire_latency));
@@ -207,11 +223,6 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 		advance(hub_iommu->hub_iommu_io_down_ec);
 
-		/*printf("hub_iommu ctrl send size %d\n", list_count(hub_iommu->Tx_queue_bottom));*/
-
-		/*CGM_DEBUG(hub_iommu_debug_file,"%s access_id %llu cycle %llu delivered\n",
-				hub_iommu->name, message_packet->access_id, P_TIME);
-*/
 	}
 	//if we are pointing to the bottom queue route to the correct GPU l2 cache
 	else if(last_queue_num == Rx_queue_bottom)
@@ -254,6 +265,8 @@ void hub_iommu_ctrl(void){
 
 	long long step = 1;
 
+	int l3_map;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
@@ -281,6 +294,7 @@ void hub_iommu_ctrl(void){
 			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
 			if(hub_iommu->hub_iommu_translate != NULL)
 				hub_iommu->hub_iommu_translate(message_packet);
+
 
 			//pull the correct physical address
 			/*phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);*/
@@ -369,31 +383,28 @@ unsigned int iommu_translation_table_get_address(int id){
 
 void iommu_translate(struct cgm_packet_t *message_packet){
 
-	unsigned int phy_addr = 0;
+	//unsigned int phy_addr = 0;
 
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 	{
 		/*load and stores are heading to the system agent.*/
 
-		printf("hub-iommu gpu vtl address in 0x%08x\n", message_packet->address);
+		printf("hub-iommu guest vtl address in 0x%08x\n", message_packet->address);
 
-		phy_addr = mmu_translate_guest(0, si_emu->pid, message_packet->address);
+		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
 
-		printf("hub-iommu gpu phy address out 0x%08x\n", phy_addr);
+		printf("hub-iommu host phy address out 0x%08x\n", message_packet->address);
 
-		/*store the vtrl address in the translation lookup table and get the translation id*/
-		message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);
-
-		/*Translate the vtl address to a phy address*/
-		message_packet->address = iommu_get_phy_address(message_packet->address);
 	}
 	else if(message_packet->access_type == cgm_access_mc_put)
 	{
 		/*put coming from the system agent.*/
 
+		message_packet->address = mmu_reverse_translate_guest(0, si_emu->pid, message_packet->address);
+
 		/*find the virtual address in the translation lookup table*/
-		message_packet->address = iommu_translation_table_get_address(message_packet->translation_id);
+		//message_packet->address = iommu_translation_table_get_address(message_packet->translation_id);
 
 	}
 	else

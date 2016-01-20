@@ -14,7 +14,7 @@
 
 void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("%s s load vtl_addr 0x%08x\n", cache->name, message_packet->address);
+	/*printf("%s s load vtl_addr 0x%08x\n", cache->name, message_packet->address);*/
 	/*STOP;*/
 
 	int cache_block_hit;
@@ -32,12 +32,13 @@ void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
 
-	/*message_packet = list_remove(cache->last_queue, message_packet);
+	P_PAUSE(cache->latency);
+	message_packet = list_remove(cache->last_queue, message_packet);
 	(*message_packet->witness_ptr)++;
 	packet_destroy(message_packet);
-	return;*/
+	return;
 
-	switch(*cache_block_state_ptr)
+	/*switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_shared:
@@ -68,7 +69,7 @@ void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			}
 
 			//add some routing/status data to the packet
-			/*message_packet->gpu_access_type = cgm_access_load_s;*/
+			message_packet->gpu_access_type = cgm_access_load_s;
 
 			message_packet->gpu_cache_id = cache->id;
 			message_packet->access_type = cgm_access_gets_s;
@@ -106,7 +107,7 @@ void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			cache_gpu_s_return(cache, message_packet);
 			break;
 	}
-	return;
+	return;*/
 }
 
 void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet){

@@ -113,9 +113,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void);
 void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
 int hub_iommu_can_access(struct list_t *queue);
 
-
 //iommu functions
-
 void iommu_translate(struct cgm_packet_t *message_packet);
 unsigned int iommu_get_phy_address(unsigned int address);
 unsigned int iommu_get_vtl_address(unsigned int address, int id);

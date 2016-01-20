@@ -1,3 +1,110 @@
+/*store the vtrl address in the translation lookup table and get the translation id*/
+		//message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);
+
+		/*Translate the vtl address to a phy address*/
+		//message_packet->address = iommu_get_phy_address(message_packet->address);
+
+/*search the page list for a page hit.*/
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		//pull a page
+		page = list_get(mmu->page_list, i);
+
+		//check to see if page is linked to a quest
+		if(page->link == 1)
+		{
+			printf("page found id %d\n", page->id);
+
+			/*check the guest's vtl tag*/
+			LIST_FOR_EACH(page->guest_list, j)
+			{
+				//pull a guest
+				guest = list_get(page->guest_list, j);
+
+				printf("quest found tag %d\n", guest->guest_vtl_tag);
+
+				//check to see if page is linked to a quest
+				if(guest->guest_pid == guest_pid && guest->guest_vtl_tag == guest_vtl_tag)
+				{
+					printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+					*(page_id_ptr) = page->id;
+					*(page_phy_addr_ptr) = page->phy_addr;
+					*(quest_vtl_tag_ptr) = guest->guest_vtl_tag;
+					*(host_vtl_offset_ptr) = guest->host_vtl_offset;
+
+					//this stops the outer loop from running when the right guest is found.
+					i = (list_count(mmu->page_list) + 1) ;
+					break;
+				}
+			}
+		}
+	}
+
+	printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+
+
+/*get the guest vtl tag and host vtl offset*/
+	guest_vtl_tag = guest_ptr & ~mmu_page_mask;
+	guest_vtl_offset = guest_ptr & mmu_page_mask;
+	host_vtl_offset = host_ptr & mmu_page_mask;
+
+	/*determine the number of pages the data spans on the host...*/
+	host_sum = host_vtl_offset + size;
+	host_sum = host_sum >> LOG2(mmu_page_mask);
+
+	/*determine the number of TAGS the data spans on the guest...*/
+	guest_sum = guest_vtl_offset + size;
+	guest_sum = guest_sum >> LOG2(mmu_page_mask);
+	/*printf("host sum %u\n", host_sum);
+	printf("guest sum %u 0x%08x size %u\n", guest_sum, guest_vtl_offset, size);
+	getchar();*/
+
+
+struct mmu_page_t *page;
+	struct page_guest_t *guest;
+	unsigned int guest_vtl_tag;
+	unsigned int host_vtl_offset;
+	unsigned int guest_vtl_offset;
+
+	unsigned int host_sum;
+	unsigned int guest_sum;
+	unsigned int delta;
+
+	int i = 0;
+
+
+	for(i = 0; i <= host_sum; i++)
+	{
+		printf("adding page host_ptr 0x%08x\n", host_ptr);
+		/*get the page*/
+		page = mmu_page_access(address_space_index, host_ptr, mmu_access_load_store);
+		assert(page);
+
+		printf("page guest added page id %d gpu vtl address 0x%08x\n", page->id, guest_ptr);
+		getchar();
+
+		/*add the guest device to the page guest list*/
+		guest = mmu_create_guest();
+		guest->guest_pid = guest_pid;
+		guest->guest_vtl_addr = guest_ptr;
+		guest->host_vtl_offset = host_vtl_offset;
+
+		/*insert the quest into the guest page list*/
+		page->link = 1;
+		list_enqueue(page->guest_list, guest);
+
+
+		//if the loop is going to run again adjust the addresses...
+		host_ptr = & ~mmu_page_mask; //increments the host page tag
+		host_ptr = host_ptr + (mmu_page_mask + 1);
+		host_vtl_offset = 0;
+
+
+
+		/*guest_ptr =*/
+
+	}
+
 /*printf("phy_addr is 0x%08x\n", phy_addr);
 	printf("starting reverse translation...\n");
 	printf("mask out the vtl_addr offset from the physical address...\n");

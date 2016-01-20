@@ -3491,6 +3491,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		return;
 	}
 
+	if(message_packet->access_id == 1627862)
+	{
+		fatal("message %llu in L3 0x%08x hit_ptr %d\n", message_packet->access_id, message_packet->address, *cache_block_hit_ptr);
+	}
+
 
 	switch(*cache_block_state_ptr)
 	{

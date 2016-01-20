@@ -258,7 +258,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 		si_emu->video_mem_top += size;
 		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
-		/*link this GPU memory segment to the corresponding host memory page*/
+		/*link this GPU memory segment to the corresponding host memory space*/
 		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
 	}
 	else
