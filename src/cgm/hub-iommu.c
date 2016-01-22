@@ -70,7 +70,9 @@ int hub_iommu_io_down_pid = 0;
 void hub_iommu_init(void){
 
 	hub_iommu_create();
-	hub_iommu_create_tasks();
+
+	//moved to configure to support ini configuration inputs.
+	/*hub_iommu_create_tasks();*/
 
 	return;
 }
@@ -82,7 +84,7 @@ void hub_iommu_create(void){
 	return;
 }
 
-void hub_iommu_create_tasks(void){
+void hub_iommu_create_tasks(void (*func)(void)){
 
 	char buff[100];
 	//int i = 0;
@@ -96,8 +98,7 @@ void hub_iommu_create_tasks(void){
 	hub_iommu_tasks = (void *) calloc(1, sizeof(task));
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "hub_iommu_ctrl");
-	hub_iommu_tasks = create_task(hub_iommu_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
-
+	hub_iommu_tasks = create_task(func, DEFAULT_STACK_SIZE, strdup(buff));
 
 	return;
 }
@@ -167,7 +168,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 	return new_message;
 }
 
-void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
+void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
@@ -182,13 +183,6 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 	//if we are pointing to one of the top queues put the packet on the switch.
 	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
 	{
-
-		/*while(!switch_can_access(hub_iommu->switch_queue))
-		{
-			printf("hub stalling\n");
-			P_PAUSE(1);
-		}*/
-
 		//switch queue has a slot
 
 		//update routing headers for the packet
@@ -196,9 +190,85 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 
 		//set access type
 		message_packet->access_type = cgm_access_getx;
+		message_packet->cpu_access_type = cgm_access_store;
 
 		message_packet->dest_name = l3_caches[l3_map].name;
 		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+		//save the gpu l2 cache id
+		message_packet->gpu_cache_id = message_packet->l2_cache_id;
+		message_packet->gpu_cache_name = message_packet->l2_cache_name;
+
+		message_packet->l2_cache_id = hub_iommu->switch_id;
+		message_packet->l2_cache_name = hub_iommu->name;
+
+		//change src name and id
+		message_packet->src_name = hub_iommu->name;
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+
+		message_packet = list_remove(hub_iommu->last_queue, message_packet);
+		assert(message_packet);
+
+		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
+				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
+
+		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
+		advance(hub_iommu->hub_iommu_io_down_ec);
+
+	}
+	//if we are pointing to the bottom queue route to the correct GPU l2 cache
+	else if(last_queue_num == Rx_queue_bottom)
+	{
+		//return trip for memory access
+		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
+
+		if(message_packet->access_id == 1627680)
+		{
+			printf("message %llu hub_iomm received gpu cache name %s\n", message_packet->access_id, message_packet->gpu_cache_name);
+		}
+
+		//star todo fix this
+		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
+		{
+			fatal("hub_iommu_put_next_queue(): hub stalling on return\n");
+			P_PAUSE(1);
+		}
+
+		message_packet = list_remove(hub_iommu->last_queue, message_packet);
+
+		//list_enqueue(gpu_l2_caches[l2_src_id].Rx_queue_bottom, message_packet);
+		//advance(&gpu_l2_cache[l2_src_id]);
+		//future_advance(&gpu_l2_cache[l2_src_id], WIRE_DELAY(gpu_l2_caches[l2_src_id].wire_latency));
+
+		list_enqueue(hub_iommu->Tx_queue_top[l2_src_id], message_packet);
+		advance(hub_iommu->hub_iommu_io_up_ec[l2_src_id]);
+
+	}
+	else
+	{
+		fatal("hub_iommu_put_next_queue(): got a queue id that is out of range\n");
+
+	}
+
+	return;
+}
+
+void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
+
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	int last_queue_num = -1;
+	int l2_src_id = -1;
+
+	int l3_map;
+
+	//get the number of the last queue
+	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
+
+	//if we are pointing to one of the top queues put the packet on the switch.
+	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
+	{
+		//switch queue has a slot
 
 		//save the gpu l2 cache id
 		message_packet->l2_cache_id = message_packet->src_id;
@@ -211,18 +281,8 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
 
-		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
-				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
-		getchar();
-
-
-		//list_enqueue(hub_iommu->switch_queue, message_packet);
-		//advance(&switches_ec[hub_iommu->switch_id]);
-		//future_advance(&switches_ec[hub_iommu->switch_id], WIRE_DELAY(switches[hub_iommu->switch_id].wire_latency));
-
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 		advance(hub_iommu->hub_iommu_io_down_ec);
-
 	}
 	//if we are pointing to the bottom queue route to the correct GPU l2 cache
 	else if(last_queue_num == Rx_queue_bottom)
@@ -256,7 +316,52 @@ void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet){
 	return;
 }
 
-void hub_iommu_ctrl(void){
+void hub_iommu_noncoherent_ctrl(void){
+
+	int my_pid = hub_iommu_pid++;
+	/*int num_cus = si_gpu_num_compute_units;*/
+	/*int gpu_group_cache_num = (num_cus/4);*/
+	struct cgm_packet_t *message_packet;
+	long long step = 1;
+	int l3_map;
+
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		//we have received a packet
+		await(hub_iommu_ec, step);
+
+		//star todo figure out a way to check the l2 in queue
+		if(!switch_can_access(hub_iommu->switch_queue))// && !cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
+		{
+			P_PAUSE(1);
+			fatal("hub_iommu_ctrl(): hub stalled\n");
+		}
+		else
+		{
+			step++;
+
+			//if we made it here we should have a packet.
+			message_packet = hub_iommu_get_from_queue();
+			assert(message_packet);
+
+			P_PAUSE(hub_iommu->latency);
+
+			iommu_nc_translate(message_packet);
+
+
+
+			//star the hub multiplexes GPU memory requests.
+			hub_iommu_put_next_queue(message_packet);
+		}
+	}
+
+	fatal("hub_iommu_ctrl(): reached end of func\n");
+	return;
+}
+
+void hub_iommu_coherent_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
 	/*int num_cus = si_gpu_num_compute_units;*/
@@ -292,8 +397,10 @@ void hub_iommu_ctrl(void){
 
 			/*virtual to physical or physical to virtual translation is here
 			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
-			if(hub_iommu->hub_iommu_translate != NULL)
-				hub_iommu->hub_iommu_translate(message_packet);
+			/*if(hub_iommu->hub_iommu_translate != NULL)
+				hub_iommu->hub_iommu_translate(message_packet);*/
+
+			iommu_translate(message_packet);
 
 
 			//pull the correct physical address
@@ -380,6 +487,32 @@ unsigned int iommu_translation_table_get_address(int id){
 }
 
 
+
+void iommu_nc_translate(struct cgm_packet_t *message_packet){
+
+	//check to see if the packet is inbound or outbound
+	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
+	{
+		/*load and stores are heading to the system agent.*/
+		printf("hub-iommu NC ACCESS vtl address in 0x%08x\n", message_packet->address);
+		message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
+		printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
+	}
+	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
+	{
+		/*replies coming from system agent*/
+		printf("hub-iommu NC return phy address in 0x%08x\n", message_packet->address);
+		message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
+		printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);
+	}
+	else
+	{
+		fatal("iommu_translate(): invalid message_packet access type\n");
+	}
+
+
+	return;
+}
 
 void iommu_translate(struct cgm_packet_t *message_packet){
 

@@ -678,7 +678,13 @@ void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	row = ort_search(cache, message_packet->tag, message_packet->set);
 
-	assert(row < cache->mshr_size);
+	if(row >= cache->mshr_size)
+	{
+		ort_dump(cache);
+		printf("ort_clear(): row >= cache->mshr_size %s access id %llu\n", cache->name, message_packet->access_id);
+		assert(row < cache->mshr_size);
+	}
+
 	cache->ort[row][0] = -1;
 	cache->ort[row][1] = -1;
 	cache->ort[row][2] = -1;
@@ -2154,7 +2160,7 @@ void gpu_l2_cache_ctrl(void){
 				//Call back function (gpu_cache_access_get)
 				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
 			}
-			else if(access_type == cgm_access_mc_put)
+			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet);
@@ -2578,17 +2584,14 @@ void gpu_l2_cache_up_io_ctrl(void){
 		//drop into the correct l1 cache queue.
 		if(message_packet->gpu_access_type == cgm_access_load_s)
 		{
-
-
-
 			list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
-			advance(&gpu_s_cache[message_packet->gpu_cache_id]);
+			advance(&gpu_s_cache[message_packet->l1_cache_id]);
 		}
 		else if(message_packet->gpu_access_type == cgm_access_load_v || message_packet->gpu_access_type == cgm_access_store_v
 				|| message_packet->gpu_access_type == cgm_access_nc_store)
 		{
-			list_enqueue(gpu_v_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
-			advance(&gpu_v_cache[message_packet->gpu_cache_id]);
+			list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
+			advance(&gpu_v_cache[message_packet->l1_cache_id]);
 		}
 		else
 		{
@@ -3093,7 +3096,7 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	assert(l2_cache_id > (-1) && l2_cache_id < num_cores);
+	assert(l2_cache_id > (-1) && l2_cache_id < (num_cores + 1)); //+1 is hub-iommu
 
 	if(l2_cache_id == 0)
 	{
@@ -3110,6 +3113,10 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 	else if(l2_cache_id == 3)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p3 = 1;
+	}
+	else if(l2_cache_id == 4)
+	{
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p4 = 1;
 	}
 	else
 	{
@@ -3410,7 +3417,7 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 	}
 	else
 	{
-		fatal("cgm_cache_get_retry_state(): unrecognized state\n");
+		fatal("cgm_cache_get_retry_state(): unrecognized state as %s \n", str_map_value(&cgm_mem_access_strn_map, r_state));
 	}
 
 	return retry_state;

@@ -270,6 +270,8 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 		device_ptr = si_emu->video_mem_top;
 		si_emu->video_mem_top += size;
 		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
+
+		printf("opencl_abi_si_mem_alloc_impl(): fix me!\n");
 	}
 
 	if(INT == 1)

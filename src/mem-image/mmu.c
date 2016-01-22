@@ -119,6 +119,7 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	struct mmu_page_t *page = NULL;
 	struct mmu_page_t *text_page = NULL;
 	struct mmu_page_t *data_page = NULL;
+	struct mmu_page_t *gpu_page = NULL;
 	unsigned int tag;
 	int index;
 	int i = 0;
@@ -136,17 +137,17 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 		page = list_get(mmu->page_list, i);
 
 		//check to see if it is a hit and look for both text and data page types
-		if(mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		if(page->page_type == mmu_page_text && mmu_search_page(page, addr_type, addr, address_space_index, tag))
 		{
-			//assign to text or data page
-			if(page->page_type == mmu_page_text)
-			{
-				text_page = page;
-			}
-			else if(page->page_type == mmu_page_data)
-			{
-				data_page = page;
-			}
+			text_page = page;
+		}
+		else if(page->page_type == mmu_page_data && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		{
+			data_page = page;
+		}
+		else if(page->page_type == mmu_page_gpu && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		{
+			gpu_page = page;
 		}
 	}
 
@@ -161,25 +162,15 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	{
 		return data_page;
 	}
+	else if(page_type == mmu_page_gpu && gpu_page)
+	{
+		return gpu_page;
+	}
 	else
 	{
 		fatal("mmu_page_access(): page miss\n");
 	}
 
-	/*page = mmu->page_hash_table[index];
-
-	while (page)
-	{
-		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
-			break;
-		prev = page;
-		page = page->next;
-	}*/
-
-	assert(page);
-
-	/* Return it */
-	return page;
 }
 
 int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, unsigned int addr, int address_space_index, int tag){
@@ -217,6 +208,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	struct mmu_page_t *page = NULL;
 	struct mmu_page_t *text_page = NULL;
 	struct mmu_page_t *data_page = NULL;
+	struct mmu_page_t *gpu_page = NULL;
 	unsigned int tag;
 	int index;
 	/*int num_pages;*/
@@ -229,6 +221,11 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	tag = vtladdr & ~mmu_page_mask;
 	//prev = NULL;
 
+	if(access_type == mmu_access_gpu)
+	{
+		printf("searching for page gpu vtl_addr 0x%08x\n", vtladdr);
+	}
+
 	/*search the page list for a page hit.*/
 	LIST_FOR_EACH(mmu->page_list, i)
 	{
@@ -236,19 +233,29 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		page = list_get(mmu->page_list, i);
 
 		//check to see if it is a hit and look for both text and data page types
-		if(mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		if(page->page_type == mmu_page_text && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
 		{
-			//assign to text or data page ptr
-			if(page->page_type == mmu_page_text)
-			{
-				text_page = page;
-			}
-			else if(page->page_type == mmu_page_data)
-			{
-				data_page = page;
-			}
+			text_page = page;
 		}
+		else if(page->page_type == mmu_page_data && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		{
+			data_page = page;
+		}
+		else if (page->page_type == mmu_page_gpu && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		{
+			gpu_page = page;
+		}
+
 		/*printf("page id %d, page type %d\n", page->id, page->page_type);*/
+	}
+
+	if(access_type == mmu_access_gpu && gpu_page)
+	{
+		printf("page found\n");
+	}
+	else if(access_type == mmu_access_gpu && !gpu_page)
+	{
+		printf("page NOT found\n");
 	}
 
 	//figure out if we are looking for a .text or a data page.
@@ -267,10 +274,22 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		return data_page;
 	}
+	else if(page_type == mmu_page_data && data_page)
+	{
+		return gpu_page;
+	}
 	else
 	{
+		if(access_type == mmu_access_gpu && !gpu_page)
+		{
+			printf("creating page\n");
+		}
+
 		return mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
+
+
+
 }
 
 
@@ -453,6 +472,10 @@ enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type){
 	{
 		page_type = mmu_page_data;
 	}
+	else if(access_type == mmu_access_gpu)
+	{
+		page_type = mmu_page_gpu;
+	}
 	else
 	{
 		fatal("mmu_get_page_type(): invalid page access_type\n");
@@ -476,6 +499,8 @@ void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pt
 
 	guest->host_vtl_addr_base = host_ptr;
 	guest->host_vtl_addr_top = guest->host_vtl_addr_base + (size - 1);
+
+	printf("mmu guest added %d guest base address 0x%08x host base address 0x%08x\n", guest_pid, guest_ptr, host_ptr);
 
 	list_enqueue(mmu->guest_list, guest);
 
@@ -541,6 +566,25 @@ unsigned int mmu_reverse_link_host_address(int guest_pid, unsigned int host_vtl_
 	/*printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);*/
 	assert(hit == 1);
 	return guest_vtl_addr;
+}
+
+
+unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_addr, enum mmu_access_t access_type){
+
+	struct mmu_page_t *page;
+	unsigned int vtl_addr;
+	unsigned int offset;
+
+	assert(address_space_index == 0);
+
+	page = mmu_page_access(address_space_index, mmu_addr_phy, phy_addr, access_type);
+	assert(page);
+
+	/*build the host_vtl_addr*/
+	offset = (phy_addr & mmu_page_mask);
+	vtl_addr = page->vtl_addr | offset;
+
+	return vtl_addr;
 }
 
 unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid, unsigned int host_phy_addr){
@@ -638,6 +682,15 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	{
 		page->page_type = mmu_page_data;
 	}
+	else if(access_type == mmu_access_gpu)
+	{
+		if(access_type == mmu_access_gpu)
+		{
+			printf("created page %d\n", page->id);
+		}
+
+		page->page_type = mmu_page_gpu;
+	}
 	else
 	{
 		fatal("mmu_get_page(): invalid access_type\n");
@@ -663,7 +716,10 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	unsigned int offset;
 	unsigned int phy_addr;
 
-	/*printf("translating vtl_addr 0x%08x\n", vtl_addr);*/
+	if(access_type == mmu_access_gpu)
+	{
+		printf("translating gpu vtl_addr 0x%08x\n", vtl_addr);
+	}
 
 	//star added this check. The address space doesn't change for 1 CPU.
 	assert(address_space_index == 0);
@@ -690,6 +746,11 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
 				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);
 		return 0;
+	}
+	else if(page->page_type == mmu_page_gpu && access_type != mmu_access_gpu)
+	{
+		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);
 	}
 
 	return phy_addr;

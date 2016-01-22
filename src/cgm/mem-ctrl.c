@@ -230,6 +230,11 @@ void memctrl_ctrl(void){
 				printf(" blah blah blah!!! address 0x%08x\n", mmu_get_vtladdr(0, message_packet->address)),
 				getchar();*/
 
+				if(message_packet->access_id == 1627680)
+				{
+					printf("message %llu MC service\n", message_packet->access_id);
+				}
+
 
 				//set the access type
 				message_packet->access_type = cgm_access_mc_put;

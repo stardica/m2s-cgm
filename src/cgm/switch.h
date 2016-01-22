@@ -74,6 +74,7 @@ enum cpu_l2_map{
 		l2_caches_1,
 		l2_caches_2,
 		l2_caches_3,
+		hub_iommu_0,
 		l2_number
 };
 

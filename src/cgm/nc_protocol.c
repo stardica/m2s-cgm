@@ -112,7 +112,7 @@ void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("%s v load\n", cache->name);
+	/*printf("%s v load\n", cache->name);*/
 	/*STOP;*/
 
 	int cache_block_hit;
@@ -156,10 +156,16 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			if(message_packet->coalesced == 1)
 				return;
 
+			if(message_packet->access_id == 1628128)
+			{
+				ort_dump(cache);
+				printf("%s message %llu here.\n", cache->name, message_packet->access_id);
+			}
+
 			//add some routing/status data to the packet
 			/*message_packet->gpu_access_type = cgm_access_load_v;*/
 
-			message_packet->gpu_cache_id = cache->id;
+			message_packet->l1_cache_id = cache->id;
 			message_packet->access_type = cgm_access_gets_v;
 			message_packet->l1_access_type = cgm_access_gets_v;
 
@@ -201,7 +207,7 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	printf("%s v store\n", cache->name);
+	/*printf("%s v store\n", cache->name);*/
 	/*STOP;*/
 
 	int cache_block_hit;
@@ -246,7 +252,7 @@ void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pack
 				return;
 
 			//add some routing/status data to the packet
-			message_packet->gpu_cache_id = cache->id;
+			message_packet->l1_cache_id = cache->id;
 			message_packet->access_type = cgm_access_gets_v;
 			message_packet->l1_access_type = cgm_access_gets_v;
 
@@ -423,6 +429,9 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 			message_packet->access_type = cgm_access_mc_load;
 			message_packet->cache_block_state = cgm_cache_block_noncoherent;
 
+			message_packet->l2_cache_id = cache->id;
+			message_packet->l2_cache_name = cache->name;
+
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&gpu_l2_strn_map, cache->name);
 
@@ -446,7 +455,7 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 			}
 
 			message_packet->access_type = cgm_access_puts;
-			message_packet->size = 0;
+			message_packet->size = 64;
 			message_packet->cache_block_state = cgm_cache_block_noncoherent;
 
 			cache_put_io_up_queue(cache, message_packet);
@@ -460,9 +469,12 @@ void cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//check the packet for integrity
 	assert(cache->cache_type == gpu_l2_cache_t);
-	assert(message_packet->cache_block_state == cgm_cache_block_noncoherent);
+	assert(message_packet->cache_block_state == cgm_cache_block_noncoherent || message_packet->cache_block_state == cgm_cache_block_modified);
 	//make sure victim way was correctly stored.
 	assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
+
+	//star todo fix this
+	message_packet->cache_block_state = cgm_cache_block_noncoherent;
 
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);

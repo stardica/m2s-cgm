@@ -1,3 +1,45 @@
+hub-iommu put to l3
+
+	//update routing headers for the packet
+		l3_map = cgm_l3_cache_map(message_packet->set);
+
+		//set access type
+		message_packet->access_type = cgm_access_getx;
+
+		message_packet->dest_name = l3_caches[l3_map].name;
+		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+		//save the gpu l2 cache id
+		message_packet->l2_cache_id = message_packet->src_id;
+		message_packet->l2_cache_name = message_packet->src_name;
+
+		//change src name and id
+		message_packet->src_name = hub_iommu->name;
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+
+		message_packet = list_remove(hub_iommu->last_queue, message_packet);
+		assert(message_packet);
+
+		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
+				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
+				
+				
+				//save the gpu l2 cache id
+		/*message_packet->l2_cache_id = message_packet->src_id;
+		message_packet->l2_cache_name = message_packet->src_name;
+
+		//change src name and id
+		message_packet->src_name = hub_iommu->name;
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+
+		message_packet = list_remove(hub_iommu->last_queue, message_packet);
+		assert(message_packet);
+				
+				
+				
+				
+				
+
 /*store the vtrl address in the translation lookup table and get the translation id*/
 		//message_packet->translation_id = iommu_translation_table_insert_address(message_packet->address);
 

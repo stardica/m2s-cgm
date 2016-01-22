@@ -3232,6 +3232,7 @@ int switch_finish_create(void){
 
 	//connect to switch queue
 	hub_iommu->switch_id = (num_cores + extras - 1);
+
 	//hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
 
@@ -3263,19 +3264,33 @@ int switch_finish_create(void){
 	//configure hub-iommu virtual functions
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 	{
-		hub_iommu->hub_iommu_translate = NULL;
+		hub_iommu_ctrl = hub_iommu_noncoherent_ctrl;
 	}
 	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
-		//fatal("here\n");
+		hub_iommu_ctrl = hub_iommu_coherent_ctrl;
+	}
 
-		hub_iommu->hub_iommu_translate = iommu_translate;
+	hub_iommu_create_tasks(hub_iommu_ctrl);
+
+	//configure correct routing function
+	if(HUB_IOMMU_CONNECTION_MODE == 0)
+	{
+		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
+	}
+	else if(HUB_IOMMU_CONNECTION_MODE == 1)
+	{
+		hub_iommu_put_next_queue = hub_iommu_put_next_queue_L3;
+	}
+	else if(HUB_IOMMU_CONNECTION_MODE == 2)
+	{
 
 	}
 	else
 	{
-		fatal("invalid protocol at hub-iommu init\n");
+		fatal("switch_finish_create(): HUB_IOMMU_CONNECTION_MODE invlid setting\n");
 	}
+
 
 	return 0;
 }

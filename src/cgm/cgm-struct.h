@@ -119,6 +119,7 @@ struct cgm_packet_t{
 	char *l2_cache_name;
 	int l2_cache_id;
 	int gpu_cache_id;
+	char *gpu_cache_name;
 
 	//access data
 	long long access_id;

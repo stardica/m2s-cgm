@@ -26,6 +26,7 @@ enum mmu_access_t
 	mmu_access_invalid = 0,
 	mmu_access_fetch,
 	mmu_access_load_store,
+	mmu_access_gpu,	//add more devices as needed
 	mmu_access_read,
 	mmu_access_write,
 	mmu_access_execute
@@ -35,7 +36,8 @@ enum mmu_page_type_t
 {
 	mmu_page_invalid = 0,
 	mmu_page_text,
-	mmu_page_data
+	mmu_page_data,
+	mmu_page_gpu
 };
 
 enum mmu_address_type_t
@@ -74,6 +76,7 @@ void mmu_access_stats(unsigned int phy_addr, enum mmu_access_t access);
 
 void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr, unsigned int size);
 struct page_guest_t *mmu_create_guest(void);
+unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_addr, enum mmu_access_t access_type);
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr);
 unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid, unsigned int host_phy_addr);
 unsigned int mmu_forward_link_guest_address(int guest_pid, unsigned int vtl_addr);

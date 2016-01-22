@@ -23,12 +23,13 @@
 #include <cgm/switch.h>
 
 
+#define HUB_IOMMU_CONNECTION_MODE 1
+
 /*#include <lib/util/debug.h>
 #include <cgm/cgm.h>
 #include <cgm/protocol.h>
 #include <lib/util/list.h>
 #include <cgm/tasking.h>*/
-
 
 enum Rx_queue_name
 {
@@ -89,8 +90,6 @@ struct hub_iommu_t{
 	unsigned int **translation_table;
 	int translation_table_size;
 
-	//virtual functions that support multiple simulator configurations
-	void (*hub_iommu_translate)(struct cgm_packet_t *message_packet);
 };
 
 extern struct hub_iommu_t *hub_iommu;
@@ -103,17 +102,25 @@ extern int hub_iommu_io_down_pid;
 
 void hub_iommu_init(void);
 void hub_iommu_create(void);
-void hub_iommu_create_tasks(void);
-void hub_iommu_ctrl(void);
+void hub_iommu_create_tasks(void (*func)(void));
 
+int hub_iommu_can_access(struct list_t *queue);
+
+//virtual functions that support multiple simulator configurations
+void (*hub_iommu_ctrl)(void);
+void hub_iommu_noncoherent_ctrl(void);
+void hub_iommu_coherent_ctrl(void);
+
+struct cgm_packet_t *hub_iommu_get_from_queue(void);
+
+void (*hub_iommu_put_next_queue)(struct cgm_packet_t *message_packet);
+void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet);
+void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet);
 void hub_iommu_io_up_ctrl(void);
 void hub_iommu_io_down_ctrl(void);
 
-struct cgm_packet_t *hub_iommu_get_from_queue(void);
-void hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
-int hub_iommu_can_access(struct list_t *queue);
-
 //iommu functions
+void iommu_nc_translate(struct cgm_packet_t *message_packet);
 void iommu_translate(struct cgm_packet_t *message_packet);
 unsigned int iommu_get_phy_address(unsigned int address);
 unsigned int iommu_get_vtl_address(unsigned int address, int id);

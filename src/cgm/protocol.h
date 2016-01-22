@@ -132,8 +132,6 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
-
-
 /////////////////////
 /////GPU NC protocol
 /////////////////////
