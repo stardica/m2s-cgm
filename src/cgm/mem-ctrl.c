@@ -46,6 +46,8 @@ void memctrl_init(void){
 	memctrl_create();
 	memctrl_create_tasks();
 
+	dram_init();
+
 	return;
 }
 
@@ -56,6 +58,59 @@ void memctrl_create(void){
 
 	return;
 }
+
+void dram_init(void){
+
+	print_dramsim();
+	dramsim_start();
+	set_cpu_freq();
+
+	fatal("exit\n");
+
+	return;
+}
+
+void print_dramsim(void){
+
+	call_print_me();
+
+	return;
+
+}
+
+char dramsim_ddr_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini";
+char dramsim_system_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/system.ini";
+char dramsim_vis_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/results";
+
+void *dram_ptr;
+
+void dramsim_start(void){
+
+	void *temp = NULL;
+
+	/*char *dev, char *sys, char *pwd,  char *trc, unsigned int megsOfMemory, char *visfilename*/
+	temp = (void *) call_get_memory_system_instance(dramsim_ddr_config_path, dramsim_system_config_path, "/../", "exmaple_app", 4096, dramsim_vis_config_path);
+
+	dram_ptr = temp;
+	printf("C side temp_ptrint 0x%08x\n", temp);
+
+	return;
+}
+
+void set_cpu_freq(void){
+
+	call_set_CPU_clock_speed(dram_ptr, 40000);
+
+	printf("C side freq set\n");
+
+	return;
+}
+
+/*void set_CPU_clock_speed(void){
+
+	set_the_clock(deam_ptr, 40000);
+
+}*/
 
 void memctrl_create_tasks(void){
 
@@ -141,6 +196,9 @@ void memctrl_ctrl_io(void){
 	}
 	return;
 }
+
+
+
 
 //do some work.
 void memctrl_ctrl(void){

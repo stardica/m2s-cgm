@@ -37,6 +37,7 @@
 
 #define DRAM_DELAY(DRAM_latency) (etime.count + ((long long) DRAM_latency * 2))
 
+#define dram_system_t MultiChannelMemorySystem
 
 struct mem_ctrl_t{
 
@@ -62,6 +63,11 @@ struct mem_ctrl_t{
 //global structures
 extern struct mem_ctrl_t *mem_ctrl;
 
+
+void print_dramsim(void);
+void dramsim_start(void);
+void set_cpu_freq(void);
+
 //events
 extern eventcount volatile *mem_ctrl_ec;
 extern eventcount volatile *mem_ctrl_io_ec;
@@ -71,8 +77,11 @@ extern int mem_ctrl_pid;
 extern int mem_ctrl_io_pid;
 
 
+
+
 //function prototypes
 void memctrl_init(void);
+void dram_init(void);
 void memctrl_create(void);
 void memctrl_create_tasks(void);
 
