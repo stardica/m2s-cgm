@@ -1035,6 +1035,10 @@ int X86CpuRun(Timing *self){
 	{
 		advance(watchdog);
 	}
+	else if (DRAMSim == 1)
+	{
+		advance(dramsim);
+	}
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

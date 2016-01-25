@@ -6,30 +6,26 @@
  */
 
 
+#include <cgm/cgm.h>
 #include <cgm/mem-ctrl.h>
 
-#include <mem-image/memory.h>
-
-#include <mem-image/mmu.h>
-
-
 /*
-#include <stdio.h>
+#include <mem-image/memory.h>
+#include <mem-image/mmu.h>
+*/
+
+/*#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <lib/util/list.h>
-
 #include <cgm/cgm.h>
 #include <cgm/mem-ctrl.h>
 #include <cgm/sys-agent.h>
 #include <cgm/tasking.h>
 #include <cgm/packet.h>
 #include <cgm/cache.h>
-*/
-
-//#include <DRAMSim/DRAMSim.h>
-//#include <dramsim/DRAMSim.h>
+#include <DRAMSim/DRAMSim.h>
+#include <dramsim/DRAMSim.h>*/
 
 
 //structure declarations
@@ -40,12 +36,32 @@ task *mem_ctrl_task;
 task *mem_ctrl_io_task;
 int mem_ctrl_pid = 0;
 int mem_ctrl_io_pid = 0;
+eventcount volatile *dramsim;
+task *dramsim_cpu_clock;
+
+extern int DRAMSim = 1;
+void *DRAM_object_ptr; /*pointers to DRAMSim memory objects*/
+//star todo move this to INI file.
+/*4GB models...
+ * DDR3_micron_8M_8B_x16_sg15.ini
+ * DDR3_micron_32M_8B_x8_sg25E.ini
+ * DDR3_micron_32M_8B_x8_sg15.ini
+ * DDR3_micron_32M_8B_x4_sg15.ini
+ * DDR3_micron_32M_8B_x4_sg125.ini
+ * DDR3_micron_16M_8B_x8_sg15.ini*/
+char dramsim_ddr_config_path[250] = "/home/stardica/Desktop/DRAMSim2/ini/DDR3_micron_32M_8B_x8_sg25E.ini";
+char dramsim_system_config_path[250] = "/home/stardica/Desktop/DRAMSim2/system.ini";
+char dramsim_trace_config_path[250] = "/home/stardica/Desktop/DRAMSim2/traces";
+char dramsim_vis_config_path[250] = "vis.out";
+unsigned int mem_size = 4096;
+unsigned int cpu_freq = 4000000000;
+
+
 
 void memctrl_init(void){
 
 	memctrl_create();
 	memctrl_create_tasks();
-
 	dram_init();
 
 	return;
@@ -61,11 +77,11 @@ void memctrl_create(void){
 
 void dram_init(void){
 
-	print_dramsim();
+	//print_dramsim();
 	dramsim_start();
-	set_cpu_freq();
+	dramsim_register_call_backs();
+	dramsim_set_cpu_freq();
 
-	fatal("exit\n");
 
 	return;
 }
@@ -78,39 +94,87 @@ void print_dramsim(void){
 
 }
 
-char dramsim_ddr_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini";
-char dramsim_system_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/system.ini";
-char dramsim_vis_config_path[250] = "/home/stardica/Dropbox/CDA7919DoctoralResearch/Simulators/DRAMSim2/results";
+int dramsim_add_transaction(bool read_write, unsigned int addr){
 
-void *dram_ptr;
+	int return_val = call_add_transaction(DRAM_object_ptr, read_write, addr);
+
+	return return_val;
+}
+
 
 void dramsim_start(void){
 
-	void *temp = NULL;
+	/*call requires -> char *dev, char *sys, char *pwd,  char *trc, unsigned int megsOfMemory, char *visfilename*/
+	DRAM_object_ptr = (void *) call_get_memory_system_instance(dramsim_ddr_config_path, dramsim_system_config_path, dramsim_trace_config_path, "m2s-cgm", mem_size, dramsim_vis_config_path);
 
-	/*char *dev, char *sys, char *pwd,  char *trc, unsigned int megsOfMemory, char *visfilename*/
-	temp = (void *) call_get_memory_system_instance(dramsim_ddr_config_path, dramsim_system_config_path, "/../", "exmaple_app", 4096, dramsim_vis_config_path);
-
-	dram_ptr = temp;
-	printf("C side temp_ptrint 0x%08x\n", temp);
+	printf("C side DRAM_object_ptr 0x%08x\n", DRAM_object_ptr);
 
 	return;
 }
 
-void set_cpu_freq(void){
+void dramsim_set_cpu_freq(void){
 
-	call_set_CPU_clock_speed(dram_ptr, 40000);
+	call_set_CPU_clock_speed(DRAM_object_ptr, cpu_freq);
 
-	printf("C side freq set\n");
+	printf("C side freq set %d\n", cpu_freq);
 
 	return;
 }
 
-/*void set_CPU_clock_speed(void){
+void dramsim_register_call_backs(void){
 
-	set_the_clock(deam_ptr, 40000);
+	call_register_call_backs(DRAM_object_ptr, dramsim_read_complete, dramsim_write_complete, dramsim_power_callback);
 
-}*/
+	return;
+}
+
+/* callback functors */
+void dramsim_read_complete(unsigned id, long long address, long long clock_cycle)
+{
+	fatal("[Callback on M2S] read complete: addr 0x%08x cycle %llu\n", (unsigned int) address, P_TIME);
+
+	return;
+}
+
+void dramsim_write_complete(unsigned id, long long address, long long clock_cycle)
+{
+	fatal("[Callback] write complete: %d 0x%016x cycle=%lu\n", id, address, clock_cycle);
+
+	return;
+}
+
+void dramsim_power_callback(double a, double b, double c, double d)
+{
+	return;
+}
+
+void dramsim_update_cpu_clock(void){
+
+	call_update(DRAM_object_ptr);
+
+	return;
+}
+
+
+//do some work.
+void dramsim_ctrl(void){
+
+	long long step = 1;
+	set_id(0);
+
+	while(1)
+	{
+		//printf("mem_ctrl\n");
+		await(dramsim, step);
+		step++;
+
+		//printf("dramsim tick cycle %llu\n", P_TIME);
+
+		dramsim_update_cpu_clock();
+	}
+
+	return;
+}
 
 void memctrl_create_tasks(void){
 
@@ -139,6 +203,20 @@ void memctrl_create_tasks(void){
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl_io");
 	mem_ctrl_io_task = create_task(memctrl_ctrl_io, DEFAULT_STACK_SIZE, strdup(buff));
+
+
+	//dramsim tasks
+	dramsim = (void *) calloc(1, sizeof(eventcount));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "dramsim");
+	dramsim = new_eventcount(strdup(buff));
+
+	dramsim_cpu_clock = (void *) calloc(1, sizeof(task));
+
+	memset(buff,'\0' , 100);
+	snprintf(buff, 100, "dramsim_cpu_clock");
+	dramsim_cpu_clock = create_task(dramsim_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 	return;
 }
@@ -196,9 +274,6 @@ void memctrl_ctrl_io(void){
 	}
 	return;
 }
-
-
-
 
 //do some work.
 void memctrl_ctrl(void){
@@ -258,6 +333,8 @@ void memctrl_ctrl(void){
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
 
+				dramsim_add_transaction(true, message_packet->address);
+
 				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 				free(message_packet);
 			}
@@ -288,10 +365,9 @@ void memctrl_ctrl(void){
 				printf(" blah blah blah!!! address 0x%08x\n", mmu_get_vtladdr(0, message_packet->address)),
 				getchar();*/
 
-				if(message_packet->access_id == 1627680)
-				{
-					printf("message %llu MC service\n", message_packet->access_id);
-				}
+
+				printf("reading from memory cycle %llu\n", P_TIME);
+				dramsim_add_transaction(false, message_packet->address);
 
 
 				//set the access type

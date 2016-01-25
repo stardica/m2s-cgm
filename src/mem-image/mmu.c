@@ -107,7 +107,7 @@ struct mmu_t
 static struct mmu_t *mmu;
 
 
-#include <cgm/cgm.h>
+/*#include <cgm/cgm.h>*/
 
 /*
  * Private Functions
@@ -737,20 +737,20 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
 	{
-		fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_fetch), P_TIME);
+		/*fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_fetch), P_TIME);*/
 		return 0;
 	}
 	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
 	{
-		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);
+		/*fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);*/
 		return 0;
 	}
 	else if(page->page_type == mmu_page_gpu && access_type != mmu_access_gpu)
 	{
-		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);
+		/*fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);*/
 	}
 
 	return phy_addr;
