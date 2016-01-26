@@ -21,12 +21,13 @@
 #include <lib/util/string.h>
 
 #include <arch/common/arch.h>
-
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
 #include <arch/si/timing/gpu.h>
 #include <arch/si/timing/compute-unit.h>
+
+/*#include <driver/opencl/opencl.c>*/
 
 #include <cgm/cgm.h>
 #include <cgm/protocol.h>

@@ -5,7 +5,6 @@
  *      Author: stardica
  */
 
-
 #include <cgm/dram.h>
 #include <arch/x86/timing/cpu.h>
 
@@ -67,9 +66,12 @@ void dramsim_print(void){
 
 }
 
-int dramsim_add_transaction(bool read_write, unsigned int addr){
+int dramsim_add_transaction(enum cgm_access_kind_t access_type, unsigned int addr){
 
-	int return_val = call_add_transaction(DRAM_object_ptr, read_write, addr);
+	bool write;
+	(access_type == cgm_access_mc_store) ? (write = true) : (write = false);
+
+	int return_val = call_add_transaction(DRAM_object_ptr, write, addr);
 
 	return return_val;
 }
@@ -80,7 +82,7 @@ void dramsim_create_mem_object(void){
 	/*call requires -> char *dev, char *sys, char *pwd,  char *trc, unsigned int megsOfMemory, char *visfilename*/
 	DRAM_object_ptr = (void *) call_get_memory_system_instance(dramsim_ddr_config_path, dramsim_system_config_path, dramsim_trace_config_path, "m2s-cgm", mem_size, dramsim_vis_config_path);
 
-	printf("C side DRAM_object_ptr 0x%08x\n", DRAM_object_ptr);
+	//printf("C side DRAM_object_ptr 0x%08x\n", DRAM_object_ptr);
 
 	return;
 }
@@ -89,7 +91,7 @@ void dramsim_set_cpu_freq(void){
 
 	call_set_CPU_clock_speed(DRAM_object_ptr, cpu_freq);
 
-	printf("C side freq set %d\n", cpu_freq);
+	//printf("C side freq set %d\n", cpu_freq);
 
 	return;
 }
@@ -104,14 +106,74 @@ void dramsim_register_call_backs(void){
 /* callback functors */
 void dramsim_read_complete(unsigned id, long long address, long long clock_cycle)
 {
-	fatal("[Callback on M2S] read complete: addr 0x%08x cycle %llu\n", (unsigned int) address, P_TIME);
+	struct cgm_packet_t *message_packet;
+
+	//printf("[Callback on M2S] read complete: addr 0x%08x cycle %llu\n", (unsigned int) address, P_TIME);
+
+	int i = 0;
+	int hit = 0;
+
+	LIST_FOR_EACH(mem_ctrl->pending_accesses, i)
+	{
+		//get pointer to access in queue and check it's status.
+		message_packet = list_get(mem_ctrl->pending_accesses, i);
+
+		//found block in write back buffer
+		if(message_packet->address == (unsigned int)address)
+		{
+			hit = 1;
+			break;
+		}
+	}
+
+	assert(hit == 1);
+	assert(message_packet->address == (unsigned int)address);
+	assert(message_packet->access_type == cgm_access_mc_load);
+
+	//printf("load msaddr 0x%08x\n dsaddr 0x%08x\n", message_packet->address, (unsigned int)address);
+
+	//set the access type
+	message_packet->access_type = cgm_access_mc_put;
+	message_packet->size = l3_caches[0].block_size;
+
+	//reply to L3
+	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
+	list_enqueue(mem_ctrl->Tx_queue, message_packet);
+	advance(mem_ctrl_io_ec);
 
 	return;
 }
 
 void dramsim_write_complete(unsigned id, long long address, long long clock_cycle)
 {
-	fatal("[Callback] write complete: %d 0x%016x cycle=%lu\n", id, address, clock_cycle);
+	struct cgm_packet_t *message_packet;
+
+	//printf("[Callback] write complete: %d 0x%016x cycle=%lu\n", id, address, clock_cycle);
+
+	int i = 0;
+	int hit = 0;
+
+	LIST_FOR_EACH(mem_ctrl->pending_accesses, i)
+	{
+		//get pointer to access in queue and check it's status.
+		message_packet = list_get(mem_ctrl->pending_accesses, i);
+
+		//found block in write back buffer
+		if(message_packet->address == (unsigned int)address)
+		{
+			hit = 1;
+			break;
+		}
+	}
+
+	assert(hit == 1);
+	assert(message_packet->address == (unsigned int)address);
+	assert(message_packet->access_type == cgm_access_mc_store);
+
+	//printf("store msaddr 0x%08x dsaddr 0x%08x\n", message_packet->address, (unsigned int)address);
+
+	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
+	free(message_packet);
 
 	return;
 }

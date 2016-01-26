@@ -20,7 +20,7 @@
 #ifndef MEM_SYSTEM_MEMORY_H
 #define MEM_SYSTEM_MEMORY_H
 
-#include <cgm/cgm-struct.h>
+/*#include <cgm/cgm-struct.h>*/
 
 #define MEM_LOG_PAGE_SIZE  12
 #define MEM_PAGE_SHIFT  MEM_LOG_PAGE_SIZE

@@ -34,6 +34,8 @@ struct mem_ctrl_t{
 	struct list_t *Rx_queue_top;
 	struct list_t *Tx_queue;
 
+	struct list_t *pending_accesses;
+
 	//ptr to system agent Rx queue
 	struct list_t *system_agent_queue;
 

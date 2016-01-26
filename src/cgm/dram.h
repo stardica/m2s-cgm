@@ -9,6 +9,7 @@
 #define DRAM_H_
 
 #include <cgm/cgm.h>
+#include <cgm/cgm-struct.h>
 
 /*DRAMSim functions*/
 
@@ -38,9 +39,10 @@ void dramsim_create_mem_object(void);
 void dramsim_ctrl(void);
 void dramsim_print(void);
 
+
 void dramsim_set_cpu_freq(void);
 void dramsim_update_cpu_clock(void);
-int dramsim_add_transaction(bool read_write, unsigned int addr);
+int dramsim_add_transaction(enum cgm_access_kind_t access_type, unsigned int addr);
 void dramsim_register_call_backs(void);
 void dramsim_read_complete(unsigned id, long long address, long long clock_cycle);
 void dramsim_write_complete(unsigned id, long long address, long long clock_cycle);

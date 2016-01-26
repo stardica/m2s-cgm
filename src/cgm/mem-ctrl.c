@@ -166,9 +166,9 @@ void memctrl_ctrl(void){
 	{
 		await(mem_ctrl_ec, step);
 
-		if(!sys_agent_can_access_bottom())
+		if(list_count(mem_ctrl->pending_accesses) >= 32)	//!sys_agent_can_access_bottom())
 		{
-			fatal("MC stalling up\n");
+			printf("MC stalling dram ctrl full cycle %llu\n", P_TIME);
 			P_PAUSE(1);
 		}
 		else
@@ -185,8 +185,16 @@ void memctrl_ctrl(void){
 
 				if(DRAMSim == 1)
 				{
-					if(!dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					{
+						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
+						list_enqueue(mem_ctrl->pending_accesses, message_packet);
+					}
+					else
+					{
+						printf("MC stalling dram ctrl busy?? %llu\n", P_TIME);
 						step--;
+					}
 				}
 				else
 				{
@@ -202,9 +210,18 @@ void memctrl_ctrl(void){
 
 				if(DRAMSim == 1)
 				{
-					printf("C side reading from memory cycle %llu\n", P_TIME);
-					if(!dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					//printf("C side reading from memory access id %llu addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address, P_TIME);
+					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					{
+						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
+						list_enqueue(mem_ctrl->pending_accesses, message_packet);
+					}
+					else
+					{
+						//dram ctrl in queue is full, wait and try again.
+						printf("MC stalling dram ctrl busy?? %llu\n", P_TIME);
 						step--;
+					}
 				}
 				else
 				{

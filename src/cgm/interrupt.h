@@ -13,14 +13,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-/*#include <cgm/cgm.h>*/
 #include <cgm/misc.h>
 #include <cgm/tasking.h>
 
 #include <arch/x86/timing/cpu.h>
 #include <lib/util/list.h>
-/*#include <lib/util/debug.h>*/
-
 
 enum interrupt_type_t
 {

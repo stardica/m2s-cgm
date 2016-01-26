@@ -22,7 +22,6 @@
 
 #include <lib/util/class.h>
 
-
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
 

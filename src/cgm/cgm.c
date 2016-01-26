@@ -12,7 +12,7 @@
 #include <time.h>
 
 #include <cgm/cgm.h>
-#include <cgm/dram.h>
+/*#include <cgm/dram.h>*/
 
 
 

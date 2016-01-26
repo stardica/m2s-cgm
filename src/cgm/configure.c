@@ -3487,6 +3487,12 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	snprintf(buff, 100, "mem_ctrl.Tx_queue");
 	mem_ctrl->Tx_queue->name = strdup(buff);
 
+	mem_ctrl->pending_accesses = list_create();
+
+	memset (buff,'\0' , 100);
+	snprintf(buff, 100, "mem_ctrl.pending_accesses");
+	mem_ctrl->pending_accesses->name = strdup(buff);
+
 	mem_ctrl->system_agent_queue = system_agent->Rx_queue_bottom;
 
 	//link the memory controller to the simulated memory image
@@ -3501,6 +3507,8 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 		dramsim_create_mem_object();
 		dramsim_register_call_backs();
 		dramsim_set_cpu_freq();
+
+
 	}
 
 	return 0;
