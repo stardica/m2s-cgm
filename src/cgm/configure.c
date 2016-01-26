@@ -5,6 +5,7 @@
  *      Author: stardica
  */
 
+#include <stdio.h>
 #include <cgm/configure.h>
 #include <mem-image/memory.h>
 
@@ -3429,6 +3430,39 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 			fatal("mem_ctrl_config(): mem_ctrl bus width is out of bounds\n");
 		}
 	}
+
+	/*dram config*/
+	if(MATCH("DRAM", "DRAMSim"))
+	{
+		DRAMSim = atoi(value);
+	}
+
+	/*dram config*/
+	if(MATCH("DRAM", "Size"))
+	{
+		mem_size = atoi(value);
+	}
+
+	if(MATCH("DRAM", "DDR_Module_Path"))
+	{
+		dramsim_ddr_config_path = strdup(value);
+	}
+
+	if(MATCH("DRAM", "DRAMSim_Config_Path"))
+	{
+		dramsim_system_config_path = strdup(value);
+	}
+
+	if(MATCH("DRAM", "DRAMSim_Trace_Path"))
+	{
+		dramsim_trace_config_path = strdup(value);
+	}
+
+	if(MATCH("DRAM", "DRAMSim_Vis_File_Name"))
+	{
+		dramsim_vis_config_path = strdup(value);
+	}
+
 	return 0;
 }
 
@@ -3457,6 +3491,17 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 
 	//link the memory controller to the simulated memory image
 	mem_ctrl->mem = mem;
+
+	/*dramsim stuff*/
+	if(DRAMSim == 1)
+	{
+		/*get CPU frequency*/
+		cpu_freq = x86_cpu_frequency * MHZ;
+
+		dramsim_create_mem_object();
+		dramsim_register_call_backs();
+		dramsim_set_cpu_freq();
+	}
 
 	return 0;
 }

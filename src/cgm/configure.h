@@ -9,7 +9,6 @@
 #ifndef CONFIGURE_H_
 #define CONFIGURE_H_
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,16 +35,7 @@
 #include <cgm/hub-iommu.h>
 #include <cgm/sys-agent.h>
 #include <cgm/mem-ctrl.h>
-
-
-/*
-#include <math.h>
-#include <lib/util/config.h>
-#include <arch/common/arch.h>
-#include <arch/x86/timing/core.h>
-#include <arch/x86/timing/cpu.h>
-#include <arch/x86/timing/thread.h>
-*/
+#include <cgm/dram.h>
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define LOG2(x) ((int) rint((log((double) (x))) / (log(2.0))))

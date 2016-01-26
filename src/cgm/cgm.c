@@ -12,6 +12,7 @@
 #include <time.h>
 
 #include <cgm/cgm.h>
+#include <cgm/dram.h>
 
 
 
@@ -139,6 +140,7 @@ void cgm_init(char **argv){
 	hub_iommu_init();
 	sys_agent_init();
 	memctrl_init();
+	dramsim_init();
 
 	return;
 }
@@ -199,6 +201,23 @@ void cgm_create_tasks(void){
 	return;
 }
 
+void tick(void){
+
+	/*advance tasks on each cycle here*/
+
+	if(DRAMSim == 1)
+	{
+		advance(dramsim);
+	}
+
+	if(watch_dog == 1)
+	{
+		advance(watchdog);
+	}
+
+	return;
+}
+
 void cgm_watchdog(void){
 
 	long long t_1 = 1;
@@ -208,9 +227,7 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-
 		printf("WD: queue %d cycle %llu\n", switches[0].queue, P_TIME);
-
 	}
 	return;
 }

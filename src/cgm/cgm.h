@@ -42,9 +42,6 @@
 #include <arch/si/timing/lds-unit.h>
 #include <arch/si/timing/compute-unit.h>
 
-
-
-
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
@@ -52,9 +49,9 @@
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
 #define WATCHBLOCK (unsigned int) 0x000278c0
 #define WATCHLINE 0
+#define CPUTICK 1
 
 #define SKIP 1000000
-
 
 //config file
 extern char *cgm_config_file_name_and_path;
@@ -167,8 +164,6 @@ extern eventcount volatile *watchdog;
 extern int mem_system_off;
 extern int watch_dog;
 
-
-
 //set up related
 void m2scgm_init(void);
 void cgm_init(char **argv);
@@ -176,10 +171,13 @@ void cgm_check_config_files(char **argv);
 void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
-void cgm_watchdog(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 void cgm_dump_stats(void);
+
+void tick(void);
+void cgm_watchdog(void);
+void dram_tick(void);
 
 //cache access related
 int cgm_can_fetch_access(X86Thread *self, unsigned int addr);

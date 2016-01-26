@@ -30,6 +30,7 @@ struct x86_uop_t;
 
 
 extern int opencl_syscall_flag;
+extern int x86_cpu_frequency;
 
 /*
  * Class 'X86Cpu'

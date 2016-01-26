@@ -64,7 +64,6 @@
  * Global variables
  */
 
-
 /* Help message */
 
 char *x86_config_help =
@@ -1031,13 +1030,9 @@ int X86CpuRun(Timing *self){
 	self->cycle = P_TIME;
 
 	//star added a watch dog thread and can watch things of interest cycle by cycle
-	if(watch_dog == 1)
+	if(CPUTICK == 1)
 	{
-		advance(watchdog);
-	}
-	else if (DRAMSim == 1)
-	{
-		advance(dramsim);
+		tick();
 	}
 
 	X86CpuEmptyTraceList(cpu);
