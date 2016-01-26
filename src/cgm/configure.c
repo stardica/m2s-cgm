@@ -9,17 +9,6 @@
 #include <cgm/configure.h>
 #include <mem-image/memory.h>
 
-/*
-
-
-#include <cgm/ini-parse.h>
-#include <cgm/cache.h>
-#include <cgm/tasking.h>
-
-
-#include <cgm/mshr.h>
-*/
-
 int cgmmem_check_config = 0;
 
 int cgm_mem_configure(struct mem_t *mem){
@@ -3278,10 +3267,12 @@ int switch_finish_create(void){
 	if(HUB_IOMMU_CONNECTION_MODE == 0)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
+		printf("---GPU connection mode is MC---\n");
 	}
 	else if(HUB_IOMMU_CONNECTION_MODE == 1)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_L3;
+		printf("---GPU connection mode is L3---\n");
 	}
 	else if(HUB_IOMMU_CONNECTION_MODE == 2)
 	{
