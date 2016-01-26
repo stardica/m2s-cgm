@@ -4,13 +4,15 @@ How to set up eclipse to compile and run m2s-cpu
 
 (2) Go to project properties add the following compiler settings:
 	(a) Add the path to /m2s-cgm/src in the includes list. Example -l/home/stardica/Desktop/m2s-cgm/src
-	(b) Add -pthread -mmmx -msse to miscellaneous >> other flags
-	(c) Add -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 (or just -U_FORTIFY_SOURCE) to optimizations (For the threads package).
+	(b) Set optimization to -02
+	(c) Add -U_FORTIFY_SOURCE to optimization flags (For the threads package)
+	(d) Add -pthread -mmmx -msse to miscellaneous >> other flags
 
 (3) Go to project properties add the following linker settings
-	(a) Add pthread, z, dl, m, m2s-opencl to the libraries.
+	(a) Compile staticly
+	(b) Add pthread, z, dl, m, dramsim to the libraries.
+	(c) Add path to dramsim library. Example -L/home/stardica/Desktop/DRAMSim
 
-Don't forget
-	(a) export LD_LIBRARY_PATH=/home/stardica/Desktop/runtime/Release
+(4) install the OCL runtime then run ldconfig.
 
-compile and run with correct command line arguments.
+(5) compile and run with correct command line arguments.

@@ -148,8 +148,6 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 {
 	struct cgm_packet_t *message_packet;
 
-	//printf("[Callback] write complete: %d 0x%016x cycle=%lu\n", id, address, clock_cycle);
-
 	int i = 0;
 	int hit = 0;
 

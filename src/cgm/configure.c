@@ -3508,7 +3508,8 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 		dramsim_register_call_backs();
 		dramsim_set_cpu_freq();
 
-
+		printf("---DRAMSim is connected---\n");
+		printf("---Total main memory is %d---\n", mem_size);
 	}
 
 	return 0;
