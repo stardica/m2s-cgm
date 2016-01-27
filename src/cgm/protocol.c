@@ -242,6 +242,3 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 
 	return;
 }
-
-
-

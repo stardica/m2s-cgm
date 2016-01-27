@@ -583,6 +583,24 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		}
 	}
 
+	if(MATCH("Protocol", "GPU_Connection_type"))
+	{
+		temp_strn = strdup(value);
+
+		if(strcmp(temp_strn, "MC") == 0)
+		{
+			hub_iommu_connection_type = 0;
+		}
+		else if(strcmp(temp_strn, "L3") == 0)
+		{
+			hub_iommu_connection_type = 1;
+		}
+		else
+		{
+			fatal("cache_read_config(): invalid gpu connection, check config file\n");
+		}
+	}
+
 	////////////////////////
 	//l1_d_caches
 	////////////////////////
@@ -2896,6 +2914,8 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int WireLatency = 0;
 	int Latency = 0;
 	int Bus_width = 0;
+	int MSHR = 0;
+	int maxcoal = 0;
 
 	//star todo fix this
 	int extras = 1;
@@ -2946,14 +2966,27 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		}
 	}
 
-	if(MATCH("Hub-IOMMU", "WireLatency"))
+
+	/**************here*************/
+
+	if(MATCH("Hub-IOMMU", "MSHR"))
 	{
-		hub_iommu->wire_latency = atoi(value);
+		hub_iommu->mshr_size = atoi(value);
+	}
+
+	if(MATCH("Hub-IOMMU", "MaxCoalesce"))
+	{
+		hub_iommu->max_coal = atoi(value);
 	}
 
 	if(MATCH("Hub-IOMMU", "Latency"))
 	{
 		hub_iommu->latency = atoi(value);
+	}
+
+	if(MATCH("Hub-IOMMU", "WireLatency"))
+	{
+		hub_iommu->wire_latency = atoi(value);
 	}
 
 	if(MATCH("Bus", "Switches"))
@@ -3227,6 +3260,8 @@ int switch_finish_create(void){
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
 
 
+
+
 	//set up translation table
 	assert(gpu_l2_caches[0].mshr_size);
 	int table_size = gpu_group_cache_num * gpu_l2_caches[0].mshr_size;
@@ -3259,24 +3294,27 @@ int switch_finish_create(void){
 	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
 		hub_iommu_ctrl = hub_iommu_coherent_ctrl;
+
+		if(hub_iommu_connection_type != 1)
+			fatal("switch_finish_create(): hub-iommu connection type invalid, must be L3 if coherent.\n");
 	}
 
 	hub_iommu_create_tasks(hub_iommu_ctrl);
 
 	//configure correct routing function
-	if(HUB_IOMMU_CONNECTION_MODE == 0)
+	if(hub_iommu_connection_type == 0)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
 		printf("---GPU connection mode is MC---\n");
 	}
-	else if(HUB_IOMMU_CONNECTION_MODE == 1)
+	else if(hub_iommu_connection_type == 1)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_L3;
 		printf("---GPU connection mode is L3---\n");
 	}
-	else if(HUB_IOMMU_CONNECTION_MODE == 2)
+	else if(hub_iommu_connection_type == 2)
 	{
-
+		fatal("switch_finish_create(): HUB_IOMMU_CONNECTION_MODE invlid setting\n");
 	}
 	else
 	{
@@ -3426,6 +3464,11 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	if(MATCH("DRAM", "DRAMSim"))
 	{
 		DRAMSim = atoi(value);
+
+		if (DRAMSim < 0 || DRAMSim > 1)
+		{
+			fatal("mem_ctrl_config(): dramsim invalid setting as %d\n", DRAMSim);
+		}
 	}
 
 	/*dram config*/
@@ -3501,6 +3544,10 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 
 		printf("---DRAMSim is connected---\n");
 		printf("---Total main memory is %d---\n", mem_size);
+	}
+	else
+	{
+		printf("---DRAMSim is disconnected---\n");
 	}
 
 	return 0;

@@ -11,6 +11,18 @@
 
 #include <cgm/protocol.h>
 
+unsigned int get_block_address(unsigned int address, unsigned int cache_address_mask){
+
+	return address & cache_address_mask;
+}
+
+int is_writeback_present(struct cgm_packet_t *writeback_packet){
+
+	int return_val = 0;
+	(writeback_packet == NULL) ? (return_val = 0) : (return_val = 1);
+	return return_val;
+}
+
 
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -2476,10 +2488,11 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
+
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s getx_fwd ID %llu type %d state %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+		printf("block 0x%08x %s getx_fwd ID %llu type %d state %d wb? %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, is_writeback_present(write_back_packet), P_TIME);
 	}
 
 	switch(*cache_block_state_ptr)
@@ -2559,6 +2572,11 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 			else
 			{
 				//block was locally dropped
+
+				if(message_packet->access_id == 1627795)
+				{
+					printf("L2 cgm_access_getx_fwd_nack\n");
+				}
 
 				//set cgm_access_getx_fwd_nack
 				message_packet->access_type = cgm_access_getx_fwd_nack;
@@ -3491,7 +3509,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		return;
 	}
 
-	if(message_packet->access_id == 1627680)
+	if(message_packet->access_id == 1627795)
 	{
 		printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d\n",
 				message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id);
@@ -3516,11 +3534,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->coalesced == 1)
 				return;
 
-			if(message_packet->access_id == 1627680)
-			{
-				printf("message %llu miss in L3 sending to SA/MC\n", message_packet->access_id);
-			}
-
 			//find victim because LRU has been updated on hits.
 			/*message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 			message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set);
@@ -3532,11 +3545,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//clear the directory entry
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
-
-			if(message_packet->access_id == 1627680)
-			{
-				printf("message %llu victim is %d\n", message_packet->access_id, message_packet->l3_victim_way);
-			}
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_load;
@@ -3567,7 +3575,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if the request comes from a different core the block will need to be invalidated and forwarded to the requesting core.
 			the block should only ever be in one core if not downgraded to shared*/
 
-			if(message_packet->access_id == 1627680)
+			if(message_packet->access_id == 1627795)
 			{
 				printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d\n",
 						message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id);
@@ -3601,12 +3609,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//update directory
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-				if(message_packet->access_id == 1627680)
-				{
-					printf("message %llu set DIR bit src id %d\n",
-							message_packet->access_id, message_packet->l2_cache_id);
-				}
-
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 				// update message packet size
@@ -3620,7 +3622,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				//printf("Sending %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-				if(message_packet->access_id == 1627680)
+				if(message_packet->access_id == 1627795)
 				{
 					printf("message %llu transmit to hub_iommu dest id %d dest name %s\n", message_packet->access_id, message_packet->dest_id, message_packet->dest_name);
 				}
@@ -4021,7 +4023,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s getx_upgrade_ack ID %llu type %d state %d cycle %llu\n",
+		printf("block 0x%08x %s getx_fwd_ack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 	}
 
@@ -4266,7 +4268,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s getx_upgrade_nack ID %llu type %d state %d cycle %llu\n",
+		printf("block 0x%08x %s getx_fwd_nack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 	}
 
@@ -4285,7 +4287,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 			/*star todo block evicted by L2 and inval is on its way to L1
 			change upgrade request to GetX and send on to L3 cache.*/
-/*
+			/*
 			//check WB for line...
 			if(write_back_packet)
 			{

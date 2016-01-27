@@ -8,8 +8,6 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,9 +19,6 @@
 #include <lib/util/string.h>
 #include <lib/util/misc.h>
 
-
-/*star todo fix this somehow. We shouldn't need to be included before all of
-the #includes (cgm.h) is loading protocol.h before cache_block_state_t is defined*/
 #include <cgm/cgm-struct.h>
 #include <cgm/protocol.h>
 #include <cgm/misc.h>

@@ -1,3 +1,16 @@
+//pull the correct physical address
+			/*phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);*/
+			/*printf("here address is 0x%08x\n", phy_addr);*/
+
+			/*iommu_translate(message_packet);*/
+
+			//printf("hub-iommu address 0x%08x\n", message_packet->address);
+
+/*virtual to physical or physical to virtual translation is here
+			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
+			/*if(hub_iommu->hub_iommu_translate != NULL)
+				hub_iommu->hub_iommu_translate(message_packet);*/
+
 //access_type = message_packet->access_type;
 			/*access_id = message_packet->access_id;
 			addr = message_packet->address;

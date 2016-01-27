@@ -28,6 +28,8 @@
 
 #include <mem-image/mmu.h>
 
+#include <cgm/cgm.h>
+
 
 /*
  * Global variables
@@ -619,7 +621,6 @@ unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid,
 	unsigned int host_phy_addr;
 	unsigned int offset;
 
-
 	assert(address_space_index == 0);
 
 	/* link the guest and host pages*/
@@ -737,20 +738,18 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
 	{
-		/*fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_fetch), P_TIME);*/
-		return 0;
+		fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_fetch), P_TIME);
 	}
 	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
 	{
-		/*fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);*/
-		return 0;
+		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);
 	}
 	else if(page->page_type == mmu_page_gpu && access_type != mmu_access_gpu)
 	{
-		/*fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
-				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);*/
+		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);
 	}
 
 	return phy_addr;

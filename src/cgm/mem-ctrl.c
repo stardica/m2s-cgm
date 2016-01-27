@@ -213,6 +213,7 @@ void memctrl_ctrl(void){
 					//printf("C side reading from memory access id %llu addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address, P_TIME);
 					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
 					{
+						//printf("MC access addr 0x%08x cycle%llu\n", message_packet->address, P_TIME);
 						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 						list_enqueue(mem_ctrl->pending_accesses, message_packet);
 					}

@@ -22,15 +22,6 @@
 #include <cgm/tasking.h>
 #include <cgm/switch.h>
 
-
-#define HUB_IOMMU_CONNECTION_MODE 1
-
-/*#include <lib/util/debug.h>
-#include <cgm/cgm.h>
-#include <cgm/protocol.h>
-#include <lib/util/list.h>
-#include <cgm/tasking.h>*/
-
 enum Rx_queue_name
 {
 	Rx_queue_top_0 = 0,
@@ -90,15 +81,27 @@ struct hub_iommu_t{
 	unsigned int **translation_table;
 	int translation_table_size;
 
+	/*protocol related structures*/
+
+	//mshr control links
+	int mshr_size;
+	struct mshr_t *mshrs;
+
+	//outstanding request table
+	int **ort;
+	struct list_t *ort_list;
+	int max_coal;
+
+
 };
 
 extern struct hub_iommu_t *hub_iommu;
 extern eventcount volatile *hub_iommu_ec;
 extern task *hub_iommu_tasks;
-
 extern int hub_iommu_pid;
 extern int hub_iommu_io_up_pid;
 extern int hub_iommu_io_down_pid;
+extern int hub_iommu_connection_type;
 
 void hub_iommu_init(void);
 void hub_iommu_create(void);
@@ -122,8 +125,6 @@ void hub_iommu_io_down_ctrl(void);
 //iommu functions
 void iommu_nc_translate(struct cgm_packet_t *message_packet);
 void iommu_translate(struct cgm_packet_t *message_packet);
-unsigned int iommu_get_phy_address(unsigned int address);
-unsigned int iommu_get_vtl_address(unsigned int address, int id);
 
 int iommu_translation_table_insert_address(unsigned int address);
 unsigned int iommu_translation_table_get_address(int id);

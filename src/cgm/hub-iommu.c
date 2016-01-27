@@ -65,6 +65,7 @@ task *hub_iommu_tasks;
 int hub_iommu_pid = 0;
 int hub_iommu_io_up_pid = 0;
 int hub_iommu_io_down_pid = 0;
+int hub_iommu_connection_type = 0;
 
 
 void hub_iommu_init(void){
@@ -116,7 +117,6 @@ int hub_iommu_can_access(struct list_t *queue){
 
 struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
-
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	int current_queue_num = -1;
@@ -125,8 +125,8 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 
 	//rotate the queues, of which we don't really know how many we have until runtime.
 	//current_queue_num = str_map_string(&queue_strn_map, hub_iommu->last_queue->name);
-
 	//at least one of the queues has a message packet.
+
 	do
 	{
 		//round robin
@@ -211,6 +211,7 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
 				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
+		getchar();
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 		advance(hub_iommu->hub_iommu_io_down_ec);
@@ -350,8 +351,6 @@ void hub_iommu_noncoherent_ctrl(void){
 
 			iommu_nc_translate(message_packet);
 
-
-
 			//star the hub multiplexes GPU memory requests.
 			hub_iommu_put_next_queue(message_packet);
 		}
@@ -361,15 +360,13 @@ void hub_iommu_noncoherent_ctrl(void){
 	return;
 }
 
+int sent = 0;
+
 void hub_iommu_coherent_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
-	/*int num_cus = si_gpu_num_compute_units;*/
-	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
-
 	long long step = 1;
-
 	int l3_map;
 
 	set_id((unsigned int)my_pid);
@@ -395,38 +392,17 @@ void hub_iommu_coherent_ctrl(void){
 
 			P_PAUSE(hub_iommu->latency);
 
-			/*virtual to physical or physical to virtual translation is here
-			if the GPU is in non coherant mode there is no translation function to run thus NULL*/
-			/*if(hub_iommu->hub_iommu_translate != NULL)
-				hub_iommu->hub_iommu_translate(message_packet);*/
-
 			iommu_translate(message_packet);
-
-
-			//pull the correct physical address
-			/*phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);*/
-			/*printf("here address is 0x%08x\n", phy_addr);*/
-
-			/*iommu_translate(message_packet);*/
-
-			//printf("hub-iommu address 0x%08x\n", message_packet->address);
 
 			//star the hub multiplexes GPU memory requests.
 			hub_iommu_put_next_queue(message_packet);
+			sent = 1;
+
 		}
 	}
 
 	fatal("hub_iommu_ctrl(): reached end of func\n");
 	return;
-}
-
-unsigned int iommu_get_phy_address(unsigned int address){
-
-	unsigned int phy_addr = 0xFFFFFFFF;
-
-	//star todo add the actual physical address translation here
-
-	return phy_addr;
 }
 
 int iommu_get_translation_table_size(void){
@@ -510,39 +486,30 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		fatal("iommu_translate(): invalid message_packet access type\n");
 	}
 
-
 	return;
 }
 
 void iommu_translate(struct cgm_packet_t *message_packet){
 
-	//unsigned int phy_addr = 0;
-
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 	{
 		/*load and stores are heading to the system agent.*/
-
-		printf("hub-iommu guest vtl address in 0x%08x\n", message_packet->address);
-
+		printf("hub-iommu guest vtl address in 0x%08x source %s\n", message_packet->address, message_packet->l2_cache_name);
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
 
-		printf("hub-iommu host phy address out 0x%08x\n", message_packet->address);
-
+		printf("hub-iommu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->address, get_block_address(message_packet->address, ~0x3F));
 	}
-	else if(message_packet->access_type == cgm_access_mc_put)
+	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
 	{
 		/*put coming from the system agent.*/
-
+		printf("hub-iommu host phy address in 0x%08x\n", message_packet->address);
 		message_packet->address = mmu_reverse_translate_guest(0, si_emu->pid, message_packet->address);
-
-		/*find the virtual address in the translation lookup table*/
-		//message_packet->address = iommu_translation_table_get_address(message_packet->translation_id);
-
+		printf("hub-iommu guest vtl address out 0x%08x\n", message_packet->address);
 	}
 	else
 	{
-		fatal("iommu_translate(): invalid message_packet access type\n");
+		fatal("iommu_translate(): access_d %llu invalid message_packet access type as %s\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 	}
 }
 

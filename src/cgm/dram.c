@@ -108,7 +108,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 {
 	struct cgm_packet_t *message_packet;
 
-	//printf("[Callback on M2S] read complete: addr 0x%08x cycle %llu\n", (unsigned int) address, P_TIME);
+	/*printf("[Callback on M2S] read complete: addr 0x%08x cycle %llu\n", (unsigned int) address, P_TIME);*/
 
 	int i = 0;
 	int hit = 0;

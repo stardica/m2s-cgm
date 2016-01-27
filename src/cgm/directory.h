@@ -8,17 +8,6 @@
 #ifndef DIRECTORY_H_
 #define DIRECTORY_H_
 
-/*
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-*/
-
-//#include <lib/util/list.h>
-
-//#include <arch/x86/timing/cpu.h>
-
 struct directory_entry_t{
 	unsigned int p0 : 1;
 	unsigned int p1 : 1;
@@ -43,12 +32,5 @@ extern unsigned long long dir_num_blocks;
 extern unsigned int dir_block_mask;
 extern unsigned int dir_vector_size;
 
-void directory_init(void);
-void directory_create(void);
-void directory_create_tasks(void);
-
-void directory_ctrl(void);
-
-//void directory_map_core_number(int core id);
 
 #endif /*DIRECTORY_H_*/
