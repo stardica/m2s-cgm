@@ -24,8 +24,7 @@
 
 #include <cgm/cache.h>
 #include <cgm/directory.h>
-/*#include <cgm/mem-ctrl.h>*/
-/*#include <cgm/configure.h>*/
+#include <cgm/cgm-struct.h>
 #include <cgm/sys-agent.h>
 #include <cgm/ini-parse.h>
 #include <cgm/tasking.h>
@@ -51,7 +50,7 @@
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
 #define WATCHBLOCK (unsigned int) 0x0002b800
-#define WATCHLINE 1
+#define WATCHLINE 0
 #define CPUTICK 1
 
 #define SKIP 1000000
@@ -133,26 +132,6 @@ extern char *cgm_stats_file_name;
 
 #define STOP 	CLOSE_FILES;\
 				exit(0);
-
-//for general stats
-struct cgm_stats_t{
-
-	char *benchmark_name;
-
-	/*int protection_faults;*/
-	int fetches;
-	int loads;
-	int stores;
-
-	long long cpu_rob_stalls;
-	long long cpu_fetch_stalls;
-	long long cpu_ls_stalls;
-
-	double start_wall_time;
-	double end_wall_time;
-	double sim_time;
-
-};
 
 extern struct cgm_stats_t *cgm_stat;
 

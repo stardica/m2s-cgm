@@ -420,7 +420,8 @@ int stats_finish_create(void){
 	{
 		memset (buff,'\0' , 250);
 		sprintf(buff, "%s", cgm_stats_output_path);
-		sprintf(buff + strlen(buff), "%s_p%d", cgm_stats_file_name, num_cores);
+		/*sprintf(buff + strlen(buff), "%s_p%d", cgm_stats_file_name, num_cores);*/
+		sprintf(buff + strlen(buff), "%s", cgm_stats_file_name);
 		cgm_stats_file = fopen (buff, "w+");
 	}
 

@@ -401,5 +401,47 @@ struct cache_t{
 	unsigned int *store_address_history;
 };
 
+//for general stats
+struct cgm_stats_t{
+
+	/*benchmark related*/
+	char *benchmark_name;
+	double start_wall_time;
+	double end_wall_time;
+	double sim_time;
+
+	/*cpu stats*/
+	long long cpu_total_fetches;
+	long long cpu_total_loads;
+	long long cpu_total_stores;
+	long long cpu_rob_stalls;
+	long long cpu_fetch_stalls;
+	long long cpu_ls_stalls;
+
+	/*gpu stats*/
+	long long gpu_total_loads;
+	long long gpu_total_stores;
+
+	/*switch stats
+	long long switch_total_links;
+	long long switch_total_wakes;
+	long long switch_nort_io_transfers;
+	long long switch_nort_io_transfer_cycles;
+	long long switch_nort_io_bytes_transfered;
+	long long switch_east_io_transfers;
+	long long switch_east_io_transfer_cycles;
+	long long switch_east_io_bytes_transfered;
+	long long switch_south_io_transfers;
+	long long switch_south_io_transfer_cycles;
+	long long switch_south_io_bytes_transfered;
+	long long switch_west_io_transfers;
+	long long switch_west_io_transfer_cycles;
+	long long switch_west_io_bytes_transfered;*/
+
+	/*system agent stats*/
+	long long system_agent_total_wakes;
+
+};
 
 #endif /* CGMSTRUCT_H_ */
+

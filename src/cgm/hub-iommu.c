@@ -211,7 +211,7 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
 				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
-		getchar();
+		/*getchar();*/
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 		advance(hub_iommu->hub_iommu_io_down_ec);

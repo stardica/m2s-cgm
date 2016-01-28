@@ -72,20 +72,6 @@ int watch_dog = 0;
 
 struct cgm_stats_t *cgm_stat;
 
-
-/*int protection_faults = 0;
-int fetches = 0;
-int loads = 0;
-int stores = 0;*/
-
-/*double start_wall_time = 0;
-double end_wall_time = 0;
-
-//stats
-long long cpu_rob_stalls = 0;
-long long cpu_fetch_stalls = 0;
-long long cpu_load_store_stalls = 0;*/
-
 void m2scgm_init(void){
 
 	/* Initial information*/
@@ -273,6 +259,7 @@ void cgm_dump_summary(void){
 
 	cgm_dump_stats();
 	cache_dump_stats();
+	switch_dump_stats();
 
 	CLOSE_FILES;
 
@@ -481,6 +468,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		fatal("cgm_fetch_access() unsupported access type\n");
 	}
 
+	/*stats*/
+	cgm_stat->cpu_total_fetches++;
+
 	return access_id;
 }
 
@@ -549,17 +539,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 					(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
 		}
 
-		//printf("%s id %llu type %d start cycle %llu\n", l1_d_caches[id].name, new_packet->access_id, new_packet->access_type, P_TIME);
-
-		/*if(new_packet->access_id == 106789)
-		{
-
-			unsigned int temp = new_packet->address;
-			temp = temp & l1_d_caches[id].block_address_mask;
-
-			fatal("address 0x%08x blk_addr 0x%08x\n", new_packet->address, temp);
-		}*/
-
 		//Drop the packet into the L1 D Cache Rx queue
 		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
 
@@ -574,6 +553,17 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	else
 	{
 		fatal("cgm_issue_lspq_access() unsupported access type\n");
+	}
+
+	/*stats*/
+	if(access_kind == cgm_access_load)
+	{
+		cgm_stat->cpu_total_loads++;
+	}
+
+	if(access_kind == cgm_access_store)
+	{
+	 	cgm_stat->cpu_total_stores++;
 	}
 
 	return;
@@ -663,6 +653,17 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	else
 	{
 		fatal("cgm_vector_access() unsupported access type\n");
+	}
+
+	/*stats*/
+	if(access_kind == cgm_access_load_v)
+	{
+		cgm_stat->gpu_total_loads++;
+	}
+
+	if(access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
+	{
+	 	cgm_stat->gpu_total_stores++;
 	}
 
 	return;

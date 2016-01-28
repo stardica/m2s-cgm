@@ -197,24 +197,17 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	P_PAUSE(system_agent->latency);
 
 
-	CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
-		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);
+	/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);*/
 
 	if(access_type == cgm_access_mc_load || access_type == cgm_access_mc_store)
 	{
-		/*while(!memctrl_can_access())
-		{
-			//stalling
-			printf("SA stalling down\n");
-			P_PAUSE(1);
-		}*/
-
 		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
-		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
-				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
+		/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
+				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
 
 	}
 	else if(access_type == cgm_access_mc_put)
@@ -226,19 +219,13 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		message_packet->src_name = system_agent->name;
 		message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
 
-		/*while(!switch_can_access(system_agent->switch_queue))
-		{
-			printf("SA stalling up\n");
-			P_PAUSE(1);
-		}*/
-
 		//success
 		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
 		advance(system_agent_io_up_ec);
 
-		CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
-				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));
+		/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
+				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
 	}
 
 	return;
@@ -340,11 +327,6 @@ void sys_agent_ctrl(void){
 	int my_pid = system_agent_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	//int i = 0;
-
-	/*long long access_id = 0;*/
-	/*enum cgm_access_kind_t access_type;*/
-	/*unsigned int addr;*/
 
 	set_id((unsigned int)my_pid);
 
@@ -365,16 +347,11 @@ void sys_agent_ctrl(void){
 			message_packet = sysagent_get_message();
 			assert(message_packet);
 
-			//access_type = message_packet->access_type;
-			/*access_id = message_packet->access_id;*/
-			/*addr = message_packet->address;*/
-
-			CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu src %s dest %s\n",
-					system_agent->name, message_packet->access_id, P_TIME, message_packet->src_name, message_packet->dest_name);
-
-
-			//star todo this is where we will receive our other directory coherence messages
 			system_agent_route(message_packet);
+
+			/*stats*/
+			cgm_stat->system_agent_total_wakes++;
+
 		}
 	}
 

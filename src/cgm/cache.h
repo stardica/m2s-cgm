@@ -21,7 +21,6 @@
 
 #include <cgm/cgm-struct.h>
 #include <cgm/protocol.h>
-#include <cgm/misc.h>
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
 #include <cgm/switch.h>

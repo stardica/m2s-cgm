@@ -262,6 +262,21 @@ struct switch_t{
 	int next_east_id;
 	int next_west_id;
 
+	/*switch stats*/
+	long long switch_total_links;
+	long long switch_total_wakes;
+	long long switch_north_io_transfers;
+	long long switch_north_io_transfer_cycles;
+	long long switch_north_io_bytes_transfered;
+	long long switch_east_io_transfers;
+	long long switch_east_io_transfer_cycles;
+	long long switch_east_io_bytes_transfered;
+	long long switch_south_io_transfers;
+	long long switch_south_io_transfer_cycles;
+	long long switch_south_io_bytes_transfered;
+	long long switch_west_io_transfers;
+	long long switch_west_io_transfer_cycles;
+	long long switch_west_io_bytes_transfered;
 };
 
 extern struct str_map_t node_strn_map;
@@ -305,6 +320,8 @@ enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
 struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
+
+void switch_dump_stats(void);
 
 //void route_create(void);
 //void get_path(void);

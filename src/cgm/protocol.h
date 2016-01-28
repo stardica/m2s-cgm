@@ -15,8 +15,6 @@
 
 #include <lib/util/linked-list.h>
 
-#include <cgm/misc.h>
-
 extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 

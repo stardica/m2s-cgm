@@ -596,6 +596,9 @@ void switch_ctrl(void){
 			message_packet = NULL;
 		}
 
+		/*stats*/
+		switches[my_pid].switch_total_links += switches[my_pid].crossbar->num_pairs;
+		switches[my_pid].switch_total_wakes++;
 
 		//increase step by number of pairs formed
 		step += switches[my_pid].crossbar->num_pairs;
@@ -606,10 +609,7 @@ void switch_ctrl(void){
 		//set message_paket null
 		message_packet = NULL;
 
-		/*printf("next_3 queue %d\n", switches[my_pid].queue);*/
-
 		next_queue = switches[my_pid].queue;
-
 	}
 
 	fatal("switch_ctrl() quit\n");
@@ -814,12 +814,8 @@ void switch_north_io_ctrl(void){
 
 	int my_pid = switch_north_io_pid++;
 	long long step = 1;
-
 	int num_cores = x86_cpu_num_cores;
-	/*int num_cus = si_gpu_num_compute_units;*/
-
 	struct cgm_packet_t *message_packet;
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -876,6 +872,12 @@ void switch_north_io_ctrl(void){
 		{
 			fatal("switch_north_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
+
+		/*stats*/
+		switches[my_pid].switch_north_io_transfers++;
+		switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+		switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+
 	}
 
 	return;
@@ -916,6 +918,11 @@ void switch_east_io_ctrl(void){
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_east, message_packet);
 		advance(&switches_ec[switches[my_pid].next_east_id]);
+
+		/*stats*/
+		switches[my_pid].switch_east_io_transfers++;
+		switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
+		switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
 	}
 
 	return;
@@ -956,6 +963,12 @@ void switch_west_io_ctrl(void){
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_west, message_packet);
 		advance(&switches_ec[switches[my_pid].next_west_id]);
+
+		/*stats*/
+		switches[my_pid].switch_west_io_transfers++;
+		switches[my_pid].switch_west_io_transfer_cycles += transfer_time;
+		switches[my_pid].switch_west_io_bytes_transfered += message_packet->size;
+
 	}
 
 	return;
@@ -1032,6 +1045,41 @@ void switch_south_io_ctrl(void){
 		{
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
+
+		/*stats*/
+		switches[my_pid].switch_south_io_transfers++;
+		switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+		switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+
 	}
+	return;
+}
+
+void switch_dump_stats(void){
+
+	int num_switches = x86_cpu_num_cores + 1;
+	int i = 0;
+
+	for(i = 0; i < num_switches; i++)
+	{
+		CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "NumberWakes = %llu\n", switches[i].switch_total_wakes);
+		CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[i].switch_total_links);
+		CGM_STATS(cgm_stats_file, "AveNumberLinksPerWake = %f\n", (double)switches[i].switch_total_links/(double)switches[i].switch_total_wakes);
+		CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[i].switch_north_io_transfers);
+		CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[i].switch_north_io_transfer_cycles);
+		CGM_STATS(cgm_stats_file, "NorthIOBytesTransfered = %llu\n", switches[i].switch_north_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "EastIOTransfers = %llu\n", switches[i].switch_east_io_transfers);
+		CGM_STATS(cgm_stats_file, "EastIOCycles = %llu\n", switches[i].switch_east_io_transfer_cycles);
+		CGM_STATS(cgm_stats_file, "EastIOBytesTransfered = %llu\n", switches[i].switch_east_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "SouthIOTransfers = %llu\n", switches[i].switch_south_io_transfers);
+		CGM_STATS(cgm_stats_file, "SouthIOCycles = %llu\n", switches[i].switch_south_io_transfer_cycles);
+		CGM_STATS(cgm_stats_file, "SouthIOBytesTransfered = %llu\n", switches[i].switch_south_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "WestIOTransfers = %llu\n", switches[i].switch_west_io_transfers);
+		CGM_STATS(cgm_stats_file, "WestIOCycles = %llu\n", switches[i].switch_west_io_transfer_cycles);
+		CGM_STATS(cgm_stats_file, "WestIOBytesTransfered = %llu\n", switches[i].switch_west_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "\n");
+	}
+
 	return;
 }

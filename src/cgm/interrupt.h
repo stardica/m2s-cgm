@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <cgm/misc.h>
 #include <cgm/tasking.h>
 
 #include <arch/x86/timing/cpu.h>
