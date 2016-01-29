@@ -642,8 +642,6 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		unsigned int temp = addr;
 		temp = temp & gpu_v_caches[id].block_address_mask;
 
-		//printf("%s id %llu type %d address 0x%08x blk_addr 0x%08x start cycle %llu\n", gpu_v_caches[id].name, new_packet->access_id, new_packet->access_type, addr, temp, P_TIME);
-
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
 

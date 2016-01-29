@@ -1,3 +1,97 @@
+/*void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	//get the status of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	printf("gpu l2 id %d made it here id %llu cycle %llu\n", message_packet->gpu_cache_id, message_packet->access_id, P_TIME);
+
+	message_packet->access_type = cgm_access_puts;
+	message_packet->size = 64;
+	message_packet->cache_block_state = cgm_cache_block_noncoherent;
+
+	cache_put_io_up_queue(cache, message_packet);
+
+	return;
+	fatal("gpu l2 running\n");
+
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_shared:
+		case cgm_cache_block_modified:
+		case cgm_cache_block_owned:
+			fatal("gpu_s_cache_ctrl(): Invalid block state on hit as %s\n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+			break;
+
+		//miss or invalid cache block states
+		case cgm_cache_block_invalid:
+
+			//stats
+			cache->misses++;
+
+			//check ORT for coalesce
+			cache_check_ORT(cache, message_packet);
+
+			if(message_packet->coalesced == 1)
+				return;
+
+			//find victim and evict on return
+			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
+
+			//evict the block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->l2_victim_way, cgm_cache_block_invalid);
+
+			//add some routing/status data to the packet
+			//message_packet->gpu_access_type = cgm_access_mc_load;
+
+			message_packet->access_type = cgm_access_mc_load;
+			message_packet->cache_block_state = cgm_cache_block_noncoherent;
+
+			message_packet->l2_cache_id = cache->id;
+			message_packet->l2_cache_name = cache->name;
+
+			message_packet->src_name = cache->name;
+			message_packet->src_id = str_map_string(&gpu_l2_strn_map, cache->name);
+
+			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
+			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
+
+			//transmit to system agent
+			cache_put_io_down_queue(cache, message_packet);
+			break;
+
+		case cgm_cache_block_noncoherent:
+
+			//stats
+			cache->hits++;
+
+			//set retry state and delay
+			if(message_packet->access_type == cgm_access_store_retry || message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			{
+				//enter retry state.
+				gpu_cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+			}
+
+			message_packet->access_type = cgm_access_puts;
+			message_packet->size = 64;
+			message_packet->cache_block_state = cgm_cache_block_noncoherent;
+
+			cache_put_io_up_queue(cache, message_packet);
+			break;
+	}
+	return;
+
+}*/
+
 //pull the correct physical address
 			/*phy_addr = mmu_translate_guest(ctx->address_space_index, si_emu->pid, device_ptr);*/
 			/*printf("here address is 0x%08x\n", phy_addr);*/

@@ -350,8 +350,6 @@ void sys_agent_ctrl(void){
 			system_agent_route(message_packet);
 
 			/*stats*/
-			cgm_stat->system_agent_total_wakes++;
-
 		}
 	}
 

@@ -1049,7 +1049,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_gets;
@@ -1194,7 +1194,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_get;
@@ -1438,7 +1438,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			//evict the victim
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 			//set access type
 			message_packet->access_type = cgm_access_getx;
@@ -1487,8 +1487,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//set message status and size
 			message_packet->size = l1_d_caches[cache->id].block_size; //this should be L1 D cache block size.
-
-			//set the local block state
 			message_packet->access_type = cgm_access_putx;
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
@@ -2209,7 +2207,7 @@ void cgm_mesi_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 				//get the way of the block
 				/*message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
 				packet_destroy(message_packet);
@@ -3509,10 +3507,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		return;
 	}
 
-	if(message_packet->access_id == 1627795)
+	if(message_packet->access_id == 1627758)
 	{
-		printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d\n",
-				message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id);
+		printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d cycle %llu\n",
+				message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id, P_TIME);
 	}
 
 	switch(*cache_block_state_ptr)
@@ -3575,12 +3573,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if the request comes from a different core the block will need to be invalidated and forwarded to the requesting core.
 			the block should only ever be in one core if not downgraded to shared*/
 
-			if(message_packet->access_id == 1627795)
-			{
-				printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d\n",
-						message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id);
-			}
-
 			assert(sharers >= 0 && sharers <= num_cores);
 			assert(owning_core >= 0 && owning_core <= 1);
 
@@ -3622,7 +3614,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				//printf("Sending %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 
-				if(message_packet->access_id == 1627795)
+				if(message_packet->access_id == 1627758)
 				{
 					printf("message %llu transmit to hub_iommu dest id %d dest name %s\n", message_packet->access_id, message_packet->dest_id, message_packet->dest_name);
 				}
@@ -5184,7 +5176,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 					assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 					//evict the victim
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 					//set access type
 					message_packet->access_type = cgm_access_getx;

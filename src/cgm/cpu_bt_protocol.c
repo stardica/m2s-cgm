@@ -878,7 +878,7 @@ void cgm_bt_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			/*assert(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) == cgm_cache_block_shared
 					|| cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) == cgm_cache_block_invalid);*/
 
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 
 			//cgm_cache_set_block_state(cache, message_packet->set, message_packet->l2_victim_way, cgm_cache_block_invalid);
@@ -1028,7 +1028,7 @@ void cgm_bt_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 			//transmit to L3
 			cache_put_io_down_queue(cache, message_packet);
@@ -1212,7 +1212,7 @@ int cgm_bt_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			//evict the victim
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0);
 
 			//set the data type bit in the block
 			/*int type;
@@ -1934,7 +1934,7 @@ void cgm_bt_l2_inval(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//get the way of the block
 				/*message_packet->l2_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
 				packet_destroy(message_packet);

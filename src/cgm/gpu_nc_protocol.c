@@ -156,12 +156,6 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			if(message_packet->coalesced == 1)
 				return;
 
-			if(message_packet->access_id == 1628128)
-			{
-				ort_dump(cache);
-				printf("%s message %llu here.\n", cache->name, message_packet->access_id);
-			}
-
 			//add some routing/status data to the packet
 			/*message_packet->gpu_access_type = cgm_access_load_v;*/
 

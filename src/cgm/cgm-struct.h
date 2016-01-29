@@ -37,7 +37,8 @@ enum cache_waylist_enum{
 
 enum protocol_kind_t {
 
-	cgm_protocol_mesi = 0,
+	cgm_protocol_invalid = 0,
+	cgm_protocol_mesi,
 	cgm_protocol_bt,
 	cgm_protocol_moesi,
 	cgm_protocol_gmesi,
@@ -100,6 +101,8 @@ enum cgm_access_kind_t {
 	/*50*/	cgm_access_fetch_retry,
 			cgm_access_load_retry,
 			cgm_access_store_retry,
+			cgm_access_loadx_retry, /*gpu mesi mode*/
+			cgm_access_storex_retry, /*gpu mesi mode*/
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
 			num_access_types
@@ -256,10 +259,13 @@ struct cache_t{
 	unsigned int block_size;
 	unsigned int assoc;
 	unsigned int num_ports;
+	unsigned int addr_range_base;
+	unsigned int addr_range_top;
 	enum cache_policy_t policy;
 	char * policy_type;
 	int slice_type;
 	int bus_width;
+
 
 	//cache data
 	struct cache_set_t *sets;
@@ -370,10 +376,12 @@ struct cache_t{
 	void (*gpu_v_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	/*void (*gpu_v_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 	//GPU L2 cache protocol virtual functions
+	void (*gpu_l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	/*void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -422,24 +430,9 @@ struct cgm_stats_t{
 	long long gpu_total_loads;
 	long long gpu_total_stores;
 
-	/*switch stats
-	long long switch_total_links;
-	long long switch_total_wakes;
-	long long switch_nort_io_transfers;
-	long long switch_nort_io_transfer_cycles;
-	long long switch_nort_io_bytes_transfered;
-	long long switch_east_io_transfers;
-	long long switch_east_io_transfer_cycles;
-	long long switch_east_io_bytes_transfered;
-	long long switch_south_io_transfers;
-	long long switch_south_io_transfer_cycles;
-	long long switch_south_io_bytes_transfered;
-	long long switch_west_io_transfers;
-	long long switch_west_io_transfer_cycles;
-	long long switch_west_io_bytes_transfered;*/
+	/*OS stats*/
 
-	/*system agent stats*/
-	long long system_agent_total_wakes;
+	/*runtime stats*/
 
 };
 

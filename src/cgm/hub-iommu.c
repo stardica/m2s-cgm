@@ -187,11 +187,6 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 		//update routing headers for the packet
 		l3_map = cgm_l3_cache_map(message_packet->set);
-
-		//set access type
-		message_packet->access_type = cgm_access_getx;
-		message_packet->cpu_access_type = cgm_access_store;
-
 		message_packet->dest_name = l3_caches[l3_map].name;
 		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
@@ -223,7 +218,7 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		//return trip for memory access
 		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
 
-		if(message_packet->access_id == 1627680)
+		if(message_packet->access_id == 1627758)
 		{
 			printf("message %llu hub_iomm received gpu cache name %s\n", message_packet->access_id, message_packet->gpu_cache_name);
 		}
@@ -379,8 +374,9 @@ void hub_iommu_coherent_ctrl(void){
 		//star todo figure out a way to check the l2 in queue
 		if(!switch_can_access(hub_iommu->switch_queue))// && !cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
 		{
-			P_PAUSE(1);
 			fatal("hub_iommu_ctrl(): hub stalled\n");
+			P_PAUSE(1);
+
 		}
 		else
 		{
@@ -396,8 +392,6 @@ void hub_iommu_coherent_ctrl(void){
 
 			//star the hub multiplexes GPU memory requests.
 			hub_iommu_put_next_queue(message_packet);
-			sent = 1;
-
 		}
 	}
 
@@ -492,13 +486,13 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 void iommu_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
-	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
+	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
+			|| message_packet->access_type == cgm_access_getx)
 	{
 		/*load and stores are heading to the system agent.*/
-		printf("hub-iommu guest vtl address in 0x%08x source %s\n", message_packet->address, message_packet->l2_cache_name);
+		printf("hub-iommu access_id %llu guest vtl address in 0x%08x source %s\n", message_packet->access_id, message_packet->address, message_packet->l2_cache_name);
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
-
-		printf("hub-iommu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->address, get_block_address(message_packet->address, ~0x3F));
+		printf("hub-iommu access_id %llu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->access_id, message_packet->address, get_block_address(message_packet->address, ~0x3F));
 	}
 	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
 	{

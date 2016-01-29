@@ -728,17 +728,13 @@ int cgm_l3_cache_map(int set){
 	int num_cores = x86_cpu_num_cores;
 	int map = -1;
 
-	/*assert(l3_caches[0].slice_type == 1);*/
-
 	int map_type = l3_caches[0].slice_type;
 
-	//stripe
 	if(map_type == 0)
 	{
-		//get the address range
+		//only 1 L3 cache.
 		map = 0;
 	}
-	//block (one big shared L3 cache
 	else if (map_type == 1)
 	{
 		//map = *(set) % num_cores;
@@ -755,50 +751,17 @@ int cgm_l3_cache_map(int set){
 	return map;
 }
 
-int cgm_gpu_cache_map(int cache_id){
+/*int cgm_gpu_cache_map(int cache_id){*/
+int cgm_gpu_cache_map(struct cache_t *cache, unsigned int addr){
 
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 	int map = -1;
 
-	if(cache_id < 4)
-	{
-		map = 0;
-	}
-	else if(cache_id >= 4 && cache_id < 8)
-	{
-		map = 1;
-	}
-	else if(cache_id >= 8 && cache_id < 12)
-	{
-		map = 2;
-	}
-	else if(cache_id >= 12 && cache_id < 16)
-	{
-		map = 3;
-	}
-	else if(cache_id >= 16 && cache_id < 20)
-	{
-		map = 4;
-	}
-	else if(cache_id >= 20 && cache_id < 24)
-	{
-		map = 5;
-	}
-	else if(cache_id >= 24 && cache_id < 28)
-	{
-		map = 6;
-	}
-	else if(cache_id >= 28 && cache_id < 32)
-	{
-		map = 7;
-	}
-	else if (cache_id < 0 && cache_id > 31)
-	{
-		fatal("cgm_gpu_cache_map(): cache_id out of bounds\n");
-	}
-	else
-	{
-		fatal("cgm_gpu_cache_map(): cache_id out of bounds\n");
-	}
+	unsigned int set = addr & cache->block_address_mask;
+	set = set >> cache->log_block_size;
+
+	map = set & (unsigned int) (gpu_group_cache_num - 1);
 
 	return map;
 }
@@ -998,7 +961,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 
 void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
-	assert(cache->cache_type == l1_d_cache_t);
+	assert(cache->cache_type == l1_d_cache_t || cache->cache_type == gpu_v_cache_t);
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
@@ -1025,10 +988,10 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 }
 
 
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 
 	enum cgm_cache_block_state_t victim_state;
-	assert(cache->cache_type == l2_cache_t);
+	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
@@ -1049,7 +1012,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 	/*get the block flush_pending_bit
 	if the pending bit is set a flush was previously sent*/
 	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);*/
-	if(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0)
+	if(cgm_cache_get_block_flush_pending_bit(cache, set, way)) //&& victim_state != cgm_cache_block_invalid
 	{
 		//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
 		struct cgm_packet_t *flush_packet = packet_create();
@@ -1058,7 +1021,15 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way){
 
 		/*needed for correct routing from L2 to L1 D
 		figure out another way to do this*/
-		flush_packet->cpu_access_type = cgm_access_load;
+		if(cache->cache_type == gpu_l2_cache_t)
+		{
+			flush_packet->cpu_access_type = cgm_access_load_v;
+			flush_packet->l1_cache_id = id;
+		}
+		else
+		{
+			flush_packet->cpu_access_type = cgm_access_load;
+		}
 
 		list_enqueue(cache->Tx_queue_top, flush_packet);
 		advance(cache->cache_io_up_ec);
@@ -1981,7 +1952,7 @@ void gpu_s_cache_ctrl(void){
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
 
-		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(&gpu_s_caches[my_pid], message_packet->address)]))
 		{
 			//printf("%s stalling\n", gpu_s_caches[my_pid].name);
 
@@ -2052,7 +2023,8 @@ void gpu_v_cache_ctrl(void){
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
-		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(my_pid)]))
+		//star todo fix this
+		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]))
 		{
 			/*printf("%s stalling\n", gpu_v_caches[my_pid].name);*/
 			P_PAUSE(1);
@@ -2072,23 +2044,29 @@ void gpu_v_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(access_type == cgm_access_load_v || access_type == cgm_access_load_retry)
+			if(access_type == cgm_access_load_v || access_type == cgm_access_load_retry
+					|| access_type == cgm_access_loadx_retry)
 			{
 				//Call back function (gpu_cache_access_load)
 				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store || access_type == cgm_access_store_retry)
+			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store
+					|| access_type == cgm_access_store_retry || access_type == cgm_access_storex_retry)
 			{
 				//Call back function (gpu_l1_cache_access_store)
 				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_puts)
+			else if (access_type == cgm_access_puts || access_type == cgm_access_putx)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet);
 
 				//entered retry state run again.
 				step--;
+			}
+			else if (access_type == cgm_access_inv)
+			{
+				gpu_v_caches[my_pid].gpu_v_inval(&(gpu_v_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -2144,21 +2122,17 @@ void gpu_l2_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			/*if(P_TIME == 7530357)
-			{
-				printf("%s running id %llu type %s assoc %d cycle %llu\n",
-						gpu_l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->assoc_conflict, P_TIME);
-
-				cgm_cache_dump_set(&(gpu_l2_caches[my_pid]), 0);
-				ort_dump(&(gpu_l2_caches[my_pid]));
-
-			}*/
-
 			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v
 					|| access_type == cgm_access_load_retry || access_type == cgm_access_store_retry)
 			{
 				//Call back function (gpu_cache_access_get)
 				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx || access_type == cgm_access_storex_retry
+					|| access_type == cgm_access_loadx_retry)
+			{
+				//Call back function (cgm_mesi_gpu_l2_getx)
+				gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx)
 			{
@@ -2497,8 +2471,8 @@ void gpu_s_cache_down_io_ctrl(void){
 		P_PAUSE(transfer_time);
 
 		//drop into next east queue.
-		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(my_pid)].Rx_queue_top, message_packet);
-		advance(&gpu_l2_cache[cgm_gpu_cache_map(my_pid)]);
+		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_s_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
+		advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_s_caches[my_pid], message_packet->address)]);
 	}
 
 	return;
@@ -2539,8 +2513,8 @@ void gpu_v_cache_down_io_ctrl(void){
 		P_PAUSE(transfer_time);
 
 		//drop into next east queue.
-		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(my_pid)].Rx_queue_top, message_packet);
-		advance(&gpu_l2_cache[cgm_gpu_cache_map(my_pid)]);
+		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
+		advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
 	}
 
 	return;
@@ -2584,7 +2558,7 @@ void gpu_l2_cache_up_io_ctrl(void){
 		//drop into the correct l1 cache queue.
 		if(message_packet->gpu_access_type == cgm_access_load_s)
 		{
-			list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
+			list_enqueue(gpu_s_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
 			advance(&gpu_s_cache[message_packet->l1_cache_id]);
 		}
 		else if(message_packet->gpu_access_type == cgm_access_load_v || message_packet->gpu_access_type == cgm_access_store_v
@@ -2595,7 +2569,8 @@ void gpu_l2_cache_up_io_ctrl(void){
 		}
 		else
 		{
-			fatal("gpu_l2_cache_up_io_ctrl(): bad gpu access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->gpu_access_type));
+			fatal("gpu_l2_cache_up_io_ctrl(): access_id %llu bad gpu access type as %s\n",
+					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->gpu_access_type));
 		}
 
 	}
@@ -2688,6 +2663,13 @@ void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_pa
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//remove packet from cache queue, global queue, and simulator memory
+
+	if(message_packet->access_id == 1627758)
+	{
+		fatal("%s BOOM HIT!\n", cache->name);
+	}
+
+
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
 	packet_destroy(message_packet);
@@ -2950,7 +2932,14 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 		{
 			ort_packet = list_remove_at(cache->ort_list, i);
 
-			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+			if(cache->cache_type == gpu_l2_cache_t || cache->cache_type == gpu_v_cache_t)
+			{
+				ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
+			}
+			else
+			{
+				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+			}
 
 			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
@@ -2990,7 +2979,15 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			coalescer to re-enter the set and tag.*/
 			ort_packet->coalesced = 0;
 			ort_packet->assoc_conflict = 1;
-			ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+
+			if(cache->cache_type == gpu_l2_cache_t || cache->cache_type == gpu_v_cache_t)
+			{
+				ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
+			}
+			else
+			{
+				ort_packet->access_type = cgm_cache_get_retry_state(ort_packet->cpu_access_type);
+			}
 
 			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
@@ -3383,18 +3380,42 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 
 	enum cgm_access_kind_t retry_state = cgm_access_invalid;
 
-	if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
+	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 	{
-		retry_state = cgm_access_load_retry;
+		if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
+		{
+			retry_state = cgm_access_load_retry;
+		}
+		else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
+		{
+			retry_state = cgm_access_store_retry;
+		}
+		else
+		{
+			fatal("cgm_gpu_cache_get_retry_state(): unrecognized state as %s\n", str_map_value(&cgm_mem_access_strn_map, r_state));
+		}
 	}
-	else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
+	else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
-		retry_state = cgm_access_store_retry;
+		if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
+		{
+			retry_state = cgm_access_loadx_retry;
+		}
+		else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
+		{
+			retry_state = cgm_access_storex_retry;
+		}
+		else
+		{
+			fatal("cgm_gpu_cache_get_retry_state(): unrecognized state as %s\n", str_map_value(&cgm_mem_access_strn_map, r_state));
+		}
 	}
 	else
 	{
-		fatal("cgm_cache_get_retry_state(): unrecognized state as %s\n", str_map_value(&cgm_mem_access_strn_map, r_state));
+		fatal("cgm_gpu_cache_get_retry_state(): protocol\n");
 	}
+
+	assert(retry_state != cgm_access_invalid);
 
 	return retry_state;
 }
@@ -3417,7 +3438,7 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 	}
 	else
 	{
-		fatal("cgm_cache_get_retry_state(): unrecognized state as %s \n", str_map_value(&cgm_mem_access_strn_map, r_state));
+		fatal("cgm_cache_get_retry_state(): CPU unrecognized state as %s \n", str_map_value(&cgm_mem_access_strn_map, r_state));
 	}
 
 	return retry_state;
