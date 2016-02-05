@@ -3140,6 +3140,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//add routing/status data to the packet
 				write_back_packet->access_type = cgm_access_mc_store;
+				write_back_packet->size = cache->block_size;
 
 				write_back_packet->src_name = cache->name;
 				write_back_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -3507,6 +3508,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				//add routing/status data to the packet
 				write_back_packet->access_type = cgm_access_mc_store;
+				write_back_packet->size = cache->block_size;
 
 				write_back_packet->src_name = cache->name;
 				write_back_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -3564,7 +3566,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		return;
 	}
 
-	if(message_packet->access_id == 1627758)
+	if(message_packet->access_id == 1638361)
 	{
 		printf("message %llu in L3 0x%08x hit_ptr %d src %s src id %d cycle %llu\n",
 				message_packet->access_id, message_packet->address, *cache_block_hit_ptr, message_packet->src_name, message_packet->src_id, P_TIME);
@@ -3897,6 +3899,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				//add routing/status data to the packet
 				write_back_packet->access_type = cgm_access_mc_store;
+				write_back_packet->size = cache->block_size;
 
 				write_back_packet->src_name = cache->name;
 				write_back_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -4392,10 +4395,6 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
-	if(message_packet->access_id == 1627680)
-	{
-		printf("message %llu L3 write block\n", message_packet->access_id);
-	}
 
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
@@ -4415,6 +4414,11 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	//set retry state
 	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+
+	/*if(message_packet->access_id == 1638361)
+	{
+		fatal("here\n");
+	}*/
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
@@ -4510,6 +4514,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					//transmit WB to SA/MC
 					message_packet->access_type = cgm_access_mc_store;
+					message_packet->size = cache->block_size;
 
 					message_packet->src_name = cache->name;
 					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
@@ -4567,6 +4572,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 			//add routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_store;
+			message_packet->size = cache->block_size;
 
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);

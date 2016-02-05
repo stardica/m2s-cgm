@@ -103,7 +103,7 @@ void dramsim_register_call_backs(void){
 	return;
 }
 
-/* callback functors */
+/* callback functions */
 void dramsim_read_complete(unsigned id, long long address, long long clock_cycle)
 {
 	struct cgm_packet_t *message_packet;
@@ -136,6 +136,19 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 	message_packet->access_type = cgm_access_mc_put;
 	message_packet->size = l3_caches[0].block_size;
 
+	/*stats*/
+	mem_ctrl->num_reads++;
+	long long elapsed_cycles = P_TIME - message_packet->dram_start_cycle;
+
+	/*running ave = ((old count * old data) + next data) / next count*/
+	mem_ctrl->ave_dram_read_lat = (((mem_ctrl->num_writes - 1) * mem_ctrl->ave_dram_write_lat) + elapsed_cycles) / mem_ctrl->num_writes;
+
+	if(mem_ctrl->read_min > elapsed_cycles)
+		mem_ctrl->read_min = elapsed_cycles;
+
+	if(mem_ctrl->read_max < elapsed_cycles)
+		mem_ctrl->read_max = elapsed_cycles;
+
 	//reply to L3
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
 	list_enqueue(mem_ctrl->Tx_queue, message_packet);
@@ -156,7 +169,6 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 		//get pointer to access in queue and check it's status.
 		message_packet = list_get(mem_ctrl->pending_accesses, i);
 
-		//found block in write back buffer
 		if(message_packet->address == (unsigned int)address)
 		{
 			hit = 1;
@@ -168,7 +180,18 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	assert(message_packet->address == (unsigned int)address);
 	assert(message_packet->access_type == cgm_access_mc_store);
 
-	//printf("store msaddr 0x%08x dsaddr 0x%08x\n", message_packet->address, (unsigned int)address);
+	/*stats*/
+	mem_ctrl->num_writes++;
+	long long elapsed_cycles = P_TIME - message_packet->dram_start_cycle;
+
+	/*running ave = ((old count * old data) + next data) / next count*/
+	mem_ctrl->ave_dram_write_lat = (((mem_ctrl->num_writes - 1) * mem_ctrl->ave_dram_write_lat) + elapsed_cycles) / mem_ctrl->num_writes;
+
+	if(mem_ctrl->write_min > elapsed_cycles)
+		mem_ctrl->write_min = elapsed_cycles;
+
+	if(mem_ctrl->write_max < elapsed_cycles)
+		mem_ctrl->write_max = elapsed_cycles;
 
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
 	free(message_packet);

@@ -175,6 +175,7 @@ struct cgm_packet_t{
 	//stats
 	long long start_cycle;
 	long long end_cycle;
+	long long dram_start_cycle;
 };
 
 struct cgm_packet_status_t{

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <cgm/configure.h>
 #include <mem-image/memory.h>
+#include <limits.h>
 
 int cgmmem_check_config = 0;
 
@@ -590,17 +591,28 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 
 		if(strcmp(temp_strn, "MC") == 0)
 		{
-			hub_iommu_connection_type = 0;
+			hub_iommu_connection_type = hub_to_mc;
+
+			if(cgm_gpu_cache_protocol != cgm_protocol_non_coherent)
+			{
+				fatal("cache_read_config(): invalid gpu nc protocol configuration\n");
+			}
 		}
 		else if(strcmp(temp_strn, "L3") == 0)
 		{
-			hub_iommu_connection_type = 1;
+			hub_iommu_connection_type = hub_to_l3;
+
+			if (!(cgm_gpu_cache_protocol != cgm_protocol_non_coherent || cgm_gpu_cache_protocol != cgm_protocol_mesi))
+			{
+				fatal("cache_read_config(): invalid gpu mesi protocol configuration\n");
+			}
 		}
 		else
 		{
 			fatal("cache_read_config(): invalid gpu connection, check config file\n");
 		}
 	}
+
 
 	////////////////////////
 	//l1_d_caches
@@ -3266,8 +3278,6 @@ int switch_finish_create(void){
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
 
 
-
-
 	//set up translation table
 	assert(gpu_l2_caches[0].mshr_size);
 	int table_size = gpu_group_cache_num * gpu_l2_caches[0].mshr_size;
@@ -3308,12 +3318,12 @@ int switch_finish_create(void){
 	hub_iommu_create_tasks(hub_iommu_ctrl);
 
 	//configure correct routing function
-	if(hub_iommu_connection_type == 0)
+	if(hub_iommu_connection_type == hub_to_mc)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
 		printf("---GPU connection mode is MC---\n");
 	}
-	else if(hub_iommu_connection_type == 1)
+	else if(hub_iommu_connection_type == hub_to_l3)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_L3;
 		printf("---GPU connection mode is L3---\n");
@@ -3326,7 +3336,6 @@ int switch_finish_create(void){
 	{
 		fatal("switch_finish_create(): HUB_IOMMU_CONNECTION_MODE invlid setting\n");
 	}
-
 
 	return 0;
 }
@@ -3555,6 +3564,23 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	{
 		printf("---DRAMSim is disconnected---\n");
 	}
+
+	/*stats*/
+	mem_ctrl->active_cycles = 0;
+	mem_ctrl->num_reads = 0;
+	mem_ctrl->num_writes = 0;
+	mem_ctrl->ave_dram_read_lat = 0;
+	mem_ctrl->ave_dram_write_lat = 0;
+	mem_ctrl->ave_dram_total_lat = 0;
+	mem_ctrl->read_min = LLONG_MAX;
+	mem_ctrl->read_max = 0;
+	mem_ctrl->write_min = LLONG_MAX;
+	mem_ctrl->write_max = 0;
+	mem_ctrl->pedding_accesses_max = 0;
+	mem_ctrl->rx_max = 0;
+	mem_ctrl->tx_max = 0;
+	mem_ctrl->bytes_read = 0;
+	mem_ctrl->bytes_wrote = 0;
 
 	return 0;
 }

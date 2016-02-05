@@ -420,8 +420,23 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 			//add some routing/status data to the packet
 			//message_packet->gpu_access_type = cgm_access_mc_load;
 
-			message_packet->access_type = cgm_access_mc_load;
-			message_packet->cache_block_state = cgm_cache_block_noncoherent;
+			if(hub_iommu_connection_type == hub_to_mc)
+			{
+				//message is going down to mc so its and mc_load
+				message_packet->access_type = cgm_access_mc_load;
+				message_packet->cache_block_state = cgm_cache_block_noncoherent;
+
+			}
+			else if(hub_iommu_connection_type == hub_to_l3)
+			{
+				//message is going down to L3 so its a getx
+				message_packet->access_type = cgm_access_getx;
+				message_packet->cpu_access_type = cgm_access_store;
+			}
+			else
+			{
+				fatal("cgm_nc_gpu_l2_get(): hub_iommu_connection_type is invalid\n");
+			}
 
 			message_packet->l2_cache_id = cache->id;
 			message_packet->l2_cache_name = cache->name;

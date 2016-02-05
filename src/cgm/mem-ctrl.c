@@ -92,6 +92,10 @@ void memctrl_ctrl_io(void){
 		await(mem_ctrl_io_ec, step);
 		step++;
 
+		/*stats*/
+		if(mem_ctrl->tx_max < list_count(mem_ctrl->Tx_queue))
+			mem_ctrl->tx_max = list_count(mem_ctrl->Tx_queue);
+
 		message_packet = list_dequeue(mem_ctrl->Tx_queue);
 		assert(message_packet);
 
@@ -105,12 +109,9 @@ void memctrl_ctrl_io(void){
 
 		P_PAUSE(transfer_time);
 
-		/*while(transfer_time > 0)
-		{
-			P_PAUSE(1);
-			transfer_time--;
-			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
-		}*/
+		if(message_packet->access_type == cgm_access_mc_put)
+			mem_ctrl->bytes_read += message_packet->size;
+
 
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 		advance(system_agent_ec);
@@ -178,6 +179,10 @@ void memctrl_ctrl(void){
 			message_packet = list_get(mem_ctrl->Rx_queue_top, 0);
 			assert(message_packet);
 
+			/*stats*/
+			if(mem_ctrl->rx_max < list_count(mem_ctrl->Rx_queue_top))
+				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);
+
 			if(message_packet->access_type == cgm_access_mc_store)
 			{
 				/*the message is a store message (Write Back) from a L3 cache
@@ -187,6 +192,11 @@ void memctrl_ctrl(void){
 				{
 					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
 					{
+
+						/*stats*/
+						message_packet->dram_start_cycle = P_TIME;
+						mem_ctrl->bytes_wrote += message_packet->size;
+
 						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 						list_enqueue(mem_ctrl->pending_accesses, message_packet);
 					}
@@ -213,6 +223,9 @@ void memctrl_ctrl(void){
 					//printf("C side reading from memory access id %llu addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address, P_TIME);
 					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
 					{
+						/*stats*/
+						message_packet->dram_start_cycle = P_TIME;
+
 						//printf("MC access addr 0x%08x cycle%llu\n", message_packet->address, P_TIME);
 						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 						list_enqueue(mem_ctrl->pending_accesses, message_packet);
@@ -238,7 +251,44 @@ void memctrl_ctrl(void){
 					advance(mem_ctrl_io_ec);
 				}
 			}
+
+			/*stats*/
+			mem_ctrl->active_cycles++;
+
+			if(mem_ctrl->pedding_accesses_max < list_count(mem_ctrl->pending_accesses))
+				mem_ctrl->pedding_accesses_max = list_count(mem_ctrl->pending_accesses);
+
 		}
 	}
+	return;
+}
+
+void memctrl_dump_stats(void){
+
+
+	//cycles per nano second
+
+	double ave_lat_ns = (((mem_ctrl->ave_dram_write_lat + mem_ctrl->ave_dram_read_lat)/2) *GHZ) / cpu_freq;
+
+	CGM_STATS(cgm_stats_file, "[MemCtrl]\n");
+	CGM_STATS(cgm_stats_file, "TotalActiveCycles = %llu\n", mem_ctrl->active_cycles);
+	CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", mem_ctrl->num_reads);
+	CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", mem_ctrl->num_writes);
+	CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", mem_ctrl->ave_dram_read_lat);
+	CGM_STATS(cgm_stats_file, "AveDramWriteLat = %.02f\n", mem_ctrl->ave_dram_write_lat);
+	CGM_STATS(cgm_stats_file, "AveDramTotalLat(cycles) = %.02f\n", (mem_ctrl->ave_dram_write_lat + mem_ctrl->ave_dram_read_lat)/2);
+	CGM_STATS(cgm_stats_file, "AveDramTotalLat(nanoseconds) = %.02f\n", ave_lat_ns);
+	CGM_STATS(cgm_stats_file, "ReadMinLat = %llu\n", mem_ctrl->read_min);
+	CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", mem_ctrl->read_max);
+	CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", mem_ctrl->write_min);
+	CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", mem_ctrl->write_max);
+	CGM_STATS(cgm_stats_file, "PenddingAccessesMax = %llu\n", mem_ctrl->pedding_accesses_max);
+	CGM_STATS(cgm_stats_file, "RxMax = %llu\n", mem_ctrl->rx_max);
+	CGM_STATS(cgm_stats_file, "TxMax = %llu\n", mem_ctrl->tx_max);
+	CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", mem_ctrl->bytes_read);
+	CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", mem_ctrl->bytes_wrote);
+
+	CGM_STATS(cgm_stats_file, "\n");
+
 	return;
 }

@@ -15,6 +15,7 @@
 
 #define dram_system_t MultiChannelMemorySystem
 #define MHZ 1000000
+#define GHZ 1000000000
 
 typedef int bool;
 enum {false, true};

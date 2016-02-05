@@ -41,6 +41,24 @@ struct mem_ctrl_t{
 
 	//bus
 	int bus_width;
+
+	/*stats*/
+	long long active_cycles;
+	long long num_reads;
+	long long num_writes;
+	double ave_dram_read_lat;
+	double ave_dram_write_lat;
+	double ave_dram_total_lat;
+	long long read_min;
+	long long read_max;
+	long long write_min;
+	long long write_max;
+	long long pedding_accesses_max;
+	long long rx_max;
+	long long tx_max;
+	long long bytes_read;
+	long long bytes_wrote;
+
 };
 
 //events
@@ -61,5 +79,7 @@ void memctrl_create_tasks(void);
 void memctrl_ctrl(void);
 void memctrl_ctrl_io(void);
 int memctrl_can_access(void);
+
+void memctrl_dump_stats(void);
 
 #endif /* MEMCTRL_H_ */

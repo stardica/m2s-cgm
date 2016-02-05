@@ -50,6 +50,13 @@ enum Tx_queue_name
 	Tx_queue_num
 };
 
+enum hub_connect_type_t
+{
+	hub_to_mc = 0,
+	hub_to_l3,
+	Thub_connect_type_num
+};
+
 extern struct str_map_t Rx_queue_strn_map;
 extern struct str_map_t Tx_queue_strn_map;
 
@@ -119,6 +126,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void);
 void (*hub_iommu_put_next_queue)(struct cgm_packet_t *message_packet);
 void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet);
 void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet);
+
 void hub_iommu_io_up_ctrl(void);
 void hub_iommu_io_down_ctrl(void);
 

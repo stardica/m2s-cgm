@@ -5,7 +5,6 @@
  *      Author: stardica
  */
 
-
 //////////////////////
 /////GPU MESI protocol
 //////////////////////
@@ -14,7 +13,7 @@
 
 void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*GPU S$ contains read only data that is established prior to kernal execution (during OS/drvier configuration)
+	/*GPU S$ contains read only data that is established prior to kernel execution (during OS/driver configuration)
 	it should be sufficient to charge a small latency and continue on for simulator purposes.*/
 
 	P_PAUSE(cache->latency);
@@ -106,7 +105,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 			//add some routing/status data to the packet
 			message_packet->gpu_access_type = cgm_access_load_v;
 
-			//this is mesi hsa stuff. GETX!
+			//this is mesi hsa stuff baby. GETX!
 			message_packet->l1_cache_id = cache->id;
 			message_packet->l1_access_type = cgm_access_getx;
 			message_packet->access_type = cgm_access_getx;

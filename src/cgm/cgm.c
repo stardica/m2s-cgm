@@ -260,6 +260,7 @@ void cgm_dump_summary(void){
 	cgm_dump_stats();
 	cache_dump_stats();
 	switch_dump_stats();
+	memctrl_dump_stats();
 
 	CLOSE_FILES;
 

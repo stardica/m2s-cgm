@@ -204,8 +204,8 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
 
-		printf("hub-iommu access id %llu first address 0x%08x set %d heading to L3 id %d \n",
-				message_packet->access_id, message_packet->address, message_packet->set, l3_map);
+		printf("hub-iommu access id %llu as %s first address 0x%08x set %d heading to L3 id %d \n",
+				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_map);
 		/*getchar();*/
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
@@ -218,10 +218,10 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		//return trip for memory access
 		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
 
-		if(message_packet->access_id == 1627758)
+		/*if(message_packet->access_id == 1638361)
 		{
-			printf("message %llu hub_iomm received gpu cache name %s\n", message_packet->access_id, message_packet->gpu_cache_name);
-		}
+			fatal("message %llu hub_iomm received gpu cache name %s\n", message_packet->access_id, message_packet->gpu_cache_name);
+		}*/
 
 		//star todo fix this
 		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
@@ -461,7 +461,8 @@ unsigned int iommu_translation_table_get_address(int id){
 void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
-	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
+	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
+			|| message_packet->access_type == cgm_access_getx)
 	{
 		/*load and stores are heading to the system agent.*/
 		printf("hub-iommu NC ACCESS vtl address in 0x%08x\n", message_packet->address);
@@ -477,7 +478,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 	}
 	else
 	{
-		fatal("iommu_translate(): invalid message_packet access type\n");
+		fatal("iommu_translate(): invalid message_packet access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 	}
 
 	return;
