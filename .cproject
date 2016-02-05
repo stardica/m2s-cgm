@@ -36,13 +36,16 @@
 								<option id="gnu.c.compiler.option.include.paths.1155319343" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/home/stardica/Desktop/m2s-cgm/src"/>
 								</option>
-								<option id="gnu.c.compiler.option.misc.other.650141837" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-pthread -fopenmp -mmmx -msse -c -fmessage-length=0" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.650141837" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-m32 -pthread -fopenmp -mmmx -msse -c -fmessage-length=0" valueType="string"/>
 								<option id="gnu.c.compiler.option.debugging.other.1467401181" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" value="" valueType="string"/>
-								<option id="gnu.c.compiler.option.optimization.flags.1705365602" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-U_FORTIFY_SOURCE" valueType="string"/>
+								<option id="gnu.c.compiler.option.optimization.flags.1705365602" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="" valueType="string"/>
 								<option id="gnu.c.compiler.option.warnings.allwarn.1772039799" name="All warnings (-Wall)" superClass="gnu.c.compiler.option.warnings.allwarn" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.nowarn.1524835928" name="Inhibit all warnings (-w)" superClass="gnu.c.compiler.option.warnings.nowarn" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.toerrors.1743522230" name="Warnings as errors (-Werror)" superClass="gnu.c.compiler.option.warnings.toerrors" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.pedantic.919608801" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="false" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.preprocessor.undef.symbol.957018884" superClass="gnu.c.compiler.option.preprocessor.undef.symbol" valueType="undefDefinedSymbols">
+									<listOptionValue builtIn="false" value="_FORTIFY_SOURCE"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.542266866" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool command="g++" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser" id="cdt.managedbuild.tool.gnu.c.linker.exe.release.82903734" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release">
@@ -57,6 +60,7 @@
 									<listOptionValue builtIn="false" value="/home/stardica/Desktop/DRAMSim"/>
 								</option>
 								<option id="gnu.c.link.option.noshared.259926346" name="No shared libraries (-static)" superClass="gnu.c.link.option.noshared" value="true" valueType="boolean"/>
+								<option id="gnu.c.link.option.ldflags.1601909842" superClass="gnu.c.link.option.ldflags" value="-m32" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1699497185" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

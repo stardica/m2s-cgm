@@ -2664,10 +2664,10 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//remove packet from cache queue, global queue, and simulator memory
 
-	if(message_packet->access_id == 1627758)
+	/*if(message_packet->access_id == 1627758)
 	{
 		fatal("%s BOOM HIT!\n", cache->name);
-	}
+	}*/
 
 
 	(*message_packet->witness_ptr)++;
