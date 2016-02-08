@@ -119,7 +119,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 		message_packet = list_get(mem_ctrl->pending_accesses, i);
 
 		//found block in write back buffer
-		if(message_packet->address == (unsigned int)address)
+		if(GET_BLOCK(message_packet->address) == (unsigned int)address)
 		{
 			hit = 1;
 			break;
@@ -127,7 +127,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 	}
 
 	assert(hit == 1);
-	assert(message_packet->address == (unsigned int)address);
+	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
 	assert(message_packet->access_type == cgm_access_mc_load);
 
 	//printf("load msaddr 0x%08x\n dsaddr 0x%08x\n", message_packet->address, (unsigned int)address);
@@ -136,7 +136,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 	message_packet->access_type = cgm_access_mc_put;
 	message_packet->size = l3_caches[0].block_size;
 
-	/*stats*/
+	//stats//////
 	mem_ctrl->num_reads++;
 	long long elapsed_cycles = P_TIME - message_packet->dram_start_cycle;
 
@@ -148,6 +148,9 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 
 	if(mem_ctrl->read_max < elapsed_cycles)
 		mem_ctrl->read_max = elapsed_cycles;
+
+	mem_ctrl->dram_busy_cycles += elapsed_cycles;
+	//stats end//////
 
 	//reply to L3
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
@@ -169,7 +172,7 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 		//get pointer to access in queue and check it's status.
 		message_packet = list_get(mem_ctrl->pending_accesses, i);
 
-		if(message_packet->address == (unsigned int)address)
+		if(GET_BLOCK(message_packet->address) == (unsigned int)address)
 		{
 			hit = 1;
 			break;
@@ -177,10 +180,10 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	}
 
 	assert(hit == 1);
-	assert(message_packet->address == (unsigned int)address);
+	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
 	assert(message_packet->access_type == cgm_access_mc_store);
 
-	/*stats*/
+	//stats/////////
 	mem_ctrl->num_writes++;
 	long long elapsed_cycles = P_TIME - message_packet->dram_start_cycle;
 
@@ -192,6 +195,9 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 
 	if(mem_ctrl->write_max < elapsed_cycles)
 		mem_ctrl->write_max = elapsed_cycles;
+
+	mem_ctrl->dram_busy_cycles += elapsed_cycles;
+	//stats/////////
 
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
 	free(message_packet);

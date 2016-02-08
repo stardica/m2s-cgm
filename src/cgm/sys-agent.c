@@ -187,18 +187,11 @@ struct cgm_packet_t *sysagent_get_message(void){
 void system_agent_route(struct cgm_packet_t *message_packet){
 
 	enum cgm_access_kind_t access_type;
-	unsigned int addr = 0;
-	long long access_id = 0;
-
 	access_type = message_packet->access_type;
-	access_id = message_packet->access_id;
-	addr = message_packet->address;
+
+	int queue_depth = 0;
 
 	P_PAUSE(system_agent->latency);
-
-
-	/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
-		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);*/
 
 	if(access_type == cgm_access_mc_load || access_type == cgm_access_mc_store)
 	{
@@ -206,8 +199,20 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
-		/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
-				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
+		/*stats*/
+		if(access_type == cgm_access_mc_load)
+			system_agent->mc_loads++;
+
+		if(access_type == cgm_access_mc_store)
+			system_agent->mc_stores++;
+
+		/*running ave = ((old count * old data) + next data) / next count*/
+		system_agent->south_puts++;
+		queue_depth = list_count(system_agent->Tx_queue_bottom);
+		system_agent->ave_south_txqueue_depth = ((((double) system_agent->south_puts - 1) * system_agent->ave_south_txqueue_depth) + (double) queue_depth) / (double) system_agent->south_puts;
+
+		if(system_agent->max_south_txqueue_depth < list_count(system_agent->Tx_queue_bottom))
+				system_agent->max_south_txqueue_depth = list_count(system_agent->Tx_queue_bottom);
 
 	}
 	else if(access_type == cgm_access_mc_put)
@@ -224,8 +229,16 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
 		advance(system_agent_io_up_ec);
 
-		/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
-				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
+		/*stats*/
+		system_agent->mc_returns++;
+
+		system_agent->north_puts++;
+		queue_depth = list_count(system_agent->Tx_queue_top);
+		system_agent->ave_north_txqueue_depth = ((((double) system_agent->north_puts - 1) * system_agent->ave_north_txqueue_depth) + (double) queue_depth) / (double) system_agent->north_puts;
+
+		if(system_agent->max_north_txqueue_depth < list_count(system_agent->Tx_queue_top))
+				system_agent->max_north_txqueue_depth = list_count(system_agent->Tx_queue_top);
+
 	}
 
 	return;
@@ -273,6 +286,8 @@ void sys_agent_ctrl_io_up(void){
 
 		P_PAUSE(transfer_time);
 
+		system_agent->north_io_busy_cycles += (transfer_time + 1);
+
 		list_enqueue(system_agent->switch_queue, message_packet);
 		advance(&switches_ec[system_agent->switch_id]);
 	}
@@ -308,6 +323,9 @@ void sys_agent_ctrl_io_down(void){
 
 		P_PAUSE(transfer_time);
 
+
+		system_agent->south_io_busy_cycles += (transfer_time + 1);
+
 		/*while(transfer_time > 0)
 		{
 			P_PAUSE(1);
@@ -327,6 +345,7 @@ void sys_agent_ctrl(void){
 	int my_pid = system_agent_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
+	int queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -338,6 +357,9 @@ void sys_agent_ctrl(void){
 		{
 			//printf("SA stalling down\n");
 			P_PAUSE(1);
+
+			/*stats*/
+			system_agent->busy_cycles += 1;
 		}
 		else
 		{
@@ -350,9 +372,32 @@ void sys_agent_ctrl(void){
 			system_agent_route(message_packet);
 
 			/*stats*/
+			system_agent->busy_cycles += (system_agent->latency + 1);
 		}
 	}
 
 	fatal("sys_agent_ctrl task is broken\n");
+	return;
+}
+
+void sys_agent_dump_stats(void){
+
+	CGM_STATS(cgm_stats_file, "[SystemAgent]\n");
+	CGM_STATS(cgm_stats_file, "BusyCycles = %llu\n", system_agent->busy_cycles);
+	CGM_STATS(cgm_stats_file, "NorthIOBusyCycles = %llu\n", system_agent->north_io_busy_cycles);
+	CGM_STATS(cgm_stats_file, "SouthIOBusyCycles = %llu\n", system_agent->south_io_busy_cycles);
+	CGM_STATS(cgm_stats_file, "MCLoads = %llu\n", system_agent->mc_loads);
+	CGM_STATS(cgm_stats_file, "MCStores = %llu\n", system_agent->mc_stores);
+	CGM_STATS(cgm_stats_file, "MCReturns = %llu\n", system_agent->mc_returns);
+	CGM_STATS(cgm_stats_file, "MaxNorthRxQueueDepth = %d\n", system_agent->max_north_rxqueue_depth);
+	CGM_STATS(cgm_stats_file, "AveNorthRxQueueDepth = %0.2f\n", system_agent->ave_north_rxqueue_depth);
+	CGM_STATS(cgm_stats_file, "MaxSouthRxQueueDepth = %d\n", system_agent->max_south_rxqueue_depth);
+	CGM_STATS(cgm_stats_file, "AveSouthRxQueueDepth = %0.2f\n", system_agent->ave_south_rxqueue_depth);
+	CGM_STATS(cgm_stats_file, "MaxNorthTxQueueDepth = %d\n", system_agent->max_north_txqueue_depth);
+	CGM_STATS(cgm_stats_file, "AveNorthTxQueueDepth = %0.2f\n", system_agent->ave_north_txqueue_depth);
+	CGM_STATS(cgm_stats_file, "MaxSouthTxQueueDepth = %d\n", system_agent->max_south_txqueue_depth);
+	CGM_STATS(cgm_stats_file, "AveSouthTxQueueDepth = %0.2f\n", system_agent->ave_south_txqueue_depth);
+	CGM_STATS(cgm_stats_file, "\n");
+
 	return;
 }

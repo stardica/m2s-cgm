@@ -60,7 +60,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -103,7 +103,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_shared:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//set retry state and delay
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
@@ -221,7 +221,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -267,7 +267,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_shared:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//check for pending upgrade before finishing
 			upgrade_pending = ort_search(cache, message_packet->tag, message_packet->set);
@@ -396,7 +396,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -505,7 +505,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 
-			cache->hits++;
+			//cache->hits++;
 
 			//set modified if current block state is exclusive
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
@@ -1034,7 +1034,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 
 
@@ -1071,7 +1071,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_shared:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//check if the packet has coalesced accesses.
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
@@ -1176,7 +1176,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -1228,7 +1228,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_shared:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
@@ -1417,7 +1417,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -1468,7 +1468,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_exclusive:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			//set retry state
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
@@ -2807,7 +2807,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_invalid:
 
 			//stats;
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -2849,7 +2849,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_shared:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			assert(message_packet->cpu_access_type == cgm_access_fetch);
 
@@ -3214,7 +3214,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_invalid:
 
 			//stats;
-			cache->misses++;
+			//cache->misses++;
 			assert(message_packet->cpu_access_type == cgm_access_load);
 
 			if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
@@ -3268,7 +3268,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_exclusive:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			//star todo update this message when working in GETX
 			/*on the first GET the block should have been brought in as exclusive.
@@ -3394,7 +3394,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_shared:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			//check if the packet has coalesced accesses.
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -3583,7 +3583,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -3623,7 +3623,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_exclusive:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			/*on the first GET the block should have been brought in as exclusive.
 			Then it will be a hit on retry with no presence bits set (exclusive).

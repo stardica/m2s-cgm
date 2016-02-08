@@ -393,12 +393,17 @@ struct cache_t{
 	/*unsigned int *outstanding_addresses;*/
 
 	//statistics
-	long long fetches;
-	long long loads;
-	long long stores;
-	long long hits;
+	long long TotalAcesses;
+	long long TotalMisses;
+	long long TotalReads;
+	long long TotalWrites;
+	long long writes_Getx;
+	long long writes_upgrades;
+	long long write_backs;
+
+
+
 	long long invalid_hits;
-	long long misses;
 	long long assoc_conflict;
 	long long upgrade_misses;
 	long long retries;

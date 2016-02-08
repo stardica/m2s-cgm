@@ -84,6 +84,7 @@ void memctrl_ctrl_io(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	int queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -109,12 +110,26 @@ void memctrl_ctrl_io(void){
 
 		P_PAUSE(transfer_time);
 
+		mem_ctrl->io_busy_cycles += (transfer_time + 1);
+
 		if(message_packet->access_type == cgm_access_mc_put)
 			mem_ctrl->bytes_read += message_packet->size;
 
 
+
 		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
 		advance(system_agent_ec);
+
+		/*stats*/
+
+		if(system_agent->max_south_rxqueue_depth < list_count(system_agent->Rx_queue_bottom))
+				system_agent->max_south_rxqueue_depth = list_count(system_agent->Rx_queue_bottom);
+
+		/*running ave = ((old count * old data) + next data) / next count*/
+		system_agent->south_gets++;
+		queue_depth = list_count(system_agent->Rx_queue_bottom);
+		system_agent->ave_south_rxqueue_depth = ((((double) system_agent->south_gets - 1) * system_agent->ave_south_rxqueue_depth) + (double) queue_depth) / (double) system_agent->south_gets;
+
 	}
 	return;
 }
@@ -125,6 +140,9 @@ void memctrl_ctrl(void){
 	int my_pid = mem_ctrl_pid;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
+
+	int queue_depth = 0;
+	long long num_inserts = 0;
 
 	/*long long access_id = 0;
 	enum cgm_access_kind_t access_type;
@@ -171,6 +189,10 @@ void memctrl_ctrl(void){
 		{
 			printf("MC stalling dram ctrl full cycle %llu\n", P_TIME);
 			P_PAUSE(1);
+
+			/*stats*/
+			mem_ctrl->mem_ctrl_busy_cycles += 1;
+
 		}
 		else
 		{
@@ -190,12 +212,13 @@ void memctrl_ctrl(void){
 
 				if(DRAMSim == 1)
 				{
-					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					if(dramsim_add_transaction(message_packet->access_type, GET_BLOCK(message_packet->address)))
 					{
 
 						/*stats*/
 						message_packet->dram_start_cycle = P_TIME;
 						mem_ctrl->bytes_wrote += message_packet->size;
+						num_inserts++;
 
 						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 						list_enqueue(mem_ctrl->pending_accesses, message_packet);
@@ -221,10 +244,11 @@ void memctrl_ctrl(void){
 				if(DRAMSim == 1)
 				{
 					//printf("C side reading from memory access id %llu addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address, P_TIME);
-					if(dramsim_add_transaction(message_packet->access_type, message_packet->address))
+					if(dramsim_add_transaction(message_packet->access_type, GET_BLOCK(message_packet->address)))
 					{
 						/*stats*/
 						message_packet->dram_start_cycle = P_TIME;
+						num_inserts++;
 
 						//printf("MC access addr 0x%08x cycle%llu\n", message_packet->address, P_TIME);
 						message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
@@ -253,10 +277,14 @@ void memctrl_ctrl(void){
 			}
 
 			/*stats*/
-			mem_ctrl->active_cycles++;
+			mem_ctrl->mem_ctrl_busy_cycles += (mem_ctrl->DRAM_latency + 1);
 
-			if(mem_ctrl->pedding_accesses_max < list_count(mem_ctrl->pending_accesses))
-				mem_ctrl->pedding_accesses_max = list_count(mem_ctrl->pending_accesses);
+			if(mem_ctrl->dram_max_queue_depth < list_count(mem_ctrl->pending_accesses))
+				mem_ctrl->dram_max_queue_depth = list_count(mem_ctrl->pending_accesses);
+
+			/*running ave = ((old count * old data) + next data) / next count*/
+			queue_depth = list_count(mem_ctrl->pending_accesses);
+			mem_ctrl->dram_ave_queue_depth = ((((double) num_inserts - 1) * mem_ctrl->dram_ave_queue_depth) + (double) queue_depth) / (double) num_inserts;
 
 		}
 	}
@@ -265,13 +293,13 @@ void memctrl_ctrl(void){
 
 void memctrl_dump_stats(void){
 
-
 	//cycles per nano second
 
 	double ave_lat_ns = (((mem_ctrl->ave_dram_write_lat + mem_ctrl->ave_dram_read_lat)/2) *GHZ) / cpu_freq;
 
 	CGM_STATS(cgm_stats_file, "[MemCtrl]\n");
-	CGM_STATS(cgm_stats_file, "TotalActiveCycles = %llu\n", mem_ctrl->active_cycles);
+	CGM_STATS(cgm_stats_file, "MemCtrlBusyCycles = %llu\n", mem_ctrl->mem_ctrl_busy_cycles);
+	CGM_STATS(cgm_stats_file, "DramBusyCycles = %llu\n", mem_ctrl->dram_busy_cycles);
 	CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", mem_ctrl->num_reads);
 	CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", mem_ctrl->num_writes);
 	CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", mem_ctrl->ave_dram_read_lat);
@@ -282,12 +310,13 @@ void memctrl_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", mem_ctrl->read_max);
 	CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", mem_ctrl->write_min);
 	CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", mem_ctrl->write_max);
-	CGM_STATS(cgm_stats_file, "PenddingAccessesMax = %llu\n", mem_ctrl->pedding_accesses_max);
+	CGM_STATS(cgm_stats_file, "DramMaxQueueDepth = %llu\n", mem_ctrl->dram_max_queue_depth);
+	CGM_STATS(cgm_stats_file, "DramAveQueueDepth = %.2f\n", mem_ctrl->dram_ave_queue_depth);
 	CGM_STATS(cgm_stats_file, "RxMax = %llu\n", mem_ctrl->rx_max);
 	CGM_STATS(cgm_stats_file, "TxMax = %llu\n", mem_ctrl->tx_max);
 	CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", mem_ctrl->bytes_read);
 	CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", mem_ctrl->bytes_wrote);
-
+	CGM_STATS(cgm_stats_file, "IOBusyCycles = %llu\n", mem_ctrl->io_busy_cycles);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;

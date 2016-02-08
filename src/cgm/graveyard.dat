@@ -1,3 +1,15 @@
+
+/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
+				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
+
+	/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s addr 0x%08u\n",
+		system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type), addr);*/
+
+	/*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s reply from mem ctrl\n",
+				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
+				
+				
+
 /*void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;

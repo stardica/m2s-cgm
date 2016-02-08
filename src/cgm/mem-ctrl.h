@@ -28,6 +28,9 @@ struct mem_ctrl_t{
 	int DRAM_latency;
 	int latency;
 
+	unsigned int block_size;
+	unsigned int block_mask;
+
 	//pointer to memory image.
 	struct mem_t *mem;
 
@@ -43,7 +46,7 @@ struct mem_ctrl_t{
 	int bus_width;
 
 	/*stats*/
-	long long active_cycles;
+	long long mem_ctrl_busy_cycles;
 	long long num_reads;
 	long long num_writes;
 	double ave_dram_read_lat;
@@ -53,11 +56,14 @@ struct mem_ctrl_t{
 	long long read_max;
 	long long write_min;
 	long long write_max;
-	long long pedding_accesses_max;
+	long long dram_max_queue_depth;
+	double dram_ave_queue_depth;
+	long long dram_busy_cycles;
 	long long rx_max;
 	long long tx_max;
 	long long bytes_read;
 	long long bytes_wrote;
+	long long io_busy_cycles;
 
 };
 

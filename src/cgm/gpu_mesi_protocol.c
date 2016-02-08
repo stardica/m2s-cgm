@@ -86,7 +86,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -138,7 +138,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_modified:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//check for pending upgrade before finishing
 			upgrade_pending = ort_search(cache, message_packet->tag, message_packet->set);
@@ -272,7 +272,7 @@ void cgm_mesi_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pa
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -562,7 +562,7 @@ void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pa
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+		//	cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -615,7 +615,7 @@ void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pa
 		case cgm_cache_block_modified:
 
 			//stats;
-			cache->hits++;
+			//cache->hits++;
 
 			//set retry state
 			if(message_packet->access_type == cgm_access_storex_retry || message_packet->access_type == cgm_access_loadx_retry || message_packet->coalesced == 1)

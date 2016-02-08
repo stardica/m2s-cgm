@@ -148,7 +148,7 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -180,7 +180,7 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_noncoherent:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//set retry state and delay
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -237,7 +237,7 @@ void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pack
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			//cache->misses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -267,7 +267,7 @@ void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pack
 		case cgm_cache_block_noncoherent:
 
 			//stats
-			cache->hits++;
+			//cache->hits++;
 
 			//set retry state and delay
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
@@ -402,7 +402,7 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_invalid:
 
 			//stats
-			cache->misses++;
+			/*cache->misses++;*/
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -454,7 +454,7 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_noncoherent:
 
 			//stats
-			cache->hits++;
+			/*cache->hits++;*/
 
 			//set retry state and delay
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)

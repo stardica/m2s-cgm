@@ -1691,11 +1691,11 @@ int cache_finish_create(){
 		}
 
 		//stats
-		l1_i_caches[i].fetches = 0;
-		l1_i_caches[i].stores = 0;
-		l1_i_caches[i].hits = 0;
+		//l1_i_caches[i].fetches = 0;
+		//l1_i_caches[i].stores = 0;
+		//l1_i_caches[i].hits = 0;
 		l1_i_caches[i].invalid_hits = 0;
-		l1_i_caches[i].misses = 0;
+		//l1_i_caches[i].misses = 0;
 		l1_i_caches[i].assoc_conflict = 0;
 		l1_i_caches[i].upgrade_misses = 0;
 		l1_i_caches[i].retries = 0;
@@ -1839,12 +1839,12 @@ int cache_finish_create(){
 		}
 
 		//stats
-		l1_d_caches[i].fetches = 0;
-		l1_d_caches[i].loads = 0;
-		l1_d_caches[i].stores = 0;
-		l1_d_caches[i].hits = 0;
+		//l1_d_caches[i].fetches = 0;
+		//l1_d_caches[i].loads = 0;
+		//l1_d_caches[i].stores = 0;
+		//l1_d_caches[i].hits = 0;
 		l1_d_caches[i].invalid_hits = 0;
-		l1_d_caches[i].misses = 0;
+		//l1_d_caches[i].misses = 0;
 		l1_d_caches[i].assoc_conflict = 0;
 		l1_d_caches[i].upgrade_misses = 0;
 		l1_d_caches[i].retries = 0;
@@ -2017,12 +2017,12 @@ int cache_finish_create(){
 		}
 
 		//stats
-		l2_caches[i].fetches = 0;
-		l2_caches[i].loads = 0;
-		l2_caches[i].stores = 0;
-		l2_caches[i].hits = 0;
+	//	l2_caches[i].fetches = 0;
+		//l2_caches[i].loads = 0;
+		//l2_caches[i].stores = 0;
+	//	l2_caches[i].hits = 0;
 		l2_caches[i].invalid_hits = 0;
-		l2_caches[i].misses = 0;
+	//	l2_caches[i].misses = 0;
 		l2_caches[i].assoc_conflict = 0;
 		l2_caches[i].upgrade_misses = 0;
 		l2_caches[i].retries = 0;
@@ -2193,12 +2193,12 @@ int cache_finish_create(){
 		}
 
 		//stats
-		l3_caches[i].fetches = 0;
-		l3_caches[i].loads = 0;
-		l3_caches[i].stores = 0;
-		l3_caches[i].hits = 0;
+		//l3_caches[i].fetches = 0;
+		//l3_caches[i].loads = 0;
+		//l3_caches[i].stores = 0;
+		//l3_caches[i].hits = 0;
 		l3_caches[i].invalid_hits = 0;
-		l3_caches[i].misses = 0;
+		//l3_caches[i].misses = 0;
 		l3_caches[i].assoc_conflict = 0;
 		l3_caches[i].upgrade_misses = 0;
 		l3_caches[i].retries = 0;
@@ -2405,12 +2405,12 @@ int cache_finish_create(){
 		}
 
 		//stats
-		gpu_s_caches[i].fetches = 0;
-		gpu_s_caches[i].loads = 0;
-		gpu_s_caches[i].stores = 0;
-		gpu_s_caches[i].hits = 0;
+	//	gpu_s_caches[i].fetches = 0;
+		//gpu_s_caches[i].loads = 0;
+	//	gpu_s_caches[i].stores = 0;
+	//gpu_s_caches[i].hits = 0;
 		gpu_s_caches[i].invalid_hits = 0;
-		gpu_s_caches[i].misses = 0;
+		//gpu_s_caches[i].misses = 0;
 		gpu_s_caches[i].assoc_conflict = 0;
 		gpu_s_caches[i].upgrade_misses = 0;
 		gpu_s_caches[i].retries = 0;
@@ -2540,12 +2540,12 @@ int cache_finish_create(){
 		}
 
 		//stats
-		gpu_v_caches[i].fetches = 0;
-		gpu_v_caches[i].loads = 0;
-		gpu_v_caches[i].stores = 0;
-		gpu_v_caches[i].hits = 0;
+		//gpu_v_caches[i].fetches = 0;
+		//gpu_v_caches[i].loads = 0;
+		//gpu_v_caches[i].stores = 0;
+		//gpu_v_caches[i].hits = 0;
 		gpu_v_caches[i].invalid_hits = 0;
-		gpu_v_caches[i].misses = 0;
+		//gpu_v_caches[i].misses = 0;
 		gpu_v_caches[i].assoc_conflict = 0;
 		gpu_v_caches[i].upgrade_misses = 0;
 		gpu_v_caches[i].retries = 0;
@@ -2786,12 +2786,12 @@ int cache_finish_create(){
 		}
 
 		//stats//stats
-		gpu_l2_caches[i].fetches = 0;
-		gpu_l2_caches[i].loads = 0;
-		gpu_l2_caches[i].stores = 0;
-		gpu_l2_caches[i].hits = 0;
+		//gpu_l2_caches[i].fetches = 0;
+		//gpu_l2_caches[i].loads = 0;
+		//gpu_l2_caches[i].stores = 0;
+		//gpu_l2_caches[i].hits = 0;
 		gpu_l2_caches[i].invalid_hits = 0;
-		gpu_l2_caches[i].misses = 0;
+		//gpu_l2_caches[i].misses = 0;
 		gpu_l2_caches[i].assoc_conflict = 0;
 		gpu_l2_caches[i].upgrade_misses = 0;
 		gpu_l2_caches[i].retries = 0;
@@ -3435,6 +3435,26 @@ int sys_agent_finish_create(void){
 	//pointer to next queue.
 	system_agent->next_queue = system_agent->Rx_queue_top;
 
+	/*stats*/
+	system_agent->busy_cycles = 0;
+	system_agent->north_io_busy_cycles = 0;
+	system_agent->south_io_busy_cycles = 0;
+	system_agent->mc_loads = 0;
+	system_agent->mc_stores = 0;
+	system_agent->mc_returns = 0;
+	system_agent->ave_north_rxqueue_depth = 0;
+	system_agent->max_north_rxqueue_depth = 0;
+	system_agent->ave_south_rxqueue_depth = 0;
+	system_agent->max_south_rxqueue_depth = 0;
+	system_agent->ave_north_txqueue_depth = 0;
+	system_agent->max_north_txqueue_depth = 0;
+	system_agent->ave_south_txqueue_depth = 0;
+	system_agent->max_south_txqueue_depth = 0;
+	system_agent->north_gets = 0;
+	system_agent->south_gets = 0;
+	system_agent->north_puts = 0;
+	system_agent->south_puts = 0;
+
 	return 0;
 }
 
@@ -3445,6 +3465,7 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	int DRAMLatency = 0;
 	int Latency = 0;
 	int Bus_width = 0;
+	int block_size = 0;
 
 	if(MATCH("MemCtrl", "Latency"))
 	{
@@ -3462,6 +3483,12 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	{
 		DRAMLatency = atoi(value);
 		mem_ctrl->DRAM_latency = DRAMLatency;
+	}
+
+	if(MATCH("MemCtrl", "BlockSize"))
+	{
+		block_size = atoi(value);
+		mem_ctrl->block_size = block_size;
 	}
 
 	if(MATCH("Bus", "MC-SA"))
@@ -3519,6 +3546,8 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 
 	char buff[100];
 
+	mem_ctrl->block_mask = mem_ctrl->block_size - 1;
+
 	//set cache name
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl");
@@ -3566,7 +3595,7 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	}
 
 	/*stats*/
-	mem_ctrl->active_cycles = 0;
+	mem_ctrl->mem_ctrl_busy_cycles = 0;
 	mem_ctrl->num_reads = 0;
 	mem_ctrl->num_writes = 0;
 	mem_ctrl->ave_dram_read_lat = 0;
@@ -3576,11 +3605,14 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	mem_ctrl->read_max = 0;
 	mem_ctrl->write_min = LLONG_MAX;
 	mem_ctrl->write_max = 0;
-	mem_ctrl->pedding_accesses_max = 0;
+	mem_ctrl->dram_max_queue_depth = 0;
+	mem_ctrl->dram_ave_queue_depth = 0;
+	mem_ctrl->dram_busy_cycles = 0;
 	mem_ctrl->rx_max = 0;
 	mem_ctrl->tx_max = 0;
 	mem_ctrl->bytes_read = 0;
 	mem_ctrl->bytes_wrote = 0;
+	mem_ctrl->io_busy_cycles = 0;
 
 	return 0;
 }

@@ -1341,29 +1341,30 @@ void cache_dump_stats(void){
 	for(i = 0; i < num_cores; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l1_i_caches[i].TotalAcesses);
+		/*	CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
 		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_i_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].loads);
 		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_i_caches[i].hits);
-		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_i_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_i_caches[i].misses);*/
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_d_caches[i].num_sets);
-		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_d_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %d\n", l1_d_caches[i].TotalAcesses);
+		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_d_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Loads = %lld\n", l1_d_caches[i].loads);
 		CGM_STATS(cgm_stats_file, "Stores = %lld\n", l1_d_caches[i].stores);
 		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_d_caches[i].hits);
-		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_d_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_d_caches[i].misses);*/
 		CGM_STATS(cgm_stats_file, "\n");
 
-		CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
+		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "Sets = %d\n", l2_caches[i].num_sets);
 		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
 		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l2_caches[i].hits);
 		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);
-		CGM_STATS(cgm_stats_file, "\n");
+		CGM_STATS(cgm_stats_file, "\n");*/
 	}
 
 	return;

@@ -57,6 +57,27 @@ struct system_agent_t{
 	int up_bus_width;
 	int down_bus_width;
 
+	/*stats*/
+	long long busy_cycles;
+	long long north_io_busy_cycles;
+	long long south_io_busy_cycles;
+	long long mc_loads;
+	long long mc_stores;
+	long long mc_returns;
+	int max_north_rxqueue_depth;
+	double ave_north_rxqueue_depth;
+	int max_south_rxqueue_depth;
+	double ave_south_rxqueue_depth;
+	int max_north_txqueue_depth;
+	double ave_north_txqueue_depth;
+	int max_south_txqueue_depth;
+	double ave_south_txqueue_depth;
+	long long north_gets;
+	long long south_gets;
+	long long north_puts;
+	long long south_puts;
+
+
 };
 
 extern struct system_agent_t *system_agent;
@@ -80,6 +101,7 @@ void sys_agent_create(void);
 void sys_agent_create_tasks(void);
 
 struct cgm_packet_t *sysagent_get_message(void);
+void system_agent_route(struct cgm_packet_t *message_packet);
 
 int sys_agent_can_access_top(void);
 int sys_agent_can_access_bottom(void);
@@ -87,5 +109,7 @@ int sys_agent_can_access_bottom(void);
 void sys_agent_ctrl(void);
 void sys_agent_ctrl_io_down(void);
 void sys_agent_ctrl_io_up(void);
+
+void sys_agent_dump_stats(void);
 
 #endif /* SYSAGENT_H_ */

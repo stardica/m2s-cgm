@@ -230,11 +230,17 @@ void cgm_dump_stats(void){
 	//calculate simulation runtime (wall clock)
 	cgm_stat->sim_time = (cgm_stat->end_wall_time - cgm_stat->start_wall_time);
 
+	unsigned int cpu_freq_hz = (unsigned int) x86_cpu_frequency * (unsigned int) MHZ;
+	double cpu_sim_time = (double) P_TIME / (double) (cpu_freq_hz);
+
+	/*fatal("PTIME %llu, Freq %u\n", P_TIME, cpu_freq_hz);*/
+
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
-	CGM_STATS(cgm_stats_file, "SimulationRunTime = %.2fs\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(cpu) = %.9f\n", cpu_sim_time);
+	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
@@ -260,6 +266,7 @@ void cgm_dump_summary(void){
 	cgm_dump_stats();
 	cache_dump_stats();
 	switch_dump_stats();
+	sys_agent_dump_stats();
 	memctrl_dump_stats();
 
 	CLOSE_FILES;
@@ -463,6 +470,10 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
 		advance(&l1_i_cache[id]);
+
+		/*stats*/
+		l1_i_caches[id].TotalAcesses++;
+
 	}
 	else
 	{
@@ -545,6 +556,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 		//advance the L1 D Cache Ctrl task
 		advance(&l1_d_cache[id]);
+
+		/*stats*/
+		l1_d_caches[id].TotalAcesses++;
 
 	}
 	else if(access_kind == cgm_access_prefetch)

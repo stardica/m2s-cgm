@@ -986,6 +986,7 @@ void switch_south_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	int queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -1040,6 +1041,17 @@ void switch_south_io_ctrl(void){
 		{
 			list_enqueue(system_agent->Rx_queue_top, message_packet);
 			advance(system_agent_ec);
+
+			/*stats*/
+			/*running ave = ((old count * old data) + next data) / next count*/
+
+			/*stats*/
+			if(system_agent->max_north_rxqueue_depth < list_count(system_agent->Rx_queue_top))
+				system_agent->max_north_rxqueue_depth = list_count(system_agent->Rx_queue_top);
+
+			system_agent->north_gets++;
+			queue_depth = list_count(system_agent->Rx_queue_top);
+			system_agent->ave_north_rxqueue_depth = ((((double) system_agent->north_gets - 1) * system_agent->ave_north_rxqueue_depth) + (double) queue_depth) / (double) system_agent->north_gets;
 		}
 		else
 		{
