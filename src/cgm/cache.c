@@ -1136,7 +1136,7 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i < cache->assoc; i++)
 	{
-		printf("cache %s set %d way %d tag %d state %s t_state %s cycle %llu\n",
+		printf("cache %s set %d way %d tag %d blk_state %s tran_state %s cycle %llu\n",
 				cache->name, set, i, cache->sets[set].blocks[i].tag,
 				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state),
 				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state), P_TIME);
@@ -1162,8 +1162,15 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 			break;
 		}
 	}
+/*
+	if(way < 0 || way >= cache->assoc)
+	{
+		cgm_cache_dump_set(cache, set);
+		ort_dump(cache);
+		fatal("cgm_cache_get_victim_for_wb(): no room for wb in cache set %d way %d\n", set, way);
+	}
 
-	assert(way >= 0 && way <= cache->assoc);
+	assert(way >= 0 && way < cache->assoc);*/
 	return way;
 }
 
@@ -1177,7 +1184,7 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 	assert(set >= 0 && set < cache->num_sets);
 
-	if(cache->policy == cache_policy_first_available)
+	/*if(cache->policy == cache_policy_first_available)
 	{
 		for(i = 0; i < cache->assoc; i++)
 		{
@@ -1193,8 +1200,8 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 		assert(way >= 0 && way < cache->assoc);
 		return way;
-	}
-	else if(cache->policy == cache_policy_lru)
+	}*/
+	if(cache->policy == cache_policy_lru)
 	{
 		//get the tail block.
 		block = cache->sets[set].way_tail;
@@ -1335,13 +1342,25 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 void cache_dump_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
-	int num_threads = x86_cpu_num_threads;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
+
+	/*CPU caches*/
 	for(i = 0; i < num_cores; i++)
 	{
+		CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l1_i_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l1_i_caches[i].TotalAcesses - l1_i_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l1_i_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (l1_i_caches[i].TotalMisses)/(double) (l1_i_caches[i].TotalAcesses - l1_i_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l1_i_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", 0);
+		//CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", 0);
+		//CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", 0);
 		/*	CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
 		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_i_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].loads);
@@ -1350,7 +1369,16 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "TotalAccesses = %d\n", l1_d_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l1_d_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l1_d_caches[i].TotalAcesses - l1_d_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l1_d_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (l1_d_caches[i].TotalMisses)/(double) (l1_d_caches[i].TotalAcesses - l1_d_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l1_d_caches[i].TotalReads);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l1_d_caches[i].TotalWrites);
+		//CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", l1_d_caches[i].);
+		//CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l1_d_caches[i]);
+
 		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_d_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Loads = %lld\n", l1_d_caches[i].loads);
 		CGM_STATS(cgm_stats_file, "Stores = %lld\n", l1_d_caches[i].stores);
@@ -1358,13 +1386,89 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_d_caches[i].misses);*/
 		CGM_STATS(cgm_stats_file, "\n");
 
-		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "Sets = %d\n", l2_caches[i].num_sets);
-		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l2_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l2_caches[i].TotalAcesses - l2_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l2_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (l2_caches[i].TotalMisses)/(double) (l2_caches[i].TotalAcesses - l2_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l2_caches[i].TotalReads);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l2_caches[i].TotalWrites);
+
+		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
 		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l2_caches[i].hits);
-		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);*/
+		CGM_STATS(cgm_stats_file, "\n");
+	}
+
+	for(i = 0; i < num_cus; i++)
+	{
+
+		CGM_STATS(cgm_stats_file, ";---CU %d---\n", i);
+		/*CGM_STATS(cgm_stats_file, "[GPU_S_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", gpu_s_caches[i].TotalAcesses);
+			CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
+		CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_i_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Fetches = %lld\n", l1_i_caches[i].loads);
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_i_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_i_caches[i].misses);
 		CGM_STATS(cgm_stats_file, "\n");*/
+
+		CGM_STATS(cgm_stats_file, "[GPU_V_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", gpu_v_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (gpu_v_caches[i].TotalAcesses - gpu_v_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", gpu_v_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (gpu_v_caches[i].TotalMisses)/(double) (gpu_v_caches[i].TotalAcesses - gpu_v_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", gpu_v_caches[i].TotalReads);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", gpu_v_caches[i].TotalWrites);
+
+		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l1_d_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Loads = %lld\n", l1_d_caches[i].loads);
+		CGM_STATS(cgm_stats_file, "Stores = %lld\n", l1_d_caches[i].stores);
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l1_d_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l1_d_caches[i].misses);*/
+		CGM_STATS(cgm_stats_file, "\n");
+	}
+
+	CGM_STATS(cgm_stats_file, ";---GPU L2s---\n");
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		CGM_STATS(cgm_stats_file, "[GPU_L2_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", gpu_l2_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (gpu_l2_caches[i].TotalAcesses - gpu_l2_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", gpu_l2_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (gpu_l2_caches[i].TotalMisses)/(double) (gpu_l2_caches[i].TotalAcesses - gpu_l2_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", gpu_l2_caches[i].TotalReads);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", gpu_l2_caches[i].TotalWrites);
+
+		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l2_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);*/
+		CGM_STATS(cgm_stats_file, "\n");
+	}
+
+	CGM_STATS(cgm_stats_file, ";---System L3s---\n");
+	for(i = 0; i < num_cores; i++)
+	{
+
+		CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l3_caches[i].TotalAcesses);
+		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l3_caches[i].TotalAcesses - l3_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l3_caches[i].TotalMisses);
+		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
+				(double) (l3_caches[i].TotalMisses)/(double) (l3_caches[i].TotalAcesses - l3_caches[i].TotalMisses));
+		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l3_caches[i].TotalReads);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l3_caches[i].TotalWrites);
+
+		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
+		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
+		CGM_STATS(cgm_stats_file, "Hits = %lld\n", l2_caches[i].hits);
+		CGM_STATS(cgm_stats_file, "Misses = %lld\n", l2_caches[i].misses);*/
+		CGM_STATS(cgm_stats_file, "\n");
 	}
 
 	return;
@@ -2188,6 +2292,9 @@ void l1_i_cache_down_io_ctrl(void){
 		//drop into the next virtual lane correct queue.
 		list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 		advance(&l2_cache[my_pid]);
+
+		/*stats*/
+		l2_caches[my_pid].TotalAcesses++;
 	}
 
 	return;
@@ -2240,6 +2347,10 @@ void l1_d_cache_down_io_ctrl(void){
 		{
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 		}
+
+		/*stats*/
+		l2_caches[my_pid].TotalAcesses++;
+
 	}
 
 	return;
@@ -2351,6 +2462,9 @@ void l2_cache_down_io_ctrl(void){
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].north_queue, message_packet);
 		advance(&switches_ec[my_pid]);
+
+		/*stats*/
+		l3_caches[cgm_l3_cache_map(message_packet->set)].TotalAcesses++;
 
 	}
 	return;
@@ -2516,6 +2630,9 @@ void gpu_v_cache_down_io_ctrl(void){
 		//drop into next east queue.
 		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
 		advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
+
+		/*stats*/
+		gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
 	}
 
 	return;
@@ -2588,12 +2705,7 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 	int my_pid = gpu_l2_down_io_pid++;
 	long long step = 1;
-
-	/*int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;*/
-
 	struct cgm_packet_t *message_packet;
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -2620,6 +2732,10 @@ void gpu_l2_cache_down_io_ctrl(void){
 		list_enqueue(hub_iommu->Rx_queue_top[my_pid], message_packet);
 		advance(hub_iommu_ec);
 
+		/*stats*/
+		if(hub_iommu_connection_type == hub_to_l3)
+			l3_caches[cgm_l3_cache_map(message_packet->set)].TotalAcesses++;
+
 	}
 	return;
 }
@@ -2639,7 +2755,7 @@ void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
 
-	//lock for the block in the cache
+	//look for the block in the cache
 	*(cache_block_hit_ptr) = cgm_cache_find_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
 	//store the decode in the packet for now.
@@ -2674,6 +2790,87 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
 	packet_destroy(message_packet);
+
+	return;
+}
+
+void cache_access_stats(struct cache_t *cache, int hit, int state){
+
+	/*cgm_cache_block_invalid = 0,
+	cgm_cache_block_noncoherent,1
+	cgm_cache_block_modified, 2
+	cgm_cache_block_owned, 3
+	cgm_cache_block_exclusive,4
+	cgm_cache_block_shared, 5
+	cgm_cache_block_transient,6
+	cgm_cache_block_flush,6
+	cgm_cache_block_null,7
+	cgm_cache_block_state_num*/
+
+	/*l1_i_cache_t,
+	l1_d_cache_t,
+	l2_cache_t,
+	l3_cache_t,
+	gpu_s_cache_t,
+	gpu_v_cache_t,
+	gpu_l2_cache_t*/
+
+	//for all cache types
+	assert(hit == 0 || hit == 1);
+	if(hit == 0)
+	{
+		cache->TotalMisses++;
+	}
+	else if(hit == 1)
+	{
+		cache->TotalHits++;
+	}
+
+	//specific stats to collect
+	switch(cache->cache_type)
+	{
+
+		case l1_i_cache_t:
+			//don't need anything here for now...
+			break;
+
+		case l1_d_cache_t:
+
+			if(hit == 0)
+			{
+				if(state == cgm_cache_block_invalid)
+				{
+					//
+
+				}
+			}
+
+			break;
+
+		case l2_cache_t:
+
+			break;
+
+		case l3_cache_t:
+
+			break;
+
+		case gpu_s_cache_t:
+
+			break;
+
+		case gpu_v_cache_t:
+
+			break;
+
+		case gpu_l2_cache_t:
+
+			break;
+
+		default:
+			fatal("cache_access_stats() cache missing cache type\n");
+			break;
+	}
 
 	return;
 }
@@ -2970,12 +3167,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			ort_packet = list_remove_at(cache->ort_list, i);
 
-			/*if(ort_packet->access_id == 90960)
-			{
-				printf("pulled from ort_assoc\n");
-				getchar();
-			}*/
-
 			/*retry the access and it will be a hit then cause
 			coalescer to re-enter the set and tag.*/
 			ort_packet->coalesced = 0;
@@ -2995,12 +3186,6 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 			}
-
-			/*if(ort_packet->access_id == 91067)
-			{
-				fatal("ort pulled 91067\n");
-
-			}*/
 
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);

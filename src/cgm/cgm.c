@@ -662,6 +662,8 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 
 		//advance the L1 I Cache Ctrl task
 		advance(&gpu_v_cache[id]);
+
+		gpu_v_caches[id].TotalAcesses++;
 	}
 	else
 	{
@@ -734,6 +736,8 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 
 		//advance the L1 I Cache Ctrl task
 		advance(&gpu_s_cache[id]);
+
+		gpu_s_caches[id].TotalAcesses++;
 	}
 	else
 	{

@@ -123,6 +123,10 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+	/*stats*/
+	if(*cache_block_hit_ptr == 0)
+		cache->TotalMisses++;
+
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
 	{
@@ -211,6 +215,10 @@ void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*stats*/
+	if(*cache_block_hit_ptr == 0)
+		cache->TotalMisses++;
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
@@ -374,6 +382,10 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*stats*/
+	if(*cache_block_hit_ptr == 0)
+		cache->TotalMisses++;
 
 	//charge delay
 	P_PAUSE(cache->latency);

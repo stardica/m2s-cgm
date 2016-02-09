@@ -149,7 +149,7 @@ void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message
 void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
+void cache_access_stats(struct cache_t *cache, int hit, int state);
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);

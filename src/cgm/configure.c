@@ -1694,14 +1694,14 @@ int cache_finish_create(){
 		//l1_i_caches[i].fetches = 0;
 		//l1_i_caches[i].stores = 0;
 		//l1_i_caches[i].hits = 0;
-		l1_i_caches[i].invalid_hits = 0;
+		//l1_i_caches[i].invalid_hits = 0;
 		//l1_i_caches[i].misses = 0;
-		l1_i_caches[i].assoc_conflict = 0;
-		l1_i_caches[i].upgrade_misses = 0;
-		l1_i_caches[i].retries = 0;
-		l1_i_caches[i].coalesces = 0;
-		l1_i_caches[i].mshr_entries = 0;
-		l1_i_caches[i].stalls = 0;
+		//l1_i_caches[i].assoc_conflict = 0;
+		//l1_i_caches[i].upgrade_misses = 0;
+		//l1_i_caches[i].retries = 0;
+		//l1_i_caches[i].coalesces = 0;
+		//l1_i_caches[i].mshr_entries = 0;
+		//l1_i_caches[i].stalls = 0;
 
 
 		/////////////
@@ -1843,14 +1843,14 @@ int cache_finish_create(){
 		//l1_d_caches[i].loads = 0;
 		//l1_d_caches[i].stores = 0;
 		//l1_d_caches[i].hits = 0;
-		l1_d_caches[i].invalid_hits = 0;
+		//l1_d_caches[i].invalid_hits = 0;
 		//l1_d_caches[i].misses = 0;
-		l1_d_caches[i].assoc_conflict = 0;
-		l1_d_caches[i].upgrade_misses = 0;
-		l1_d_caches[i].retries = 0;
-		l1_d_caches[i].coalesces = 0;
-		l1_d_caches[i].mshr_entries = 0;
-		l1_d_caches[i].stalls = 0;
+		//l1_d_caches[i].assoc_conflict = 0;
+		//l1_d_caches[i].upgrade_misses = 0;
+		//l1_d_caches[i].retries = 0;
+		//l1_d_caches[i].coalesces = 0;
+		//l1_d_caches[i].mshr_entries = 0;
+		//l1_d_caches[i].stalls = 0;
 
 		/////////////
 		//L2 Cache
@@ -2017,18 +2017,18 @@ int cache_finish_create(){
 		}
 
 		//stats
-	//	l2_caches[i].fetches = 0;
+		//l2_caches[i].fetches = 0;
 		//l2_caches[i].loads = 0;
 		//l2_caches[i].stores = 0;
-	//	l2_caches[i].hits = 0;
-		l2_caches[i].invalid_hits = 0;
-	//	l2_caches[i].misses = 0;
-		l2_caches[i].assoc_conflict = 0;
-		l2_caches[i].upgrade_misses = 0;
-		l2_caches[i].retries = 0;
-		l2_caches[i].coalesces = 0;
-		l2_caches[i].mshr_entries = 0;
-		l2_caches[i].stalls = 0;
+		//l2_caches[i].hits = 0;
+		//l2_caches[i].invalid_hits = 0;
+		//l2_caches[i].misses = 0;
+		//l2_caches[i].assoc_conflict = 0;
+		//l2_caches[i].upgrade_misses = 0;
+		//l2_caches[i].retries = 0;
+		//l2_caches[i].coalesces = 0;
+		//l2_caches[i].mshr_entries = 0;
+		//l2_caches[i].stalls = 0;
 
 		/////////////
 		//L3 Cache
@@ -2197,15 +2197,14 @@ int cache_finish_create(){
 		//l3_caches[i].loads = 0;
 		//l3_caches[i].stores = 0;
 		//l3_caches[i].hits = 0;
-		l3_caches[i].invalid_hits = 0;
+		//l3_caches[i].invalid_hits = 0;
 		//l3_caches[i].misses = 0;
-		l3_caches[i].assoc_conflict = 0;
-		l3_caches[i].upgrade_misses = 0;
-		l3_caches[i].retries = 0;
-		l3_caches[i].coalesces = 0;
-		l3_caches[i].mshr_entries = 0;
-		l3_caches[i].stalls = 0;
-
+		//l3_caches[i].assoc_conflict = 0;
+		//l3_caches[i].upgrade_misses = 0;
+		//l3_caches[i].retries = 0;
+		//l3_caches[i].coalesces = 0;
+		//l3_caches[i].mshr_entries = 0;
+		//l3_caches[i].stalls = 0;
 
 		//Initialize array of sets
 		//l1_i_caches[i].num_sets = (l1_i_caches[i].num_sets / l1_i_caches[i].assoc);
@@ -2405,18 +2404,18 @@ int cache_finish_create(){
 		}
 
 		//stats
-	//	gpu_s_caches[i].fetches = 0;
+		//gpu_s_caches[i].fetches = 0;
 		//gpu_s_caches[i].loads = 0;
-	//	gpu_s_caches[i].stores = 0;
-	//gpu_s_caches[i].hits = 0;
-		gpu_s_caches[i].invalid_hits = 0;
+		//gpu_s_caches[i].stores = 0;
+		//gpu_s_caches[i].hits = 0;
+		//gpu_s_caches[i].invalid_hits = 0;
 		//gpu_s_caches[i].misses = 0;
-		gpu_s_caches[i].assoc_conflict = 0;
-		gpu_s_caches[i].upgrade_misses = 0;
-		gpu_s_caches[i].retries = 0;
-		gpu_s_caches[i].coalesces = 0;
-		gpu_s_caches[i].mshr_entries = 0;
-		gpu_s_caches[i].stalls = 0;
+		//gpu_s_caches[i].assoc_conflict = 0;
+		//gpu_s_caches[i].upgrade_misses = 0;
+		//gpu_s_caches[i].retries = 0;
+		//gpu_s_caches[i].coalesces = 0;
+		//gpu_s_caches[i].mshr_entries = 0;
+		//gpu_s_caches[i].stalls = 0;
 
 		/////////////
 		//GPU V Cache
@@ -2544,14 +2543,14 @@ int cache_finish_create(){
 		//gpu_v_caches[i].loads = 0;
 		//gpu_v_caches[i].stores = 0;
 		//gpu_v_caches[i].hits = 0;
-		gpu_v_caches[i].invalid_hits = 0;
+		//gpu_v_caches[i].invalid_hits = 0;
 		//gpu_v_caches[i].misses = 0;
-		gpu_v_caches[i].assoc_conflict = 0;
-		gpu_v_caches[i].upgrade_misses = 0;
-		gpu_v_caches[i].retries = 0;
-		gpu_v_caches[i].coalesces = 0;
-		gpu_v_caches[i].mshr_entries = 0;
-		gpu_v_caches[i].stalls = 0;
+		//gpu_v_caches[i].assoc_conflict = 0;
+		//gpu_v_caches[i].upgrade_misses = 0;
+		//gpu_v_caches[i].retries = 0;
+		//gpu_v_caches[i].coalesces = 0;
+		//gpu_v_caches[i].mshr_entries = 0;
+		//gpu_v_caches[i].stalls = 0;
 
 
 		////////////
@@ -2790,14 +2789,14 @@ int cache_finish_create(){
 		//gpu_l2_caches[i].loads = 0;
 		//gpu_l2_caches[i].stores = 0;
 		//gpu_l2_caches[i].hits = 0;
-		gpu_l2_caches[i].invalid_hits = 0;
+		//gpu_l2_caches[i].invalid_hits = 0;
 		//gpu_l2_caches[i].misses = 0;
-		gpu_l2_caches[i].assoc_conflict = 0;
-		gpu_l2_caches[i].upgrade_misses = 0;
-		gpu_l2_caches[i].retries = 0;
-		gpu_l2_caches[i].coalesces = 0;
-		gpu_l2_caches[i].mshr_entries = 0;
-		gpu_l2_caches[i].stalls = 0;
+		//gpu_l2_caches[i].assoc_conflict = 0;
+		//gpu_l2_caches[i].upgrade_misses = 0;
+		//gpu_l2_caches[i].retries = 0;
+		//gpu_l2_caches[i].coalesces = 0;
+		//gpu_l2_caches[i].mshr_entries = 0;
+		//gpu_l2_caches[i].stalls = 0;
 
 		gpu_l2_caches[i].sets = calloc(gpu_l2_caches[i].num_sets, sizeof(struct cache_set_t));
 		for (set = 0; set < gpu_l2_caches[i].num_sets; set++)

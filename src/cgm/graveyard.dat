@@ -1,4 +1,13 @@
 
+/*if(P_TIME == 13687603)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		printf("id %llu type %d set %d tag %d way %d hit %d cycle %llu\n",
+				message_packet->access_id, message_packet->access_type, message_packet->set, message_packet->tag, message_packet->way,
+				*cache_block_hit_ptr, P_TIME);
+	}*/
+
 /*CGM_DEBUG(sysagent_debug_file,"%s access_id %llu cycle %llu as %s sent to mem ctrl\n",
 				system_agent->name, access_id, P_TIME, (char *)str_map_value(&cgm_mem_access_strn_map, access_type));*/
 
