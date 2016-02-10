@@ -1162,8 +1162,8 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 			break;
 		}
 	}
-/*
-	if(way < 0 || way >= cache->assoc)
+
+	/*if(way < 0 || way >= cache->assoc)
 	{
 		cgm_cache_dump_set(cache, set);
 		ort_dump(cache);
@@ -1171,6 +1171,7 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 	}
 
 	assert(way >= 0 && way < cache->assoc);*/
+
 	return way;
 }
 
@@ -1352,6 +1353,7 @@ void cache_dump_stats(void){
 	{
 		CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalThreadLoops = %llu\n", l1_i_caches[i].TotalThreadLoops);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l1_i_caches[i].TotalAcesses);
 		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l1_i_caches[i].TotalAcesses - l1_i_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l1_i_caches[i].TotalMisses);
@@ -1369,6 +1371,7 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalThreadLoops = %llu\n", l1_d_caches[i].TotalThreadLoops);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l1_d_caches[i].TotalAcesses);
 		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l1_d_caches[i].TotalAcesses - l1_d_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l1_d_caches[i].TotalMisses);
@@ -1387,6 +1390,7 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalThreadLoops = %llu\n", l2_caches[i].TotalThreadLoops);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l2_caches[i].TotalAcesses);
 		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l2_caches[i].TotalAcesses - l2_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l2_caches[i].TotalMisses);
@@ -1456,6 +1460,7 @@ void cache_dump_stats(void){
 	{
 
 		CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "TotalThreadLoops = %llu\n", l3_caches[i].TotalThreadLoops);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l3_caches[i].TotalAcesses);
 		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l3_caches[i].TotalAcesses - l3_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l3_caches[i].TotalMisses);
@@ -1498,6 +1503,8 @@ void l1_i_cache_ctrl(void){
 
 		//wait here until there is a job to do
 		await(&l1_i_cache[my_pid], step);
+
+		l1_i_caches[my_pid].TotalThreadLoops++;
 
 		//peak at a message from the input queues.
 		message_packet = cache_get_message(&(l1_i_caches[my_pid]));
@@ -1571,6 +1578,8 @@ void l1_d_cache_ctrl(void){
 	{
 		//wait here until there is a job to do.
 		await(&l1_d_cache[my_pid], step);
+
+		l1_d_caches[my_pid].TotalThreadLoops++;
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
@@ -1732,6 +1741,8 @@ void l2_cache_ctrl(void){
 	{
 		/*wait here until there is a job to do.*/
 		await(&l2_cache[my_pid], step);
+
+		l2_caches[my_pid].TotalThreadLoops++;
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
@@ -1912,6 +1923,8 @@ void l3_cache_ctrl(void){
 	{
 		/*wait here until there is a job to do.*/
 		await(&l3_cache[my_pid], step);
+
+		l3_caches[my_pid].TotalThreadLoops++;
 
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));

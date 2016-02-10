@@ -393,6 +393,7 @@ struct cache_t{
 	/*unsigned int *outstanding_addresses;*/
 
 	//statistics
+	long long TotalThreadLoops; //this is an error check...
 	long long TotalAcesses;
 	long long TotalMisses;
 	long long TotalHits;

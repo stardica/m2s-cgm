@@ -1,4 +1,71 @@
 
+//make sure victim block isn't transient
+	/*victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	if(*cache_block_hit_ptr == 1 && victim_trainsient_state == cgm_cache_block_transient)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		fatal("cgm_mesi_l2_get_fwd(): %s block in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, temp,
+			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+
+	}*/
+		/*assert(victim_trainsient_state != cgm_cache_block_transient);*/
+
+
+	/*if(victim_trainsient_state == cgm_cache_block_transient)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		assert((*cache_block_hit_ptr == 1 && victim_trainsient_state != cgm_cache_block_transient) || *cache_block_hit_ptr == 0);
+
+		fatal("cgm_mesi_l2_get_fwd(): %s block in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, temp,
+			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+	}*/
+
+	/*printf(" hit_ptr %d t_ptr %d\n", *cache_block_hit_ptr, victim_trainsient_state);*/
+
+	/*assert((*cache_block_hit_ptr == 1 && victim_trainsient_state != cgm_cache_block_transient) || *cache_block_hit_ptr == 0);*/
+
+/*if(write_back_packet->cache_block_state == cgm_cache_block_exclusive)
+				{
+					//drop the WB and send request to L3
+					write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+					packet_destroy(write_back_packet);
+				}
+				else
+				{
+					//block is modified flush to L3 and send request
+					printf("l2 get WB id %llu type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+
+					//add routing/status data to the packet
+					write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+
+					write_back_packet->access_id = message_packet->access_id;
+
+					l3_map = cgm_l3_cache_map(write_back_packet->set);
+					write_back_packet->l2_cache_id = cache->id;
+					write_back_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+					write_back_packet->src_name = cache->name;
+					write_back_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					write_back_packet->dest_name = l3_caches[l3_map].name;
+					write_back_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+					//transmit to SA/MC
+					list_enqueue(cache->Tx_queue_bottom, write_back_packet);
+					advance(cache->cache_io_down_ec);
+				}*/
+
+
 /*if(P_TIME == 13687603)
 	{
 		cgm_cache_dump_set(cache, message_packet->set);
