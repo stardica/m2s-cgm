@@ -488,7 +488,7 @@ void si_isa_S_MAX_I32_impl(struct si_work_item_t *work_item,
 		s0_max.as_uint = 0;
 	}
 
-	printf("here\n");
+	/*printf("here\n");*/
 
 	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, max.as_uint);

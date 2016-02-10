@@ -1767,7 +1767,19 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	//do not set retry because this contains the coalesce set and tag.
 	//check that there is an ORT entry for this address
 	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
-	assert(ort_row < cache->mshr_size);
+
+	/*printf("here\n");
+	getchar();*/
+	if(ort_row >= cache->mshr_size)
+	{
+
+		ort_dump(cache);
+
+		printf("problem set %d tag %d block 0x%08x cycle %llu\n",
+			message_packet->set, message_packet->tag, (message_packet->address & cache->block_address_mask), P_TIME);
+
+		assert(ort_row < cache->mshr_size);
+	}
 
 	//add some routing/status data to the packet
 	message_packet->access_type = cgm_access_getx;
@@ -5137,10 +5149,17 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//maybe delete this? use transient
 			cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
+			//add to ORT table
+			/*ort_dump(cache);
+			getchar();*/
+			/*cache_check_ORT(cache, message_packet);
+			assert(message_packet->coalesced == 0);*/
+
 			//send upgrade request to L3 (home)
 			upgrade_request_packet = packet_create();
 			assert(upgrade_request_packet);
 			init_upgrade_request_packet(upgrade_request_packet, message_packet->address);
+
 
 			//gather some other data as well
 			upgrade_request_packet->access_id = message_packet->access_id;
@@ -5207,7 +5226,20 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 			/*block has been silently dropped by L2 and is dropped in L1 by inclusion.
 			fwd the ack on to the requesting core.*/
 
-			assert(victim_trainsient_state == cgm_cache_block_invalid);
+			//assert(victim_trainsient_state == cgm_cache_block_invalid);
+
+			/*if(victim_trainsient_state == cgm_cache_block_transient)
+			{
+				ort_dump(cache);
+				cgm_cache_dump_set(cache, message_packet->set);
+
+				unsigned int temp = message_packet->address;
+				temp = temp & cache->block_address_mask;
+
+				fatal("cgm_mesi_l2_upgrade_inval(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
+					cache->name, message_packet->access_id, message_packet->address, temp,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+			}*/
 
 			//transmit ack to requesting L2 cache
 			if(message_packet->upgrade == 1)
@@ -5321,20 +5353,30 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	P_PAUSE(cache->latency);
 
 	/*our upgrade request has been nacked by the L3 this means another core
-	has it eighter in the exclusive or modified state turn this into a getx*/
+	has it either in the exclusive or modified state turn this into a getx*/
 
 	//get the status of the cache block
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	/*star this is broken, it only return the block way if the block is valid*/
+	/*cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);*/
+
+	cache_get_transient_block(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	assert(*cache_block_hit_ptr == 1);
+	assert(*cache_block_state_ptr == cgm_cache_block_invalid);
 
 	//block should be in the transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	assert(victim_trainsient_state == cgm_cache_block_transient);
 
-	//check for a pending request in the pending request buffer
+	//get the request from the pending request buffer
 	pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 	assert(pending_packet);
 
+	/*we have lost the block to an eviction or something clear the transient state and retry access as a std getx*/
+	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
 	if(victim_trainsient_state != cgm_cache_block_transient)
 	{
+		ort_dump(cache);
 		cgm_cache_dump_set(cache, message_packet->set);
 
 		unsigned int temp = message_packet->address;
@@ -5347,37 +5389,44 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s upgrade ack ID %llu type %d state %d cycle %llu\n",
+		printf("block 0x%08x %s upgrade nack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 	}
 
-	assert(victim_trainsient_state == cgm_cache_block_transient);
 
-	//printf("here\n");
 
 	//change the pending request to a getx
-	pending_packet->access_type = cgm_access_getx;
-	pending_packet->l2_victim_way = message_packet->way;
+	message_packet->access_type = cgm_access_getx;
+	message_packet->cpu_access_type = pending_packet->cpu_access_type;
+	message_packet->l1_victim_way = pending_packet->l1_victim_way;
+	message_packet->event_queue = pending_packet->event_queue;
+	message_packet->data = pending_packet->data;
+	message_packet->access_id = pending_packet->access_id;
+	message_packet->name = strdup(pending_packet->name);
 	assert(pending_packet->address == message_packet->address);
+	//pending_packet->l2_victim_way = message_packet->way;
+	//assert(pending_packet->set == message_packet->set && pending_packet->tag == message_packet->tag);
 
+	/*OLD CODE*/
 	//update routing headers for the packet
-	l3_map = cgm_l3_cache_map(pending_packet->set);
+	/*l3_map = cgm_l3_cache_map(pending_packet->set);
 	pending_packet->l2_cache_id = cache->id;
 	pending_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
 	pending_packet->src_name = cache->name;
 	pending_packet->src_id = str_map_string(&node_strn_map, cache->name);
 	pending_packet->dest_name = l3_caches[l3_map].name;
-	pending_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+	pending_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);*/
 
 	//remove the request from the buffer
 	pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
-	list_enqueue(cache->Tx_queue_bottom, pending_packet);
-	advance(cache->cache_io_down_ec);
+	free(pending_packet);
+	//list_enqueue(cache->Tx_queue_bottom, pending_packet);
+	//advance(cache->cache_io_down_ec);
 
 	//destroy the upgrade request
-	message_packet = list_remove(cache->last_queue, message_packet);
-	packet_destroy(message_packet);
+	//message_packet = list_remove(cache->last_queue, message_packet);
+	//packet_destroy(message_packet);
 
 }
 
@@ -5402,15 +5451,10 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	//block should be in the transient state
+	//block should valid and in the transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-
-	/*if(victim_trainsient_state != cgm_cache_block_transient)
-	{
-		printf("crash here access id %llu\n", message_packet->access_id);
-	}
-*/
 	assert(victim_trainsient_state == cgm_cache_block_transient);
+	assert(*cache_block_hit_ptr == 1);
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
@@ -5439,7 +5483,7 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 		case cgm_cache_block_invalid:
 
-			fatal("cgm_mesi_l2_upgrade_ack\n");
+			fatal("cgm_mesi_l2_upgrade_ack(): block is invalid...\n");
 
 			/*it is possible to find the block in the invalid state here
 			if L3 has sent an eviction/upgrade_inval/getx_fwd.
@@ -5590,6 +5634,9 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 				//pull the pending request from the pending request buffer
 				pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+
+				/*//enter retry state.
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);*/
 
 				//set access type, block state,
 				pending_packet->access_type = cgm_access_upgrade_ack;

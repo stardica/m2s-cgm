@@ -863,6 +863,37 @@ unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag){
 	return addr;
 }
 
+int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
+
+	int set, tag, way;
+	//unsigned int offset;
+
+	/* Locate block */
+	tag = *(tag_ptr);
+	set = *(set_ptr);
+
+	//offset = *(offset_ptr);
+
+	*(state_ptr) = 0;
+
+	for (way = 0; way < cache->assoc; way++)
+	{
+		if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].transient_state == cgm_cache_block_transient)
+		{
+			/* Block found */
+			*(way_ptr) = way;
+			*(state_ptr) = cache->sets[set].blocks[way].state;
+			return 1;
+		}
+	}
+
+	//if here something is wrong
+	fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
+
+	/* Block not found */
+	return 0;
+}
+
 
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
@@ -1849,6 +1880,8 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_upgrade_nack(&(l2_caches[my_pid]), message_packet);
+
+				step--;
 			}
 			else if(access_type == cgm_access_upgrade_putx_n)
 			{
@@ -2752,6 +2785,36 @@ void gpu_l2_cache_down_io_ctrl(void){
 	}
 	return;
 }
+void cache_get_transient_block(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
+
+	//similar to cache_get_block_status(), but returns the transient block way regardless of block state.
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//look for the block in the cache
+	*(cache_block_hit_ptr) = cgm_cache_find_transient_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+	message_packet->way = way;
+
+
+	return;
+}
+
 
 void cache_get_block_status(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
 
