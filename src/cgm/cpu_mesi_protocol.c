@@ -1402,6 +1402,11 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			/*stats*/
 			cache->TotalReads++;
 
+			if(cache->sets[message_packet->set].blocks[message_packet->way].flush_pending == 1)
+				printf("************ %s get while flush is going up blk_address 0x%08x cycle %llu\n", cache->name, (message_packet->address & ~cache->block_mask), P_TIME);
+
+
+
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
@@ -2004,6 +2009,8 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			//downgrade the local block
 			assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
 			cgm_cache_set_block_state(cache, pending_request->set, pending_request->way, cgm_cache_block_shared);
+			assert(cache->sets[pending_request->set].blocks[pending_request->way].flush_pending == 1);
+			cgm_cache_clear_block_flush_pending_bit(cache, pending_request->set, pending_request->way);
 
 			//prepare to forward the block
 			//set access type
@@ -5371,7 +5378,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 	assert(pending_packet);
 
-	/*we have lost the block to an eviction or something clear the transient state and retry access as a std getx*/
+	/*we have lost the block to an eviction "or something" clear the transient state and retry access as a std getx*/
 	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
 	if(victim_trainsient_state != cgm_cache_block_transient)
@@ -5393,9 +5400,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 	}
 
-
-
-	//change the pending request to a getx
+	//change to a getx
 	message_packet->access_type = cgm_access_getx;
 	message_packet->cpu_access_type = pending_packet->cpu_access_type;
 	message_packet->l1_victim_way = pending_packet->l1_victim_way;

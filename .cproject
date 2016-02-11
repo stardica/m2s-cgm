@@ -114,7 +114,7 @@
 								</option>
 								<option id="gnu.c.compiler.option.optimization.flags.174636391" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="" valueType="string"/>
 								<option id="gnu.c.compiler.option.misc.other.1496706460" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-m32 -pthread -mmmx -msse -c -fmessage-length=0" valueType="string"/>
-								<option id="gnu.c.compiler.option.preprocessor.undef.symbol.1780948418" superClass="gnu.c.compiler.option.preprocessor.undef.symbol" valueType="undefDefinedSymbols">
+								<option id="gnu.c.compiler.option.preprocessor.undef.symbol.1780948418" name="Undefined symbols (-U)" superClass="gnu.c.compiler.option.preprocessor.undef.symbol" valueType="undefDefinedSymbols">
 									<listOptionValue builtIn="false" value="_FORTIFY_SOURCE"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2144661043" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
