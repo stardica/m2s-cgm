@@ -67,6 +67,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//charge delay on a miss
 			P_PAUSE(cache->latency);
 
+			/*stats*/
+			cache->TotalReadMisses++;
 
 			//check ORT for coalesce
 			cache_check_ORT(cache, message_packet);
@@ -249,6 +251,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					}
 				}
 
+				/*stats*/
+				cache->TotalMisses--;
+
 				//success now move block from wb to cache
 				assert(message_packet->access_type == cgm_access_load || message_packet->access_type == cgm_access_load_retry);
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l1_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
@@ -285,8 +290,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 				//block isn't in the cache or in write back.
 
-				//stats
-				//cache->misses++;
+				/*stats*/
+				cache->TotalReadMisses++;
 
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
@@ -480,6 +485,10 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				}
 
 
+				/*stats*/
+				cache->TotalMisses--;
+
+
 				//success now move block from wb to cache
 
 				assert(message_packet->access_type == cgm_access_store || message_packet->access_type == cgm_access_store_retry);
@@ -515,8 +524,8 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			else
 			{
 
-				//stats
-				//cache->misses++;
+				/*stats*/
+				cache->TotalWriteMisses++;
 
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
@@ -531,6 +540,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 					return;
 				}
+
+				/*stats*/
+				cache->TotalGetx++;
 
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_getx;
@@ -565,7 +577,8 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			P_PAUSE(cache->latency);
 
 			//stats
-			cache->upgrade_misses++;
+			cache->TotalWriteMisses++;
+			cache->TotalUpgrades++;
 
 			//put back on the core event queue to end memory system access.
 			/*cache_l1_d_return(cache, message_packet);
@@ -924,6 +937,9 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	else if (message_packet->cache_block_state == cgm_cache_block_modified)
 	{
 		//block is dirty send the write back down to the L2 cache.
+
+		/*stats*/
+		cache->TotalWriteBacks++;
 
 		if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 		{
@@ -1402,8 +1418,8 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			/*stats*/
 			cache->TotalReads++;
 
-			if(cache->sets[message_packet->set].blocks[message_packet->way].flush_pending == 1)
-				printf("************ %s get while flush is going up blk_address 0x%08x cycle %llu\n", cache->name, (message_packet->address & ~cache->block_mask), P_TIME);
+			/*if(cache->sets[message_packet->set].blocks[message_packet->way].flush_pending == 1)
+				printf("************ %s get while flush is going up blk_address 0x%08x cycle %llu\n", cache->name, (message_packet->address & ~cache->block_mask), P_TIME);*/
 
 
 

@@ -1391,7 +1391,17 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "MissRate = %0.4f\n",
 				(double) (l1_i_caches[i].TotalMisses)/(double) (l1_i_caches[i].TotalAcesses - l1_i_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l1_i_caches[i].TotalMisses);
-		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", 0);
+		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l1_i_caches[i].TotalWrites);
+		CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", l1_i_caches[i].TotalGetx);
+		CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l1_i_caches[i].TotalUpgrades);
+		CGM_STATS(cgm_stats_file, "TotalReadMisses = %llu\n", l1_i_caches[i].TotalReadMisses);
+		CGM_STATS(cgm_stats_file, "ReadMissRate = %0.4f\n",
+				(double) (l1_i_caches[i].TotalReads)/(double) (l1_i_caches[i].TotalReads - l1_i_caches[i].TotalReadMisses));
+		CGM_STATS(cgm_stats_file, "TotalWriteMisses = %llu\n", l1_i_caches[i].TotalWriteMisses);
+		CGM_STATS(cgm_stats_file, "WriteMissRate = %0.4f\n",
+				(double) (l1_i_caches[i].TotalWrites)/(double) (l1_i_caches[i].TotalWrites - l1_i_caches[i].TotalWriteMisses));
+		CGM_STATS(cgm_stats_file, "TotalWriteBacks = %llu\n", l1_i_caches[i].TotalWriteBacks);
+
 		//CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", 0);
 		//CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", 0);
 		/*	CGM_STATS(cgm_stats_file, "Sets = %d\n", l1_i_caches[i].num_sets);
@@ -1410,6 +1420,19 @@ void cache_dump_stats(void){
 				(double) (l1_d_caches[i].TotalMisses)/(double) (l1_d_caches[i].TotalAcesses - l1_d_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l1_d_caches[i].TotalReads);
 		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l1_d_caches[i].TotalWrites);
+		CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", l1_d_caches[i].TotalGetx);
+		CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l1_d_caches[i].TotalUpgrades);
+		CGM_STATS(cgm_stats_file, "TotalReadMisses = %llu\n", l1_d_caches[i].TotalReadMisses);
+		CGM_STATS(cgm_stats_file, "ReadMissRate = %0.4f\n",
+				(double) (l1_d_caches[i].TotalReads)/(double) (l1_d_caches[i].TotalReads - l1_d_caches[i].TotalReadMisses));
+		CGM_STATS(cgm_stats_file, "TotalWriteMisses = %llu\n", l1_d_caches[i].TotalWriteMisses);
+		CGM_STATS(cgm_stats_file, "WriteMissRate = %0.4f\n",
+				(double) (l1_d_caches[i].TotalWrites)/(double) (l1_d_caches[i].TotalWrites - l1_d_caches[i].TotalWriteMisses));
+		CGM_STATS(cgm_stats_file, "GetxMissRate = %0.4f\n",
+				(double) (l1_d_caches[i].TotalWrites)/(double) (l1_d_caches[i].TotalWrites - l1_d_caches[i].TotalGetx));
+		CGM_STATS(cgm_stats_file, "UpgradeMissRate = %0.4f\n",
+				(double) (l1_d_caches[i].TotalWrites)/(double) (l1_d_caches[i].TotalWrites - l1_d_caches[i].TotalUpgrades));
+		CGM_STATS(cgm_stats_file, "TotalWriteBacks = %llu\n", l1_d_caches[i].TotalWriteBacks);
 		//CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", l1_d_caches[i].);
 		//CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l1_d_caches[i]);
 
@@ -1429,6 +1452,8 @@ void cache_dump_stats(void){
 				(double) (l2_caches[i].TotalMisses)/(double) (l2_caches[i].TotalAcesses - l2_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", l2_caches[i].TotalReads);
 		CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", l2_caches[i].TotalWrites);
+		CGM_STATS(cgm_stats_file, "TotalGetx = %llu\n", l2_caches[i].TotalWrites);
+		CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l2_caches[i].TotalWrites);
 
 		/*CGM_STATS(cgm_stats_file, "BlockSize = %d\n", l2_caches[i].block_size);
 		CGM_STATS(cgm_stats_file, "Accesses = %lld\n", (l2_caches[i].fetches + l2_caches[i].loads + l2_caches[i].stores));
