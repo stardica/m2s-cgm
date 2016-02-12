@@ -437,7 +437,6 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = cgm_access_fetch;
 
-
 	//////////////testing
 	/*if(new_packet->cpu_access_type == cgm_access_fetch)
 	{
@@ -458,30 +457,28 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		return access_id;
 	}
 
+	//get the core ID number should be <= number of cores
+	id = thread->core->id;
+	assert(id < num_cores);
+
+	/*stats*/
+	cgm_stat->cpu_total_fetches++;
+	l1_i_caches[id].TotalAcesses++;
 
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
-		//get the core ID number should be <= number of cores
-		id = thread->core->id;
-		assert(id < num_cores);
-
 		//Drop the packet into the L1 I Cache Rx queue
 		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
 		advance(&l1_i_cache[id]);
 
-		/*stats*/
-		l1_i_caches[id].TotalAcesses++;
-
+		l1_i_caches[id].TotalReads++;
 	}
 	else
 	{
 		fatal("cgm_fetch_access() unsupported access type\n");
 	}
-
-	/*stats*/
-	cgm_stat->cpu_total_fetches++;
 
 	return access_id;
 }
@@ -538,12 +535,26 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	}*/
 	//////////////testing
 
+	//get the core ID number should be <= number of cores
+	id = thread->core->id;
+	assert(id < num_cores);
+
+	/*stats*/
+	l1_d_caches[id].TotalAcesses++;
+
+	if(access_kind == cgm_access_load)
+	{
+		cgm_stat->cpu_total_loads++;
+	}
+	else if(access_kind == cgm_access_store)
+	{
+	 	cgm_stat->cpu_total_stores++;
+	}
+
+
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
-		//get the core ID number should be <= number of cores
-		id = thread->core->id;
-		assert(id < num_cores);
 
 		if(((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE)
 		{
@@ -558,8 +569,14 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		advance(&l1_d_cache[id]);
 
 		/*stats*/
-		l1_d_caches[id].TotalAcesses++;
-
+		if(access_kind == cgm_access_load)
+		{
+			l1_d_caches[id].TotalReads++;
+		}
+		else if(access_kind == cgm_access_store)
+		{
+			l1_d_caches[id].TotalWrites++;
+		}
 	}
 	else if(access_kind == cgm_access_prefetch)
 	{
@@ -568,17 +585,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	else
 	{
 		fatal("cgm_issue_lspq_access() unsupported access type\n");
-	}
-
-	/*stats*/
-	if(access_kind == cgm_access_load)
-	{
-		cgm_stat->cpu_total_loads++;
-	}
-
-	if(access_kind == cgm_access_store)
-	{
-	 	cgm_stat->cpu_total_stores++;
 	}
 
 	return;

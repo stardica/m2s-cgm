@@ -399,6 +399,8 @@ struct cache_t{
 	long long TotalHits;
 	long long TotalReads;
 	long long TotalWrites;
+	long long TotalGets;
+	long long TotalGet;
 	long long TotalGetx;
 	long long TotalUpgrades;
 	long long TotalReadMisses;
