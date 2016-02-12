@@ -3005,16 +3005,16 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	if(mem_lat >= HISTSIZE)
-		fatal("cache_l1_i_return(): increase HISTSIZEe\n");
+		fatal("cache_l1_i_return(): increase HISTSIZEE %llu\n", mem_lat);
 
 	cgm_stat->fetch_lat_hist[mem_lat]++;
+
+	if(message_packet->access_id == 1)
+		cgm_stat->first_mem_access_lat = mem_lat;
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
 	remove_from_global(message_packet->access_id);
-
-	//stats
-	//CGM_STATS(mem_trace_file, "l1_i_cache_%d total cycles %llu access_id %llu\n", cache->id, (message_packet->end_cycle - message_packet->start_cycle), message_packet->access_id);
 
 	packet_destroy(message_packet);
 	return;
@@ -3025,14 +3025,19 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//debug
 	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
 
-	/*if(message_packet->access_id == 1759)
-	{*/
-	/*if(message_packet->set == 62)
+	/*stats*/
+	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
+	if(mem_lat >= HISTSIZE)
+		fatal("cache_l1_d_return(): increase HISTSIZEE %llu\n", mem_lat);
+
+	if(message_packet->cpu_access_type == cgm_access_load)
 	{
-		printf("%s id %llu type %d tag %d set %d FINISHED cycle %llu\n",
-				cache->name, message_packet->access_id, message_packet->access_type, message_packet->tag, message_packet->set, P_TIME);
-	}*/
-	/*}*/
+		cgm_stat->load_lat_hist[mem_lat]++;
+	}
+	else if(message_packet->cpu_access_type == cgm_access_store)
+	{
+		cgm_stat->store_lat_hist[mem_lat]++;
+	}
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);

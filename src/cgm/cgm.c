@@ -250,8 +250,11 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[GPU]\n");
 	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
-	/*CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n",;*/
 	CGM_STATS(cgm_stats_file, "\n");
+	CGM_STATS(cgm_stats_file, "[MemSystem]\n");
+	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat->first_mem_access_lat);
+	CGM_STATS(cgm_stats_file, "\n");
+
 
 	return;
 }
@@ -260,17 +263,46 @@ void cgm_dump_histograms(void){
 
 	int i = 0;
 
+	FILE *fetch_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/fetch_lat_log_file.out", "w+");
+
 	/* Histograms */
-	CGM_STATS(cgm_stats_file, "[MemSystemFetchLat]\n");
 	for(i = 0; i < HISTSIZE; i++)
 	{
-		if(cgm_stat->fetch_lat_hist[i] != 0)
+		while(cgm_stat->fetch_lat_hist[i] > 0)
 		{
-			CGM_STATS(cgm_stats_file, "%d = %llu\n", i, cgm_stat->fetch_lat_hist[i]);
+			fprintf(fetch_lat_log_file, "%d\n", i);
+			cgm_stat->fetch_lat_hist[i]--;
 		}
 	}
-	CGM_STATS(cgm_stats_file, "\n");
+	fclose (fetch_lat_log_file);
 
+
+	FILE *load_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/load_lat_log_file.out", "w+");
+
+	/* Histograms */
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		while(cgm_stat->load_lat_hist[i] > 0)
+		{
+			fprintf(load_lat_log_file, "%d\n", i);
+			cgm_stat->load_lat_hist[i]--;
+		}
+	}
+	fclose (load_lat_log_file);
+
+
+	FILE *store_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/store_lat_log_file.out", "w+");
+
+	/* Histograms */
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		while(cgm_stat->store_lat_hist[i] > 0)
+		{
+			fprintf(store_lat_log_file, "%d\n", i);
+			cgm_stat->store_lat_hist[i]--;
+		}
+	}
+	fclose (store_lat_log_file);
 
 	return;
 }
