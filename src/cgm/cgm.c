@@ -233,8 +233,6 @@ void cgm_dump_stats(void){
 	unsigned int cpu_freq_hz = (unsigned int) x86_cpu_frequency * (unsigned int) MHZ;
 	double cpu_sim_time = (double) P_TIME / (double) (cpu_freq_hz);
 
-	/*fatal("PTIME %llu, Freq %u\n", P_TIME, cpu_freq_hz);*/
-
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
@@ -258,6 +256,25 @@ void cgm_dump_stats(void){
 	return;
 }
 
+void cgm_dump_histograms(void){
+
+	int i = 0;
+
+	/* Histograms */
+	CGM_STATS(cgm_stats_file, "[MemSystemFetchLat]\n");
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		if(cgm_stat->fetch_lat_hist[i] != 0)
+		{
+			CGM_STATS(cgm_stats_file, "%d = %llu\n", i, cgm_stat->fetch_lat_hist[i]);
+		}
+	}
+	CGM_STATS(cgm_stats_file, "\n");
+
+
+	return;
+}
+
 
 void cgm_dump_summary(void){
 
@@ -268,6 +285,7 @@ void cgm_dump_summary(void){
 	switch_dump_stats();
 	sys_agent_dump_stats();
 	memctrl_dump_stats();
+	cgm_dump_histograms();
 
 	CLOSE_FILES;
 

@@ -14,6 +14,8 @@
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
 
+#define HISTSIZE 2000
+
 enum cgm_cache_block_state_t{
 
 	cgm_cache_block_invalid = 0,
@@ -441,6 +443,11 @@ struct cgm_stats_t{
 	/*gpu stats*/
 	long long gpu_total_loads;
 	long long gpu_total_stores;
+
+	/*mem system lat stats*/
+	long long fetch_lat_hist[HISTSIZE];
+	long long load_lat_hist[HISTSIZE];
+	long long store_lat_hist[HISTSIZE];
 
 	/*OS stats*/
 

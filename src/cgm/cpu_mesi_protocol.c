@@ -1236,10 +1236,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	/*stats*/
-	if(*cache_block_hit_ptr == 0)
-		cache->TotalMisses++;
-
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
@@ -1535,10 +1531,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-	/*stats*/
-	if(*cache_block_hit_ptr == 0)
-		cache->TotalMisses++;
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -2996,10 +2988,6 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	/*stats*/
-	if(*cache_block_hit_ptr == 0)
-		cache->TotalMisses++;
-
 	//should never find a wb with matching set and tag. This would mean a .text block was written to.
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 	assert(!write_back_packet);
@@ -3325,10 +3313,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-	/*stats*/
-	if(*cache_block_hit_ptr == 0)
-		cache->TotalMisses++;
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -3758,10 +3742,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-	/*stats*/
-	if(*cache_block_hit_ptr == 0)
-		cache->TotalMisses++;
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);

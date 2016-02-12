@@ -156,6 +156,7 @@ void cgm_mem_run(void);
 void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 void cgm_dump_stats(void);
+void cgm_dump_histograms(void);
 
 void tick(void);
 void cgm_watchdog(void);

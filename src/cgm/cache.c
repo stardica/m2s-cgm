@@ -1444,7 +1444,7 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "TotalThreadLoops = %llu\n", l3_caches[i].TotalThreadLoops);
+		CGM_STATS(cgm_stats_file, "TotalCacheCtrlLoops = %llu\n", l3_caches[i].TotalThreadLoops);
 		CGM_STATS(cgm_stats_file, "TotalAccesses = %llu\n", l3_caches[i].TotalAcesses);
 		CGM_STATS(cgm_stats_file, "TotalHits = %llu\n", (l3_caches[i].TotalAcesses - l3_caches[i].TotalMisses));
 		CGM_STATS(cgm_stats_file, "TotalMisses = %llu\n", l3_caches[i].TotalMisses);
@@ -3002,12 +3002,19 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//debug
 	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
 
+	/*stats*/
+	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
+	if(mem_lat >= HISTSIZE)
+		fatal("cache_l1_i_return(): increase HISTSIZEe\n");
+
+	cgm_stat->fetch_lat_hist[mem_lat]++;
+
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
 	remove_from_global(message_packet->access_id);
 
 	//stats
-	CGM_STATS(mem_trace_file, "l1_i_cache_%d total cycles %llu access_id %llu\n", cache->id, (message_packet->end_cycle - message_packet->start_cycle), message_packet->access_id);
+	//CGM_STATS(mem_trace_file, "l1_i_cache_%d total cycles %llu access_id %llu\n", cache->id, (message_packet->end_cycle - message_packet->start_cycle), message_packet->access_id);
 
 	packet_destroy(message_packet);
 	return;
