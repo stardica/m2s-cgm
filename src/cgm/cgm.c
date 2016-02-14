@@ -264,8 +264,31 @@ void cgm_dump_histograms(void){
 	int i = 0;
 
 	FILE *fetch_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/fetch_lat_log_file.out", "w+");
+	FILE *load_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/load_lat_log_file.out", "w+");
+	FILE *store_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/store_lat_log_file.out", "w+");
 
 	/* Histograms */
+	//fprintf(fetch_lat_log_file, "[FetchLatHist]\n");
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		if(cgm_stat->fetch_lat_hist[i] > 0)
+			fprintf(fetch_lat_log_file, "%d %llu\n", i, cgm_stat->fetch_lat_hist[i]);
+	}
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		if(cgm_stat->load_lat_hist[i] > 0)
+			fprintf(load_lat_log_file, "%d %llu\n", i, cgm_stat->load_lat_hist[i]);
+	}
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		if(cgm_stat->store_lat_hist[i] > 0)
+			fprintf(store_lat_log_file, "%d %llu\n", i, cgm_stat->store_lat_hist[i]);
+	}
+
+
+	/*OLD CODE
 	for(i = 0; i < HISTSIZE; i++)
 	{
 		while(cgm_stat->fetch_lat_hist[i] > 0)
@@ -274,12 +297,7 @@ void cgm_dump_histograms(void){
 			cgm_stat->fetch_lat_hist[i]--;
 		}
 	}
-	fclose (fetch_lat_log_file);
 
-
-	FILE *load_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/load_lat_log_file.out", "w+");
-
-	/* Histograms */
 	for(i = 0; i < HISTSIZE; i++)
 	{
 		while(cgm_stat->load_lat_hist[i] > 0)
@@ -288,12 +306,7 @@ void cgm_dump_histograms(void){
 			cgm_stat->load_lat_hist[i]--;
 		}
 	}
-	fclose (load_lat_log_file);
 
-
-	FILE *store_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/store_lat_log_file.out", "w+");
-
-	/* Histograms */
 	for(i = 0; i < HISTSIZE; i++)
 	{
 		while(cgm_stat->store_lat_hist[i] > 0)
@@ -301,7 +314,12 @@ void cgm_dump_histograms(void){
 			fprintf(store_lat_log_file, "%d\n", i);
 			cgm_stat->store_lat_hist[i]--;
 		}
-	}
+	}*/
+
+
+
+	fclose (load_lat_log_file);
+	fclose (fetch_lat_log_file);
 	fclose (store_lat_log_file);
 
 	return;

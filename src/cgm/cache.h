@@ -211,6 +211,8 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set);
 int cgm_cache_get_victim(struct cache_t *cache, int set);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_dump_set(struct cache_t *cache, int set);
+int cgm_cache_get_block_usage(struct cache_t *cache);
+
 
 //ORT Manipulations
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state);

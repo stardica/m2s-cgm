@@ -961,6 +961,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
 	cache->sets[set].blocks[way].transient_state = cgm_cache_block_invalid;
+	cache->sets[set].blocks[way].written = 1;
 	return;
 }
 
@@ -1160,6 +1161,27 @@ int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag){
 	assert(type == 0 || type == 1);
 	return type;
 }
+
+int cgm_cache_get_block_usage(struct cache_t *cache){
+
+	int count = 0;
+	int set = 0;
+	int way = 0;
+
+	for (set = 0; set < cache->num_sets; set++)
+	{
+		for (way = 0; way < cache->assoc; way++)
+		{
+			if( cache->sets[set].blocks[way].written == 1)
+			{
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
 
 void cgm_cache_dump_set(struct cache_t *cache, int set){
 
@@ -1377,6 +1399,11 @@ void cache_dump_stats(void){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
+	int j = 0;
+	int blocks_written = 0;
+	int max_fetch_lat = 0;
+	int max_load_lat = 0;
+	int max_store_lat = 0;
 
 
 	/*CPU caches*/
@@ -1395,6 +1422,15 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "ReadMissRate = %0.4f\n", ((double) l1_i_caches[i].TotalReadMisses / (double) l1_i_caches[i].TotalReads));
 		CGM_STATS(cgm_stats_file, "TotalGets = %llu\n", l1_i_caches[i].TotalGets);
 		CGM_STATS(cgm_stats_file, "GetsMissRate = %0.4f\n", ((double) l1_i_caches[i].TotalGets / (double) l1_i_caches[i].TotalReads));
+		blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
+		/*fatal("total sets %d block written %d\n", l1_i_caches[i].num_sets * l1_i_caches[i].assoc, blocks_written);*/
+		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.4f\n", ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+		for(j = 0; j < HISTSIZE; j++)
+		{
+			if(cgm_stat->fetch_lat_hist[j] > 0)
+				max_fetch_lat = j;
+		}
+		CGM_STATS(cgm_stats_file, "MaxFetchLat = %d\n", max_fetch_lat);
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);
@@ -1417,6 +1453,21 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "TotalUpgrades = %llu\n", l1_d_caches[i].TotalUpgrades);
 		CGM_STATS(cgm_stats_file, "UpgradeMissRate = %0.4f\n", ((double) l1_d_caches[i].TotalUpgrades / (double) l1_d_caches[i].TotalWrites));
 		CGM_STATS(cgm_stats_file, "TotalWriteBacks = %llu\n", l1_d_caches[i].TotalWriteBacks);
+		blocks_written = cgm_cache_get_block_usage(&l1_d_caches[i]);
+		/*fatal("total sets %d block written %d\n", l1_i_caches[i].num_sets * l1_i_caches[i].assoc, blocks_written);*/
+		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.4f\n", ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
+		for(j = 0; j < HISTSIZE; j++)
+		{
+			if(cgm_stat->load_lat_hist[j] > 0)
+				max_load_lat = j;
+		}
+		for(j = 0; j < HISTSIZE; j++)
+		{
+			if(cgm_stat->store_lat_hist[j] > 0)
+				max_store_lat = j;
+		}
+		CGM_STATS(cgm_stats_file, "MaxLoadLat = %d\n", max_load_lat);
+		CGM_STATS(cgm_stats_file, "MaxStoreLat = %d\n", max_store_lat);
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);
@@ -1441,6 +1492,9 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "GetxMissRate = %0.4f\n", ((double) l2_caches[i].TotalGetx / (double) l2_caches[i].TotalWrites));
 		CGM_STATS(cgm_stats_file, "UpgradeMissRate = %0.4f\n", ((double) l2_caches[i].TotalUpgrades / (double) l2_caches[i].TotalWrites));
 		CGM_STATS(cgm_stats_file, "TotalWriteBacks = %llu\n", l2_caches[i].TotalWriteBacks);
+		blocks_written = cgm_cache_get_block_usage(&l2_caches[i]);
+		/*fatal("total sets %d block written %d\n", l1_i_caches[i].num_sets * l1_i_caches[i].assoc, blocks_written);*/
+		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.4f\n", ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "\n");
 
 		CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);
@@ -1465,6 +1519,9 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "GetxMissRate = %0.4f\n", ((double) l3_caches[i].TotalGetx / (double) l3_caches[i].TotalWrites));
 		CGM_STATS(cgm_stats_file, "UpgradeMissRate = %0.4f\n", ((double) l3_caches[i].TotalUpgrades / (double) l3_caches[i].TotalWrites));
 		CGM_STATS(cgm_stats_file, "TotalWriteBacks = %llu\n", l3_caches[i].TotalWriteBacks);
+		blocks_written = cgm_cache_get_block_usage(&l3_caches[i]);
+		/*fatal("total sets %d block written %d\n", l1_i_caches[i].num_sets * l1_i_caches[i].assoc, blocks_written);*/
+		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.4f\n", ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "\n");
 	}
 
@@ -3005,7 +3062,7 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	if(mem_lat >= HISTSIZE)
-		fatal("cache_l1_i_return(): increase HISTSIZEE %llu\n", mem_lat);
+		fatal("cache_l1_i_return(): increase HISTSIZE %llu\n", mem_lat);
 
 	cgm_stat->fetch_lat_hist[mem_lat]++;
 
@@ -3028,7 +3085,9 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	if(mem_lat >= HISTSIZE)
-		fatal("cache_l1_d_return(): increase HISTSIZEE %llu\n", mem_lat);
+		fatal("cache_l1_d_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
+				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
+				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
 
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{

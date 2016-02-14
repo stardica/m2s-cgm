@@ -202,6 +202,7 @@ struct cache_block_t{
 	int flush_pending;
 	int upgrade_pending;
 	unsigned int address;
+	int written;
 
 	enum cgm_cache_block_state_t state;
 	enum cgm_cache_block_state_t transient_state;

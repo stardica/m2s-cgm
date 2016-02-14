@@ -1893,7 +1893,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				assert(pending_request);
 				/*the address better be the same too...*/
 				assert(pending_request->address == message_packet->address);
-
+				assert(pending_request->start_cycle != 0);
 				assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
 
 				//the line is invalid in the cache so don't set the line shared.
@@ -1982,6 +1982,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				assert(pending_request);
 				/*the address better be the same too...*/
 				assert(pending_request->address == message_packet->address);
+				assert(pending_request->start_cycle != 0);
 
 				//downgrade the local block
 				assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
@@ -2176,6 +2177,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				assert(pending_getx_fwd_request);
 				/*the address better be the same too...*/
 				assert(pending_getx_fwd_request->address == message_packet->address);
+				assert(pending_getx_fwd_request->start_cycle != 0);
 
 				/*//invalidate the local block
 				assert(pending_getx_fwd_request->set == message_packet->set && pending_getx_fwd_request->way == message_packet->way);
@@ -2273,6 +2275,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				assert(pending_getx_fwd_request);
 				/*the address better be the same too...*/
 				assert(pending_getx_fwd_request->address == message_packet->address);
+				assert(pending_getx_fwd_request->start_cycle != 0);
 
 				//downgrade the local block
 				assert(pending_getx_fwd_request->set == message_packet->set && pending_getx_fwd_request->way == message_packet->way);
@@ -2323,6 +2326,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			assert(pending_getx_fwd_request);
 			/*the address better be the same too...*/
 			assert(pending_getx_fwd_request->address == message_packet->address);
+			assert(pending_getx_fwd_request->start_cycle != 0);
 
 			//invalidate the local block
 			assert(pending_getx_fwd_request->set == message_packet->set && pending_getx_fwd_request->way == message_packet->way);

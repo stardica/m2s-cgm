@@ -518,13 +518,6 @@ void switch_ctrl(void){
 	struct cgm_packet_t *message_packet = NULL;
 	long long step = 1;
 
-	/*char *dest_name;
-	int dest_node;
-	char *src_name;
-	int src_node;
-	int switch_node = switches[my_pid].switch_node_number;
-	float distance;*/
-
 	enum port_name next_queue = west_queue;
 
 	/*long long access_id = 0;*/
@@ -543,9 +536,7 @@ void switch_ctrl(void){
 
 		assert(next_queue == switches[my_pid].queue);
 
-		/*printf("start_1 queue %d\n", switches[my_pid].queue);*/
-
-		/*switches models a std cross bar.
+		/*switches models a cross bar.
 		link as many inputs to outputs as possible*/
 		switch_crossbar_link(&switches[my_pid]);
 
@@ -1075,9 +1066,9 @@ void switch_dump_stats(void){
 	for(i = 0; i < num_switches; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "NumberWakes = %llu\n", switches[i].switch_total_wakes);
+		CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[i].switch_total_wakes);
 		CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[i].switch_total_links);
-		CGM_STATS(cgm_stats_file, "AveNumberLinksPerWake = %f\n", (double)switches[i].switch_total_links/(double)switches[i].switch_total_wakes);
+		CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %f\n", (double)switches[i].switch_total_links/(double)switches[i].switch_total_wakes);
 		CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[i].switch_north_io_transfers);
 		CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[i].switch_north_io_transfer_cycles);
 		CGM_STATS(cgm_stats_file, "NorthIOBytesTransfered = %llu\n", switches[i].switch_north_io_bytes_transfered);
