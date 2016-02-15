@@ -383,12 +383,12 @@ void sys_agent_ctrl(void){
 void sys_agent_dump_stats(void){
 
 	CGM_STATS(cgm_stats_file, "[SystemAgent]\n");
-	CGM_STATS(cgm_stats_file, "BusyCycles = %llu\n", system_agent->busy_cycles);
-	CGM_STATS(cgm_stats_file, "NorthIOBusyCycles = %llu\n", system_agent->north_io_busy_cycles);
-	CGM_STATS(cgm_stats_file, "SouthIOBusyCycles = %llu\n", system_agent->south_io_busy_cycles);
+	CGM_STATS(cgm_stats_file, "TotalCtrlLoops = %llu\n", system_agent->busy_cycles);
 	CGM_STATS(cgm_stats_file, "MCLoads = %llu\n", system_agent->mc_loads);
 	CGM_STATS(cgm_stats_file, "MCStores = %llu\n", system_agent->mc_stores);
 	CGM_STATS(cgm_stats_file, "MCReturns = %llu\n", system_agent->mc_returns);
+	CGM_STATS(cgm_stats_file, "NorthIOBusyCycles = %llu\n", system_agent->north_io_busy_cycles);
+	CGM_STATS(cgm_stats_file, "SouthIOBusyCycles = %llu\n", system_agent->south_io_busy_cycles);
 	CGM_STATS(cgm_stats_file, "MaxNorthRxQueueDepth = %d\n", system_agent->max_north_rxqueue_depth);
 	CGM_STATS(cgm_stats_file, "AveNorthRxQueueDepth = %0.2f\n", system_agent->ave_north_rxqueue_depth);
 	CGM_STATS(cgm_stats_file, "MaxSouthRxQueueDepth = %d\n", system_agent->max_south_rxqueue_depth);

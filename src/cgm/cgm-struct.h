@@ -17,16 +17,16 @@
 #define HISTSIZE 20000
 
 enum protocol_case_kind_t{
-
-	cgm_protocol_case_invalid = 0,
-	cgm_protocol_case_L1_hit,
-	cgm_protocol_case_L2_hit,
-	cgm_protocol_case_L3_hit,
-	cgm_protocol_case_mm,
-	cgm_protocol_case_get_fwd,
-	cgm_protocol_case_getx_fwd,
-	cgm_protocol_case_upgrade,
-	cgm_protocol_case_kind_num
+	invalid = 0,
+	L1_hit,
+	L2_hit,
+	L3_hit,
+	memory,
+	get_fwd,
+	getx_fwd,
+	L2_upgrade,
+	L3_upgrade,
+	number_cases
 };
 
 enum cgm_cache_block_state_t{
@@ -465,9 +465,26 @@ struct cgm_stats_t{
 	long long load_lat_hist[HISTSIZE];
 	long long store_lat_hist[HISTSIZE];
 
-	/*OS stats*/
+	/*protocol cases*/
+	long long fetch_l1_hits;
+	long long fetch_l2_hits;
+	long long fetch_l3_hits;
+	long long fetch_memory;
 
-	/*runtime stats*/
+	long long load_l1_hits;
+	long long load_l2_hits;
+	long long load_l3_hits;
+	long long load_memory;
+	long long load_get_fwd;
+
+	long long store_l1_hits;
+	long long store_l2_hits;
+	long long store_l2_upgrade;
+	long long store_l3_hits;
+	long long store_l3_upgrade;
+	long long store_memory;
+	long long store_getx_fwd;
+	long long store_upgrade;
 
 };
 

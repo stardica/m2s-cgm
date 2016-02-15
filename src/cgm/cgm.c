@@ -253,8 +253,25 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[MemSystem]\n");
 	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat->first_mem_access_lat);
+	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cgm_stat->cpu_total_fetches);
+	CGM_STATS(cgm_stats_file, "FetchesL1 = %llu\n", cgm_stat->fetch_l1_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL2 = %llu\n", cgm_stat->fetch_l2_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL3 = %llu\n", cgm_stat->fetch_l3_hits);
+	CGM_STATS(cgm_stats_file, "FetchesMemory = %llu\n", cgm_stat->fetch_memory);
+	CGM_STATS(cgm_stats_file, "TotalLoads = %llu\n", cgm_stat->cpu_total_loads);
+	CGM_STATS(cgm_stats_file, "LoadsL1 = %llu\n", cgm_stat->load_l1_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL2 = %llu\n", cgm_stat->load_l2_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL3 = %llu\n", cgm_stat->load_l3_hits);
+	CGM_STATS(cgm_stats_file, "LoadsMemory = %llu\n", cgm_stat->load_memory);
+	CGM_STATS(cgm_stats_file, "LoadsGetFwd = %llu\n", cgm_stat->load_get_fwd);
+	CGM_STATS(cgm_stats_file, "TotalStore = %llu\n", cgm_stat->cpu_total_stores);
+	CGM_STATS(cgm_stats_file, "StoresL1 = %llu\n", cgm_stat->store_l1_hits);
+	CGM_STATS(cgm_stats_file, "StoresL2 = %llu\n", cgm_stat->store_l2_hits);
+	CGM_STATS(cgm_stats_file, "StoresL3 = %llu\n", cgm_stat->store_l3_hits);
+	CGM_STATS(cgm_stats_file, "StoresMemory = %llu\n", cgm_stat->store_memory);
+	CGM_STATS(cgm_stats_file, "StoresGetxFwd = %llu\n", cgm_stat->store_getx_fwd);
+	CGM_STATS(cgm_stats_file, "StoresUpgrade = %llu\n", cgm_stat->store_upgrade);
 	CGM_STATS(cgm_stats_file, "\n");
-
 
 	return;
 }

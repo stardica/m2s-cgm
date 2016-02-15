@@ -129,7 +129,10 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
 
+			/*stats*/
 			message_packet->end_cycle = P_TIME;
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L1_hit;
 			cache_l1_i_return(cache,message_packet);
 			break;
 
@@ -284,7 +287,11 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 				}
 
+				/*stats*/
 				message_packet->end_cycle = P_TIME;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L1_hit;
+
 				cache_l1_d_return(cache, message_packet);
 				return;
 			}
@@ -390,7 +397,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			/*stats*/
 			message_packet->end_cycle = P_TIME;
-			message_packet->protocol_case = cgm_protocol_case_L1_hit;
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L1_hit;
 
 			cache_l1_d_return(cache,message_packet);
 
@@ -521,7 +529,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 				}
 
+				/*stats*/
 				message_packet->end_cycle = P_TIME;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L1_hit;
+
 				cache_l1_d_return(cache,message_packet);
 				return;
 			}
@@ -655,7 +667,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
 
+			/*stats*/
 			message_packet->end_cycle = P_TIME;
+			if(!message_packet->protocol_case)
+					message_packet->protocol_case = L1_hit;
+
 			cache_l1_d_return(cache,message_packet);
 
 			break;
@@ -1208,13 +1224,15 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
 
-			//set block state
+			//set block state and message size
 			message_packet->cache_block_state = *cache_block_state_ptr;
-
-			//set message size
 			message_packet->size = l1_i_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
-
 			message_packet->access_type = cgm_access_puts;
+
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L2_hit;
+
 			cache_put_io_up_queue(cache, message_packet);
 
 			break;
@@ -1355,6 +1373,10 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 				}
 
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L2_hit;
+
 				cache_put_io_up_queue(cache, message_packet);
 				return;
 			}
@@ -1451,12 +1473,11 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			}
 
 			/*stats*/
-			message_packet->protocol_case = cgm_protocol_case_L2_hit;
+			if(!message_packet->protocol_case)
+					message_packet->protocol_case = L2_hit;
 
 			cache_put_io_up_queue(cache, message_packet);
 
-			//debug
-			/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit cycle %llu\n", cache->name, message_packet->access_id, P_TIME);*/
 			break;
 	}
 }
@@ -1656,6 +1677,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 				}
 
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L2_hit;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -1710,9 +1735,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 
-			//stats;
-			//cache->hits++;
-
 			//set retry state
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
@@ -1733,6 +1755,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->access_type = cgm_access_putx;
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L2_hit;
+
 			//send up to L1 D cache
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -1745,9 +1771,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		case cgm_cache_block_shared:
 
-			//stats
-			cache->upgrade_misses++;
-
 			if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
 				printf("block 0x%08x %s upgrade miss ID %llu type %d state %d cycle %llu\n",
@@ -1756,6 +1779,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//access was a miss in L1 D but a hit in the shared state at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
+
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L2_upgrade;
 
 			//return 0 to process as an upgrade.
 			return 0;
@@ -3072,6 +3099,10 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = memory;
+
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
 
@@ -3104,6 +3135,10 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L3_hit;
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -3496,7 +3531,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				/*stats*/
-				message_packet->protocol_case = cgm_protocol_case_mm;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
 
 				cache_put_io_up_queue(cache, message_packet);
 			}
@@ -3548,6 +3584,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
 				//transmit to SA/MC
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = memory;
+
 				cache_put_io_down_queue(cache, message_packet);
 
 			}
@@ -3617,7 +3656,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				/*stats*/
-				message_packet->protocol_case = cgm_protocol_case_L3_hit;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
 
 				//send the cache block out
 				cache_put_io_up_queue(cache, message_packet);
@@ -3672,7 +3712,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
 				/*stats*/
-				message_packet->protocol_case = cgm_protocol_case_get_fwd;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = get_fwd;
 
 				cache_put_io_up_queue(cache, message_packet);
 			}
@@ -3683,9 +3724,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			break;
 
 		case cgm_cache_block_shared:
-
-			//stats;
-			//cache->hits++;
 
 			//check if the packet has coalesced accesses.
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -3719,7 +3757,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 			/*stats*/
-			message_packet->protocol_case = cgm_protocol_case_L3_hit;
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L3_hit;
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -3936,6 +3975,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -3983,6 +4026,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 				message_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
+
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = memory;
 
 				//transmit to SA
 				cache_put_io_down_queue(cache, message_packet);
@@ -4049,6 +4096,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					printf("message %llu transmit to hub_iommu dest id %d dest name %s\n", message_packet->access_id, message_packet->dest_id, message_packet->dest_name);
 				}
 
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
+
 				cache_put_io_up_queue(cache, message_packet);
 
 			}
@@ -4096,6 +4147,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//requesting node L2
 				message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
+
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = getx_fwd;
 
 				cache_put_io_up_queue(cache, message_packet);
 			}
@@ -6188,4 +6243,3 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	return 1;
 }
-

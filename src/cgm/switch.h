@@ -277,6 +277,35 @@ struct switch_t{
 	long long switch_west_io_transfers;
 	long long switch_west_io_transfer_cycles;
 	long long switch_west_io_bytes_transfered;
+
+	long long north_txqueue_max_depth;
+	double north_txqueue_ave_depth;
+	long long east_txqueue_max_depth;
+	double east_txqueue_ave_depth;
+	long long south_txqueue_max_depth;
+	double south_txqueue_ave_depth;
+	long long west_txqueue_max_depth;
+	double west_txqueue_ave_depth;
+
+	long long north_tx_inserts;
+	long long east_tx_inserts;
+	long long south_tx_inserts;
+	long long west_tx_inserts;
+
+	long long north_rxqueue_max_depth;
+	double north_rxqueue_ave_depth;
+	long long east_rxqueue_max_depth;
+	double east_rxqueue_ave_depth;
+	long long south_rxqueue_max_depth;
+	double south_rxqueue_ave_depth;
+	long long west_rxqueue_max_depth;
+	double west_rxqueue_ave_depth;
+
+	long long north_rx_inserts;
+	long long east_rx_inserts;
+	long long south_rx_inserts;
+	long long west_rx_inserts;
+
 };
 
 extern struct str_map_t node_strn_map;

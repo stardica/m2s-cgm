@@ -2561,6 +2561,7 @@ void l2_cache_down_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -2589,6 +2590,17 @@ void l2_cache_down_io_ctrl(void){
 		advance(&switches_ec[my_pid]);
 
 		/*stats*/
+		switches[my_pid].north_rx_inserts++;
+		queue_depth = list_count(switches[my_pid].north_queue);
+		/*max depth*/
+		if(queue_depth > switches[my_pid].north_rxqueue_max_depth)
+			switches[my_pid].north_rxqueue_max_depth = queue_depth;
+
+		/*ave depth = ((old count * old data) + next data) / next count*/
+		switches[my_pid].north_rxqueue_ave_depth =
+			((((double) switches[my_pid].north_rx_inserts - 1) * switches[my_pid].north_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_rx_inserts;
+
+
 		l3_caches[cgm_l3_cache_map(message_packet->set)].TotalAcesses++;
 		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get)
 		{
@@ -2614,6 +2626,7 @@ void l3_cache_up_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -2637,6 +2650,18 @@ void l3_cache_up_io_ctrl(void){
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].south_queue, message_packet);
 		advance(&switches_ec[my_pid]);
+
+		/*stats*/
+		switches[my_pid].south_rx_inserts++;
+		queue_depth = list_count(switches[my_pid].south_queue);
+		/*max depth*/
+		if(queue_depth > switches[my_pid].south_rxqueue_max_depth)
+			switches[my_pid].south_rxqueue_max_depth = queue_depth;
+
+		/*ave depth = ((old count * old data) + next data) / next count*/
+		switches[my_pid].south_rxqueue_ave_depth =
+			((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
+
 	}
 	return;
 
@@ -3056,9 +3081,6 @@ void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//debug
-	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
-
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	if(mem_lat >= HISTSIZE)
@@ -3068,6 +3090,19 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	if(message_packet->access_id == 1)
 		cgm_stat->first_mem_access_lat = mem_lat;
+
+	assert(message_packet->protocol_case != invalid);
+	if(message_packet->protocol_case == L1_hit)
+		cgm_stat->fetch_l1_hits++;
+	else if (message_packet->protocol_case == L2_hit)
+		cgm_stat->fetch_l2_hits++;
+	else if (message_packet->protocol_case == L3_hit)
+		cgm_stat->fetch_l3_hits++;
+	else if (message_packet->protocol_case == memory)
+		cgm_stat->fetch_memory++;
+	else
+		fatal("cache_l1_i_return(): message_packet->protocol_case is invalid\n");
+
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -3093,10 +3128,37 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
 		cgm_stat->load_lat_hist[mem_lat]++;
+
+		if(message_packet->protocol_case == L1_hit)
+			cgm_stat->load_l1_hits++;
+		else if (message_packet->protocol_case == L2_hit)
+			cgm_stat->load_l2_hits++;
+		else if (message_packet->protocol_case == L3_hit)
+			cgm_stat->load_l3_hits++;
+		else if (message_packet->protocol_case == memory)
+			cgm_stat->load_memory++;
+		else if (message_packet->protocol_case == get_fwd)
+			cgm_stat->load_get_fwd++;
+		else
+			fatal("cache_l1_d_return(): message_packet->protocol_case is invalid\n");
 	}
 	else if(message_packet->cpu_access_type == cgm_access_store)
 	{
 		cgm_stat->store_lat_hist[mem_lat]++;
+
+		if(message_packet->protocol_case == L1_hit)
+			cgm_stat->store_l1_hits++;
+		else if (message_packet->protocol_case == L2_hit)
+			cgm_stat->store_l2_hits++;
+		else if (message_packet->protocol_case == L3_hit)
+			cgm_stat->store_l3_hits++;
+		else if (message_packet->protocol_case == memory)
+			cgm_stat->store_memory++;
+		else if (message_packet->protocol_case == getx_fwd)
+			cgm_stat->store_getx_fwd++;
+		else
+			cgm_stat->store_upgrade++;
+
 	}
 
 	//remove packet from cache queue, global queue, and simulator memory

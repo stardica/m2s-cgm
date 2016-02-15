@@ -520,6 +520,8 @@ void switch_ctrl(void){
 
 	enum port_name next_queue = west_queue;
 
+	long long queue_depth;
+
 	/*long long access_id = 0;*/
 
 	assert(my_pid <= (num_cores + num_cus));
@@ -551,6 +553,17 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
 
+			/*stats*/
+			switches[my_pid].north_tx_inserts++;
+			queue_depth = list_count(switches[my_pid].Tx_north_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].north_txqueue_max_depth)
+					switches[my_pid].north_txqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].north_txqueue_ave_depth =
+					((((double) switches[my_pid].north_tx_inserts - 1) * switches[my_pid].north_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_tx_inserts;
+
 			message_packet = NULL;
 		}
 
@@ -561,6 +574,17 @@ void switch_ctrl(void){
 
 			list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
 			advance(switches[my_pid].switches_east_io_ec);
+
+			/*stats*/
+			switches[my_pid].east_tx_inserts++;
+			queue_depth = list_count(switches[my_pid].Tx_east_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].east_txqueue_max_depth)
+					switches[my_pid].east_txqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].east_txqueue_ave_depth =
+					((((double) switches[my_pid].east_tx_inserts - 1) * switches[my_pid].east_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].east_tx_inserts;
 
 			message_packet = NULL;
 		}
@@ -573,6 +597,17 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
 			advance(switches[my_pid].switches_south_io_ec);
 
+			/*stats*/
+			switches[my_pid].south_tx_inserts++;
+			queue_depth = list_count(switches[my_pid].Tx_south_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].south_txqueue_max_depth)
+					switches[my_pid].south_txqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].south_txqueue_ave_depth =
+					((((double) switches[my_pid].south_tx_inserts - 1) * switches[my_pid].south_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_tx_inserts;
+
 			message_packet = NULL;
 		}
 
@@ -583,6 +618,17 @@ void switch_ctrl(void){
 
 			list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
 			advance(switches[my_pid].switches_west_io_ec);
+
+			/*stats*/
+			switches[my_pid].west_tx_inserts++;
+			queue_depth = list_count(switches[my_pid].Tx_west_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].west_txqueue_max_depth)
+					switches[my_pid].west_txqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].west_txqueue_ave_depth =
+					((((double) switches[my_pid].west_tx_inserts - 1) * switches[my_pid].west_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].west_tx_inserts;
 
 			message_packet = NULL;
 		}
@@ -885,6 +931,7 @@ void switch_east_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -914,6 +961,19 @@ void switch_east_io_ctrl(void){
 		switches[my_pid].switch_east_io_transfers++;
 		switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
 		switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
+
+
+		//note these stats are for the adjacent switch to the east which puts packets in the west rx_queue
+		switches[switches[my_pid].next_east_id].west_rx_inserts++;
+		queue_depth = list_count(switches[my_pid].next_east); //tricky
+		/*max depth*/
+		if(queue_depth > switches[switches[my_pid].next_east_id].west_rxqueue_max_depth)
+			switches[switches[my_pid].next_east_id].west_rxqueue_max_depth = queue_depth;
+
+		/*ave depth = ((old count * old data) + next data) / next count*/
+		switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth =
+			((((double) switches[switches[my_pid].next_east_id].west_rx_inserts - 1) * switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth)
+					+ (double) queue_depth) / (double) switches[switches[my_pid].next_east_id].west_rx_inserts;
 	}
 
 	return;
@@ -930,6 +990,7 @@ void switch_west_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 
@@ -960,6 +1021,17 @@ void switch_west_io_ctrl(void){
 		switches[my_pid].switch_west_io_transfer_cycles += transfer_time;
 		switches[my_pid].switch_west_io_bytes_transfered += message_packet->size;
 
+		//note these stats are for the adjacent switch
+		switches[switches[my_pid].next_west_id].east_rx_inserts++;
+		queue_depth = list_count(switches[my_pid].next_west); //tricky
+		/*max depth*/
+		if(queue_depth > switches[switches[my_pid].next_west_id].east_rxqueue_max_depth)
+			switches[switches[my_pid].next_west_id].east_rxqueue_max_depth = queue_depth;
+
+		/*ave depth = ((old count * old data) + next data) / next count*/
+		switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth =
+			((((double) switches[switches[my_pid].next_west_id].east_rx_inserts - 1) * switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth)
+					+ (double) queue_depth) / (double) switches[switches[my_pid].next_west_id].east_rx_inserts;
 	}
 
 	return;
@@ -1067,20 +1139,37 @@ void switch_dump_stats(void){
 	{
 		CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[i].switch_total_wakes);
+		CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.4f\n", (double) switches[i].switch_total_wakes/ (double) P_TIME);
 		CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[i].switch_total_links);
 		CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %f\n", (double)switches[i].switch_total_links/(double)switches[i].switch_total_wakes);
 		CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[i].switch_north_io_transfers);
 		CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[i].switch_north_io_transfer_cycles);
 		CGM_STATS(cgm_stats_file, "NorthIOBytesTransfered = %llu\n", switches[i].switch_north_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "NorthRxQueueMaxDepth = %llu\n", switches[i].north_rxqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "NorthRxQueueAveDepth = %0.4f\n", switches[i].north_rxqueue_ave_depth);
+		CGM_STATS(cgm_stats_file, "NorthTxQueueMaxDepth = %llu\n", switches[i].north_txqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "NorthTxQueueAveDepth = %0.4f\n", switches[i].north_txqueue_ave_depth);
 		CGM_STATS(cgm_stats_file, "EastIOTransfers = %llu\n", switches[i].switch_east_io_transfers);
 		CGM_STATS(cgm_stats_file, "EastIOCycles = %llu\n", switches[i].switch_east_io_transfer_cycles);
 		CGM_STATS(cgm_stats_file, "EastIOBytesTransfered = %llu\n", switches[i].switch_east_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "EastRxQueueMaxDepth = %llu\n", switches[i].east_rxqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "EastRxQueueAveDepth = %0.4f\n", switches[i].east_rxqueue_ave_depth);
+		CGM_STATS(cgm_stats_file, "EastTxQueueMaxDepth = %llu\n", switches[i].east_txqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "EastTxQueueAveDepth = %0.4f\n", switches[i].east_txqueue_ave_depth);
 		CGM_STATS(cgm_stats_file, "SouthIOTransfers = %llu\n", switches[i].switch_south_io_transfers);
 		CGM_STATS(cgm_stats_file, "SouthIOCycles = %llu\n", switches[i].switch_south_io_transfer_cycles);
 		CGM_STATS(cgm_stats_file, "SouthIOBytesTransfered = %llu\n", switches[i].switch_south_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "SouthRxQueueMaxDepth = %llu\n", switches[i].south_rxqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "SouthRxQueueAveDepth = %0.4f\n", switches[i].south_rxqueue_ave_depth);
+		CGM_STATS(cgm_stats_file, "SouthTxQueueMaxDepth = %llu\n", switches[i].south_txqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "SouthTxQueueAveDepth = %0.4f\n", switches[i].south_txqueue_ave_depth);
 		CGM_STATS(cgm_stats_file, "WestIOTransfers = %llu\n", switches[i].switch_west_io_transfers);
 		CGM_STATS(cgm_stats_file, "WestIOCycles = %llu\n", switches[i].switch_west_io_transfer_cycles);
 		CGM_STATS(cgm_stats_file, "WestIOBytesTransfered = %llu\n", switches[i].switch_west_io_bytes_transfered);
+		CGM_STATS(cgm_stats_file, "WestRxQueueMaxDepth = %llu\n", switches[i].west_rxqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "WestRxQueueAveDepth = %0.4f\n", switches[i].west_rxqueue_ave_depth);
+		CGM_STATS(cgm_stats_file, "WestTxQueueMaxDepth = %llu\n", switches[i].west_txqueue_max_depth);
+		CGM_STATS(cgm_stats_file, "WestTxQueueAveDepth = %0.4f\n", switches[i].west_txqueue_ave_depth);
 		CGM_STATS(cgm_stats_file, "\n");
 	}
 
