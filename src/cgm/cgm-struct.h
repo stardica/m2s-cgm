@@ -16,6 +16,19 @@
 
 #define HISTSIZE 20000
 
+enum protocol_case_kind_t{
+
+	cgm_protocol_case_invalid = 0,
+	cgm_protocol_case_L1_hit,
+	cgm_protocol_case_L2_hit,
+	cgm_protocol_case_L3_hit,
+	cgm_protocol_case_mm,
+	cgm_protocol_case_get_fwd,
+	cgm_protocol_case_getx_fwd,
+	cgm_protocol_case_upgrade,
+	cgm_protocol_case_kind_num
+};
+
 enum cgm_cache_block_state_t{
 
 	cgm_cache_block_invalid = 0,
@@ -178,6 +191,7 @@ struct cgm_packet_t{
 	long long start_cycle;
 	long long end_cycle;
 	long long dram_start_cycle;
+	enum protocol_case_kind_t protocol_case;
 };
 
 struct cgm_packet_status_t{

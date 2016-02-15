@@ -3084,6 +3084,7 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
+	assert(message_packet->start_cycle != 0);
 	if(mem_lat >= HISTSIZE)
 		fatal("cache_l1_d_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,

@@ -105,4 +105,3 @@ table_switch_data = [
 ]
 
 print tabulate(table_switch_data, headers=["Stat Switch", "S0", "S1", "S2", "S3", "S4"], tablefmt="simple", numalign="right", floatfmt="16.4f")
-print('\n')

@@ -388,7 +388,10 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
 
+			/*stats*/
 			message_packet->end_cycle = P_TIME;
+			message_packet->protocol_case = cgm_protocol_case_L1_hit;
+
 			cache_l1_d_return(cache,message_packet);
 
 			break;
@@ -1415,7 +1418,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				printf("************ %s get while flush is going up blk_address 0x%08x cycle %llu\n", cache->name, (message_packet->address & ~cache->block_mask), P_TIME);*/
 
 
-
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
@@ -1447,6 +1449,9 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				printf("block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 			}
+
+			/*stats*/
+			message_packet->protocol_case = cgm_protocol_case_L2_hit;
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -3490,6 +3495,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
+				/*stats*/
+				message_packet->protocol_case = cgm_protocol_case_mm;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -3549,10 +3557,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 
-			//stats;
-			//cache->hits++;
-
-
 			/*on the first GET the block should have been brought in as exclusive.
 			Then it will be a hit on retry with no presence bits set (exclusive).
 			On a subsequent access (by either the requesting core or a different core) the block will be here as exclusive,
@@ -3578,7 +3582,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					/*there should be only 1 core with the block*/
 					assert(sharers == 1);
 				}
-
 
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
@@ -3612,6 +3615,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->dest_name = str_map_value(&l2_strn_map, message_packet->dest_id);
 				message_packet->src_name = cache->name;
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+				/*stats*/
+				message_packet->protocol_case = cgm_protocol_case_L3_hit;
 
 				//send the cache block out
 				cache_put_io_up_queue(cache, message_packet);
@@ -3665,6 +3671,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
+				/*stats*/
+				message_packet->protocol_case = cgm_protocol_case_get_fwd;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -3709,11 +3718,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->src_name = cache->name;
 			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
-			cache_put_io_up_queue(cache, message_packet);
+			/*stats*/
+			message_packet->protocol_case = cgm_protocol_case_L3_hit;
 
-			//debug
-			CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu hit changed (%s) cycle %llu\n",
-					cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
+			cache_put_io_up_queue(cache, message_packet);
 
 			break;
 	}
@@ -5247,6 +5255,7 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			upgrade_request_packet = packet_create();
 			assert(upgrade_request_packet);
 			init_upgrade_request_packet(upgrade_request_packet, message_packet->address);
+			upgrade_request_packet->start_cycle = message_packet->start_cycle;
 
 
 			//gather some other data as well
@@ -5489,6 +5498,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	message_packet->data = pending_packet->data;
 	message_packet->access_id = pending_packet->access_id;
 	message_packet->name = strdup(pending_packet->name);
+	message_packet->start_cycle = pending_packet->start_cycle;
 	assert(pending_packet->address == message_packet->address);
 	//pending_packet->l2_victim_way = message_packet->way;
 	//assert(pending_packet->set == message_packet->set && pending_packet->tag == message_packet->tag);
