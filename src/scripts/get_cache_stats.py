@@ -427,6 +427,48 @@ table_P3 = [
 ["CacheUtilization", l1_i_3_cache_utilization, l1_d_3_cache_utilization, l2_3_cache_utilization, l3_3_cache_utilization]
 ]
 
+l3_0_total_cache_ctrl_loops_total = l3_0_total_cache_ctrl_loops + l3_1_total_cache_ctrl_loops + l3_2_total_cache_ctrl_loops + l3_3_total_cache_ctrl_loops
+l3_0_total_accesses_total = l3_0_total_accesses + l3_1_total_accesses + l3_2_total_accesses + l3_3_total_accesses
+l3_0_total_hits_total = l3_0_total_hits + l3_1_total_hits + l3_2_total_hits + l3_3_total_hits
+l3_0_total_misses_total = l3_0_total_misses + l3_1_total_misses + l3_2_total_misses + l3_3_total_misses
+l3_0_miss_rate_total = l3_0_miss_rate + l3_1_miss_rate + l3_2_miss_rate + l3_3_miss_rate
+l3_0_total_reads_total = l3_0_total_reads + l3_1_total_reads + l3_2_total_reads + l3_3_total_reads
+l3_0_total_read_misses_total = l3_0_total_read_misses + l3_1_total_read_misses + l3_2_total_read_misses + l3_3_total_read_misses
+l3_0_read_miss_rate_total = l3_0_read_miss_rate + l3_1_read_miss_rate + l3_2_read_miss_rate + l3_3_read_miss_rate
+l1_i_3_total_writes_total = l1_i_3_total_writes + l1_d_3_total_writes + l2_3_total_writes + l3_3_total_writes
+l3_0_total_write_misses_total = l3_0_total_write_misses + l3_1_total_write_misses + l3_2_total_write_misses + l3_3_total_write_misses
+l3_0_write_miss_rate_total = l3_0_write_miss_rate + l3_1_write_miss_rate + l3_2_write_miss_rate + l3_3_write_miss_rate
+l3_0_total_get_total = l3_0_total_get +  l3_1_total_get +  l3_2_total_get + l3_3_total_get
+l3_0_total_getx_total = l3_0_total_getx + l3_1_total_getx + l3_2_total_getx + l3_3_total_getx
+l3_0_get_miss_rate_total = l3_0_get_miss_rate + l3_1_get_miss_rate + l3_2_get_miss_rate + l3_3_get_miss_rate
+l3_0_getx_miss_rate_total = l3_0_getx_miss_rate + l3_1_getx_miss_rate + l3_2_getx_miss_rate + l3_3_getx_miss_rate
+l3_0_total_upgrades_total = l3_0_total_upgrades + l3_1_total_upgrades + l3_2_total_upgrades + l3_3_total_upgrades
+l3_0_upgrade_miss_rate_total = l3_0_upgrade_miss_rate + l3_1_upgrade_miss_rate + l3_2_upgrade_miss_rate + l3_3_upgrade_miss_rate
+l3_0_total_write_backs_total = l3_0_total_write_backs + l3_1_total_write_backs + l3_2_total_write_backs + l3_3_total_write_backs
+l3_0_cache_utilization_total = l3_0_cache_utilization + l3_1_cache_utilization + l3_2_cache_utilization + l3_3_cache_utilization
+
+table_L3_cache = [
+["TotalCacheCtrlLoops", l3_0_total_cache_ctrl_loops, l3_1_total_cache_ctrl_loops, l3_2_total_cache_ctrl_loops, l3_3_total_cache_ctrl_loops, l3_0_total_cache_ctrl_loops_total],
+["TotalAccesses", l3_0_total_accesses, l3_1_total_accesses, l3_2_total_accesses, l3_3_total_accesses, l3_0_total_accesses_total], 
+["TotalHits", l3_0_total_hits, l3_1_total_hits, l3_2_total_hits, l3_3_total_hits, l3_0_total_hits_total],
+["TotalMisses", l3_0_total_misses, l3_1_total_misses, l3_2_total_misses, l3_3_total_misses, l3_0_total_misses_total],
+["MissRate", l3_0_miss_rate, l3_1_miss_rate, l3_2_miss_rate, l3_3_miss_rate, l3_0_miss_rate_total],
+["TotalReads", l3_0_total_reads, l3_1_total_reads, l3_2_total_reads, l3_3_total_reads, l3_0_total_reads_total],
+["TotalReadMisses", l3_0_total_read_misses, l3_1_total_read_misses, l3_2_total_read_misses, l3_3_total_read_misses, l3_0_total_read_misses_total],
+["ReadMissRate", l3_0_read_miss_rate, l3_1_read_miss_rate, l3_2_read_miss_rate, l3_3_read_miss_rate, l3_0_read_miss_rate_total],
+["TotalWrites", l1_i_3_total_writes, l1_d_3_total_writes, l2_3_total_writes, l3_3_total_writes, l1_i_3_total_writes_total],
+["TotalWriteMisses", l3_0_total_write_misses, l3_1_total_write_misses, l3_2_total_write_misses, l3_3_total_write_misses, l3_0_total_write_misses_total],
+["WriteMissRate", l3_0_write_miss_rate, l3_1_write_miss_rate, l3_2_write_miss_rate, l3_3_write_miss_rate, l3_0_write_miss_rate_total],
+["TotalGet",  l3_0_total_get,  l3_1_total_get,  l3_2_total_get, l3_3_total_get, l3_0_total_get_total],
+["TotalGetx", l3_0_total_getx, l3_1_total_getx, l3_2_total_getx, l3_3_total_getx, l3_0_total_getx_total],
+["GetMissRate", l3_0_get_miss_rate, l3_1_get_miss_rate, l3_2_get_miss_rate, l3_3_get_miss_rate, l3_0_get_miss_rate_total],
+["GetxMissRate", l3_0_getx_miss_rate, l3_1_getx_miss_rate, l3_2_getx_miss_rate, l3_3_getx_miss_rate, l3_0_getx_miss_rate_total],
+["TotalUpgrades", l3_0_total_upgrades, l3_1_total_upgrades, l3_2_total_upgrades, l3_3_total_upgrades, l3_0_total_upgrades_total],
+["UpgradeMissRate", l3_0_upgrade_miss_rate, l3_1_upgrade_miss_rate, l3_2_upgrade_miss_rate, l3_3_upgrade_miss_rate, l3_0_total_write_backs_total],
+["TotalWriteBacks", l3_0_total_write_backs, l3_1_total_write_backs, l3_2_total_write_backs, l3_3_total_write_backs, l3_0_total_write_backs_total],
+["CacheUtilization", l3_0_cache_utilization, l3_1_cache_utilization, l3_2_cache_utilization, l3_3_cache_utilization, l3_0_cache_utilization_total]
+]
+
 
 print tabulate(table_P0, headers=["Stat P0", "P0_I", "P0_D", "P0_L2", "P0_L3"], tablefmt="simple", numalign="right", floatfmt="16.4f")
 print('\n')
@@ -434,7 +476,9 @@ print tabulate(table_P1, headers=["Stat P1", "P1_I", "P1_D", "P1_L2", "P1_L3"], 
 print('\n')
 print tabulate(table_P2, headers=["Stat P2", "P2_I", "P2_D", "P2_L2", "P2_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f")
 print('\n')
-print tabulate(table_P3, headers=["Stat P3", "P3_I", "P3_D", "P3_L2", "P3_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f")        
+print tabulate(table_P3, headers=["Stat P3", "P3_I", "P3_D", "P3_L2", "P3_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f")
+print('\n')
+print tabulate(table_L3_cache, headers=["Stat L3", "Slice_0", "Slice_1", "Slice_2", "Slice_3", "All L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f")
 
 #f = open('Cache_stats.out', 'w')
 #f.write(tabulate(table_P0, headers=["Stat P0", "P0_I", "P0_D", "P0_L2", "P0_L3"], tablefmt="simple", numalign="right", floatfmt="16.4f"))

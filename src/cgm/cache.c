@@ -701,6 +701,13 @@ void ort_set(struct cache_t *cache, int entry, int tag, int set){
 	return;
 }
 
+void ort_set_valid_bit(struct cache_t *cache,int row){
+
+	cache->ort[row][2] = 0;
+
+	return;
+}
+
 
 void ort_dump(struct cache_t *cache){
 
