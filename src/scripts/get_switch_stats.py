@@ -39,7 +39,6 @@ s_0_west_rxqueue_ave_depth = switch_data.getfloat('Switch_0', 'WestRxQueueAveDep
 s_0_west_txqueue_max_depth = switch_data.getint('Switch_0', 'WestTxQueueMaxDepth')
 s_0_west_txqueue_ave_depth = switch_data.getfloat('Switch_0', 'WestTxQueueAveDepth')
 
-
 s_1_total_ctrl_loops = switch_data.getint('Switch_1', 'NumberSwitchCtrlLoops')
 s_1_occupance = switch_data.getfloat('Switch_1', 'SwitchOccupance')
 s_1_total_links_formed = switch_data.getint('Switch_1', 'NumberLinks')
@@ -72,7 +71,6 @@ s_1_west_rxqueue_max_depth = switch_data.getint('Switch_1', 'WestRxQueueMaxDepth
 s_1_west_rxqueue_ave_depth = switch_data.getfloat('Switch_1', 'WestRxQueueAveDepth')
 s_1_west_txqueue_max_depth = switch_data.getint('Switch_1', 'WestTxQueueMaxDepth')
 s_1_west_txqueue_ave_depth = switch_data.getfloat('Switch_1', 'WestTxQueueAveDepth')
-
 
 s_2_total_ctrl_loops = switch_data.getint('Switch_2', 'NumberSwitchCtrlLoops')
 s_2_occupance = switch_data.getfloat('Switch_2', 'SwitchOccupance')
@@ -107,7 +105,6 @@ s_2_west_rxqueue_ave_depth = switch_data.getfloat('Switch_2', 'WestRxQueueAveDep
 s_2_west_txqueue_max_depth = switch_data.getint('Switch_2', 'WestTxQueueMaxDepth')
 s_2_west_txqueue_ave_depth = switch_data.getfloat('Switch_2', 'WestTxQueueAveDepth')
 
-
 s_3_total_ctrl_loops = switch_data.getint('Switch_3', 'NumberSwitchCtrlLoops')
 s_3_occupance = switch_data.getfloat('Switch_3', 'SwitchOccupance')
 s_3_total_links_formed = switch_data.getint('Switch_3', 'NumberLinks')
@@ -141,6 +138,7 @@ s_3_west_rxqueue_max_depth = switch_data.getint('Switch_3', 'WestRxQueueMaxDepth
 s_3_west_rxqueue_ave_depth = switch_data.getfloat('Switch_3', 'WestRxQueueAveDepth')
 s_3_west_txqueue_max_depth = switch_data.getint('Switch_3', 'WestTxQueueMaxDepth')
 s_3_west_txqueue_ave_depth = switch_data.getfloat('Switch_3', 'WestTxQueueAveDepth')
+
 
 s_4_total_ctrl_loops = switch_data.getint('Switch_4', 'NumberSwitchCtrlLoops')
 s_4_occupance = switch_data.getfloat('Switch_4', 'SwitchOccupance')
@@ -181,7 +179,7 @@ s_4_west_txqueue_ave_depth = switch_data.getfloat('Switch_4', 'WestTxQueueAveDep
 
 table_switch_data = [
 ["TotalSwitchCtrlLoops", s_0_total_ctrl_loops, s_1_total_ctrl_loops, s_2_total_ctrl_loops, s_3_total_ctrl_loops, s_4_total_ctrl_loops],
-["SwitchOccupance", s_0_occupance, s_1_occupance, s_2_occupance, s_3_occupance, s_4_occupance],
+["SwitchOccupancy", s_0_occupance, s_1_occupance, s_2_occupance, s_3_occupance, s_4_occupance],
 ["TotalLinksFormed", s_0_total_links_formed, s_1_total_links_formed, s_2_total_links_formed, s_3_total_links_formed, s_4_total_ctrl_loops],
 ["TotalAveNumberLinksPerCtrlLoop", s_0_ave_links_formed_per_ctrl_loop, s_1_ave_links_formed_per_ctrl_loop, s_2_ave_links_formed_per_ctrl_loop, s_3_ave_links_formed_per_ctrl_loop, s_4_ave_links_formed_per_ctrl_loop],
 ["NorthIOTransfers", s_0_north_io_transfers, s_1_north_io_transfers, s_2_north_io_transfers, s_3_north_io_transfers, s_4_north_io_transfers ],
@@ -214,4 +212,18 @@ table_switch_data = [
 ["WestTxQueueAveDepth", s_0_west_txqueue_ave_depth, s_1_west_txqueue_ave_depth, s_2_west_txqueue_ave_depth, s_3_west_txqueue_ave_depth, s_4_west_txqueue_ave_depth],
 ]
 
-print tabulate(table_switch_data, headers=["Stat Switch", "S0", "S1", "S2", "S3", "S4"], tablefmt="simple", numalign="right", floatfmt="16.4f")
+f = open('sim_stats.out', 'a')
+
+f.write("//Switch Stats//////////////////////////////////////////////////" + '\n')
+f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+
+for tup in table_switch_data:
+	if tup[0] == "NorthRxQueueAveDepth":
+		print("{}{:>16.2f}{:>16.2f}{:>16.2f}{:>16.2f}{:>16.2f}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5]))
+	else:
+		print "test"
+#	print("%s%d%d%d%d%d" %(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5]))
+
+f.write(tabulate(table_switch_data, headers=["Stat Switch", "S0", "S1", "S2", "S3", "S4"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
+f.write('\n\n\n')
+f.close

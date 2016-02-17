@@ -3,9 +3,9 @@
 from tabulate import tabulate
 import ConfigParser
 
+
 sa_data = ConfigParser.ConfigParser()
 sa_data.read("/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out")
-
 
 sa_total_ctrl_loops = sa_data.getint('SystemAgent', 'TotalCtrlLoops')
 sa_total_mc_loads = sa_data.getint('SystemAgent', 'MCLoads')
@@ -21,8 +21,6 @@ sa_max_soutth_rx_queue_depth = sa_data.getint('SystemAgent', 'MaxSouthRxQueueDep
 sa_ave_south_rx_queue_depth = sa_data.getfloat('SystemAgent', 'AveSouthRxQueueDepth')
 sa_max_south_tx_queue_depth = sa_data.getint('SystemAgent', 'MaxSouthTxQueueDepth')
 sa_ave_south_tx_queue_depth = sa_data.getfloat('SystemAgent', 'AveSouthTxQueueDepth')
-
-
 
 mc_total_ctrl_loops = sa_data.getint('MemCtrl', 'MemCtrlBusyCycles')
 mc_total_reads = sa_data.getint('MemCtrl', 'TotalReads')
@@ -47,7 +45,6 @@ mc_dram_total_bytes_written = sa_data.getint('MemCtrl', 'BytesWrote')
 #bridge some of the stats so we can put evetyhing in one table...
 sa_0 = 0;
 mc_0 = 0;
-
 
 table_sa_data = [
 ["TotalCtrlLoops", sa_total_ctrl_loops, mc_total_ctrl_loops],
@@ -79,4 +76,10 @@ table_sa_data = [
 ["DramTotalBytesWritten", sa_0, mc_dram_total_bytes_written],
 ]
 
-print tabulate(table_sa_data, headers=["Stat SA/MC", "SA", "MC"], tablefmt="simple", numalign="right", floatfmt="16.4f")
+f = open('sim_stats.out', 'a')
+
+f.write("//SA-MC Stats//////////////////////////////////////////////////" + '\n')
+f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+f.write(tabulate(table_sa_data, headers=["Stat SA/MC", "SA", "MC"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
+f.write('\n\n\n')
+f.close
