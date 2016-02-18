@@ -441,6 +441,9 @@ struct cache_t{
 //for general stats
 struct cgm_stats_t{
 
+	char* date_time_file;
+	char* date_time_pretty;
+
 	/*benchmark related*/
 	char *benchmark_name;
 	char *args;

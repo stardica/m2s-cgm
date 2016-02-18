@@ -3132,6 +3132,12 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
 
+	/*if(mem_lat >= 716 && mem_lat <=860)
+		fatal("cache_l1_d_return(): %s access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
+				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
+				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
+
+
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
 		cgm_stat->load_lat_hist[mem_lat]++;
@@ -3255,6 +3261,10 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//this is an associativity conflict
 		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
 		//i.e. there IS NOT a space for the block in the cache set and ways on return
+
+		/*if(message_packet->access_id == 1299683)
+			fatal("here\n");*/
+
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);

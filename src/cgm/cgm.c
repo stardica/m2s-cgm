@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <libgen.h>
 
 #include <cgm/cgm.h>
 /*#include <cgm/dram.h>*/
@@ -101,18 +102,41 @@ void cgm_check_config_files(char **argv){
 	return;
 }
 
-void cgm_init(char **argv){
+void cgm_init(int argc, char **argv){
 
+	char time_buff[250];
+	memset(time_buff, '\0', 250);
+	char buff[400];
+	memset(buff, '\0', 400);
+	int i = 1;
+	char *bname;
 
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
 
-	//set the start time.
+	/* Obtain current time. */
+	time_t current_time;
+    struct tm *time_info;// = time(NULL);
+    time(&current_time);
+    time_info = localtime(&current_time);
+    strftime(time_buff, sizeof(time_buff), "%m%d%Y%H%M%S", time_info);
+    cgm_stat->date_time_file = strdup(time_buff);
+
+    memset(time_buff, '\0', 250);
+    strftime(time_buff, sizeof(time_buff), "%a %b %Y %H:%M:%S", time_info);
+
+    cgm_stat->date_time_pretty = strdup(time_buff);
 	cgm_stat->start_wall_time = get_wall_time();
 
-	//bring the benchmark name and args
-	cgm_stat->benchmark_name = strdup(argv[1]);
+	//get the benchmark name and args
+	bname = basename(argv[i++]);
+	sprintf(buff + strlen(buff), "%s ", bname);
 
-		//set up internal structures
+	while(i < argc)
+		sprintf(buff + strlen(buff), "%s ", argv[i++]);
+
+	cgm_stat->benchmark_name = strdup(buff);
+
+	//set up internal structures
 	cgm_access_record = list_create();
 
 	//set up the threads
@@ -237,6 +261,7 @@ void cgm_dump_stats(void){
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
+	CGM_STATS(cgm_stats_file, "Day&Time = %s\n", cgm_stat->date_time_pretty);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(cpu) = %.9f\n", cpu_sim_time);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);

@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <m2s.h>
 
@@ -49,8 +50,8 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0008a640
-#define WATCHLINE 1
+#define WATCHBLOCK (unsigned int) 0x0001aac0
+#define WATCHLINE 0
 #define CPUTICK 1
 
 #define SKIP 1000000
@@ -148,7 +149,7 @@ extern int watch_dog;
 
 //set up related
 void m2scgm_init(void);
-void cgm_init(char **argv);
+void cgm_init(int argc, char **argv);
 void cgm_check_config_files(char **argv);
 void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);

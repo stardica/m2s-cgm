@@ -1120,17 +1120,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--si-disasm-opengl' is incompatible with any other options.");
 #endif
 
-
-
-	//star >> this casts away command line entries until all entries have been processed.
+	//star >> this casts away command line entries.
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
 	for (argi = 1; argi < argc - arg_discard; argi++)
 		argv[argi] = argv[argi + arg_discard];
 	*argc_ptr = argc - arg_discard;
 
-
-/*	printf("%s\n", argv[1]);
+	/*	printf("%s\n", argv[1]);
 	fflush(stdout);
 
 	printf("%s\n", argv[1]);
@@ -1650,8 +1647,7 @@ int main(int argc, char **argv)
 #if CGM
 
 	/* Network and memory system */
-	cgm_init(argv);
-
+	cgm_init(argc, argv);
 
 	/*struct mem_t *new_mem = */
 	x86_emu->context_list_head->mem->num_links = 5;

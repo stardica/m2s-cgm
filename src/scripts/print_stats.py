@@ -5,9 +5,9 @@ import ConfigParser
 cache_combined = 1
 
 
-def print_cache_stats():
+def print_cache_stats(file_path):
 	sim_data = ConfigParser.RawConfigParser()
-	sim_data.read('/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out')
+	sim_data.read(file_path)
 	
 	###core P0###
 	l1_i_0_total_cache_ctrl_loops = sim_data.getint("L1_I_Cache_0", "TotalCacheCtrlLoops")
@@ -614,9 +614,9 @@ def print_cache_stats():
 
 	return
 
-def print_switch_stats():
+def print_switch_stats(file_path):
 	switch_data = ConfigParser.ConfigParser()
-	switch_data.read("/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out")
+	switch_data.read(file_path)
 
 	s_0_total_ctrl_loops = switch_data.getint('Switch_0', 'NumberSwitchCtrlLoops')
 	s_0_occupance = switch_data.getfloat('Switch_0', 'SwitchOccupance')
@@ -870,10 +870,10 @@ def print_switch_stats():
 
 
 
-def print_samc_stats():
+def print_samc_stats(file_path):
 
 	sa_data = ConfigParser.ConfigParser()
-	sa_data.read("/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out")
+	sa_data.read(file_path)
 
 	sa_total_ctrl_loops = sa_data.getint('SystemAgent', 'TotalCtrlLoops')
 	sa_total_mc_loads = sa_data.getint('SystemAgent', 'MCLoads')
@@ -989,10 +989,10 @@ def print_samc_stats():
 	return
 
 
-def print_mem_system_stats():
+def print_mem_system_stats(file_path):
 
 	sa_data = ConfigParser.ConfigParser()
-	sa_data.read("/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out")
+	sa_data.read(file_path)
 	
 	First_access_lat = sa_data.getint('MemSystem', 'FirstAccessLat(Fetch)')
 	Total_fetches = sa_data.getint('MemSystem', 'TotalFetches')
@@ -1036,7 +1036,7 @@ def print_mem_system_stats():
 	["StoresUpgrade", Stores_upgrade],
 	]
 
-	f = open('sim_stats.txt', 'w')
+	f = open('sim_stats.txt', 'a')
 
 	f.write("//Mem-System Stats/////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -1081,12 +1081,79 @@ def print_mem_system_stats():
 
 	return
 
+def print_general_stats(file_path):
+
+	general_data = ConfigParser.ConfigParser()
+	general_data.read(file_path)
+		
+	bench_args = general_data.get('General', 'Benchmark')
+	day_time = general_data.get('General', 'Day&Time')
+	total_cycles = general_data.getint('General', 'TotalCycles')
+	run_time_cpu = general_data.getfloat('General', 'SimulationRunTimeSeconds(cpu)')
+	run_time_wall = general_data.getfloat('General', 'SimulationRunTimeSeconds(wall)')
+	simulated_cycles_per_sec = general_data.getfloat('General', 'SimulatedCyclesPerSec')
+	
+	table_general_data = [
+	["BenchmarkArgs", bench_args],
+	["DateTime", day_time],
+	["TotalCycles", total_cycles],
+	["CPURunTime", run_time_cpu],
+	["WallRunTime", run_time_wall],
+	["SimulatedCyclesPerSec", simulated_cycles_per_sec],
+	]
+	
+	f = open('sim_stats.txt', 'w')
+
+	f.write("//General Stats/////////////////////////////////////////////" + '\n')
+	f.write("////////////////////////////////////////////////////////////"  + '\n\n')
+
+	#get the largest title length	
+	max_title_length = len('General Stats')
+	current_title_length = 0
+
+	for tup in table_general_data:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_general_data:
+		for item in tup[1:2]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("General Stats",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_general_data:
+		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+	f.close
+		
+	return
 
 
-print_general_stats()
-print_mem_system_stats()
-print_cache_stats()
-print_switch_stats()
-print_samc_stats()
+file_path = "/home/stardica/Desktop/m2s-cgm/src/scripts/m2s_cgm_stats_02182016163755.txt"
+
+print_general_stats(file_path)
+print_mem_system_stats(file_path)
+print_cache_stats(file_path)
+print_switch_stats(file_path)
+print_samc_stats(file_path)
 
 

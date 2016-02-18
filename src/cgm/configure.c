@@ -404,10 +404,10 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats_output_path = strdup(value);
 	}
 
-	if(MATCH("Stats", "File_Name"))
+	/*if(MATCH("Stats", "File_Name"))
 	{
 		cgm_stats_file_name = strdup(value);
-	}
+	}*/
 
 	return 1;
 }
@@ -421,8 +421,7 @@ int stats_finish_create(void){
 	{
 		memset (buff,'\0' , 250);
 		sprintf(buff, "%s", cgm_stats_output_path);
-		/*sprintf(buff + strlen(buff), "%s_p%d", cgm_stats_file_name, num_cores);*/
-		sprintf(buff + strlen(buff), "%s", cgm_stats_file_name);
+		sprintf(buff + strlen(buff), "m2s_cgm_stats_%s.txt", cgm_stat->date_time_file);
 		cgm_stats_file = fopen (buff, "w+");
 	}
 
