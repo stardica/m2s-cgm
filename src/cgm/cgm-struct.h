@@ -443,6 +443,7 @@ struct cgm_stats_t{
 
 	/*benchmark related*/
 	char *benchmark_name;
+	char *args;
 	double start_wall_time;
 	double end_wall_time;
 	double sim_time;

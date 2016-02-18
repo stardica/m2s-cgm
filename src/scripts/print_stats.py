@@ -322,9 +322,7 @@ def print_cache_stats():
 	["CacheUtilization", l1_i_2_cache_utilization, l1_d_2_cache_utilization, l2_2_cache_utilization, l3_2_cache_utilization]
 	]
 
-
 	###core P3###
-
 	l1_i_3_total_cache_ctrl_loops = sim_data.getint("L1_I_Cache_3", "TotalCacheCtrlLoops")
 	l1_i_3_total_accesses = sim_data.getint("L1_I_Cache_3", "TotalAccesses")
 	l1_i_3_total_hits = sim_data.getint("L1_I_Cache_3", "TotalHits")
@@ -554,26 +552,63 @@ def print_cache_stats():
 	["CacheUtilization", l1_i_cache_utilization, l1_d_cache_utilization, l2_cache_utilization, l3_cache_utilization]
 	]
 
-	f = open('sim_stats.txt', 'w')
+	f = open('sim_stats.txt', 'a')
 
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	if cache_combined == 0:
-		f.write( "Cache stats for each core"  + '\n')
-		f.write('\n')
-		f.write(tabulate(table_P0, headers=["Stat P0", "P0_I", "P0_D", "P0_L2", "P0_L3"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
-		f.write('\n')
-		f.write(tabulate(table_P1, headers=["Stat P1", "P1_I", "P1_D", "P1_L2", "P1_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
-		f.write('\n')
-		f.write(tabulate(table_P2, headers=["Stat P2", "P2_I", "P2_D", "P2_L2", "P2_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
-		f.write('\n')
-		f.write(tabulate(table_P3, headers=["Stat P3", "P3_I", "P3_D", "P3_L2", "P3_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
-		f.write('\n')
-		f.write(tabulate(table_L3_cache, headers=["Stat L3", "Slice_0", "Slice_1", "Slice_2", "Slice_3", "All L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
-	else:
-		f.write(tabulate(table_cache_combined, headers=["Cache stats combined", "I$", "D$", "L2$", "L3$"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
-		f.write('\n\n\n')
+	#get the largest title length	
+	max_title_length = len('Cache stats combined')
+	current_title_length = 0
+
+	for tup in table_cache_combined:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_cache_combined:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Cache stats combined",'I$', 'D$', 'L2$', 'L3$', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_cache_combined:
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+
+	#if cache_combined == 0:
+	#	f.write( "Cache stats for each core"  + '\n')
+	#	f.write('\n')
+	#	f.write(tabulate(table_P0, headers=["Stat P0", "P0_I", "P0_D", "P0_L2", "P0_L3"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
+	#	f.write('\n')
+	#	f.write(tabulate(table_P1, headers=["Stat P1", "P1_I", "P1_D", "P1_L2", "P1_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
+	#	f.write('\n')
+	#	f.write(tabulate(table_P2, headers=["Stat P2", "P2_I", "P2_D", "P2_L2", "P2_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
+	#	f.write('\n')
+	#	f.write(tabulate(table_P3, headers=["Stat P3", "P3_I", "P3_D", "P3_L2", "P3_L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
+	#	f.write('\n')
+	#	f.write(tabulate(table_L3_cache, headers=["Stat L3", "Slice_0", "Slice_1", "Slice_2", "Slice_3", "All L3"], tablefmt="simple",  numalign="right", floatfmt="16.4f"))
+	#else:
+	#	f.write(tabulate(table_cache_combined, headers=["Cache stats combined", "I$", "D$", "L2$", "L3$"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
+	#	f.write('\n\n\n')
 	
 	f.close()
 
@@ -790,11 +825,9 @@ def print_switch_stats():
 	]
 
 	f = open('sim_stats.txt', 'a')
-	print('//Switch Stats//////////////////////////////////////////////////')
-	print('////////////////////////////////////////////////////////////////'  + '\n')	
-	#print("//Switch Stats//////////////////////////////////////////////////" + '\n')
-	#print("///////////////////////////////////////////////////////////////"  + '\n\n')
-
+	f.write('//Switch Stats//////////////////////////////////////////////////' +'\n')
+	f.write('////////////////////////////////////////////////////////////////'  + '\n\n')	
+	
 	#get the largest title length	
 	max_title_length = len('Stat Switches')
 	current_title_length = 0
@@ -823,12 +856,15 @@ def print_switch_stats():
 	data_bar = '-' * (max_element_length - 1)
 
 	#print the title and bars
-	print("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', 'S2', 'S3', 'S4', title_width=max_title_length, data_width=max_element_length))
-	print("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length))
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', 'S2', 'S3', 'S4', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	#print the table's data
 	for tup in table_switch_data:
-		print("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length))
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+	f.close
 			
 	return
 
@@ -912,19 +948,145 @@ def print_samc_stats():
 
 	f.write("//SA-MC Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-	f.write(tabulate(table_sa_data, headers=["Stat SA/MC", "SA", "MC"], tablefmt="simple", numalign="right", floatfmt="16.4f"))
-	f.write('\n\n\n')
+		
+	#get the largest title length	
+	max_title_length = len('SA-MC Stats')
+	current_title_length = 0
+
+	for tup in table_sa_data:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_sa_data:
+		for item in tup[1:2]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}".format("Stat SA/MC",'SA', 'MC', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_sa_data:
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+	f.close
+	return
+
+
+def print_mem_system_stats():
+
+	sa_data = ConfigParser.ConfigParser()
+	sa_data.read("/home/stardica/Desktop/m2s-cgm/src/scripts/m2s-cgm.out")
+	
+	First_access_lat = sa_data.getint('MemSystem', 'FirstAccessLat(Fetch)')
+	Total_fetches = sa_data.getint('MemSystem', 'TotalFetches')
+	Fetches_L1 = sa_data.getint('MemSystem', 'FetchesL1')
+	Fetches_L2 = sa_data.getint('MemSystem', 'FetchesL2')
+	Fetches_L3 = sa_data.getint('MemSystem', 'FetchesL3')
+	Fetches_memory = sa_data.getint('MemSystem', 'FetchesMemory')
+	Total_loads = sa_data.getint('MemSystem', 'TotalLoads')
+	Loads_L1 = sa_data.getint('MemSystem', 'LoadsL1')
+	Loads_L2 = sa_data.getint('MemSystem', 'LoadsL2')
+	Loads_L3 = sa_data.getint('MemSystem', 'LoadsL3')
+	Loads_memory = sa_data.getint('MemSystem', 'LoadsMemory')
+	Loads_getfwd = sa_data.getint('MemSystem', 'LoadsGetFwd')
+	Total_store = sa_data.getint('MemSystem', 'TotalStore')
+	Stores_L1 = sa_data.getint('MemSystem', 'StoresL1')
+	Stores_L2 = sa_data.getint('MemSystem', 'StoresL2')
+	Stores_L3 = sa_data.getint('MemSystem', 'StoresL3')
+	Stores_memory = sa_data.getint('MemSystem', 'StoresMemory')
+	Stores_getxfwd = sa_data.getint('MemSystem', 'StoresGetxFwd')
+	Stores_upgrade = sa_data.getint('MemSystem', 'StoresUpgrade')
+		
+	table_mem_system_data = [
+	["FirstAccessLat(Fetch)", First_access_lat],
+	["TotalFetches", Total_fetches],
+	["FetchesL1", Fetches_L1],
+	["FetchesL2", Fetches_L2],
+	["FetchesL3", Fetches_L3],
+	["FetchesMemory", Fetches_memory],
+	["TotalLoads", Total_loads],
+	["LoadsL1", Loads_L1],
+	["LoadsL2", Loads_L2],
+	["LoadsL3", Loads_L3],
+	["LoadsMemory", Loads_memory],
+	["LoadsGetFwd", Loads_getfwd],
+	["TotalStore", Total_store],
+	["StoresL1", Stores_L1],
+	["StoresL2", Stores_L2],
+	["StoresL3", Stores_L3],
+	["StoresMemory", Stores_memory],
+	["StoresGetxFwd", Stores_getxfwd],
+	["StoresUpgrade", Stores_upgrade],
+	]
+
+	f = open('sim_stats.txt', 'w')
+
+	f.write("//Mem-System Stats/////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+
+	#get the largest title length	
+	max_title_length = len('Stat Mem System')
+	current_title_length = 0
+
+	for tup in table_mem_system_data:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_mem_system_data:
+		for item in tup[1:2]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("Stat Mem System",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_mem_system_data:
+		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
 	f.close
 
 	return
 
 
 
-#print_general_stats()
-#print_mem_system_stats()
-
-#print_cache_stats()
+print_general_stats()
+print_mem_system_stats()
+print_cache_stats()
 print_switch_stats()
-#print_samc_stats()
+print_samc_stats()
 
 

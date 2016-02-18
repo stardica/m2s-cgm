@@ -103,15 +103,16 @@ void cgm_check_config_files(char **argv){
 
 void cgm_init(char **argv){
 
+
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
 
 	//set the start time.
 	cgm_stat->start_wall_time = get_wall_time();
 
-	//bring the benchmark name
+	//bring the benchmark name and args
 	cgm_stat->benchmark_name = strdup(argv[1]);
 
-	//set up internal structures
+		//set up internal structures
 	cgm_access_record = list_create();
 
 	//set up the threads
