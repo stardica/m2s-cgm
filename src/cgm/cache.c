@@ -2907,7 +2907,6 @@ void gpu_l2_cache_down_io_ctrl(void){
 void cache_get_transient_block(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
 
 	//similar to cache_get_block_status(), but returns the transient block way regardless of block state.
-
 	int set = 0;
 	int tag = 0;
 	unsigned int offset = 0;
@@ -3132,7 +3131,7 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
 
-	/*if(mem_lat >= 716 && mem_lat <=860)
+	/*if(mem_lat >= 15783)// && mem_lat <=860)
 		fatal("cache_l1_d_return(): %s access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
 				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
@@ -3262,8 +3261,14 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
 		//i.e. there IS NOT a space for the block in the cache set and ways on return
 
-		/*if(message_packet->access_id == 1299683)
-			fatal("here\n");*/
+		/*if(message_packet->access_id == 4860828)
+		{
+			ort_dump(cache);
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			fatal("%s access id %llu blk_addr 0x%08x set %d tag %d type %d cycle %llu\n",
+				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->set, message_packet->tag, message_packet->access_type, P_TIME);
+		}*/
 
 
 		//set the row in the ORT
@@ -3376,6 +3381,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 	struct cgm_packet_t *ort_packet;
 	int i = 0;
+	long long oldest_packet = 0;
 
 	//first look for merged accesses
 	LIST_FOR_EACH(cache->ort_list, i)
@@ -3411,6 +3417,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 		}
 	}
 
+	oldest_packet = get_oldest_packet(cache, set);
+
 	//no coalesced packets remaining now check for packets with cache assoc conflicts
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
@@ -3419,6 +3427,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
 		{
+			assert(ort_packet->start_cycle >= oldest_packet);
+
 			//clear the ORT entry for the assoc miss
 			ort_clear(cache, ort_packet);
 
@@ -3817,6 +3827,29 @@ long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set,
 	assert(id > 0);
 
 	return id;
+}
+
+long long get_oldest_packet(struct cache_t *cache, int set){
+
+	long long start = 0xFFFFFFFFFFFFFF;
+	long long i = 0;
+	struct cgm_packet_t *ort_packet;
+
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
+		{
+			if(ort_packet->start_cycle < start)
+			{
+				start = ort_packet->start_cycle;
+			}
+		}
+	}
+
+	return start;
 }
 
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state){

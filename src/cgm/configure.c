@@ -414,23 +414,26 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 
 int stats_finish_create(void){
 
-	char buff[250];
-	int num_cores = x86_cpu_num_cores;
+	char buff_path[250];
+	char buff_file[250];
 
 	if (cgm_stats == 1)
 	{
-		memset (buff,'\0' , 250);
-		sprintf(buff, "%s", cgm_stats_output_path);
-		sprintf(buff + strlen(buff), "m2s_cgm_stats_%s.txt", cgm_stat->date_time_file);
-		cgm_stats_file = fopen (buff, "w+");
+		memset (buff_path,'\0' , 250);
+		memset (buff_file,'\0' , 250);
+		sprintf(buff_path, "%s", cgm_stats_output_path);
+		sprintf(buff_file, "m2s_cgm_stats_%s.txt", cgm_stat->date_time_file);
+		sprintf(buff_path + strlen(buff_path), "%s", buff_file);
+		cgm_stat->stat_file_name = strdup(buff_file);
+		cgm_stats_file = fopen (buff_path, "w+");
 	}
 
 	if (mem_trace == 1)
 	{
-		memset (buff,'\0' , 250);
-		sprintf(buff, "%s", cgm_stats_output_path);
-		sprintf(buff + strlen(buff), "/mem_trace.out");
-		mem_trace_file = fopen (buff, "w+");
+		memset (buff_path,'\0' , 250);
+		sprintf(buff_path, "%s", cgm_stats_output_path);
+		sprintf(buff_path + strlen(buff_path), "/mem_trace.out");
+		mem_trace_file = fopen (buff_path, "w+");
 	}
 
 	return 1;

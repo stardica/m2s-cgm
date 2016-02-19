@@ -47,11 +47,14 @@
 
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
+#define SYSTEM_LATENCY_FACTOR 4
+#define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
+
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0001aac0
-#define WATCHLINE 0
+#define WATCHBLOCK (unsigned int) 0x006dcf80
+#define WATCHLINE 1
 #define CPUTICK 1
 
 #define SKIP 1000000

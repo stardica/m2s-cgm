@@ -5602,6 +5602,12 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	//block should be valid and in the transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
+	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+	{
+		printf("block 0x%08x %s upgrade ack ID %llu numjoins %d stc %s type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->upgrade_ack, message_packet->src_name, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+	}
+
 	if(victim_trainsient_state != cgm_cache_block_transient)
 	{
 		cgm_cache_dump_set(cache, message_packet->set);
@@ -6177,16 +6183,20 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			}
 			else
 			{
-				if(*cache_block_state_ptr == cgm_cache_block_shared)
+				if(*cache_block_state_ptr == cgm_cache_block_shared && owning_core == 1)
 				{
-					/*set the number of inval_acks expected to receive number of sharers minus your self*/
+					/*trying to unconfuse myself...*/
+					/*the block is shared over n cores, but one of the cores is the requesting core so minus 1*/
 					message_packet->upgrade_ack = (num_sharers - 1);
 				}
-				//star todo look into this I had shared below... however I think this is right.
+				else if (*cache_block_state_ptr == cgm_cache_block_shared && owning_core == 0)
+				{
+					/*the block is shared over n cores but is NOT in the requesting core*/
+					message_packet->upgrade_ack = num_sharers;
+				}
 				else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 				{
-					//fatal("l3 upgrade in exclusive state check this\n");
-					/*another core has gained control. */
+					/*another core has full control over the block. */
 					message_packet->upgrade_ack = num_sharers;
 
 					/*should only be one other core*/
@@ -6194,9 +6204,12 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 				}
 				else
 				{
-					fatal("check this\n");
+					fatal("L3 upgrade check this\n");
 				}
 			}
+
+			/*if(message_packet->access_id == 4976121)
+				fatal("\t requesting core %d num shares %d num joins = %d", owning_core, num_sharers, message_packet->upgrade_ack);*/
 
 			//set block state
 			message_packet->cache_block_state = cgm_cache_block_modified;

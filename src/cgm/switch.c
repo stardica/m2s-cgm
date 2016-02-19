@@ -16,6 +16,8 @@ eventcount volatile *switches_ec;
 task *switches_tasks;
 int switch_pid = 0;
 
+int switch_io_delay_factor = 4;
+
 int switch_north_io_pid = 0;
 int switch_east_io_pid = 0;
 int switch_south_io_pid = 0;
@@ -534,7 +536,7 @@ void switch_ctrl(void){
 		switch to be advanced more than once per cycle*/
 		await(&switches_ec[my_pid], step);
 
-		P_PAUSE(switches[my_pid].latency);
+		SYSTEM_PAUSE(switches[my_pid].latency);
 
 		assert(next_queue == switches[my_pid].queue);
 
@@ -873,7 +875,7 @@ void switch_north_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//L2 switches
 		if(my_pid < num_cores)
@@ -951,7 +953,7 @@ void switch_east_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_east, message_packet);
@@ -1010,7 +1012,7 @@ void switch_west_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_west, message_packet);
@@ -1069,7 +1071,7 @@ void switch_south_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//L3 caches
 		if(my_pid < num_cores)

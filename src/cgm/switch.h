@@ -324,6 +324,8 @@ extern int switch_east_io_pid;
 extern int switch_south_io_pid;
 extern int switch_west_io_pid;
 
+int switch_io_delay_factor;
+
 /*extern eventcount volatile *switches_io_ec;
 extern task *switches_io_tasks;
 extern int switch_io_pid;*/

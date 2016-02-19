@@ -215,6 +215,7 @@ int cgm_cache_get_block_usage(struct cache_t *cache);
 
 
 //ORT Manipulations
+long long get_oldest_packet(struct cache_t *cache, int set);
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set);

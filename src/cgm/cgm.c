@@ -239,7 +239,8 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		printf("WD: queue %d cycle %llu\n", switches[0].queue, P_TIME);
+		if(P_TIME > 9000000)
+			printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);
 	}
 	return;
 }
@@ -249,6 +250,8 @@ void cgm_dump_stats(void){
 	int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
+
+
 
 	//get the time
 	cgm_stat->end_wall_time = get_wall_time();
@@ -372,7 +375,8 @@ void cgm_dump_histograms(void){
 
 void cgm_dump_summary(void){
 
-	printf("\n---Printing Stats---\n");
+	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
+
 
 	cgm_dump_stats();
 	cache_dump_stats();
