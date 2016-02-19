@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 from tabulate import tabulate
 import ConfigParser
+from optparse import OptionParser
 
 cache_combined = 1
 
 
-def print_cache_stats(file_path):
+def print_cache_stats(options):
 	sim_data = ConfigParser.RawConfigParser()
-	sim_data.read(file_path)
+	sim_data.read(options.InFileName)
 	
 	###core P0###
 	l1_i_0_total_cache_ctrl_loops = sim_data.getint("L1_I_Cache_0", "TotalCacheCtrlLoops")
@@ -552,7 +553,7 @@ def print_cache_stats(file_path):
 	["CacheUtilization", l1_i_cache_utilization, l1_d_cache_utilization, l2_cache_utilization, l3_cache_utilization]
 	]
 
-	f = open('sim_stats.txt', 'a')
+	f = open(options.OutFileName, 'a')
 
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -614,9 +615,9 @@ def print_cache_stats(file_path):
 
 	return
 
-def print_switch_stats(file_path):
+def print_switch_stats(options):
 	switch_data = ConfigParser.ConfigParser()
-	switch_data.read(file_path)
+	switch_data.read(options.InFileName)
 
 	s_0_total_ctrl_loops = switch_data.getint('Switch_0', 'NumberSwitchCtrlLoops')
 	s_0_occupance = switch_data.getfloat('Switch_0', 'SwitchOccupance')
@@ -824,7 +825,7 @@ def print_switch_stats(file_path):
 	["WestTxQueueAveDepth", s_0_west_txqueue_ave_depth, s_1_west_txqueue_ave_depth, s_2_west_txqueue_ave_depth, s_3_west_txqueue_ave_depth, s_4_west_txqueue_ave_depth],
 	]
 
-	f = open('sim_stats.txt', 'a')
+	f = open(options.OutFileName, 'a')
 	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
 	f.write('///////////////////////////////////////////////////////////////'  + '\n\n')	
 	
@@ -870,10 +871,10 @@ def print_switch_stats(file_path):
 
 
 
-def print_samc_stats(file_path):
+def print_samc_stats(options):
 
 	sa_data = ConfigParser.ConfigParser()
-	sa_data.read(file_path)
+	sa_data.read(options.InFileName)
 
 	sa_total_ctrl_loops = sa_data.getint('SystemAgent', 'TotalCtrlLoops')
 	sa_total_mc_loads = sa_data.getint('SystemAgent', 'MCLoads')
@@ -944,7 +945,7 @@ def print_samc_stats(file_path):
 	["DramTotalBytesWritten", sa_0, mc_dram_total_bytes_written],
 	]
 
-	f = open('sim_stats.txt', 'a')
+	f = open(options.OutFileName, 'a')
 
 	f.write("//SA-MC Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -989,10 +990,10 @@ def print_samc_stats(file_path):
 	return
 
 
-def print_mem_system_stats(file_path):
+def print_mem_system_stats(options):
 
 	sa_data = ConfigParser.ConfigParser()
-	sa_data.read(file_path)
+	sa_data.read(options.InFileName)
 	
 	First_access_lat = sa_data.getint('MemSystem', 'FirstAccessLat(Fetch)')
 	Total_fetches = sa_data.getint('MemSystem', 'TotalFetches')
@@ -1036,7 +1037,7 @@ def print_mem_system_stats(file_path):
 	["StoresUpgrade", Stores_upgrade],
 	]
 
-	f = open('sim_stats.txt', 'a')
+	f = open(options.OutFileName, 'a')
 
 	f.write("//Mem-System Stats/////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -1081,10 +1082,10 @@ def print_mem_system_stats(file_path):
 
 	return
 
-def print_general_stats(file_path):
+def print_general_stats(options):
 
 	general_data = ConfigParser.ConfigParser()
-	general_data.read(file_path)
+	general_data.read(options.InFileName)
 		
 	bench_args = general_data.get('General', 'Benchmark')
 	day_time = general_data.get('General', 'Day&Time')
@@ -1102,7 +1103,7 @@ def print_general_stats(file_path):
 	["SimulatedCyclesPerSec", simulated_cycles_per_sec],
 	]
 	
-	f = open('sim_stats.txt', 'w')
+	f = open(options.OutFileName, 'w')
 
 	f.write("//General Stats////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -1147,10 +1148,10 @@ def print_general_stats(file_path):
 		
 	return
 
-def print_cpu_stats(file_path):
+def print_cpu_stats(options):
 
 	cpu_data = ConfigParser.ConfigParser()
-	cpu_data.read(file_path)
+	cpu_data.read(options.InFileName)
 	
 	ROBStalls = cpu_data.get('CPU', 'ROBStalls')
 	FetchStalls = cpu_data.get('CPU', 'FetchStalls')
@@ -1162,7 +1163,7 @@ def print_cpu_stats(file_path):
 	["LoadStoreStalls", LoadStoreStalls],
 	]
 	
-	f = open('sim_stats.txt', 'a')
+	f = open(options.OutFileName, 'a')
 
 	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
@@ -1208,14 +1209,21 @@ def print_cpu_stats(file_path):
 	return
 
 
+parser = OptionParser()
+parser.usage = "%prog -i %inputfile -o outputfile"
+parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
+parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")
+(options, args) = parser.parse_args()
 
-file_path = "/home/stardica/Desktop/m2s-cgm/src/scripts/m2s_cgm_stats_02182016211622.txt"
+if not options.InFileName:
+	parser.print_usage()
+	exit(0)
 
-print_general_stats(file_path)
-print_cpu_stats(file_path)
-print_mem_system_stats(file_path)
-print_cache_stats(file_path)
-print_switch_stats(file_path)
-print_samc_stats(file_path)
+print_general_stats(options)
+print_cpu_stats(options)
+print_mem_system_stats(options)
+print_cache_stats(options)
+print_switch_stats(options)
+print_samc_stats(options)
 
 

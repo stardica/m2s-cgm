@@ -236,7 +236,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
     if sys.stdin.isatty():
         # if isatty() that means it's run without anything piped into it
-        parser.print_usage()
+        parser.print_usage() 
         print "for more help use --help"
         sys.exit(1)
     histogram(load_stream(sys.stdin, options.agg_value_key, options.agg_key_value), options)
