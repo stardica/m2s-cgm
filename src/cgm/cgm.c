@@ -119,6 +119,7 @@ void cgm_init(int argc, char **argv){
     time(&current_time);
     time_info = localtime(&current_time);
     strftime(time_buff, sizeof(time_buff), "%m%d%Y%H%M%S", time_info);
+
     cgm_stat->date_time_file = strdup(time_buff);
 
     memset(time_buff, '\0', 250);

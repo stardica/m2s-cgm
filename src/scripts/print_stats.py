@@ -825,8 +825,8 @@ def print_switch_stats(file_path):
 	]
 
 	f = open('sim_stats.txt', 'a')
-	f.write('//Switch Stats//////////////////////////////////////////////////' +'\n')
-	f.write('////////////////////////////////////////////////////////////////'  + '\n\n')	
+	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
+	f.write('///////////////////////////////////////////////////////////////'  + '\n\n')	
 	
 	#get the largest title length	
 	max_title_length = len('Stat Switches')
@@ -1097,15 +1097,15 @@ def print_general_stats(file_path):
 	["BenchmarkArgs", bench_args],
 	["DateTime", day_time],
 	["TotalCycles", total_cycles],
-	["CPURunTime", run_time_cpu],
-	["WallRunTime", run_time_wall],
+	["CPURunTime(sec)", run_time_cpu],
+	["WallRunTime(sec)", run_time_wall],
 	["SimulatedCyclesPerSec", simulated_cycles_per_sec],
 	]
 	
 	f = open('sim_stats.txt', 'w')
 
-	f.write("//General Stats/////////////////////////////////////////////" + '\n')
-	f.write("////////////////////////////////////////////////////////////"  + '\n\n')
+	f.write("//General Stats////////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
 	#get the largest title length	
 	max_title_length = len('General Stats')
@@ -1147,10 +1147,72 @@ def print_general_stats(file_path):
 		
 	return
 
+def print_cpu_stats(file_path):
 
-file_path = "/home/stardica/Desktop/m2s-cgm/src/scripts/m2s_cgm_stats_02182016163755.txt"
+	cpu_data = ConfigParser.ConfigParser()
+	cpu_data.read(file_path)
+	
+	ROBStalls = cpu_data.get('CPU', 'ROBStalls')
+	FetchStalls = cpu_data.get('CPU', 'FetchStalls')
+	LoadStoreStalls = cpu_data.getint('CPU', 'LoadStoreStalls')
+	
+	table_cpu_data = [
+	["ROBStalls", ROBStalls],
+	["FetchStalls", FetchStalls],
+	["LoadStoreStalls", LoadStoreStalls],
+	]
+	
+	f = open('sim_stats.txt', 'a')
+
+	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+
+	#get the largest title length	
+	max_title_length = len('CPU Stats')
+	current_title_length = 0
+
+	for tup in table_cpu_data:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_cpu_data:
+		for item in tup[1:2]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and barss
+	f.write("{:<{title_width}}{:>{data_width}}".format("CPU Stats",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_cpu_data:
+		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+	f.close
+	
+	return
+
+
+
+file_path = "/home/stardica/Desktop/m2s-cgm/src/scripts/m2s_cgm_stats_02182016211622.txt"
 
 print_general_stats(file_path)
+print_cpu_stats(file_path)
 print_mem_system_stats(file_path)
 print_cache_stats(file_path)
 print_switch_stats(file_path)

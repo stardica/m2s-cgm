@@ -146,6 +146,7 @@ def histogram(stream, options):
     boundaries = []
     bucket_counts = []
     buckets = 0
+    last_percentage = 0
 
     if options.custbuckets:
         bound = options.custbuckets.split(',')
@@ -193,20 +194,19 @@ def histogram(stream, options):
                 bucket_counts[bucket_postion] += record.count
                 break
     
-    # auto-pick the hash scale
+    # auto-pick the hash scalee
     if max(bucket_counts) > 75:
         bucket_scale = int(max(bucket_counts) / 75)
     
-    print "# NumSamples = %d; Min = %0.2f; Max = %0.2f" % (samples, min_v, max_v)
+    print "# NumSamples = %d; Min = %d; Max = %d; NumBuckets %s;" % (samples, min_v, max_v, options.buckets)
     if skipped:
         print "# %d value%s outside of min/max" % (skipped, skipped > 1 and 's' or '')
     if options.mvsd:
-        print "# Mean = %f; Variance = %f; SD = %f; Median %f" % (mvsd.mean(), mvsd.var(), mvsd.sd(), median(accepted_data, key=lambda x: x.value))
-    print "# each ∎ represents a count of %d" % bucket_scale
+        print "# Mean = %f; Variance = %f; SD = %f; Median %f" % (mvsd.mean(), mvsd.var(), mvsd.sd(), median(accepted_data, key=lambda x: x.value))   
     bucket_min = min_v
     bucket_max = min_v
     percentage = ""
-    format_string = options.format + ' - ' + options.format + ' [%6d]: %s%s'
+    format_string = options.format + ' - ' + options.format + ' [%6d]: %s'
     for bucket in range(buckets):
         bucket_min = bucket_max
         bucket_max = boundaries[bucket]
@@ -215,31 +215,23 @@ def histogram(stream, options):
         if bucket_count:
             star_count = bucket_count / bucket_scale
         if options.percentage:
-            percentage = " (%0.2f%%)" % (100 * Decimal(bucket_count) / Decimal(samples))
-        print format_string % (bucket_min, bucket_max, bucket_count, '∎' * star_count, percentage)
+	    last_percentage += (100 * Decimal(bucket_count) / Decimal(samples))
+            percentage = " (%0.3f%%)" % ( last_percentage)
+        print format_string % (bucket_min, bucket_max, bucket_count, percentage)
         
 
 if __name__ == "__main__":
     parser = OptionParser()
     parser.usage = "cat data | %prog [options]"
-    parser.add_option("-a", "--agg", dest="agg_value_key", default=False, action="store_true",
-                        help="Two column input format, space seperated with value<space>key")
-    parser.add_option("-A", "--agg-key-value", dest="agg_key_value", default=False, action="store_true",
-                        help="Two column input format, space seperated with key<space>value")
-    parser.add_option("-m", "--min", dest="min",
-                        help="minimum value for graph")
-    parser.add_option("-x", "--max", dest="max",
-                        help="maximum value for graph")
-    parser.add_option("-b", "--buckets", dest="buckets",
-                        help="Number of buckets to use for the histogram")
-    parser.add_option("-B", "--custom-buckets", dest="custbuckets",
-                        help="Comma seperated list of bucket edges for the histogram")
-    parser.add_option("--no-mvsd", dest="mvsd", action="store_false", default=True,
-                        help="Disable the calculation of Mean, Variance and SD (improves performance)")
-    parser.add_option("-f", "--bucket-format", dest="format", default="%10.4f",
-                        help="format for bucket numbers")
-    parser.add_option("-p", "--percentage", dest="percentage", default=False, action="store_true",
-                        help="List percentage for each bar")
+    parser.add_option("-a", "--agg", dest="agg_value_key", default=False, action="store_true", help="Two column input format, space seperated with value<space>key")
+    parser.add_option("-A", "--agg-key-value", dest="agg_key_value", default=False, action="store_true", help="Two column input format, space seperated with key<space>value")
+    parser.add_option("-m", "--min", dest="min", help="minimum value for graph")
+    parser.add_option("-x", "--max", dest="max", help="maximum value for graph")
+    parser.add_option("-b", "--buckets", dest="buckets", help="Number of buckets to use for the histogram")
+    parser.add_option("-B", "--custom-buckets", dest="custbuckets", help="Comma seperated list of bucket edges for the histogram")
+    parser.add_option("--no-mvsd", dest="mvsd", action="store_false", default=True, help="Disable the calculation of Mean, Variance and SD (improves performance)")
+    parser.add_option("-f", "--bucket-format", dest="format", default="%5.0f", help="format for bucket numbers")
+    parser.add_option("-p", "--percentage", dest="percentage", default=False, action="store_true", help="List percentage for each bar")
 
     (options, args) = parser.parse_args()
     if sys.stdin.isatty():
