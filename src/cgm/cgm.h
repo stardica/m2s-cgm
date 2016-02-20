@@ -53,8 +53,9 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x00002fc0
+#define WATCHBLOCK (unsigned int) 0x00003540
 #define WATCHLINE 1
+#define DUMP 0
 #define CPUTICK 1
 
 #define SKIP 1000000
@@ -149,6 +150,16 @@ extern eventcount volatile *watchdog;
 
 extern int mem_system_off;
 extern int watch_dog;
+
+extern long long last_issued_lsq_access_id;
+extern unsigned int last_issued_lsq_access_blk;
+extern long long last_committed_lsq_access_id;
+extern unsigned int last_committed_lsq_access_blk;
+
+extern long long last_issued_fetch_access_id;
+extern unsigned int last_issued_fetch_access_blk;
+extern long long last_committed_fetch_access_id;
+extern unsigned int last_committed_fetch_access_blk;
 
 //set up related
 void m2scgm_init(void);

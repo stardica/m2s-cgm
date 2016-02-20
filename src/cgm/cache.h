@@ -172,6 +172,7 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cac
 
 //Write Back Buffer Manipulations
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set);
+struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache);
 
 //Pending Request Buffer Manipulations
 void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -192,8 +193,8 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way);
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id);
-void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers);
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, int victim_way);
+void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);
 enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);

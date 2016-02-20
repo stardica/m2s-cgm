@@ -2186,6 +2186,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_upgrade = cgm_mesi_l3_upgrade;
 			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
 			l3_caches[i].l3_write_back = cgm_mesi_l3_write_back;
+			l3_caches[i].l3_flush_block_ack = cgm_mesi_l3_flush_block_ack;
 		}
 		else
 		{

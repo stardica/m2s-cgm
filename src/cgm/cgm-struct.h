@@ -386,6 +386,7 @@ struct cache_t{
 	int (*l3_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l3_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//GPU S cache protocol virtual functions

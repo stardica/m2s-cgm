@@ -71,6 +71,16 @@ eventcount volatile *watchdog;
 int mem_system_off = 0;
 int watch_dog = 0;
 
+long long last_issued_lsq_access_id = 0;
+unsigned int last_issued_lsq_access_blk = 0x0;
+long long last_committed_lsq_access_id = 0;
+unsigned int last_committed_lsq_access_blk = 0x0;
+
+long long last_issued_fetch_access_id = 0;
+unsigned int last_issued_fetch_access_blk = 0x0;
+long long last_committed_fetch_access_id = 0;
+unsigned int last_committed_fetch_access_blk = 0x0;
+
 struct cgm_stats_t *cgm_stat;
 
 void m2scgm_init(void){
@@ -581,6 +591,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	cgm_stat->cpu_total_fetches++;
 	l1_i_caches[id].TotalAcesses++;
 
+	last_issued_fetch_access_id = access_id;
+	last_issued_fetch_access_blk = addr & thread->i_cache_ptr[id].block_address_mask;
+
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
@@ -657,6 +670,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	/*stats*/
 	l1_d_caches[id].TotalAcesses++;
+	last_issued_lsq_access_id = access_id;
+	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
 
 	if(access_kind == cgm_access_load)
 	{
@@ -666,7 +681,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	{
 	 	cgm_stat->cpu_total_stores++;
 	}
-
 
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)

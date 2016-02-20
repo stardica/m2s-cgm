@@ -70,7 +70,14 @@ int X86ThreadCanCommit(X86Thread *self)
 		//star added this
 		fflush(stdout);
 		fflush(stderr);
-		printf("---Last cycle %llu---\n", P_TIME);
+		printf("---Last committed memory lsq access %llu last committed lsq blk address 0x%08x---\n"
+				"---Last issued lsq memory access %llu last issued lsq blk address 0x%08x---\n"
+				"---Last committed memory fetch access %llu last committed fetch blk address 0x%08x---\n"
+				"---Last issued fetch memory access %llu last issued fetch blk address 0x%08x---\n"
+				"---last real cycle %llu---\n",
+				last_committed_lsq_access_id, last_committed_lsq_access_blk, last_issued_lsq_access_id, last_issued_lsq_access_blk,
+				last_committed_fetch_access_id, last_committed_fetch_access_blk, last_issued_fetch_access_id, last_issued_fetch_access_blk,
+				(P_TIME - 1000000));
 		exit(0);
 	}
 

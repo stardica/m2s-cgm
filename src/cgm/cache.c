@@ -355,10 +355,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//schedule write back if the wb queue is full.
 	if(write_back_queue_size >= QueueSize)
 	{
-		new_message = list_get(cache->write_back_buffer, 0);
+		new_message = cache_search_wb_not_pending_flush(cache);
 
 		//star todo check this
-		if(new_message->flush_pending == 1)
+		if(new_message == NULL)
 			return NULL;
 
 		cache->last_queue = cache->write_back_buffer;
@@ -367,10 +367,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do AND the wb isn't pending a flush.
 	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && write_back_queue_size > 0)
 	{
-		new_message = list_get(cache->write_back_buffer, 0);
+		new_message = cache_search_wb_not_pending_flush(cache);
 
 		//star todo check this
-		if(new_message->flush_pending == 1)
+		if(new_message == NULL)
 			return NULL;
 
 		cache->last_queue = cache->write_back_buffer;
@@ -480,6 +480,28 @@ int get_ort_status(struct cache_t *cache){
 		}
 	}
 	return i;
+}
+
+struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache){
+
+	int i = 0;
+	int j = 0;
+	struct cgm_packet_t *wb_packet = NULL;
+
+
+	LIST_FOR_EACH(cache->write_back_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		wb_packet = list_get(cache->write_back_buffer, i);
+
+		//found block in write back buffer
+		if(wb_packet->flush_pending == 0)
+		{
+			return wb_packet;
+		}
+	}
+
+	return NULL;
 }
 
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set){
@@ -1027,13 +1049,20 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 }
 
 
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, int victim_way){
 
 	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
 	enum cgm_cache_block_state_t victim_state;
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
+
+	if(((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE))
+	{
+		printf("block 0x%08x %s evicted cycle %llu\n",
+			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+			cache->name, P_TIME);
+	}
 
 	//if dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
@@ -1048,6 +1077,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
+
 	/*set the pending bit*/
 	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
 	cgm_cache_set_block_flush_pending_bit(cache, set, way);*/
@@ -1057,6 +1087,9 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 	struct cgm_packet_t *flush_packet = packet_create();
 
 	init_flush_packet(cache, flush_packet, set, way);
+
+	if(victim_way)
+		flush_packet->l2_victim_way = victim_way;
 
 	/*needed for correct routing from L2 to L1 D
 	figure out another way to do this*/
@@ -1070,11 +1103,11 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 		flush_packet->cpu_access_type = cgm_access_load;
 	}
 
-	if(flush_packet->evict_id == 10)
+	/*if(flush_packet->evict_id == 10)
 	{
 		cgm_cache_dump_set(cache, set);
 		fatal("l2 f b %lld way %d\n", flush_packet->evict_id, way);
-	}
+	}*/
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
@@ -1085,7 +1118,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 	return;
 }
 
-void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers){
+void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way){
 
 	enum cgm_cache_block_state_t victim_state;
 	int i = 0;
@@ -1099,8 +1132,19 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	assert(cache->cache_type == l3_cache_t);
 	assert(cache->share_mask > 0);
 
+	if(((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE))
+	{
+		printf("block 0x%08x %s evicted cycle %llu\n",
+			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+			cache->name, P_TIME);
+	}
+
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
+
+	if(victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
+		assert(sharers == 0 || sharers == 1);
+
 
 	//if block is in the E/M state dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
@@ -1115,15 +1159,10 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-	if(victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
-		assert(sharers == 0 || sharers == 1);
-
-	//send eviction notices
-	/*star todo account for block sizes
-	for example, if the L3 cache is 64 bytes and L2 is 128 L2 should send two evictions*/
+	//send flush to owning cores
+	/*star todo account for different block sizes in L3 L2 L1*/
 	for(i = 0; i < num_cores; i++)
 	{
-
 		//get the presence bits from the directory
 		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 		bit_vector = bit_vector & cache->share_mask;
@@ -1136,6 +1175,9 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 			init_flush_packet(cache, flush_packet, set, way);
 
 			flush_packet->cpu_access_type = cgm_access_store;
+
+			if(victim_way)
+				flush_packet->l3_victim_way = victim_way;
 
 			//update routing
 			flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
@@ -2129,6 +2171,12 @@ void l3_cache_ctrl(void){
 				l3_caches[my_pid].l3_get_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
 				//run again and pull the message_packet as a new access
 			}
+			else if(access_type == cgm_access_flush_block_ack)
+			{
+				//via call back function (cgm_mesi_l3_get_fwd_nack)
+				l3_caches[my_pid].l3_flush_block_ack(&(l3_caches[my_pid]), message_packet);
+				//run again and pull the message_packet as a new access
+			}
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
@@ -3110,6 +3158,8 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	else
 		fatal("cache_l1_i_return(): message_packet->protocol_case is invalid\n");
 
+	last_committed_fetch_access_id = message_packet->access_id;
+	last_committed_fetch_access_blk = message_packet->address & cache->block_address_mask;
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -3171,11 +3221,14 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 			cgm_stat->store_getx_fwd++;
 		else
 			cgm_stat->store_upgrade++;
-
 	}
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
+
+	last_committed_lsq_access_id = message_packet->access_id;
+	last_committed_lsq_access_blk = message_packet->address & cache->block_address_mask;
+
 	linked_list_add(message_packet->event_queue, message_packet->data);
 
 	/*printf("access_id %llu finished cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/

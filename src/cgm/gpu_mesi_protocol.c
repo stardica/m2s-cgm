@@ -583,7 +583,7 @@ void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pa
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			//evict the victim
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->l1_cache_id);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->l1_cache_id, NULL);
 
 			//set access type
 			message_packet->access_type = cgm_access_getx;
