@@ -44,6 +44,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_getx", cgm_access_getx},
 		{"cgm_access_getx_nack", cgm_access_getx_nack},
 		{"cgm_access_inv", cgm_access_inv},
+		{"cgm_access_flush_block", cgm_access_flush_block},
+		{"cgm_access_flush_block_ack", cgm_access_flush_block_ack},
 		{"cgm_access_inv_ack", cgm_access_inv_ack},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
@@ -76,7 +78,8 @@ struct str_map_t cgm_mem_access_strn_map =
 };
 
 /*long long temp_access_id = 0;*/
-long long write_back_id = 0;
+long long write_back_id = 1;
+long long evict_id = 1;
 
 enum protocol_kind_t cgm_cache_protocol;
 enum protocol_kind_t cgm_gpu_cache_protocol;
@@ -233,9 +236,10 @@ void init_getx_fwd_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned 
 
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way){
 
-	inval_packet->access_type = cgm_access_inv;
+	inval_packet->access_type = cgm_access_flush_block;
 	inval_packet->inval = 1;
 	inval_packet->size = 1;
+	inval_packet->evict_id = evict_id++;
 
 	//reconstruct the address from the set and tag
 	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);

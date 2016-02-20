@@ -1821,7 +1821,7 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_downgrade = cgm_bt_l1_d_downgrade;
 			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_bt_l1_d_getx_fwd_inval;
 			l1_d_caches[i].l1_d_write_back = cgm_bt_l1_d_write_back;
-			l1_d_caches[i].l1_d_inval = cgm_bt_l1_d_inval;
+			l1_d_caches[i].l1_d_flush_block = cgm_bt_l1_d_inval;
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
@@ -1833,7 +1833,7 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_upgrade_inval = cgm_mesi_l1_d_upgrade_inval;
 			l1_d_caches[i].l1_d_upgrade_ack = cgm_mesi_l1_d_upgrade_ack;
 			l1_d_caches[i].l1_d_write_back = cgm_mesi_l1_d_write_back;
-			l1_d_caches[i].l1_d_inval = cgm_mesi_l1_d_inval;
+			l1_d_caches[i].l1_d_flush_block = cgm_mesi_l1_d_flush_block;
 		}
 		else
 		{
@@ -1985,11 +1985,10 @@ int cache_finish_create(){
 			l2_caches[i].l2_get_fwd = cgm_bt_l2_get_fwd;
 			l2_caches[i].l2_getx_fwd = cgm_bt_l2_getx_fwd;
 			l2_caches[i].l2_getx_fwd_inval_ack = cgm_bt_l2_getx_fwd_inval_ack;
-			l2_caches[i].l2_inval_ack = cgm_bt_l2_inval_ack;
+			l2_caches[i].l2_flush_block_ack = cgm_bt_l2_inval_ack;
 			l2_caches[i].l2_write_block = cgm_bt_l2_write_block;
 			l2_caches[i].l2_write_back = cgm_bt_l2_write_back;
-			l2_caches[i].l2_inval = cgm_bt_l2_inval;
-			l2_caches[i].l2_inval_ack = cgm_bt_l2_inval_ack;
+			l2_caches[i].l2_flush_block = cgm_bt_l2_inval;
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
@@ -2007,11 +2006,10 @@ int cache_finish_create(){
 			l2_caches[i].l2_upgrade_nack = cgm_mesi_l2_upgrade_nack;
 			l2_caches[i].l2_upgrade_putx_n = cgm_mesi_l2_upgrade_putx_n;
 			l2_caches[i].l2_upgrade_inval = cgm_mesi_l2_upgrade_inval;
-			l2_caches[i].l2_inval_ack = cgm_mesi_l2_inval_ack;
 			l2_caches[i].l2_write_block = cgm_mesi_l2_write_block;
 			l2_caches[i].l2_write_back = cgm_mesi_l2_write_back;
-			l2_caches[i].l2_inval = cgm_mesi_l2_inval;
-			l2_caches[i].l2_inval_ack = cgm_mesi_l2_inval_ack;
+			l2_caches[i].l2_flush_block = cgm_mesi_l2_flush_block;
+			l2_caches[i].l2_flush_block_ack = cgm_mesi_l2_flush_block_ack;
 		}
 		else
 		{

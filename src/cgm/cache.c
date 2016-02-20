@@ -1010,7 +1010,7 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 	victim_state = cgm_cache_get_block_state(cache, set, way);
 
 	//put the block in the write back buffer if in E/M states
-	if (victim_state == cgm_cache_block_exclusive || victim_state == cgm_cache_block_modified)
+	if (victim_state == cgm_cache_block_modified)
 	{
 		//move the block to the WB buffer
 		struct cgm_packet_t *write_back_packet = packet_create();
@@ -1029,9 +1029,9 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 
-	enum cgm_cache_block_state_t victim_state;
 	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
+	enum cgm_cache_block_state_t victim_state;
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
 
@@ -1043,39 +1043,44 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id){
 
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
+		write_back_packet->flush_pending = 1;
+
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-	//send eviction notices and flush the L1 cache
+	/*set the pending bit*/
+	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
+	cgm_cache_set_block_flush_pending_bit(cache, set, way);*/
 
-	/*get the block flush_pending_bit
-	if the pending bit is set a flush was previously sent*/
-	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);*/
-	if(cgm_cache_get_block_flush_pending_bit(cache, set, way)) //&& victim_state != cgm_cache_block_invalid
+	/*send eviction notices and flush the L1 cache
+	star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two evicts*/
+	struct cgm_packet_t *flush_packet = packet_create();
+
+	init_flush_packet(cache, flush_packet, set, way);
+
+	/*needed for correct routing from L2 to L1 D
+	figure out another way to do this*/
+	if(cache->cache_type == gpu_l2_cache_t)
 	{
-		//star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two invals
-		struct cgm_packet_t *flush_packet = packet_create();
+		flush_packet->cpu_access_type = cgm_access_load_v;
+		flush_packet->l1_cache_id = id;
+	}
+	else
+	{
+		flush_packet->cpu_access_type = cgm_access_load;
+	}
 
-		init_flush_packet(cache, flush_packet, set, way);
-
-		/*needed for correct routing from L2 to L1 D
-		figure out another way to do this*/
-		if(cache->cache_type == gpu_l2_cache_t)
-		{
-			flush_packet->cpu_access_type = cgm_access_load_v;
-			flush_packet->l1_cache_id = id;
-		}
-		else
-		{
-			flush_packet->cpu_access_type = cgm_access_load;
-		}
-
-		list_enqueue(cache->Tx_queue_top, flush_packet);
-		advance(cache->cache_io_up_ec);
+	if(flush_packet->evict_id == 10)
+	{
+		cgm_cache_dump_set(cache, set);
+		fatal("l2 f b %lld way %d\n", flush_packet->evict_id, way);
 	}
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
+
+	list_enqueue(cache->Tx_queue_top, flush_packet);
+	advance(cache->cache_io_up_ec);
 
 	return;
 }
@@ -1105,8 +1110,13 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
+		write_back_packet->flush_pending = 1;
+
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
+
+	if(victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
+		assert(sharers == 0 || sharers == 1);
 
 	//send eviction notices
 	/*star todo account for block sizes
@@ -1796,11 +1806,10 @@ void l1_d_cache_ctrl(void){
 
 
 			}
-			else if (access_type == cgm_access_inv)
+			else if (access_type == cgm_access_flush_block)
 			{
 				//Call back function (cgm_mesi_l1_d_inval)
-				l1_d_caches[my_pid].l1_d_inval(&(l1_d_caches[my_pid]), message_packet);
-
+				l1_d_caches[my_pid].l1_d_flush_block(&(l1_d_caches[my_pid]), message_packet);
 
 			}
 			else if (access_type == cgm_access_upgrade_ack)
@@ -1967,23 +1976,15 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_upgrade_inval)
 				l2_caches[my_pid].l2_upgrade_inval(&(l2_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_inv)
+			else if (access_type == cgm_access_flush_block)
 			{
-						/*if(P_TIME == 224930)
-						{
-							printf("STOP\n");
-							STOP;
-						}*/
-
-				//Call back function (cgm_mesi_l2_inval)
-				l2_caches[my_pid].l2_inval(&(l2_caches[my_pid]), message_packet);
+					//Call back function (cgm_mesi_l2_inval)
+				l2_caches[my_pid].l2_flush_block(&(l2_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_inv_ack)
+			else if (access_type == cgm_access_flush_block_ack)
 			{
-
-
 				//Call back function (cgm_mesi_l2_inval_ack)
-				l2_caches[my_pid].l2_inval_ack(&(l2_caches[my_pid]), message_packet);
+				l2_caches[my_pid].l2_flush_block_ack(&(l2_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -2460,7 +2461,7 @@ void l1_d_cache_down_io_ctrl(void){
 			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 			advance(&l2_cache[my_pid]);
 		}
-		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_inv_ack
+		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_flush_block_ack
 				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack)
 		{
 			list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
@@ -2537,7 +2538,7 @@ void l2_cache_up_io_ctrl(void){
 				list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l1_d_cache[my_pid]);
 			}
-			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_inv
+			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_flush_block
 					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
 					|| message_packet->access_type == cgm_access_upgrade_inval)
 			{
@@ -2551,7 +2552,7 @@ void l2_cache_up_io_ctrl(void){
 		}
 		else
 		{
-			fatal("l2_cache_up_io_ctrl(): bad cpu access type\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+			fatal("l2_cache_up_io_ctrl(): bad cpu access type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
 	}
 	return;
