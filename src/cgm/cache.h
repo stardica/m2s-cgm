@@ -231,8 +231,8 @@ void ort_dump(struct cache_t *cache);
 void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row_ptr, int *num_sets_ptr, int *ort_size_ptr);
 void ort_set_row(struct cache_t *cache, int tag, int set);
 
-/*int get_ort_num_coalesced(struct cache_t *cache, int entry, int tag, int set);*/
-//void cgm_cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
-/*void cgm_cache_inval_block(struct cache_t *cache, int set, int way);*/
+/*error checking*/
+int cache_validate_block_flushed_from_core(int core_id, unsigned int addr);
+int cache_validate_block_flushed_from_l1(int core_id, unsigned int addr);
 
 #endif /*CACHE_H_*/

@@ -982,10 +982,10 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-	/*if (cache->policy == cache_policy_fifo && cache->sets[set].blocks[way].tag != tag)
+	if (cache->cache_type == l2_cache_t && set == 23 && way == 0)
 	{
-		cgm_cache_update_waylist(&cache->sets[set], &cache->sets[set].blocks[way], cache_waylist_head);
-	}*/
+		printf("\t writing tag %d cycle %llu\n", tag, P_TIME);
+	}
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
@@ -1030,6 +1030,13 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
+
+	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+	{
+		printf("block 0x%08x %s evicted cycle %llu\n",
+			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+			cache->name, P_TIME);
+	}
 
 	//put the block in the write back buffer if in E/M states
 	if (victim_state == cgm_cache_block_modified)
@@ -1145,7 +1152,6 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	if(victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 		assert(sharers == 0 || sharers == 1);
 
-
 	//if block is in the E/M state dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 	{
@@ -1175,6 +1181,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 			init_flush_packet(cache, flush_packet, set, way);
 
 			flush_packet->cpu_access_type = cgm_access_store;
+
 
 			if(victim_way)
 				flush_packet->l3_victim_way = victim_way;
@@ -1922,6 +1929,9 @@ void l2_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			wd_current_set = message_packet->set;
+			wd_current_tag = message_packet->tag;
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
@@ -3974,7 +3984,89 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 	return retry_state;
 }
 
-/*void cgm_cache_set_way(enum cache_type_enum cache_type, struct cgm_packet_t *message_packet){
+int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 
-		return;
-}*/
+	int hit = 0;
+
+	struct cgm_packet_t *write_back_packet = NULL;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(&l1_d_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+
+	//look for the block in the cache
+	*(cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+		//search the WB buffer for the data if in WB the block is either in the E or M state so return
+	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+
+	if(*cache_block_hit_ptr == 1 || write_back_packet)
+		hit = 1;
+
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(&l2_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+
+	//look for the block in the cache
+	*(cache_block_hit_ptr) = cgm_cache_find_block(&l2_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+		//search the WB buffer for the data if in WB the block is either in the E or M state so return
+	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+
+	if(*cache_block_hit_ptr == 1 || write_back_packet)
+		hit = 1;
+
+
+	return hit;
+}
+
+
+int cache_validate_block_flushed_from_l1(int core_id, unsigned int addr){
+
+	int hit = 0;
+	struct cgm_packet_t *write_back_packet = NULL;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(&l1_d_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+
+	//look for the block in the cache
+	*(cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+		//search the WB buffer for the data if in WB the block is either in the E or M state so return
+	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+
+	if(*cache_block_hit_ptr == 1 || write_back_packet)
+		hit = 1;
+
+	return hit;
+}

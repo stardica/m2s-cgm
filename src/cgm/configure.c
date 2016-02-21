@@ -1679,8 +1679,8 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_bt)
 		{
-			l1_i_caches[i].l1_i_fetch = cgm_bt_fetch;
-			l1_i_caches[i].l1_i_write_block = cgm_bt_l1_i_write_block;
+			/*l1_i_caches[i].l1_i_fetch = cgm_bt_fetch;
+			l1_i_caches[i].l1_i_write_block = cgm_bt_l1_i_write_block;*/
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
@@ -1815,13 +1815,13 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_bt)
 		{
-			l1_d_caches[i].l1_d_load = cgm_bt_load;
+			/*l1_d_caches[i].l1_d_load = cgm_bt_load;
 			l1_d_caches[i].l1_d_store = cgm_bt_store;
 			l1_d_caches[i].l1_d_write_block = cgm_bt_l1_d_write_block;
 			l1_d_caches[i].l1_d_downgrade = cgm_bt_l1_d_downgrade;
 			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_bt_l1_d_getx_fwd_inval;
 			l1_d_caches[i].l1_d_write_back = cgm_bt_l1_d_write_back;
-			l1_d_caches[i].l1_d_flush_block = cgm_bt_l1_d_inval;
+			l1_d_caches[i].l1_d_flush_block = cgm_bt_l1_d_inval;*/
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
@@ -1976,7 +1976,7 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_bt)
 		{
-			l2_caches[i].l2_gets = cgm_bt_l2_gets;
+			/*l2_caches[i].l2_gets = cgm_bt_l2_gets;
 			l2_caches[i].l2_get = cgm_bt_l2_get;
 			l2_caches[i].l2_get_nack = cgm_bt_l2_get_nack;
 			l2_caches[i].l2_getx = cgm_bt_l2_getx;
@@ -1988,7 +1988,7 @@ int cache_finish_create(){
 			l2_caches[i].l2_flush_block_ack = cgm_bt_l2_inval_ack;
 			l2_caches[i].l2_write_block = cgm_bt_l2_write_block;
 			l2_caches[i].l2_write_back = cgm_bt_l2_write_back;
-			l2_caches[i].l2_flush_block = cgm_bt_l2_inval;
+			l2_caches[i].l2_flush_block = cgm_bt_l2_inval;*/
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
@@ -2162,7 +2162,7 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_cache_protocol == cgm_protocol_bt)
 		{
-			l3_caches[i].l3_gets = cgm_bt_l3_gets;
+			/*l3_caches[i].l3_gets = cgm_bt_l3_gets;
 			l3_caches[i].l3_get = cgm_bt_l3_get;
 			l3_caches[i].l3_getx = cgm_bt_l3_getx;
 			l3_caches[i].l3_downgrade_ack = cgm_bt_l3_downgrade_ack;
@@ -2170,7 +2170,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_getx_fwd_nack = cgm_bt_l3_getx_fwd_nack;
 			l3_caches[i].l3_getx_fwd_ack = cgm_bt_l3_getx_fwd_ack;
 			l3_caches[i].l3_write_block = cgm_bt_l3_write_block;
-			l3_caches[i].l3_write_back = cgm_bt_l3_write_back;
+			l3_caches[i].l3_write_back = cgm_bt_l3_write_back;*/
 		}
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{

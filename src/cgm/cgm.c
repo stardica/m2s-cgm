@@ -70,6 +70,9 @@ eventcount volatile *watchdog;
 
 int mem_system_off = 0;
 int watch_dog = 0;
+int run_watch_dog = 0;
+int wd_current_set = 0;
+int wd_current_tag = 0;
 
 long long last_issued_lsq_access_id = 0;
 unsigned int last_issued_lsq_access_blk = 0x0;
@@ -249,8 +252,14 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		if(P_TIME > 9000000)
-			printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);
+		if(run_watch_dog == 1)
+		{
+			if(l2_caches[0].sets[23].blocks[0].tag != 2 && wd_current_set == 23)
+				printf("WD new value %d last set %d last tag %d cycle %llu\n", l2_caches[0].sets[23].blocks[0].tag, wd_current_set, wd_current_tag, P_TIME);
+
+			//cgm_cache_dump_set(&l2_caches[0], 23);
+		}
+		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
 	}
 	return;
 }

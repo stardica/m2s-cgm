@@ -53,7 +53,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x00003540
+#define WATCHBLOCK (unsigned int) 0x000085c0
 #define WATCHLINE 1
 #define DUMP 0
 #define CPUTICK 1
@@ -150,6 +150,9 @@ extern eventcount volatile *watchdog;
 
 extern int mem_system_off;
 extern int watch_dog;
+extern int run_watch_dog;
+extern int wd_current_set;
+extern int wd_current_tag;
 
 extern long long last_issued_lsq_access_id;
 extern unsigned int last_issued_lsq_access_blk;

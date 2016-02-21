@@ -926,42 +926,50 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 
 void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//charge the latency
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+	struct cgm_packet_t *wb_packet;
+	enum cgm_cache_block_state_t block_trainsient_state;
+	int l3_map;
+	int error = 0;
+
+	//charge the delay
 	P_PAUSE(cache->latency);
 
+	//we should only receive modified lines from L1 D cache
+	assert(message_packet->cache_block_state == cgm_cache_block_modified);
 
-	//if the line is still in the exclusive state at this point drop it.
-	if(message_packet->cache_block_state == cgm_cache_block_exclusive)
+	//get the state of the local cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//check for block transient state
+	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	if(block_trainsient_state == cgm_cache_block_transient)
 	{
-		if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-		{
-			printf("block 0x%08x %s wb destroy id %llu state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->cache_block_state, P_TIME);
-		}
+		if potentially merging in cache the block better not be transient, check that the tags don't match
+		if they don't match the block is missing from both the cache and wb buffer when it should not be
 
-		message_packet = list_remove(cache->last_queue, message_packet);
-		packet_destroy(message_packet);
-	}
-	else if (message_packet->cache_block_state == cgm_cache_block_modified)
+		//check that the tags don't match. This should not happen as the request should have been coalesced at L1 D.
+		assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
+	}*/
+
+	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		//block is dirty send the write back down to the L2 cache.
-
-		/*stats*/
-		cache->TotalWriteBacks++;
-
-		if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-		{
-			printf("block 0x%08x %s wb sent id %llu state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->cache_block_state, P_TIME);
-		}
-
-		message_packet->flush_pending = 0;
-		cache_put_io_down_queue(cache, message_packet);
+		printf("block 0x%08x %s wb sent id %llu state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->cache_block_state, P_TIME);
 	}
-	else
-	{
-		fatal("cgm_mesi_l1_d_write_back(): Invalid block state in write back buffer cycle %llu\n", P_TIME);
-	}
+
+	/*better not be in my cache*/
+	assert(*cache_block_hit_ptr == 0);
+	assert(message_packet->flush_pending == 0 && message_packet->flush_join == 0);
+
+	/*stats*/
+	cache->TotalWriteBacks++;
+
+	cache_put_io_down_queue(cache, message_packet);
 
 	return;
 }
@@ -1311,11 +1319,12 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 				assert(*cache_block_hit_ptr == 0);
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
+				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
 
 				//see if we can write it back into the cache.
 				write_back_packet->l2_victim_way = cgm_cache_get_victim_for_wb(cache, write_back_packet->set);
+
 
 				//if not then we must coalesce
 				if(write_back_packet->l2_victim_way == -1)
@@ -1340,7 +1349,22 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//success now move block from wb to cache
 				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
+
+
+				if(cache->sets[write_back_packet->set].blocks[write_back_packet->l2_victim_way].state != 0)
+				{
+					printf("cgm_mesi_l2_get(): overwriting a valid block must evict first; set %d tag %d way %d cycle %llu\n",
+							write_back_packet->set, write_back_packet->tag, write_back_packet->l2_victim_way, P_TIME);
+					getchar();
+				}
+
+
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
+
+				//cgm_cache_dump_set(cache, message_packet->set);
+
+				/*printf("mp set %d mp way %d mp tag %d wb set %d wb way %d wb tag %d\n",
+						message_packet->set, message_packet->way, message_packet->tag, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag);*/
 
 				//check for retries on successful cache read...
 				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -1620,6 +1644,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				data should not be in the rest of the cache*/
 				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
 						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
+
+				//printf("mp set %d mp way %d mp tag %d wb set %d wb way %d wb tag %d\n",
+				//		message_packet->set, message_packet->way, message_packet->tag, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag);
 
 				//see if we can write it back into the cache.
 				write_back_packet->l2_victim_way = cgm_cache_get_victim_for_wb(cache, write_back_packet->set);
@@ -1644,9 +1672,19 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache->TotalMisses--;
 				cache->TotalWriteMisses--;
 
+
+
+
 				//success now move block from wb to cache
 				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
+
+				assert(cache->sets[write_back_packet->set].blocks[write_back_packet->l2_victim_way].state == 0);
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
+
+				if(write_back_packet->set == 23)
+					run_watch_dog = 1;
+
+				cgm_cache_dump_set(cache, write_back_packet->set);
 
 				//check for retries on successful cache write...
 				if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
@@ -1673,20 +1711,22 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					fatal("cgm_mesi_l2_getx(): invalid write back block state\n");
 				}
 
+				assert(write_back_packet->flush_pending == 0);
+
 				//free the write back
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				free(write_back_packet);
+				packet_destroy(write_back_packet);
 
-				/*stats*/
-				cache->TotalReads++;
+
 
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
-					printf("block 0x%08x %s load wb hit id %llu state %d cycle %llu\n",
+					printf("block 0x%08x %s store wb hit id %llu state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 				}
 
 				/*stats*/
+				cache->TotalReads++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L2_hit;
 
@@ -2495,7 +2535,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 	{
-		printf("block 0x%08x %s inval ID %llu type %d state %d cycle %llu\n",
+		printf("block 0x%08x %s flush block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 	}
 
@@ -2638,6 +2678,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	struct cgm_packet_t *wb_packet = NULL;
 	struct cgm_packet_t *pending_request_packet = NULL;
 	int l3_map = 0;
+	int error =0;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -2648,6 +2689,8 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 	//assert(*cache_block_hit_ptr == 0);
 
+	error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+	assert(error == 0);
 
 	/*if(*cache_block_hit_ptr != 0)
 	{
@@ -3164,6 +3207,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		assert(victim_trainsient_state == cgm_cache_block_transient);
 
 		//write the block
+		if (cache->cache_type == l2_cache_t && message_packet->set == 23 && message_packet->way == 0)
+			printf("\tmp access_id %llu cycle %llu\n", message_packet->access_id, P_TIME);
 		cgm_cache_set_block(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
@@ -3325,94 +3370,92 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-
 	struct cgm_packet_t *wb_packet;
 	enum cgm_cache_block_state_t block_trainsient_state;
-
 	int l3_map;
-
-	/*on a write back with inclusive caches L2 Merges the line
-	if the write back is a surprise the block will be exclusive in the L2 cache, but the data is old.*/
+	int error = 0;
 
 	//charge the delay
 	P_PAUSE(cache->latency);
 
+	//we should only receive modified lines from L1 D cache
+	assert(message_packet->cache_block_state == cgm_cache_block_modified);
+
+	//get the state of the local cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//check for block transient state
+	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	if(block_trainsient_state == cgm_cache_block_transient)
+	{
+		if potentially merging in cache the block better not be transient, check that the tags don't match
+		if they don't match the block is missing from both the cache and wb buffer when it should not be
+
+		//check that the tags don't match. This should not happen as the request should have been coalesced at L1 D.
+		assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
+	}*/
+
+	/*on a write back with inclusive caches L2 Merges the line
+	if the write back is a surprise the block will be exclusive and old in the L2 cache.*/
+
 	//WB from L1 D cache
 	if(cache->last_queue == cache->Rx_queue_top)
 	{
-		//we should only receive modified lines from L1 D cache
-		assert(message_packet->cache_block_state == cgm_cache_block_modified);
-
-		//get the state of the local cache block
-		cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-		//check for block transient state
-		block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-
-		//check WB buffer
-		wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
-
-		if(wb_packet)
+		switch(*cache_block_state_ptr)
 		{
-			//if the block is in the wb buffer it shouldn't be in the cache.
-			assert((wb_packet->cache_block_state == cgm_cache_block_modified
-				|| wb_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+			case cgm_cache_block_noncoherent:
+			case cgm_cache_block_owned:
+			case cgm_cache_block_shared:
+				cgm_cache_dump_set(cache, message_packet->set);
 
-			if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-			{
-				printf("block 0x%08x %s write back - write back merge ID %llu type %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
-			}
+				unsigned int temp = message_packet->address;
+				temp = temp & cache->block_address_mask;
 
-			//cache block found in the WB buffer merge the change here
-			//set modified if the line was exclusive
-			wb_packet->cache_block_state = cgm_cache_block_modified;
+				fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s wb_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+					cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+					message_packet->write_back_id, message_packet->address, temp,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+				break;
 
-			//destroy the L1 D WB packet
-			message_packet = list_remove(cache->last_queue, message_packet);
-			packet_destroy(message_packet);
+			case cgm_cache_block_invalid:
 
-		}
-		else
-		{
-			//if potentially merging in cache the block better not be transient, check that the tags don't match
-			//if they don't match the block is missing from both the cache and wb buffer
-			/*if(block_trainsient_state == cgm_cache_block_transient)
-			{
-				//tags match this is shouldn't happen as the request should have been coalesced at L1 D.
+				//check WB buffer
+				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-				printf("here 0x%08x\n", message_packet->address);
-				assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
-			}*/
+				if(wb_packet)
+				{
+					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+					{
+						printf("block 0x%08x %s write back - write back merge ID %llu type %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
+					}
 
-			switch(*cache_block_state_ptr)
-			{
-				case cgm_cache_block_noncoherent:
-				case cgm_cache_block_owned:
-				case cgm_cache_block_shared:
+					//cache block found in the WB buffer merge the change here
+					//set modified if the line was exclusive
+					wb_packet->cache_block_state = cgm_cache_block_modified;
+					assert(wb_packet->flush_pending == 1);
+
+					//destroy the L1 D WB packet
+					message_packet = list_remove(cache->last_queue, message_packet);
+					packet_destroy(message_packet);
+				}
+				else
+				{
+
 					cgm_cache_dump_set(cache, message_packet->set);
 
 					unsigned int temp = message_packet->address;
 					temp = temp & cache->block_address_mask;
 
-					fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s wb_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+					fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s writeback_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
 						message_packet->write_back_id, message_packet->address, temp,
 						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
-					break;
 
-				/*case cgm_cache_block_shared:
-
-					message_packet = list_remove(cache->last_queue, message_packet);
-					packet_destroy(message_packet);
-					break;*/
-
-
-				case cgm_cache_block_invalid:
+					//fatal("cgm_mesi_l2_write_back(): block not in cache or wb at L2 on L1 WB. this should not be happening anymore\n");
 
 					/*it is possible for the WB from L1 D to miss at the L2. This means there was a recent L2 eviction of the block*/
-
-					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						printf("block 0x%08x %s write back fwd (to L3) ID %llu type %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
@@ -3432,33 +3475,39 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					//send the write back to the L3 cache.
 					cache_put_io_down_queue(cache, message_packet);
-					break;
+				}
+				break;
 
-				case cgm_cache_block_exclusive:
-				case cgm_cache_block_modified:
+			case cgm_cache_block_exclusive:
+			case cgm_cache_block_modified:
 
-					//hit in cache merge write back here.
-					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+				//hit in cache merge write back here.
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
-					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-					{
-						printf("block 0x%08x %s write back - cache merge ID %llu type %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
-					}
+				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+				{
+					printf("block 0x%08x %s write back - cache merge ID %llu type %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
+				}
 
-					//destroy the L1 D WB message. L2 will clear its WB at an opportune time.
-					message_packet = list_remove(cache->last_queue, message_packet);
-					packet_destroy(message_packet);
-					break;
-			}
+				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+				assert(error == 0);
+
+				//destroy the L1 D WB message. L2 will clear its WB at an opportune time.
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+				break;
 		}
 	}
 	//if here the L2 generated it's own write back.
 	else if(cache->last_queue == cache->write_back_buffer)
 	{
-
 		//the wb should not be waiting on a flush to finish.
 		assert(message_packet->flush_pending == 0);
+		assert(*cache_block_hit_ptr == 0);
+
+		error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+		assert(error == 0);
 
 		//if the line is still in the exclusive state at this point drop it.
 		if(message_packet->cache_block_state == cgm_cache_block_exclusive)
@@ -4132,7 +4181,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 				{
-					printf("block 0x%08x %s load wb hit (getx) id %llu state %d cycle %llu\n",
+					printf("block 0x%08x %s store wb hit (getx) id %llu state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 				}
 
@@ -5027,9 +5076,68 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+	/*block is flushed out of its owning core
+	we will only get an ack in the case of a single core being in the M or E state
+	or if the block is not in L2 cache or writeback i.e we don't know if the line was dirty or not.*/
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
 
-	fatal("cgm_mesi_l3_flush_block_ack() here\n");
+	struct cgm_packet_t *wb_packet = NULL;
+	struct cgm_packet_t *pending_request_packet = NULL;
+	int l3_map = 0;
+	int error = 0;
 
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the address set and tag
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*error checking the block should no longer be "in core"*/
+	error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
+	assert(error == 0);
+
+	/*block should not be in L3 cache either*/
+	assert(*cache_block_state_ptr == 0);
+
+	if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+	{
+		printf("block 0x%08x %s flush block ack ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+	}
+
+	//state should be either invalid of modified.
+	assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid);
+
+	//find the block in the local WB buffer
+	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+	assert(wb_packet);
+
+	/*if incoming data from core data is dirty*/
+	if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+	{
+		/*no join bit at L3 so this sould be clear*/
+		assert(wb_packet->flush_join == 0);
+
+		//merge the block.
+		wb_packet->cache_block_state = cgm_cache_block_modified;
+
+		//clear the pending bit and leave the wb in the buffer
+		wb_packet->flush_pending = 0;
+	}
+	else
+	{
+		//Neither the l1 line or L2 line are dirty clear the wb from the buffer
+		assert(wb_packet->cache_block_state == cgm_cache_block_exclusive);
+		wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+		free(wb_packet);
+	}
+
+	//free the message packet
+	message_packet = list_remove(cache->last_queue, message_packet);
+	packet_destroy(message_packet);
 
 	return;
 }
@@ -5041,79 +5149,77 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-
 	struct cgm_packet_t *wb_packet;
-
 	enum cgm_cache_block_state_t block_trainsient_state;
+	int error = 0;
 
 	//charge the delay
 	P_PAUSE(cache->latency);
 
+	//we should only receive modified lines from L2 cache
+	assert(message_packet->cache_block_state == cgm_cache_block_modified);
+
+	//get the state of the cache block
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//check for block transient state
+	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	if(block_trainsient_state == cgm_cache_block_transient)
+	{
+		/*if potentially merging in cache the block better not be transient, check that the tags don't match
+		if they don't match the block is missing from both the cache and wb buffer when it should not be*/
+
+		//check that the tags don't match. This should not happen as the request should have been coalesced at L1 D.
+		assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
+	}
+
 	//WB from L2 cache
 	if(cache->last_queue == cache->Rx_queue_top)
 	{
-		//we should only receive modified lines from L2 cache
-		assert(message_packet->cache_block_state == cgm_cache_block_modified);
-
-		//get the state of the cache block
-		cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-
-		//check for block transient state
-		block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-
-		//check the WB buffer
-		wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
-
-		if(wb_packet)
+		switch(*cache_block_state_ptr)
 		{
-			/*printf("WB from L2 merged in wb\n");*/
-			//if the block is in the wb buffer it shouldn't be in the cache.
-			assert((wb_packet->cache_block_state == cgm_cache_block_modified
-				|| wb_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+			case cgm_cache_block_noncoherent:
+			case cgm_cache_block_owned:
+			case cgm_cache_block_shared:
+				cgm_cache_dump_set(cache, message_packet->set);
 
-			if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-			{
-				printf("block 0x%08x %s write back ID %llu type %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
-			}
+				unsigned int temp = message_packet->address;
+				temp = temp & cache->block_address_mask;
 
-			//cache block found in the WB buffer merge the change here
-			//set modified if the line was exclusive
-			wb_packet->cache_block_state = cgm_cache_block_modified;
+				fatal("cgm_mesi_l3_write_back(): %s invalid block state on write back as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+					cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+					message_packet->access_id, message_packet->address, temp,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 
-			//destroy the L2 WB packet
-			message_packet = list_remove(cache->last_queue, message_packet);
-			packet_destroy(message_packet);
+				break;
 
-		}
-		else
-		{
-			//if potentially merging in cache the block better not be transient, check that the tags don't match
-			//if they don't match the block is missing from both the cache and wb buffer
-			if(block_trainsient_state == cgm_cache_block_transient)
-			{
-				//tags match this is shouldn't happen as the request should have been coalesced at L1 D.
-				assert(message_packet->tag != cache->sets[message_packet->set].blocks[message_packet->way].tag);
-			}
+			case cgm_cache_block_invalid:
 
-			switch(*cache_block_state_ptr)
-			{
-				case cgm_cache_block_noncoherent:
-				case cgm_cache_block_owned:
-				case cgm_cache_block_shared:
-					cgm_cache_dump_set(cache, message_packet->set);
+				//check the WB buffer
+				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-					unsigned int temp = message_packet->address;
-					temp = temp & cache->block_address_mask;
+				if(wb_packet)
+				{
+					/*if the block is in the wb buffer it shouldn't be in the cache.*/
+					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+					{
+						printf("block 0x%08x %s write back ID %llu type %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
+					}
 
-					fatal("cgm_mesi_l3_write_back(): %s invalid block state on write back as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
-						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-						message_packet->access_id, message_packet->address, temp,
-						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+					//cache block found in the WB buffer merge the change here
+					//set modified if the line was exclusive
+					wb_packet->cache_block_state = cgm_cache_block_modified;
+					assert(wb_packet->flush_pending == 1 && wb_packet->flush_join == 0);
 
-					break;
+					//destroy the L2 WB packet
+					message_packet = list_remove(cache->last_queue, message_packet);
+					packet_destroy(message_packet);
+				}
+				else
+				{
 
-				case cgm_cache_block_invalid:
+					fatal("cgm_mesi_l3_write_back(): miss in L3 writeback should no longer happen??\n");
 
 					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 					{
@@ -5131,33 +5237,44 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
 					cache_put_io_down_queue(cache, message_packet);
-					break;
+				}
+				break;
 
-				case cgm_cache_block_exclusive:
-				case cgm_cache_block_modified:
+			case cgm_cache_block_exclusive:
+			case cgm_cache_block_modified:
 
-					//hit in cache merge WB here.
+				//hit in cache merge WB here.
+				if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+				{
+					printf("block 0x%08x %s write back - cache merge ID %llu type %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
+				}
 
-					//set modified if the line was exclusive
-					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+				//set modified if the line was exclusive
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
-					if(((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
-					{
-						printf("block 0x%08x %s write back - cache merge ID %llu type %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
-					}
+				/*error checking the block should no longer be "in core"*/
+				error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
+				assert(error == 0);
 
-					//destroy the L2 WB message. L3 will clear its WB at an opportune time.
-					message_packet = list_remove(cache->last_queue, message_packet);
-					packet_destroy(message_packet);
-					break;
-			}
+				/*clear the directory for this block*/
+				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
 
+				//destroy the L2 WB message. L3 will clear its WB at an opportune time.
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+				break;
 		}
 	}
 	else if(cache->last_queue == cache->write_back_buffer)
 	{
 		assert(message_packet->flush_pending == 0);
+		assert(*cache_block_hit_ptr == 0);
+
+		/*error checking the block should no longer be "in core"*/
+		error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
+		assert(error == 0);
+
 
 		if(message_packet->cache_block_state == cgm_cache_block_exclusive)
 		{
