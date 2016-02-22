@@ -1321,10 +1321,10 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(*cache_block_hit_ptr == 0);
 				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
+				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
 
 				//see if we can write it back into the cache.
 				write_back_packet->l2_victim_way = cgm_cache_get_victim_for_wb(cache, write_back_packet->set);
-
 
 				//if not then we must coalesce
 				if(write_back_packet->l2_victim_way == -1)
@@ -1343,22 +1343,28 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					}
 				}
 
+				/*stats*/
 				cache->TotalMisses--;
 				cache->TotalReadMisses--;
 				cache->TotalGet--;
 
-				//success now move block from wb to cache
-				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
+				//we are bringing a new block so evict the victim and flush the L1 copies
+				assert(write_back_packet->l2_victim_way >= 0 && write_back_packet->l2_victim_way < cache->assoc);
 
 
-				if(cache->sets[write_back_packet->set].blocks[write_back_packet->l2_victim_way].state != 0)
+				/*if(cache->sets[write_back_packet->set].blocks[write_back_packet->l2_victim_way].state != 0)
 				{
 					printf("cgm_mesi_l2_get(): overwriting a valid block must evict first; set %d tag %d way %d cycle %llu\n",
 							write_back_packet->set, write_back_packet->tag, write_back_packet->l2_victim_way, P_TIME);
 					getchar();
-				}
+				}*/
+
+				//first evict the old block if it isn't invalid already
+				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
 
 
+				//now set the block
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 
 				//cgm_cache_dump_set(cache, message_packet->set);
@@ -1394,7 +1400,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//free the write back
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				free(write_back_packet);
+				packet_destroy(write_back_packet);
 
 				/*stats*/
 				cache->TotalReads++;
@@ -1642,9 +1648,10 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			{
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(*cache_block_hit_ptr == 0);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
+				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
 
 				//printf("mp set %d mp way %d mp tag %d wb set %d wb way %d wb tag %d\n",
 				//		message_packet->set, message_packet->way, message_packet->tag, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag);
@@ -1672,19 +1679,21 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache->TotalMisses--;
 				cache->TotalWriteMisses--;
 
+				//we are bringing a new block so evict the victim and flush the L1 copies
+				assert(write_back_packet->l2_victim_way >= 0 && write_back_packet->l2_victim_way < cache->assoc);
 
 
+				//first evict the old block if it isn't invalid already
+				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
 
-				//success now move block from wb to cache
-				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
-
-				assert(cache->sets[write_back_packet->set].blocks[write_back_packet->l2_victim_way].state == 0);
+				//now set the new block
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 
-				if(write_back_packet->set == 23)
-					run_watch_dog = 1;
+				/*if(write_back_packet->set == 23)
+					run_watch_dog = 1;*/
 
-				cgm_cache_dump_set(cache, write_back_packet->set);
+				/*cgm_cache_dump_set(cache, write_back_packet->set);*/
 
 				//check for retries on successful cache write...
 				if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
@@ -3665,8 +3674,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 				assert(*cache_block_hit_ptr == 0);
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
+				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
+				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
 
 				/*we have a request for a block that is in L3 WB and not in the cache.
 				if the number of transient ways is less than the cache's assoc we
@@ -3698,8 +3708,15 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				cache->TotalReadMisses--;
 				cache->TotalGet--;
 
-				//success now move block from wb to cache
-				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
+				/*we are writing the block in so evict the victim and flush the copies in the core.*/
+				assert(write_back_packet->l3_victim_way >= 0 && write_back_packet->l3_victim_way < cache->assoc);
+
+				//first evict the old block if it isn't invalid already
+				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l3_victim_way) != cgm_cache_block_invalid)
+					cgm_L3_cache_evict_block(cache, write_back_packet->set, write_back_packet->l3_victim_way,
+							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l3_victim_way), NULL);
+
+
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l3_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l3_victim_way);
@@ -3733,7 +3750,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//free the write back
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				free(write_back_packet);
+				packet_destroy(write_back_packet);
 
 				/*stats*/
 				cache->TotalReads++;
@@ -4027,7 +4044,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	}
 
 
-
 	//get the status of the cache block AGAIN, because we may have merged a WB.
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -4109,8 +4125,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 				assert(*cache_block_hit_ptr == 0);
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
+				assert(message_packet->set == write_back_packet->set && message_packet->tag == write_back_packet->tag);
+				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
 
 
 				//see if we can write it back into the cache.
@@ -4140,7 +4157,14 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache->TotalGetx--;
 
 				//success now move block from wb to cache
-				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
+				/*we are writing the block in so evict the victim and flush the copies in the core.*/
+				assert(write_back_packet->l3_victim_way >= 0 && write_back_packet->l3_victim_way < cache->assoc);
+
+				//first evict the old block if it isn't invalid already
+				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l3_victim_way) != cgm_cache_block_invalid)
+					cgm_L3_cache_evict_block(cache, write_back_packet->set, write_back_packet->l3_victim_way,
+							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l3_victim_way), NULL);
+
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l3_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l3_victim_way);
@@ -5255,7 +5279,19 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				/*error checking the block should no longer be "in core"*/
 				error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
-				assert(error == 0);
+				if(error == 1)
+				{
+					unsigned int temp = message_packet->address;
+					temp = temp & cache->block_address_mask;
+
+					fatal("cgm_mesi_l3_write_back(): %s error == 1 as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+						message_packet->access_id, message_packet->address, temp,
+						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+
+				}
+
+				//assert(error == 0);
 
 				/*clear the directory for this block*/
 				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);

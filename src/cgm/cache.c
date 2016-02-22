@@ -982,10 +982,10 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-	if (cache->cache_type == l2_cache_t && set == 23 && way == 0)
+	/*if (cache->cache_type == l2_cache_t && set == 23 && way == 0)
 	{
 		printf("\t writing tag %d cycle %llu\n", tag, P_TIME);
-	}
+	}*/
 
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
@@ -3986,9 +3986,11 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 
-	int hit = 0;
+	int l1_hit = 0;
+	int l2_hit = 0;
 
-	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *l1_write_back_packet = NULL;
+	struct cgm_packet_t *l2_write_back_packet = NULL;
 
 	int set = 0;
 	int tag = 0;
@@ -4000,39 +4002,58 @@ int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 	unsigned int *offset_ptr = &offset;
 	int *way_ptr = &way;
 
-	int cache_block_hit;
-	int cache_block_state;
-	int *cache_block_hit_ptr = &cache_block_hit;
-	int *cache_block_state_ptr = &cache_block_state;
+	int l1_cache_block_hit;
+	int l1_cache_block_state;
+	int *l1_cache_block_hit_ptr = &l1_cache_block_hit;
+	int *l1_cache_block_state_ptr = &l1_cache_block_state;
+
+	int l2_cache_block_hit;
+	int l2_cache_block_state;
+	int *l2_cache_block_hit_ptr = &l2_cache_block_hit;
+	int *l2_cache_block_state_ptr = &l2_cache_block_state;
 
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(&l1_d_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
 
 	//look for the block in the cache
-	*(cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+	*(l1_cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, l1_cache_block_state_ptr);
 
 		//search the WB buffer for the data if in WB the block is either in the E or M state so return
-	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+	l1_write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
 
-	if(*cache_block_hit_ptr == 1 || write_back_packet)
-		hit = 1;
+	if(*l1_cache_block_hit_ptr == 1 || l1_write_back_packet)
+		l1_hit = 1;
 
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(&l2_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
 
 	//look for the block in the cache
-	*(cache_block_hit_ptr) = cgm_cache_find_block(&l2_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+	*(l2_cache_block_hit_ptr) = cgm_cache_find_block(&l2_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, l2_cache_block_state_ptr);
 
 		//search the WB buffer for the data if in WB the block is either in the E or M state so return
-	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+	l2_write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
 
-	if(*cache_block_hit_ptr == 1 || write_back_packet)
-		hit = 1;
+	if(*l2_cache_block_hit_ptr == 1 || l2_write_back_packet)
+		l2_hit = 1;
+
+	if(l1_hit == 1 || l2_hit ==2)
+		printf("\terror check l1_hit %d l2_hit %d\n", l1_hit, l2_hit);
+
+	if(l1_hit == 1)
+	{
+
+		return l1_hit;
+
+	}
+	else if(l2_hit ==2)
+	{
+		return l2_hit;
+
+	}
 
 
-	return hit;
 }
 
 
