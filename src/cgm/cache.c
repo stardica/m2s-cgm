@@ -481,6 +481,27 @@ int get_ort_status(struct cache_t *cache){
 	}
 	return i;
 }
+int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set){
+
+	int i = 0;
+	int j = 0;
+	struct cgm_packet_t *wb_packet = NULL;
+
+	//error checking make sure there is only one matching wb in the buffer
+	LIST_FOR_EACH(cache->write_back_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		wb_packet = list_get(cache->write_back_buffer, i);
+
+		//found block in write back buffer
+		if(wb_packet->tag == tag && wb_packet->set == set)
+		{
+			j++;
+		}
+	}
+
+	return j;
+}
 
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache){
 
@@ -843,6 +864,17 @@ int cache_can_access_bottom(struct cache_t *cache){
 
 	//cache queue is accessible.
 	return 1;
+}
+
+void cgm_cache_print_set_tag(struct cache_t *cache, unsigned int addr){
+
+	int tag = (addr >> (cache->log_block_size + cache->log_set_size));
+	int set = ((addr >> cache->log_block_size) & (cache->set_mask));
+	//int offset = addr & (cache->block_mask);
+
+	printf("%s addr 0x%08x blk addr 0x%08x set %d tag %d\n",cache->name, addr, addr & cache->block_address_mask, set, tag);
+
+	return;
 }
 
 
@@ -1925,7 +1957,8 @@ void l2_cache_ctrl(void){
 		{
 			step++;
 
-			/*printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
+			if(P_TIME > 2725380)
+				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -3371,6 +3404,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	message_packet = list_remove(cache->last_queue, message_packet);
+	assert(message_packet);
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);
 	return;
@@ -3379,6 +3413,13 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	message_packet = list_remove(cache->last_queue, message_packet);
+	if(!message_packet)
+	{
+		fatal("%s cycle %llu\n", cache->name, P_TIME);
+
+	}
+
+	assert(message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
 	advance(cache->cache_io_down_ec);
 	return;
@@ -3986,74 +4027,126 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 
-	int l1_hit = 0;
-	int l2_hit = 0;
-
 	struct cgm_packet_t *l1_write_back_packet = NULL;
 	struct cgm_packet_t *l2_write_back_packet = NULL;
 
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
+	int l1_set = 0;
+	int l1_tag = 0;
+	unsigned int l1_offset = 0;
+	int l1_way = 0;
 
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
+	int *l1_set_ptr = &l1_set;
+	int *l1_tag_ptr = &l1_tag;
+	unsigned int *l1_offset_ptr = &l1_offset;
+	int *l1_way_ptr = &l1_way;
 
-	int l1_cache_block_hit;
-	int l1_cache_block_state;
+	int l2_set = 0;
+	int l2_tag = 0;
+	unsigned int l2_offset = 0;
+	int l2_way = 0;
+
+	int *l2_set_ptr = &l2_set;
+	int *l2_tag_ptr = &l2_tag;
+	unsigned int *l2_offset_ptr = &l2_offset;
+	int *l2_way_ptr = &l1_way;
+
+	int l1_cache_block_hit = 0;
+	int l1_cache_block_state = 0;
+
+	int l2_cache_block_hit = 0;
+	int l2_cache_block_state = 0;
+
 	int *l1_cache_block_hit_ptr = &l1_cache_block_hit;
 	int *l1_cache_block_state_ptr = &l1_cache_block_state;
 
-	int l2_cache_block_hit;
-	int l2_cache_block_state;
 	int *l2_cache_block_hit_ptr = &l2_cache_block_hit;
 	int *l2_cache_block_state_ptr = &l2_cache_block_state;
 
+	int l1_hit = 0;
+	int l2_hit = 0;
+	int l1_wb_hit = 0;
+	int l2_wb_hit = 0;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(&l1_d_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(&l1_d_caches[core_id], addr, l1_set_ptr, l1_tag_ptr, l1_offset_ptr);
 
 	//look for the block in the cache
-	*(l1_cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, l1_cache_block_state_ptr);
+	*(l1_cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], l1_tag_ptr, l1_set_ptr, l1_offset_ptr, l1_way_ptr, l1_cache_block_state_ptr);
 
-		//search the WB buffer for the data if in WB the block is either in the E or M state so return
-	l1_write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+	//search the WB buffer for the data if in WB the block is either in the E or M state so return
+
+	l1_write_back_packet = cache_search_wb(&l1_d_caches[core_id], l1_tag, l1_set);
+
+	if(l1_write_back_packet)
+		l1_wb_hit = 1;
+
 
 	if(*l1_cache_block_hit_ptr == 1 || l1_write_back_packet)
 		l1_hit = 1;
 
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(&l2_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(&l2_caches[core_id], addr, l2_set_ptr, l2_tag_ptr, l2_offset_ptr);
 
 	//look for the block in the cache
-	*(l2_cache_block_hit_ptr) = cgm_cache_find_block(&l2_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, l2_cache_block_state_ptr);
+	*(l2_cache_block_hit_ptr) = cgm_cache_find_block(&l2_caches[core_id], l2_tag_ptr, l2_set_ptr,l2_offset_ptr, l2_way_ptr, l2_cache_block_state_ptr);
 
-		//search the WB buffer for the data if in WB the block is either in the E or M state so return
-	l2_write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+	//search the WB buffer for the data if in WB the block is either in the E or M state so return
+	l2_write_back_packet = cache_search_wb(&l2_caches[core_id], l2_tag, l2_set);
+
+	if(l2_write_back_packet)
+		l2_wb_hit = 1;
 
 	if(*l2_cache_block_hit_ptr == 1 || l2_write_back_packet)
 		l2_hit = 1;
 
-	if(l1_hit == 1 || l2_hit ==2)
-		printf("\terror check l1_hit %d l2_hit %d\n", l1_hit, l2_hit);
 
-	if(l1_hit == 1)
+	if(l1_hit == 1 || l2_hit ==1)
 	{
 
-		return l1_hit;
+		/*fatal("\terror check l1_hit %d l2_hit %d cycle %llu\n", l1_hit, l2_hit, P_TIME);*/
+		printf("\terror check l1_hit_ptr %d l1_state_ptr %d\n"
+			  "\terror check l2_hit_ptr %d l2_state_ptr %d\n"
+			  "\terror L1_wb id %d L2_wb id %d\n",
+			  *l1_cache_block_hit_ptr, *l1_cache_block_state_ptr,
+			  *l2_cache_block_hit_ptr, *l2_cache_block_hit_ptr,
+			  l1_wb_hit, l2_wb_hit);
 
+		printf("block 0x%08x searching for set %d tag %d\n", addr, l1_set, l1_tag);
+		cgm_cache_print_set_tag(&l1_d_caches[core_id], addr);
+		if(l1_write_back_packet)
+		{
+			printf("block 0x%08x l1 wb_addr 0x%08x id %llu wb_set %d wb_tag %d\n",
+				addr, l1_write_back_packet->address, l1_write_back_packet->write_back_id, l1_write_back_packet->set, l1_write_back_packet->tag);
+		}
+		else
+		{
+			printf("l1 no wb found\n");
+		}
+
+
+		printf("block 0x%08x searching for set %d tag %d\n", addr, l2_set, l2_tag);
+		cgm_cache_print_set_tag(&l2_caches[core_id], addr);
+		cgm_cache_dump_set(&l2_caches[core_id], l2_set);
+		if(l2_write_back_packet)
+		{
+			printf("block 0x%08x l2 wb_addr 0x%08x id %llu wb_set %d wb_tag %d\n",
+				addr, l2_write_back_packet->address, l2_write_back_packet->write_back_id, l2_write_back_packet->set, l2_write_back_packet->tag);
+
+			cgm_cache_print_set_tag(&l2_caches[core_id], l2_write_back_packet->address);
+
+		}
+		else
+		{
+			printf("l2 no wb found\n");
+		}
+
+		fatal("cache_validate_block_flushed_from_core(): block not where it ought to be\n");
+
+		return 1;
 	}
-	else if(l2_hit ==2)
-	{
-		return l2_hit;
 
-	}
-
-
+	return 0;
 }
 
 

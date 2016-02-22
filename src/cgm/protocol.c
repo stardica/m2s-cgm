@@ -125,6 +125,10 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet){
 
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, int pending, enum cgm_cache_block_state_t victim_state){
 
+	int l1_error = 0;
+	int l2_error = 0;
+	int l3_error = 0;
+
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->flush_pending = pending;
 	write_back_packet->cache_block_state = victim_state;
@@ -136,10 +140,16 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	assert(write_back_packet->address != 0);
 	assert(cache->sets[set].id >=0 && cache->sets[set].id < cache->num_sets);
 
-	if(((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+	if((((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
+		/*//verify that there is only one wb in L2 for this block.
+		l1_error = cache_search_wb_dup_packets(cache, cache->sets[set].blocks[way].tag, set);
+		l2_error = cache_search_wb_dup_packets(&l2_caches[cache->id], cache->sets[set].blocks[way].tag, set);
+		l3_error = cache_search_wb_dup_packets(&l3_caches[cgm_l3_cache_map(set)], cache->sets[set].blocks[way].tag, set);*/
+
 		printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
 			(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
+
 	}
 
 	write_back_packet->set = cache->sets[set].id;
