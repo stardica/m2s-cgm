@@ -58,8 +58,6 @@ int is_writeback_present(struct cgm_packet_t *writeback_packet);
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
-
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);

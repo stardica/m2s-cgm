@@ -257,6 +257,9 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	//check if the out on the cross bar is busy. If not assign the link.
 	if(tx_queue == north_queue)
 	{
+		/*if(switches->queue == north_queue)
+			printf("error here cycle %llu\n", P_TIME);*/
+
 		assert(switches->queue != north_queue);
 		if(switches->crossbar->north_in_out_linked_queue == invalid_queue)
 		{
@@ -415,6 +418,7 @@ void switch_crossbar_link(struct switch_t *switches){
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
+					/*printf("packet id %llu dest %d access type %d\n", packet->evict_id, packet->dest_id, packet->access_type);*/
 					switch_set_link(switches, tx_queue);
 				}
 			}

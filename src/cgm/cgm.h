@@ -53,8 +53,8 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x00006f40
-#define WATCHLINE 0
+#define WATCHBLOCK (unsigned int) 0x00078f00
+#define WATCHLINE 1
 #define DUMP 0
 #define CPUTICK 1
 

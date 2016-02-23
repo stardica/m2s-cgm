@@ -1212,8 +1212,11 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 			init_flush_packet(cache, flush_packet, set, way);
 
-			flush_packet->cpu_access_type = cgm_access_store;
+			/*if(flush_packet->evict_id == 5549)
+				printf("l3 evict id %llu vict state %d cycle %llu\n", flush_packet->evict_id, victim_state, P_TIME);*/
 
+
+			flush_packet->cpu_access_type = cgm_access_store;
 
 			if(victim_way)
 				flush_packet->l3_victim_way = victim_way;
@@ -1957,8 +1960,8 @@ void l2_cache_ctrl(void){
 		{
 			step++;
 
-			if(P_TIME > 2725380)
-				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+			/*if(P_TIME > 2725380)
+				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
