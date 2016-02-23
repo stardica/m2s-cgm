@@ -1949,7 +1949,7 @@ void l2_cache_ctrl(void){
 				|| !cache_can_access_Tx_bottom(&(l2_caches[my_pid])) || !cache_can_access_Tx_top(&(l2_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			/*printf("%s stalling\n", l2_caches[my_pid].name);*/
+			printf("%s stalling\n", l2_caches[my_pid].name);
 			l2_caches[my_pid].stalls++;
 			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
 					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
@@ -1960,8 +1960,14 @@ void l2_cache_ctrl(void){
 		{
 			step++;
 
-			/*if(P_TIME > 2725380)
+			/*if(P_TIME > 9313751)
 				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
+
+			/*if (message_packet->access_id >= 4801178)
+			{
+				printf("L2 received access id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+
+			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -3416,11 +3422,14 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	message_packet = list_remove(cache->last_queue, message_packet);
+
+
 	if(!message_packet)
 	{
 		fatal("%s cycle %llu\n", cache->name, P_TIME);
 
 	}
+
 
 	assert(message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);

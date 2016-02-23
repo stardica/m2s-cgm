@@ -154,7 +154,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 
 	//reply to L3
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
-	list_enqueue(mem_ctrl->Tx_queue, message_packet);
+	list_enqueue(mem_ctrl->Tx_queue_top, message_packet);
 	advance(mem_ctrl_io_ec);
 
 	return;

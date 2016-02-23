@@ -606,6 +606,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
+		if((((addr & l1_i_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			printf("block 0x%08x %s id %llu type %d start cycle %llu\n",
+					(addr & l1_i_caches[0].block_address_mask), thread->i_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
+		}
+
 		//Drop the packet into the L1 I Cache Rx queue
 		list_enqueue(thread->i_cache_ptr[id].Rx_queue_top, new_packet);
 
@@ -682,6 +688,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	last_issued_lsq_access_id = access_id;
 	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
 
+	/*printf("\t lsq issuing access_id %llu\n", access_id);*/
+
 	if(access_kind == cgm_access_load)
 	{
 		cgm_stat->cpu_total_loads++;
@@ -695,7 +703,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
 	{
 
-		if(((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE)
+		if((((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			printf("block 0x%08x %s id %llu type %d start cycle %llu\n",
 					(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);

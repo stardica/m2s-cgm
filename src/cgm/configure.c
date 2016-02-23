@@ -3559,11 +3559,11 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	snprintf(buff, 100, "mem_ctrl.Rx_queue_top");
 	mem_ctrl->Rx_queue_top->name = strdup(buff);
 
-	mem_ctrl->Tx_queue = list_create();
+	mem_ctrl->Tx_queue_top = list_create();
 
 	memset (buff,'\0' , 100);
 	snprintf(buff, 100, "mem_ctrl.Tx_queue");
-	mem_ctrl->Tx_queue->name = strdup(buff);
+	mem_ctrl->Tx_queue_top->name = strdup(buff);
 
 	mem_ctrl->pending_accesses = list_create();
 

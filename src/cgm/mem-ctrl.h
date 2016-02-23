@@ -35,7 +35,7 @@ struct mem_ctrl_t{
 	struct mem_t *mem;
 
 	struct list_t *Rx_queue_top;
-	struct list_t *Tx_queue;
+	struct list_t *Tx_queue_top;
 
 	struct list_t *pending_accesses;
 

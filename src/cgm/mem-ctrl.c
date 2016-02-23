@@ -94,10 +94,10 @@ void memctrl_ctrl_io(void){
 		step++;
 
 		/*stats*/
-		if(mem_ctrl->tx_max < list_count(mem_ctrl->Tx_queue))
-			mem_ctrl->tx_max = list_count(mem_ctrl->Tx_queue);
+		if(mem_ctrl->tx_max < list_count(mem_ctrl->Tx_queue_top))
+			mem_ctrl->tx_max = list_count(mem_ctrl->Tx_queue_top);
 
-		message_packet = list_dequeue(mem_ctrl->Tx_queue);
+		message_packet = list_dequeue(mem_ctrl->Tx_queue_top);
 		assert(message_packet);
 
 		/*access_id = message_packet->access_id;*/
@@ -271,7 +271,7 @@ void memctrl_ctrl(void){
 
 					//reply to L3
 					message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
-					list_enqueue(mem_ctrl->Tx_queue, message_packet);
+					list_enqueue(mem_ctrl->Tx_queue_top, message_packet);
 					advance(mem_ctrl_io_ec);
 				}
 			}
