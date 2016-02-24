@@ -886,16 +886,17 @@ void switch_north_io_ctrl(void){
 		{
 
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
-			|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
-			|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd)
+					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
+					|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
+					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
+					|| message_packet->access_type == cgm_access_upgrade)
 			{
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
-			else if (message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_flush_block
-					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_upgrade_nack
-					|| message_packet->access_type == cgm_access_upgrade_inval || message_packet->access_type == cgm_access_upgrade_putx_n)
+			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
+					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
+					|| message_packet->access_type == cgm_access_upgrade_putx_n)
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);
@@ -1082,8 +1083,7 @@ void switch_south_io_ctrl(void){
 		{
 			//put the message in the right queue.
 			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_write_back
-			|| message_packet->access_type == cgm_access_upgrade)
+					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade)
 			{
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
@@ -1094,7 +1094,8 @@ void switch_south_io_ctrl(void){
 			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
-					|| message_packet->access_type == cgm_access_flush_block_ack)
+					|| message_packet->access_type == cgm_access_flush_block_ack
+					|| message_packet->access_type == cgm_access_write_back)
 			{
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}
@@ -1139,10 +1140,10 @@ void switch_south_io_ctrl(void){
 
 void switch_dump_stats(void){
 
-	int num_switches = x86_cpu_num_cores + 1;
+	int num_cores = x86_cpu_num_cores;
 	int i = 0;
 
-	for(i = 0; i < num_switches; i++)
+	for(i = 0; i < num_cores; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[i].switch_total_wakes);
@@ -1179,6 +1180,41 @@ void switch_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "WestTxQueueAveDepth = %0.2f\n", switches[i].west_txqueue_ave_depth);
 		CGM_STATS(cgm_stats_file, "\n");
 	}
+
+	CGM_STATS(cgm_stats_file, "[Switch_SA]\n");
+	CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[num_cores].switch_total_wakes);
+	CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.2f\n", (double) switches[num_cores].switch_total_wakes/ (double) P_TIME);
+	CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[num_cores].switch_total_links);
+	CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %.02f\n", (double)switches[num_cores].switch_total_links/(double)switches[num_cores].switch_total_wakes);
+	CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[num_cores].switch_north_io_transfers);
+	CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[num_cores].switch_north_io_transfer_cycles);
+	CGM_STATS(cgm_stats_file, "NorthIOBytesTransfered = %llu\n", switches[num_cores].switch_north_io_bytes_transfered);
+	CGM_STATS(cgm_stats_file, "NorthRxQueueMaxDepth = %llu\n", switches[num_cores].north_rxqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "NorthRxQueueAveDepth = %0.2f\n", switches[num_cores].north_rxqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "NorthTxQueueMaxDepth = %llu\n", switches[num_cores].north_txqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "NorthTxQueueAveDepth = %0.2f\n", switches[num_cores].north_txqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "EastIOTransfers = %llu\n", switches[num_cores].switch_east_io_transfers);
+	CGM_STATS(cgm_stats_file, "EastIOCycles = %llu\n", switches[num_cores].switch_east_io_transfer_cycles);
+	CGM_STATS(cgm_stats_file, "EastIOBytesTransfered = %llu\n", switches[num_cores].switch_east_io_bytes_transfered);
+	CGM_STATS(cgm_stats_file, "EastRxQueueMaxDepth = %llu\n", switches[num_cores].east_rxqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "EastRxQueueAveDepth = %0.2f\n", switches[num_cores].east_rxqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "EastTxQueueMaxDepth = %llu\n", switches[num_cores].east_txqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "EastTxQueueAveDepth = %0.2f\n", switches[num_cores].east_txqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "SouthIOTransfers = %llu\n", switches[num_cores].switch_south_io_transfers);
+	CGM_STATS(cgm_stats_file, "SouthIOCycles = %llu\n", switches[num_cores].switch_south_io_transfer_cycles);
+	CGM_STATS(cgm_stats_file, "SouthIOBytesTransfered = %llu\n", switches[num_cores].switch_south_io_bytes_transfered);
+	CGM_STATS(cgm_stats_file, "SouthRxQueueMaxDepth = %llu\n", switches[num_cores].south_rxqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "SouthRxQueueAveDepth = %0.2f\n", switches[num_cores].south_rxqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "SouthTxQueueMaxDepth = %llu\n", switches[num_cores].south_txqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "SouthTxQueueAveDepth = %0.2f\n", switches[num_cores].south_txqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "WestIOTransfers = %llu\n", switches[num_cores].switch_west_io_transfers);
+	CGM_STATS(cgm_stats_file, "WestIOCycles = %llu\n", switches[num_cores].switch_west_io_transfer_cycles);
+	CGM_STATS(cgm_stats_file, "WestIOBytesTransfered = %llu\n", switches[num_cores].switch_west_io_bytes_transfered);
+	CGM_STATS(cgm_stats_file, "WestRxQueueMaxDepth = %llu\n", switches[num_cores].west_rxqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "WestRxQueueAveDepth = %0.2f\n", switches[num_cores].west_rxqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "WestTxQueueMaxDepth = %llu\n", switches[num_cores].west_txqueue_max_depth);
+	CGM_STATS(cgm_stats_file, "WestTxQueueAveDepth = %0.2f\n", switches[num_cores].west_txqueue_ave_depth);
+	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
 }

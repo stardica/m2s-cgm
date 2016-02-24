@@ -2594,14 +2594,12 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 					message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 					//reply to the L3 cache
-					printf("l2_flush_block_here_2 id %llu dest_id %d\n", message_packet->evict_id, message_packet->dest_id);
+					/*printf("l2_flush_block_here_2 id %llu dest_id %d\n", message_packet->evict_id, message_packet->dest_id);*/
 					cache_put_io_down_queue(cache, message_packet);
 
 				}
-				else
+				else if(wb_packet->flush_pending == 1)
 				{
-					assert(wb_packet->flush_pending == 1);
-
 					//waiting on flush to finish insert into pending request buffer
 					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state != cgm_cache_block_modified);
 
@@ -2611,6 +2609,10 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 					//put the message packet into the pending request buffer
 					message_packet = list_remove(cache->last_queue, message_packet);
 					list_enqueue(cache->pending_request_buffer, message_packet);
+				}
+				else
+				{
+					fatal("cgm_mesi_l2_flush_block(): wb_packet has invalid flush_pending value\n");
 				}
 			}
 			else
@@ -2727,6 +2729,10 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 		if(wb_packet->flush_join == 0) /*if not waiting on a join merge the wb*/
 		{
+
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			assert(!pending_request_packet);
+
 			//incoming data from L1 is dirty
 			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
@@ -2889,7 +2895,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 			//transmit block to L3
-			printf("l2_get_fwd\n");
+			/*printf("l2_get_fwd\n");*/
 			cache_put_io_down_queue(cache, message_packet);
 
 			break;
@@ -3062,7 +3068,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 			//transmit block to L3
-			printf("l2_getx_fwd\n");
+			/*printf("l2_getx_fwd\n");*/
 			cache_put_io_down_queue(cache, message_packet);
 
 			break;
@@ -3420,7 +3426,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	if the write back is a surprise the block will be exclusive and old in the L2 cache.*/
 
 	//WB from L1 D cache
-	if(cache->last_queue == cache->Rx_queue_top)
+	if(cache->last_queue == cache->Coherance_Rx_queue)
 	{
 		switch(*cache_block_state_ptr)
 		{
@@ -5204,7 +5210,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	}
 
 	//WB from L2 cache
-	if(cache->last_queue == cache->Rx_queue_top)
+	if(cache->last_queue == cache->Coherance_Rx_queue)
 	{
 		switch(*cache_block_state_ptr)
 		{

@@ -191,6 +191,9 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 int remove_from_global(long long id);
 
+
+void cgm_dump_system(void);
+
 //debugging and stats related
 void PrintCycle(void);
 

@@ -250,6 +250,7 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 	inval_packet->inval = 1;
 	inval_packet->size = 1;
 	inval_packet->evict_id = evict_id++;
+	inval_packet->write_back_id = write_back_id;
 
 	//reconstruct the address from the set and tag
 	inval_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);

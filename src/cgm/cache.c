@@ -503,6 +503,38 @@ int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set){
 	return j;
 }
 
+void cache_dump_request_queue(struct list_t *queue){
+
+	int i = 0;
+	struct cgm_packet_t *packet = NULL;
+
+	LIST_FOR_EACH(queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		packet = list_get(queue, i);
+		printf("\tslot %d packet id %llu access type %s\n", i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type));
+	}
+
+	return;
+}
+
+
+void cache_dump_write_back(struct cache_t *cache){
+
+	int i = 0;
+	struct cgm_packet_t *wb_packet = NULL;
+
+	LIST_FOR_EACH(cache->write_back_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		wb_packet = list_get(cache->write_back_buffer, i);
+		printf("\tslot %d wb id %llu flush bit %d blk addr 0x%08x\n", i, wb_packet->write_back_id, wb_packet->flush_pending, wb_packet->address);
+	}
+
+	return;
+}
+
+
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache){
 
 	int i = 0;
@@ -758,7 +790,7 @@ void ort_dump(struct cache_t *cache){
 
 	for (i = 0; i <  cache->mshr_size; i++)
 	{
-		printf("ort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
+		printf("\tort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
 	}
 	return;
 }
@@ -1096,7 +1128,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
 
-	if(((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE))
+	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
 		printf("block 0x%08x %s evicted cycle %llu\n",
 			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
@@ -1163,6 +1195,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	int i = 0;
 	unsigned char bit_vector;
 	int num_cores = x86_cpu_num_cores;
+	int check = 0;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *flush_packet = NULL;
@@ -1171,7 +1204,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	assert(cache->cache_type == l3_cache_t);
 	assert(cache->share_mask > 0);
 
-	if(((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE))
+	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
 		printf("block 0x%08x %s evicted cycle %llu\n",
 			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
@@ -1192,10 +1225,13 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
-		write_back_packet->flush_pending = 1;
+		/*if no core has the block dont set it as pending*/
+		if(sharers > 0)
+			write_back_packet->flush_pending = 1;
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
+
 
 	//send flush to owning cores
 	/*star todo account for different block sizes in L3 L2 L1*/
@@ -1215,8 +1251,12 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 			/*if(flush_packet->evict_id == 5549)
 				printf("l3 evict id %llu vict state %d cycle %llu\n", flush_packet->evict_id, victim_state, P_TIME);*/
 
-
 			flush_packet->cpu_access_type = cgm_access_store;
+
+			if(check == 1)
+			{
+				printf("check end evict id %llu\n", flush_packet->evict_id);
+			}
 
 			if(victim_way)
 				flush_packet->l3_victim_way = victim_way;
@@ -1234,6 +1274,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		//shift the vector to the next position and continue
 		bit_vector = bit_vector >> 1;
 	}
+
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
@@ -2151,9 +2192,9 @@ void l3_cache_ctrl(void){
 				printf("l3 running\n");
 			}*/
 
-			/*if(message_packet->access_id == 1215957)
+			/*if(message_packet->access_type == cgm_access_flush_block_ack)
 			{
-				fatal("%s id %llu type %d cycle %llu\n", l3_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				printf("%s flush_block_ack evict id %llu wb id %llu cycle %llu\n", l3_caches[my_pid].name, message_packet->evict_id, message_packet->write_back_id, P_TIME);
 			}*/
 
 			/*printf("%s running\n", l3_caches[my_pid].name);*/
@@ -2499,6 +2540,7 @@ void l1_i_cache_down_io_ctrl(void){
 
 		message_packet = list_dequeue(l1_i_caches[my_pid].Tx_queue_bottom);
 		assert(message_packet);
+		assert(message_packet->access_type == cgm_access_gets);
 
 		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
@@ -2556,13 +2598,13 @@ void l1_d_cache_down_io_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_write_back)
+				||message_packet->access_type == cgm_access_upgrade)
 		{
 			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
 			advance(&l2_cache[my_pid]);
 		}
-		else if(message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_flush_block_ack
-				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack)
+		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
 		{
 			list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 			advance(&l2_cache[my_pid]);
@@ -2627,20 +2669,21 @@ void l2_cache_up_io_ctrl(void){
 		//drop into the correct l1 cache queue and lane.
 		if (message_packet->cpu_access_type == cgm_access_fetch)
 		{
+			assert(message_packet->access_type == cgm_access_puts);
+
 			list_enqueue(l1_i_caches[my_pid].Rx_queue_bottom, message_packet);
 			advance(&l1_i_cache[my_pid]);
 		}
 		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 		{
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-					|| message_packet->access_type == cgm_access_put_clnx)
+					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade_ack)
 			{
 				list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l1_d_cache[my_pid]);
 			}
-			else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_flush_block
-					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
-					|| message_packet->access_type == cgm_access_upgrade_inval)
+			else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_downgrade
+					|| message_packet->access_type == cgm_access_getx_fwd_inval || message_packet->access_type == cgm_access_upgrade_inval)
 			{
 				list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l1_d_cache[my_pid]);

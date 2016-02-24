@@ -214,7 +214,6 @@ void memctrl_ctrl(void){
 				{
 					if(dramsim_add_transaction(message_packet->access_type, GET_BLOCK(message_packet->address)))
 					{
-
 						/*stats*/
 						message_packet->dram_start_cycle = P_TIME;
 						mem_ctrl->bytes_wrote += message_packet->size;

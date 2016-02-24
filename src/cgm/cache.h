@@ -153,6 +153,7 @@ void cache_access_stats(struct cache_t *cache, int hit, int state);
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
+void cache_dump_request_queue(struct list_t *queue);
 
 //Address Manipulations
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -175,6 +176,7 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cac
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set);
 int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set);
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache);
+void cache_dump_write_back(struct cache_t *cache);
 
 //Pending Request Buffer Manipulations
 void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
