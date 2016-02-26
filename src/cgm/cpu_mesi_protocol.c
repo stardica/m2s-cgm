@@ -1983,7 +1983,15 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				/*the address better be the same too...*/
 				assert(pending_request->address == message_packet->address);
 				assert(pending_request->start_cycle != 0);
-				assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
+				/*if (pending_request->way != message_packet->way)
+				{
+					cgm_cache_dump_set(cache, message_packet->set);
+
+					fatal("cgm_mesi_l2_downgrade_ack(): %s access_id %llu address 0x%08x blk_addr 0x%08x mp set %d mp tag %d mp way %d blk state %d pr set %d sr tag %d pr way %d cycle %llu\n",
+						cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, pending_request->set, pending_request->tag, pending_request->way, P_TIME);
+				}*/
+				assert(pending_request->set == message_packet->set);// && pending_request->way == message_packet->way);
 
 				//the line is invalid in the cache so don't set the line shared.
 				/*printf("%s downgrade_ack id %llu cycle %llu\n", cache->name, pending_request->access_id, P_TIME);*/
@@ -2731,6 +2739,15 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		{
 
 			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			if(pending_request_packet)
+			{
+				cgm_cache_dump_set(cache, message_packet->set);
+
+				fatal("cgm_mesi_l2_flush_block_ack(): %s access_id %llu address 0x%08x blk_addr 0x%08x mp set %d mp tag %d mp way %d blk state %d pr set %d sr tag %d pr way %d cycle %llu\n",
+					cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, pending_request_packet->set, pending_request_packet->tag, pending_request_packet->way, P_TIME);
+			}
+
 			assert(!pending_request_packet);
 
 			//incoming data from L1 is dirty
@@ -2908,6 +2925,9 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
+
+				assert(write_back_packet->flush_pending == 0);
+
 
 				assert(*cache_block_hit_ptr == 0);
 				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
@@ -4981,11 +5001,17 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+	if(pending_bit != 1)
+	{
+		fatal("cgm_mesi_l3_getx_fwd_nack(): pending_bit %d  %s access_id %llu access type %s address 0x%08x blk addr 0x%08x cycle %llu\n",
+				pending_bit, cache->name, message_packet->access_id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->address, message_packet->address & cache->block_address_mask, P_TIME);
+	}
 	assert(pending_bit == 1);
 
 	//get number of sharers
 	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
-	assert(sharers == 1);
+	assert(sharers == 1 || sharers == 0);
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -5188,6 +5214,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	struct cgm_packet_t *wb_packet;
 	enum cgm_cache_block_state_t block_trainsient_state;
 	int error = 0;
+	int pending_bit = 0;
 
 	//charge the delay
 	P_PAUSE(cache->latency);
@@ -5306,8 +5333,21 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				//assert(error == 0);
 
+
+				/*if the block is pending when a write back is coming in don't clear the pending bit
+				because the get_fwd or getx_fwd is enroute*/
+				pending_bit = cgm_cache_get_dir_pending_bit(cache,  message_packet->set, message_packet->way);
+
 				/*clear the directory for this block*/
-				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+				if(pending_bit == 1)
+				{
+					cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+					cgm_cache_set_dir_pending_bit(cache,  message_packet->set, message_packet->way);
+				}
+				else
+				{
+					cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+				}
 
 				//destroy the L2 WB message. L3 will clear its WB at an opportune time.
 				message_packet = list_remove(cache->last_queue, message_packet);
