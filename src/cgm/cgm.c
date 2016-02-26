@@ -254,10 +254,7 @@ void cgm_watchdog(void){
 
 		if(run_watch_dog == 1)
 		{
-			if(l2_caches[0].sets[23].blocks[0].tag != 2 && wd_current_set == 23)
-				printf("WD new value %d last set %d last tag %d cycle %llu\n", l2_caches[0].sets[23].blocks[0].tag, wd_current_set, wd_current_tag, P_TIME);
-
-			//cgm_cache_dump_set(&l2_caches[0], 23);
+			cache_dump_request_queue(switches[2].south_queue);
 		}
 		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
 	}

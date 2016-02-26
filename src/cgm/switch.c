@@ -452,6 +452,13 @@ void switch_crossbar_link(struct switch_t *switches){
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
+
+					if(packet->access_id == 4449325 || packet->access_id == 4449322)
+					{
+
+						printf("\tswtich cross bar linking id %llu to switch north tx queue cross bar\n", packet->access_id);
+						cache_dump_request_queue(switches->south_queue);
+					}
 				}
 			}
 
@@ -548,13 +555,24 @@ void switch_ctrl(void){
 		link as many inputs to outputs as possible*/
 		switch_crossbar_link(&switches[my_pid]);
 
+
 		/*crossbar state is set. now run through and move each packet as required.*/
 		if(switches[my_pid].crossbar->north_in_out_linked_queue != invalid_queue)
 		{
 			/*the north out queue is linked to an input queue
 			move the packet from the input queue to the correct output queue*/
+
+
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
 			assert(message_packet);
+
+
+			if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+			{
+				printf("\tswtich putting id %llu in switch io north tx queue\n", message_packet->access_id);
+				cache_dump_request_queue(switches[my_pid].south_queue);
+				cache_dump_request_queue(switches[my_pid].Tx_north_queue);
+			}
 
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
@@ -891,6 +909,12 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
 					|| message_packet->access_type == cgm_access_upgrade)
 			{
+				if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+				{
+					printf("\tswitch north moving id %llu to l2 rx_queue\n", message_packet->access_id);
+
+				}
+
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}

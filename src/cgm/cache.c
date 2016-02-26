@@ -512,7 +512,7 @@ void cache_dump_request_queue(struct list_t *queue){
 	{
 		//get pointer to access in queue and check it's status.
 		packet = list_get(queue, i);
-		printf("\tslot %d packet id %llu access type %s\n", i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type));
+		printf("\t %s slot %d packet id %llu access type %s\n", queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type));
 	}
 
 	return;
@@ -2004,11 +2004,11 @@ void l2_cache_ctrl(void){
 			/*if(P_TIME > 9313751)
 				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
 
-			/*if (message_packet->access_id >= 4801178)
+			if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
 			{
-				printf("L2 received access id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+				printf("\tL2 received id %llu form l2 rx_queue_bottom\n", message_packet->access_id);
 
-			}*/
+			}
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -2798,9 +2798,18 @@ void l3_cache_up_io_ctrl(void){
 
 		P_PAUSE(transfer_time);
 
+
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].south_queue, message_packet);
 		advance(&switches_ec[my_pid]);
+
+		if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+		{
+			run_watch_dog = 1;
+			printf("\tnorth io ctrl moving id %llu to switch south_queue\n", message_packet->access_id);
+			cache_dump_request_queue(switches[my_pid].south_queue);
+		}
+
 
 		/*stats*/
 		switches[my_pid].south_rx_inserts++;
@@ -3457,6 +3466,13 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	assert(message_packet);
+
+	if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+	{
+		printf("\tL3 cache moving id %llu to north io crtl\n", message_packet->access_id);
+
+	}
+
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);
 	return;
