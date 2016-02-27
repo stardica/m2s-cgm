@@ -1097,9 +1097,12 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
-		printf("block 0x%08x %s evicted cycle %llu\n",
-			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
-			cache->name, P_TIME);
+		if(LEVEL == 1 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s evicted cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+					cache->name, P_TIME);
+		}
 	}
 
 	//put the block in the write back buffer if in E/M states
@@ -1130,9 +1133,12 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 
 	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
-		printf("block 0x%08x %s evicted cycle %llu\n",
-			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
-			cache->name, P_TIME);
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s evicted cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+					cache->name, P_TIME);
+		}
 	}
 
 	//if dirty data is found
@@ -1206,9 +1212,12 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
-		printf("block 0x%08x %s evicted cycle %llu\n",
-			cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
-			cache->name, P_TIME);
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s evicted cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+					cache->name, P_TIME);
+		}
 	}
 
 	//get the victim's state
@@ -3580,8 +3589,17 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
-				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+
+				if((LEVEL == 1 || LEVEL == 3) && (cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t))
+				{
+					printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+				}
+				else if((LEVEL == 2 || LEVEL == 3) && (cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t))
+				{
+					printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+				}
 			}
 
 			list_enqueue(cache->retry_queue, ort_packet);

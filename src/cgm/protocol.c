@@ -147,9 +147,16 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 		l2_error = cache_search_wb_dup_packets(&l2_caches[cache->id], cache->sets[set].blocks[way].tag, set);
 		l3_error = cache_search_wb_dup_packets(&l3_caches[cgm_l3_cache_map(set)], cache->sets[set].blocks[way].tag, set);*/
 
-		printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
-			(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
-
+		if((LEVEL == 1 || LEVEL == 3) && (cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t))
+		{
+			printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
+					(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
+		}
+		else if((LEVEL == 2 || LEVEL == 3) && (cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t))
+		{
+			printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
+					(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
+		}
 	}
 
 	write_back_packet->set = cache->sets[set].id;
