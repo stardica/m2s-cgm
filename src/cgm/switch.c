@@ -316,6 +316,15 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	dest_node = message_packet->dest_id;
 	src_node = message_packet->src_id;
 
+
+	if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
+	{
+		printf("\tswtich routing id %llu src %d dest %d\n", message_packet->access_id, src_node, dest_node);
+		getchar();
+	}
+
+
+
 	//if dest is an L2/L3/HUB-IOMMU/SA connected to this switch.
 	if(dest_node == (switch_node - 1) || dest_node == (switch_node + 1))
 	{
@@ -453,10 +462,10 @@ void switch_crossbar_link(struct switch_t *switches){
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 
-					if(packet->access_id == 4449325 || packet->access_id == 4449322)
+					if(packet->access_id == 4446145 || packet->access_id == 4446155)
 					{
 
-						printf("\tswtich cross bar linking id %llu to switch north tx queue cross bar\n", packet->access_id);
+						printf("\%s cross bar linking to %d id %llu to switch north tx queue cross bar\n", switches->name, tx_queue, packet->access_id);
 						cache_dump_request_queue(switches->south_queue);
 					}
 				}
@@ -561,13 +570,11 @@ void switch_ctrl(void){
 		{
 			/*the north out queue is linked to an input queue
 			move the packet from the input queue to the correct output queue*/
-
-
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
 			assert(message_packet);
 
 
-			if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+			if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
 			{
 				printf("\tswtich putting id %llu in switch io north tx queue\n", message_packet->access_id);
 				cache_dump_request_queue(switches[my_pid].south_queue);
