@@ -1,3 +1,61 @@
+/*star todo block evicted by L2 and inval is on its way to L1
+			change upgrade request to GetX and send on to L3 cache.*/
+			/*
+			//check WB for line...
+			if(write_back_packet)
+			{
+				found the packet in the write back buffer
+				data should not be in the rest of the cache
+
+				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
+						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+
+
+				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+				packet_destroy(write_back_packet);
+
+				fatal("getx fwd nack check this\n");
+
+			}
+			else
+			{
+				fatal("cgm_mesi_l3_getx_fwd_nack(): miss on getx_forward nack\n");
+			}
+
+			break;*/
+
+/*OLD CODE*/
+				//store the getx_fwd in the pending request buffer
+				/*message_packet->inval_pending = 1;
+				cgm_cache_insert_pending_request_buffer(cache, message_packet);
+
+				//set the flush_pending bit to 1 in the block
+				cgm_cache_set_block_flush_pending_bit(cache, message_packet->set, message_packet->way);
+
+				//flush the L1 cache because the line may be dirty in L1
+				inval_packet = packet_create();
+				init_getx_fwd_inval_packet(inval_packet, message_packet->address);
+
+				//send the L1 D cache the inval message
+				inval_packet->cpu_access_type = cgm_access_store;
+				list_enqueue(cache->Tx_queue_top, inval_packet);
+				advance(cache->cache_io_up_ec);*/
+
+/*OLD CODE*/
+				//store the get_fwd in the pending request buffer
+				/*message_packet->downgrade_pending = 1;
+				cgm_cache_insert_pending_request_buffer(cache, message_packet);
+
+				//flush the L1 cache because the line may be dirty in L1
+				downgrade_packet = packet_create();
+				assert(downgrade_packet);
+				init_downgrade_packet(downgrade_packet, message_packet->address);
+
+				//send the L1 D cache the downgrade message
+				downgrade_packet->cpu_access_type = cgm_access_load;
+				downgrade_packet->access_id = message_packet->access_id;
+				list_enqueue(cache->Tx_queue_top, downgrade_packet);
+				advance(cache->cache_io_up_ec);*/
 
 //make sure victim block isn't transient
 	/*victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);

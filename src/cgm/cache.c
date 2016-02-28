@@ -981,7 +981,7 @@ int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set
 	}
 
 	//if here something is wrong
-	fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
+	//fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
 
 	/* Block not found */
 	return 0;
@@ -2013,11 +2013,11 @@ void l2_cache_ctrl(void){
 			/*if(P_TIME > 9313751)
 				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
 
-			if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+			/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
 			{
 				printf("\tL2 received id %llu form l2 rx_queue_bottom\n", message_packet->access_id);
 
-			}
+			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -2082,6 +2082,11 @@ void l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_l2_get_fwd)
 				l2_caches[my_pid].l2_get_fwd(&(l2_caches[my_pid]), message_packet);
 			}
+			else if(access_type == cgm_access_downgrade_nack)
+			{
+				//Call back function (cgm_mesi_l2_get_fwd)
+				l2_caches[my_pid].l2_downgrade_nack(&(l2_caches[my_pid]), message_packet);
+			}
 			else if(access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_upgrade_getx_fwd)
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd)
@@ -2091,6 +2096,11 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_getx_fwd_inval_ack(&(l2_caches[my_pid]), message_packet);
+			}
+			else if(access_type == cgm_access_getx_fwd_nack)
+			{
+				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
+				l2_caches[my_pid].l2_getx_fwd_nack(&(l2_caches[my_pid]), message_packet);
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
@@ -2244,9 +2254,6 @@ void l3_cache_ctrl(void){
 			{
 				//via call back function (cgm_mesi_l3_downgrade_nack)
 				l3_caches[my_pid].l3_downgrade_nack(&(l3_caches[my_pid]), message_packet);
-
-				//run again and pull the message_packet as a new access
-				step--;
 			}
 			else if(access_type == cgm_access_getx_fwd_ack)
 			{
@@ -2257,9 +2264,6 @@ void l3_cache_ctrl(void){
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_getx_fwd_nack(&(l3_caches[my_pid]), message_packet);
-
-				//run again and pull the message_packet as a new access
-				step--;
 			}
 			else if(access_type == cgm_access_getx_fwd_upgrade_nack)
 			{
@@ -2812,12 +2816,12 @@ void l3_cache_up_io_ctrl(void){
 		list_enqueue(switches[my_pid].south_queue, message_packet);
 		advance(&switches_ec[my_pid]);
 
-		if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+		/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
 		{
 			run_watch_dog = 1;
 			printf("\tnorth io ctrl moving id %llu to switch south_queue\n", message_packet->access_id);
 			cache_dump_request_queue(switches[my_pid].south_queue);
-		}
+		}*/
 
 
 		/*stats*/
@@ -3084,6 +3088,10 @@ void cache_get_transient_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//look for the block in the cache
 	*(cache_block_hit_ptr) = cgm_cache_find_transient_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+	/*if(*cache_block_hit_ptr == 0)
+	{
+		fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
+	}*/
 
 	//store the decode in the packet for now.
 	message_packet->tag = tag;
@@ -3476,11 +3484,11 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 	message_packet = list_remove(cache->last_queue, message_packet);
 	assert(message_packet);
 
-	if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+	/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
 	{
 		printf("\tL3 cache moving id %llu to north io crtl\n", message_packet->access_id);
 
-	}
+	}*/
 
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);
@@ -3490,15 +3498,11 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	message_packet = list_remove(cache->last_queue, message_packet);
-
-
 	if(!message_packet)
 	{
 		fatal("%s cycle %llu\n", cache->name, P_TIME);
 
 	}
-
-
 	assert(message_packet);
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
 	advance(cache->cache_io_down_ec);

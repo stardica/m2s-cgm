@@ -1999,7 +1999,9 @@ int cache_finish_create(){
 			l2_caches[i].l2_getx_nack = cgm_mesi_l2_getx_nack;
 			l2_caches[i].l2_downgrade_ack = cgm_mesi_l2_downgrade_ack;
 			l2_caches[i].l2_get_fwd = cgm_mesi_l2_get_fwd;
+			l2_caches[i].l2_downgrade_nack = cgm_mesi_l2_downgrade_nack;
 			l2_caches[i].l2_getx_fwd = cgm_mesi_l2_getx_fwd;
+			l2_caches[i].l2_getx_fwd_nack = cgm_mesi_l2_getx_fwd_nack;
 			l2_caches[i].l2_getx_fwd_inval_ack = cgm_mesi_l2_getx_fwd_inval_ack;
 			l2_caches[i].l2_upgrade = cgm_mesi_l2_upgrade;
 			l2_caches[i].l2_upgrade_ack = cgm_mesi_l2_upgrade_ack;

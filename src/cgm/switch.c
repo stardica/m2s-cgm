@@ -316,14 +316,12 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	dest_node = message_packet->dest_id;
 	src_node = message_packet->src_id;
 
-
+/*
 	if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
 	{
 		printf("\tswtich routing id %llu src %d dest %d\n", message_packet->access_id, src_node, dest_node);
 		getchar();
-	}
-
-
+	}*/
 
 	//if dest is an L2/L3/HUB-IOMMU/SA connected to this switch.
 	if(dest_node == (switch_node - 1) || dest_node == (switch_node + 1))
@@ -462,12 +460,12 @@ void switch_crossbar_link(struct switch_t *switches){
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 
-					if(packet->access_id == 4446145 || packet->access_id == 4446155)
+					/*if(packet->access_id == 4446145 || packet->access_id == 4446155)
 					{
 
 						printf("\%s cross bar linking to %d id %llu to switch north tx queue cross bar\n", switches->name, tx_queue, packet->access_id);
 						cache_dump_request_queue(switches->south_queue);
-					}
+					}*/
 				}
 			}
 
@@ -574,12 +572,12 @@ void switch_ctrl(void){
 			assert(message_packet);
 
 
-			if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
+			/*if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
 			{
 				printf("\tswtich putting id %llu in switch io north tx queue\n", message_packet->access_id);
 				cache_dump_request_queue(switches[my_pid].south_queue);
 				cache_dump_request_queue(switches[my_pid].Tx_north_queue);
-			}
+			}*/
 
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
@@ -916,18 +914,18 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
 					|| message_packet->access_type == cgm_access_upgrade)
 			{
-				if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+				/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
 				{
 					printf("\tswitch north moving id %llu to l2 rx_queue\n", message_packet->access_id);
 
-				}
+				}*/
 
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
 			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
-					|| message_packet->access_type == cgm_access_upgrade_putx_n)
+					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack)
 			{
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);

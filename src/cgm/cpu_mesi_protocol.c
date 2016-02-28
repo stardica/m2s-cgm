@@ -2167,6 +2167,9 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			}
 			else
 			{
+
+				fatal("cgm_mesi_l2_downgrade_ack(): get_fwd should no longer get this far\n");
+
 				//block was locally dropped
 
 				//pull the GET_FWD from the pending request buffer
@@ -2300,7 +2303,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			l3_map = cgm_l3_cache_map(message_packet->set);
 
 			//fakes src as the requester
-			/*reply_packet->l2_cache_id = l2_caches[my_pid].id;*/
+			//this is important sot hat L3 will set the right sharers in the directory (should be two now).
 			reply_packet->l2_cache_id = pending_request->l2_cache_id;
 			reply_packet->l2_cache_name = pending_request->src_name;
 
@@ -2476,6 +2479,8 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			}
 			else
 			{
+
+				fatal("cgm_mesi_l2_getx_fwd_inval_ack(): get_fwd should no longer get this far\n");
 				/*unsigned int temp = message_packet->address;
 				temp = temp & cache->block_address_mask;
 				fatal("cgm_mesi_l2_getx_fwd_inval_ack(): line missing in L2 after downgrade block addr 0x%08x\n", temp);*/
@@ -2956,6 +2961,91 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	return;
 }
 
+
+void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	/*int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;*/
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int l3_map = 0;
+	int ort_status = 0;
+	struct cgm_packet_t *pending_packet;
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+	message_packet->way = way;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	/*our load (get_fwd) request has been nacked by the owning L2*/
+
+	/*verify status of cache blk*/
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
+	assert(victim_trainsient_state == cgm_cache_block_transient); //there is a transient block
+	if(victim_trainsient_state != cgm_cache_block_transient)
+	{
+		ort_dump(cache);
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		fatal("cgm_mesi_l2_downgrade_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, temp,
+			message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+	}
+
+
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set); // there is an outstanding request.
+	assert(ort_status <= cache->mshr_size);
+
+
+	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+	{
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s downgrade nack ID %llu type %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+		}
+	}
+
+	//change to a get
+	message_packet->access_type = cgm_access_get;
+
+	l3_map = cgm_l3_cache_map(message_packet->set);
+	message_packet->l2_cache_id = cache->id;
+	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+	message_packet->src_name = cache->name;
+	message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+	message_packet->dest_name = l3_caches[l3_map].name;
+	message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+	cache_put_io_down_queue(cache, message_packet);
+
+	return;
+}
+
+
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
@@ -2965,8 +3055,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	struct cgm_packet_t *downgrade_packet = NULL;
 	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *nack_packet = NULL;
 
 	int error = 0;
+	int ort_status = 0;
 	int l3_map;
 
 	//charge delay
@@ -2986,6 +3078,16 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 		}
 	}
+
+	/*look for an access conflict, this can happen if a get_fwd beats a put, put_clnx, putx*/
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*if there is a pending access int the ORT there better not be a block or a write back*/
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		assert(!write_back_packet);
+	}
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -3053,8 +3155,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 							message_packet->start_cycle, message_packet->end_cycle);
 				}
 
-
-
 				//set the flush pending bit, to keep this block in WB until the L1 can reply.
 				write_back_packet->flush_pending = 1;
 
@@ -3076,38 +3176,62 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 			else
 			{
-				/* The block was evicted silently and should not be in L2 or L1 cache.*/
+				/*if(message_packet->access_id == 4410849)
+				{
+					ort_dump(cache);
+					fatal("l2 downgrade nack set %d tag %d\n", message_packet->set, message_packet->tag);
+				}*/
+
+				/* The block is not yet in L2 cache it should not be in L1 cache either.*/
 				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
 				assert(error == 0);
 
-				/*block should not be in L2 or l1 at all*/
-				//set downgrade_nack
+				/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
+				//set access type
 				message_packet->access_type = cgm_access_downgrade_nack;
+
+				//set the block state
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set message package size
+				message_packet->size = 1;
+
+				//fwd nack to requesting core
+				//update routing headers swap dest and src
+				//requesting node
+				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+				//owning node L2
+				message_packet->src_name = cache->name;
+				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+				//transmit nack to L2
+				cache_put_io_down_queue(cache, message_packet);
+
+				////////
+				//part 2
+				////////
+
+				//create downgrade_ack
+				nack_packet = packet_create();
+				assert(nack_packet);
+
+				init_downgrade_nack_packet(nack_packet, message_packet->address);
+				nack_packet->access_id = message_packet->access_id;
 
 				//fwd reply (downgrade_nack) to L3
 				l3_map = cgm_l3_cache_map(message_packet->set);
 
-				message_packet->dest_name = l3_caches[l3_map].name;
-				message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+				nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
+				nack_packet->src_name = cache->name;
+				nack_packet->dest_name = l3_caches[l3_map].name;
+				nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 				//transmit block to L3
-				cache_put_io_down_queue(cache, message_packet);
+				list_enqueue(cache->Tx_queue_bottom, nack_packet);
+				advance(cache->cache_io_down_ec);
 
-				/*OLD CODE*/
-				//store the get_fwd in the pending request buffer
-				/*message_packet->downgrade_pending = 1;
-				cgm_cache_insert_pending_request_buffer(cache, message_packet);
-
-				//flush the L1 cache because the line may be dirty in L1
-				downgrade_packet = packet_create();
-				assert(downgrade_packet);
-				init_downgrade_packet(downgrade_packet, message_packet->address);
-
-				//send the L1 D cache the downgrade message
-				downgrade_packet->cpu_access_type = cgm_access_load;
-				downgrade_packet->access_id = message_packet->access_id;
-				list_enqueue(cache->Tx_queue_top, downgrade_packet);
-				advance(cache->cache_io_up_ec);*/
 			}
 			break;
 
@@ -3140,6 +3264,84 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	return;
 }
 
+void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int l3_map = 0;
+	int ort_status = 0;
+	struct cgm_packet_t *pending_packet;
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+	message_packet->way = way;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	/*our load (get_fwd) request has been nacked by the owning L2*/
+
+	/*verify status of cache blk*/
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
+	assert(victim_trainsient_state == cgm_cache_block_transient); //there is a transient block
+	if(victim_trainsient_state != cgm_cache_block_transient)
+	{
+		ort_dump(cache);
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		fatal("cgm_mesi_l2_getx_fwd_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, temp,
+			message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+	}
+
+
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set); // there is an outstanding request.
+	assert(ort_status <= cache->mshr_size);
+
+	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+	{
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s getx_fwd_nack nack ID %llu type %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+		}
+	}
+
+	//change to a get
+	message_packet->access_type = cgm_access_getx;
+
+	l3_map = cgm_l3_cache_map(message_packet->set);
+	message_packet->l2_cache_id = cache->id;
+	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+	message_packet->src_name = cache->name;
+	message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+	message_packet->dest_name = l3_caches[l3_map].name;
+	message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+	cache_put_io_down_queue(cache, message_packet);
+
+	return;
+}
+
+
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
@@ -3148,10 +3350,11 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *inval_packet;
-
 	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *nack_packet = NULL;
 
 	int error = 0;
+	int ort_status = 0;
 	int l3_map;
 
 	//charge delay
@@ -3162,6 +3365,14 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
+	/*look for an access conflict, this can happen if a get_fwd beats a putx*/
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*if there is a pending access int the ORT there better not be a block or a write back*/
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		assert(!write_back_packet);
+	}
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -3176,7 +3387,6 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-
 
 			cgm_cache_dump_set(cache, message_packet->set);
 
@@ -3249,41 +3459,65 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 			}
 			else
 			{
+
+
+				if (ort_status < cache->mshr_size)
+				{
+
+					fatal("here\n");
+				}
+
 				/* The block was evicted silently and should not be L1 D's cache.
 				 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
 				 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
-
 				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
 				assert(error == 0);
 
-				//set cgm_access_getx_fwd_nack
+				/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
+				//set access type
 				message_packet->access_type = cgm_access_getx_fwd_nack;
+
+				//set the block state
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set message package size
+				message_packet->size = 1;
+
+				//fwd nack to requesting core
+				//update routing headers swap dest and src
+				//requesting node
+				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+				//owning node L2
+				message_packet->src_name = cache->name;
+				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+				//transmit nack to L2
+				cache_put_io_down_queue(cache, message_packet);
+
+				////////
+				//part 2
+				////////
+
+				//create downgrade_ack
+				nack_packet = packet_create();
+				assert(nack_packet);
+
+				init_getx_fwd_nack_packet(nack_packet, message_packet->address);
+				nack_packet->access_id = message_packet->access_id;
 
 				//fwd reply (downgrade_nack) to L3
 				l3_map = cgm_l3_cache_map(message_packet->set);
 
-				message_packet->dest_name = l3_caches[l3_map].name;
-				message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+				nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
+				nack_packet->src_name = cache->name;
+				nack_packet->dest_name = l3_caches[l3_map].name;
+				nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 				//transmit block to L3
-				cache_put_io_down_queue(cache, message_packet);
-
-				/*OLD CODE*/
-				//store the getx_fwd in the pending request buffer
-				/*message_packet->inval_pending = 1;
-				cgm_cache_insert_pending_request_buffer(cache, message_packet);
-
-				//set the flush_pending bit to 1 in the block
-				cgm_cache_set_block_flush_pending_bit(cache, message_packet->set, message_packet->way);
-
-				//flush the L1 cache because the line may be dirty in L1
-				inval_packet = packet_create();
-				init_getx_fwd_inval_packet(inval_packet, message_packet->address);
-
-				//send the L1 D cache the inval message
-				inval_packet->cpu_access_type = cgm_access_store;
-				list_enqueue(cache->Tx_queue_top, inval_packet);
-				advance(cache->cache_io_up_ec);*/
+				list_enqueue(cache->Tx_queue_bottom, nack_packet);
+				advance(cache->cache_io_down_ec);
 
 			}
 			break;
@@ -4855,6 +5089,16 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+	if(pending_bit != 1)
+	{
+		ort_dump(cache);
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		fatal("cgm_mesi_l3_downgrade_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+			message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+	}
+
 	assert(pending_bit == 1);
 
 	//get number of sharers
@@ -4883,9 +5127,6 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
-	//search the WB buffer for the data
-	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
-
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
 		if(LEVEL == 2 || LEVEL == 3)
@@ -4907,44 +5148,29 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->tag, message_packet->set, message_packet->way);
 			break;
 
-
-
-			/*//check WB for line...
-			if(write_back_packet)
-			{
-				found the packet in the write back buffer
-				data should not be in the rest of the cache
-
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
-
-
-				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				packet_destroy(write_back_packet);
-
-				fatal("down grade nack check this\n");
-			}
-			else
-			{
-				its possible that L3 may have evicted the block handle it, if this case comes up.
-				Should be a memory request to the memory controller
-				fatal("l3 miss on downgrade nack check this\n");
-			}
-			break;*/
-
-
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 
-			/*nack from L2 clear the directory and retry the access as a new access*/
+			assert(sharers == 1);
+			/*nack from L2 clear the directory pending bit retry will come from requesting L2*/
+			/*cgm_cache_clear_dir_pending_bit(cache, message_packet->set, message_packet->way);*/
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+			assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);
+
+			//destroy the nack and wait for the retry
+			message_packet = list_remove(cache->last_queue, message_packet);
+			packet_destroy(message_packet);
+
+			/*OLD CODE*/
+			/*nack from L2 clear the directory and retry the access as a new access*/
+			/*cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 			assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);
 
 			//set the block state
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, *cache_block_state_ptr);
 
-			/*retry the access at the L3 level*/
-			message_packet->access_type = cgm_access_get;
+			retry the access at the L3 level
+			message_packet->access_type = cgm_access_get;*/
 
 			break;
 	}
@@ -5246,9 +5472,6 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);*/
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
-	//search the WB buffer for the data
-	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
-
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
 		if(LEVEL == 2 || LEVEL == 3)
@@ -5271,46 +5494,31 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
 
-			/*star todo block evicted by L2 and inval is on its way to L1
-			change upgrade request to GetX and send on to L3 cache.*/
-			/*
-			//check WB for line...
-			if(write_back_packet)
-			{
-				found the packet in the write back buffer
-				data should not be in the rest of the cache
-
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
-
-
-				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				packet_destroy(write_back_packet);
-
-				fatal("getx fwd nack check this\n");
-
-			}
-			else
-			{
-				fatal("cgm_mesi_l3_getx_fwd_nack(): miss on getx_forward nack\n");
-			}
-
-			break;*/
-
 
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 
-			//clear the cache dir
+			assert(sharers == 1);
+			/*nack from L2 clear the directory pending bit retry will come from requesting L2*/
+			/*cgm_cache_clear_dir_pending_bit(cache, message_packet->set, message_packet->way);*/
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+			assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);
+
+			//destroy the nack and wait for the retry
+			message_packet = list_remove(cache->last_queue, message_packet);
+			packet_destroy(message_packet);
+
+			/*OLD CODE*/
+			//clear the cache dir
+			/*cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 			assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);
 
 			//set the block state
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
-			/*retry the access at the L3 level
-			its possible that L3 may have evicted the block*/
-			message_packet->access_type = cgm_access_getx;
+			retry the access at the L3 level
+			its possible that L3 may have evicted the block
+			message_packet->access_type = cgm_access_getx;*/
 
 			break;
 	}
@@ -5578,7 +5786,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 
 				/*if the block is pending when a write back is coming in don't clear the pending bit
-				because the get_fwd or getx_fwd is enroute*/
+				because the get_fwd or getx_fwd is en-route and will get nacked by the node*/
 				pending_bit = cgm_cache_get_dir_pending_bit(cache,  message_packet->set, message_packet->way);
 
 				/*clear the directory for this block*/

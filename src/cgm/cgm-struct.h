@@ -361,7 +361,9 @@ struct cache_t{
 	void (*l2_getx_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);

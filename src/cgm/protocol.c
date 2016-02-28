@@ -164,13 +164,23 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	return;
 }
 
-void init_reply_packet(struct cgm_packet_t *reply_packet, unsigned int address){
+/*void init_reply_packet(struct cgm_packet_t *reply_packet, unsigned int address){
 
 	reply_packet->access_type = cgm_access_downgrade_ack;
 	reply_packet->downgrade_ack = 1;
 	reply_packet->size = 1;
 	reply_packet->address = address;
 	return;
+}*/
+
+void init_downgrade_nack_packet(struct cgm_packet_t *nack_packet, unsigned int address){
+
+	nack_packet->access_type = cgm_access_downgrade_nack;
+	nack_packet->downgrade_ack = 1;
+	nack_packet->size = 1;
+	nack_packet->address = address;
+	return;
+
 }
 
 void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address){
@@ -185,6 +195,15 @@ void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int a
 void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address){
 
 	reply_packet->access_type = cgm_access_getx_fwd_ack;
+	reply_packet->inval_ack = 1;
+	reply_packet->size = 1;
+	reply_packet->address = address;
+	return;
+}
+
+void init_getx_fwd_nack_packet(struct cgm_packet_t *reply_packet, unsigned int address){
+
+	reply_packet->access_type = cgm_access_getx_fwd_nack;
 	reply_packet->inval_ack = 1;
 	reply_packet->size = 1;
 	reply_packet->address = address;
