@@ -473,7 +473,7 @@ int get_ort_status(struct cache_t *cache){
 	// checks the ort to find an empty row
 	for (i = 0; i < cache->mshr_size; i++)
 	{
-		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1 && cache->ort[i][2] == -1)
+		if(cache->ort[i][0] == -1 && cache->ort[i][1] == -1)
 		{
 			//hit in the ORT table
 			break;
@@ -512,7 +512,8 @@ void cache_dump_request_queue(struct list_t *queue){
 	{
 		//get pointer to access in queue and check it's status.
 		packet = list_get(queue, i);
-		printf("\t %s slot %d packet id %llu access type %s\n", queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type));
+		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x\n",
+				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address, packet->address & l2_caches[0].block_address_mask);
 	}
 
 	return;
@@ -619,6 +620,19 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 		}
 	}
 
+	/*star todo, at this point the code is a mess, we need to come back and clean everything up when the protocol is finished*/
+	/*if you don't find the block try looking at the block level*/
+	LIST_FOR_EACH(cache->pending_request_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		pending_request = list_get(cache->pending_request_buffer, i);
+
+		if((pending_request->address & cache->block_address_mask) == address)
+		{
+			return pending_request;
+		}
+	}
+
 	return NULL;
 }
 
@@ -646,6 +660,27 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 
 	return size;
 }*/
+
+int ort_get_num_coal(struct cache_t *cache, int tag, int set){
+
+	struct cgm_packet_t *ort_packet;
+	int i = 0;
+	int num_coalesced = 0;
+
+	//first look for merged accesses
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		ort_packet = list_get(cache->ort_list, i);
+
+		if(ort_packet->tag == tag && ort_packet->set == set)
+		{
+			num_coalesced ++;
+		}
+	}
+
+	return num_coalesced;
+}
 
 void ort_set_row(struct cache_t *cache, int tag, int set){
 
@@ -714,13 +749,24 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	return;
 }
 
+
+void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
+
+
+	assert(cache->ort[row][0] == tag && cache->ort[row][1] == set);
+
+	cache->ort[row][2] = 0;
+
+	return;
+}
+
 int ort_search(struct cache_t *cache, int tag, int set){
 
 	int i = 0;
 
 	for (i = 0; i < cache->mshr_size; i++)
 	{
-		if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		if(cache->ort[i][0] == tag && cache->ort[i][1] == set)
 		{
 			//hit in the ORT table
 			break;
@@ -790,7 +836,7 @@ void ort_dump(struct cache_t *cache){
 
 	for (i = 0; i <  cache->mshr_size; i++)
 	{
-		printf("\tort row %d tag %d set %d valid %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
+		printf("\tort row %d tag %d set %d pending action %d\n", i, cache->ort[i][0], cache->ort[i][1], cache->ort[i][2]);
 	}
 	return;
 }
@@ -4114,6 +4160,8 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 	{
 		fatal("cgm_cache_get_retry_state(): CPU unrecognized state as %s \n", str_map_value(&cgm_mem_access_strn_map, r_state));
 	}
+
+
 
 	return retry_state;
 }

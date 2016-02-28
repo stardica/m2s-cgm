@@ -218,22 +218,24 @@ int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_dump_set(struct cache_t *cache, int set);
 int cgm_cache_get_block_usage(struct cache_t *cache);
 
-
-//ORT Manipulations
-long long get_oldest_packet(struct cache_t *cache, int set);
 enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_state);
 enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state);
 void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set);
 void cache_coalesed_retry(struct cache_t *cache, int tag_ptr, int set_ptr);
+
+//ORT Manipulations
+long long get_oldest_packet(struct cache_t *cache, int set);
 int get_ort_status(struct cache_t *cache);
 void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cache_get_ORT_size(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
+void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_dump(struct cache_t *cache);
 void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row_ptr, int *num_sets_ptr, int *ort_size_ptr);
 void ort_set_row(struct cache_t *cache, int tag, int set);
+int ort_get_num_coal(struct cache_t *cache, int tag, int set);
 
 /*error checking*/
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr);

@@ -1338,6 +1338,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int l3_map;
 
 	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *pending_join = NULL;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -1438,8 +1439,12 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//check for retries on successful cache read...
 				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
-					//enter retry state.
+					//enter retry state process all coalesced accesses
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+
+					/*look for a pending join*/
+					pending_join = list_remove(cache->write_back_buffer, write_back_packet);
+
 				}
 
 				//set message size
@@ -1670,6 +1675,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int l3_map;
 
 	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *pending_join = NULL;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -1880,6 +1886,23 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			{
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+
+				/*check for a pending get_fwd or getx_fwd join*/
+				pending_join = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
+
+				if(pending_join)
+				{
+					pending_join->downgrade_pending--;
+
+					if (pending_join->downgrade_pending == 0)
+					{
+						//fatal("here_2 pending request id %llu\n", pending_join->access_id);
+
+						pending_join = list_remove(cache->pending_request_buffer, pending_join);
+						list_enqueue(cache->retry_queue, pending_join);
+						advance(cache->ec_ptr);
+					}
+				}
 			}
 
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
@@ -3079,6 +3102,13 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 		}
 	}
 
+	if(message_packet->access_id == 4426233)
+	{
+
+		fatal("in get forward id %llu\n", message_packet->access_id);
+
+	}
+
 	/*look for an access conflict, this can happen if a get_fwd beats a put, put_clnx, putx*/
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	if(ort_status != cache->mshr_size)
@@ -3176,61 +3206,84 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 			else
 			{
-				/*if(message_packet->access_id == 4410849)
+
+				/*its possible that a get_fwd can come in for a block while the cache is waiting for the blk after sending a request
+				if the cache is waiting for the block there will be in entry in the ORT table. L3 has already serviced the request
+				and the core has the block M/E but the packet will arive after the get_fwd. Perform a join to prevent deadlock*/
+				if(ort_status < cache->mshr_size)
 				{
-					ort_dump(cache);
-					fatal("l2 downgrade nack set %d tag %d\n", message_packet->set, message_packet->tag);
-				}*/
+					/*set the bit in the ort table to 0*/
+					ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-				/* The block is not yet in L2 cache it should not be in L1 cache either.*/
-				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
-				assert(error == 0);
+					printf("inserting pending get_fwd addr 0x%08x\n", message_packet->address);
 
-				/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
-				//set access type
-				message_packet->access_type = cgm_access_downgrade_nack;
+					message_packet->downgrade_pending = 1;
 
-				//set the block state
-				message_packet->cache_block_state = cgm_cache_block_invalid;
+					/*drop into the pending request buffer*/
+					message_packet =  list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->pending_request_buffer, message_packet);
 
-				//set message package size
-				message_packet->size = 1;
+					/*ort_dump(cache);
+					fatal("l2 downgrade nack set %d tag %d address 0x%08x blk addr 0x%08x\n",
+							message_packet->set, message_packet->tag, message_packet->address, message_packet->address & cache->block_address_mask);*/
 
-				//fwd nack to requesting core
-				//update routing headers swap dest and src
-				//requesting node
-				message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-				message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+				}
+				else
+				{
+					/*if no request is pending the block was either silently dropped OR was written back and is on its way to L3
+					We can either let the WB service the get request (not implmented yet) or just nack and let the requesting core
+					retry.*/
 
-				//owning node L2
-				message_packet->src_name = cache->name;
-				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					/* The block is not yet in L2 cache it should not be in L1 cache either.*/
+					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					assert(error == 0);
 
-				//transmit nack to L2
-				cache_put_io_down_queue(cache, message_packet);
+					/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
+					//set access type
+					message_packet->access_type = cgm_access_downgrade_nack;
 
-				////////
-				//part 2
-				////////
+					//set the block state
+					message_packet->cache_block_state = cgm_cache_block_invalid;
 
-				//create downgrade_ack
-				nack_packet = packet_create();
-				assert(nack_packet);
+					//set message package size
+					message_packet->size = 1;
 
-				init_downgrade_nack_packet(nack_packet, message_packet->address);
-				nack_packet->access_id = message_packet->access_id;
+					//fwd nack to requesting core
+					//update routing headers swap dest and src
+					//requesting node
+					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
 
-				//fwd reply (downgrade_nack) to L3
-				l3_map = cgm_l3_cache_map(message_packet->set);
+					//owning node L2
+					message_packet->src_name = cache->name;
+					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
-				nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
-				nack_packet->src_name = cache->name;
-				nack_packet->dest_name = l3_caches[l3_map].name;
-				nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+					//transmit nack to L2
+					cache_put_io_down_queue(cache, message_packet);
 
-				//transmit block to L3
-				list_enqueue(cache->Tx_queue_bottom, nack_packet);
-				advance(cache->cache_io_down_ec);
+					////////
+					//part 2
+					////////
+
+					//create downgrade_ack
+					nack_packet = packet_create();
+					assert(nack_packet);
+
+					init_downgrade_nack_packet(nack_packet, message_packet->address);
+					nack_packet->access_id = message_packet->access_id;
+
+					//fwd reply (downgrade_nack) to L3
+					l3_map = cgm_l3_cache_map(message_packet->set);
+
+					nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					nack_packet->src_name = cache->name;
+					nack_packet->dest_name = l3_caches[l3_map].name;
+					nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+					//transmit block to L3
+					list_enqueue(cache->Tx_queue_bottom, nack_packet);
+					advance(cache->cache_io_down_ec);
+				}
 
 			}
 			break;
@@ -3550,20 +3603,33 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+	int row = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+	struct cgm_packet_t *pending_get_fwd_getx_fwd_request = NULL;
+	int pending_join = 0;
+
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+
+	P_PAUSE(cache->latency);
+
+
 	assert(cache->cache_type == l2_cache_t);
 	assert((message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared)
 			|| (message_packet->access_type == cgm_access_put_clnx && message_packet->cache_block_state == cgm_cache_block_exclusive)
 			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));
-
-	enum cgm_cache_block_state_t victim_trainsient_state;
-	struct cgm_packet_t *pending_getx_fwd_request;
-
-	P_PAUSE(cache->latency);
-
-	/*int pending_bit;*/
-
-	//find the access in the ORT table and clear it.
-
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -3574,35 +3640,44 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 	}
 
+	//check the ort table for a pending join (get_fwd) (getx_fwd)
+	row = ort_search(cache, message_packet->tag, message_packet->set);
+	assert(row < cache->mshr_size);
+	pending_join = cache->ort[row][2];
+
 	/*order matters here*/
 
 	/*look for a matching pending request.
 	This could happen if L3 changed an upgrade to a getx_fwd/putx*/
 
 	//pull the pending request from the buffer
-	pending_getx_fwd_request = cache_search_pending_request_buffer(cache, message_packet->address);
+	pending_get_fwd_getx_fwd_request = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
-	if(pending_getx_fwd_request)
+	if(pending_get_fwd_getx_fwd_request && pending_join == 1)
 	{
-		//OK this is a corner case. We need to clear out the pending transaction data before proceeding.
-		assert(pending_getx_fwd_request->address == message_packet->address);
+
+		fatal("cgm_mesi_l2_write_block(): what?\n");
+		/*OK this is a corner case. we sent and upgrade but received a getx_fwd clear the pending upgrade data before proceeding.
+		i.e. another core beat us to it*/
+		assert(pending_get_fwd_getx_fwd_request->address == message_packet->address);
+		assert(pending_join == 1);
 
 		//clear the cache block pending bit
-		cgm_cache_clear_block_upgrade_pending_bit(cache, pending_getx_fwd_request->set, pending_getx_fwd_request->way);
+		cgm_cache_clear_block_upgrade_pending_bit(cache, pending_get_fwd_getx_fwd_request->set, pending_get_fwd_getx_fwd_request->way);
 
 		//victim should have been in transient state
-		victim_trainsient_state = cgm_cache_get_block_transient_state(cache, pending_getx_fwd_request->set, pending_getx_fwd_request->way);
+		victim_trainsient_state = cgm_cache_get_block_transient_state(cache, pending_get_fwd_getx_fwd_request->set, pending_get_fwd_getx_fwd_request->way);
 		assert(victim_trainsient_state == cgm_cache_block_transient);
 
 		//write the block
-		cgm_cache_set_block(cache, pending_getx_fwd_request->set, pending_getx_fwd_request->way, pending_getx_fwd_request->tag, message_packet->cache_block_state);
+		cgm_cache_set_block(cache, pending_get_fwd_getx_fwd_request->set, pending_get_fwd_getx_fwd_request->way, pending_get_fwd_getx_fwd_request->tag, message_packet->cache_block_state);
 
 		//set retry state
-		pending_getx_fwd_request->access_type = cgm_cache_get_retry_state(pending_getx_fwd_request->cpu_access_type);
+		pending_get_fwd_getx_fwd_request->access_type = cgm_cache_get_retry_state(pending_get_fwd_getx_fwd_request->cpu_access_type);
 
 		//remove the pending request
-		pending_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_getx_fwd_request);
-		list_enqueue(cache->retry_queue, pending_getx_fwd_request);
+		pending_get_fwd_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_get_fwd_getx_fwd_request);
+		list_enqueue(cache->retry_queue, pending_get_fwd_getx_fwd_request);
 
 		//destroy the getx_fwd (putx)
 		message_packet = list_remove(cache->last_queue, message_packet);
@@ -3610,6 +3685,20 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	}
 	else
 	{
+		assert((pending_join == 1 && !pending_get_fwd_getx_fwd_request) || (pending_join == 0 && pending_get_fwd_getx_fwd_request));
+
+		if (pending_join == 0 && pending_get_fwd_getx_fwd_request)
+		{
+			/*get_fwd getx_fwd should be pending*/
+			assert(pending_get_fwd_getx_fwd_request->downgrade_pending == 1);
+
+			/*set the number of coalesced accesses*/
+			pending_get_fwd_getx_fwd_request->downgrade_pending = (ort_get_num_coal(cache, message_packet->tag, message_packet->set) + 1); // + 1 account for the packet that was not coalesced and went to L3
+			/*cache_dump_request_queue(cache->pending_request_buffer);
+			cache_dump_request_queue(cache->retry_queue);
+			cache_dump_request_queue(cache->ort_list);
+			fatal("got pending retry blk addr 0x%08x number accesses coal %d\n", pending_get_fwd_getx_fwd_request->address & cache->block_address_mask, pending_get_fwd_getx_fwd_request->downgrade_pending);*/
+		}
 
 		ort_clear(cache, message_packet);
 
@@ -5151,7 +5240,20 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 
-			assert(sharers == 1);
+
+			/*if(sharers != 1)
+			{
+				ort_dump(cache);
+				cgm_cache_dump_set(cache, message_packet->set);
+
+				fatal("cgm_mesi_l3_downgrade_nack(): %s sharer == 1 access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+						cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+						message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+			}
+
+			assert(sharers == 1);*/
+
+
 			/*nack from L2 clear the directory pending bit retry will come from requesting L2*/
 			/*cgm_cache_clear_dir_pending_bit(cache, message_packet->set, message_packet->way);*/
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
