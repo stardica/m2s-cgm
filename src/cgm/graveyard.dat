@@ -1,3 +1,104 @@
+/*if(pending_request_packet)
+			{
+				printf("pending request id %llu downgrade %d\n", pending_request_packet->access_id, pending_request_packet->downgrade_pending);
+
+				cgm_cache_dump_set(cache, message_packet->set);
+
+				fatal("cgm_mesi_l2_flush_block_ack(): %s access_id %llu address 0x%08x blk_addr 0x%08x mp set %d mp tag %d mp way %d blk state %d pr set %d sr tag %d pr way %d cycle %llu\n",
+					cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, pending_request_packet->set, pending_request_packet->tag, pending_request_packet->way, P_TIME);
+			}
+
+
+			assert(!pending_request_packet);*/
+
+if(wb_packet->flush_join == 0) /*if not waiting on a join merge the wb*/
+		{
+
+			/*if there is a pending request join here*/
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			if(pending_request_packet)
+			{
+				printf("pending request id %llu downgrade %d\n", pending_request_packet->access_id, pending_request_packet->downgrade_pending);
+
+				cgm_cache_dump_set(cache, message_packet->set);
+
+				fatal("cgm_mesi_l2_flush_block_ack(): %s access_id %llu address 0x%08x blk_addr 0x%08x mp set %d mp tag %d mp way %d blk state %d pr set %d sr tag %d pr way %d cycle %llu\n",
+					cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, pending_request_packet->set, pending_request_packet->tag, pending_request_packet->way, P_TIME);
+			}
+
+
+			assert(!pending_request_packet);
+
+			//incoming data from L1 is dirty
+			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				//merge the block.
+				wb_packet->cache_block_state = cgm_cache_block_modified;
+
+				//clear the pending bit and leave the wb in the buffer
+				wb_packet->flush_pending = 0;
+			}
+			else
+			{
+				//Neither the l1 line or L2 line are dirty clear the wb from the buffer
+				assert(wb_packet->cache_block_state == cgm_cache_block_exclusive);
+				wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+				free(wb_packet);
+			}
+
+			//free the message packet
+			message_packet = list_remove(cache->last_queue, message_packet);
+			packet_destroy(message_packet);
+
+		}
+		else if(wb_packet->flush_join == 1) /*pull the join if there is one waiting*/
+		{
+
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			assert(pending_request_packet);
+
+			wb_packet->flush_pending = 0;
+			wb_packet->flush_join = 0;
+
+			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				pending_request_packet->size = cache->block_size;
+				pending_request_packet->cache_block_state = cgm_cache_block_modified;
+			}
+			else
+			{
+				pending_request_packet->size = 1;
+				pending_request_packet->cache_block_state = cgm_cache_block_invalid;
+			}
+
+			pending_request_packet->access_type = cgm_access_flush_block_ack;
+
+			l3_map = cgm_l3_cache_map(pending_request_packet->set);
+			pending_request_packet->l2_cache_id = cache->id;
+			pending_request_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+			pending_request_packet->src_name = cache->name;
+			pending_request_packet->src_id = str_map_string(&node_strn_map, cache->name);
+			pending_request_packet->dest_name = l3_caches[l3_map].name;
+			pending_request_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+			//reply to the L3 cache
+			/*printf("l2_flush_block_ack_here id %llu dest %d cycle %llu\n", pending_request_packet->evict_id, pending_request_packet->dest_id, P_TIME);*/
+			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
+			list_enqueue(cache->Tx_queue_bottom, pending_request_packet);
+			advance(cache->cache_io_down_ec);
+
+			//free the write back
+			wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+			packet_destroy(wb_packet);
+
+			//free the message packet
+			message_packet = list_remove(cache->last_queue, message_packet);
+			packet_destroy(message_packet);
+		}
+
 /*star todo block evicted by L2 and inval is on its way to L1
 			change upgrade request to GetX and send on to L3 cache.*/
 			/*

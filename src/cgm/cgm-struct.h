@@ -158,7 +158,7 @@ struct cgm_packet_t{
 
 	//for evictions, write backs, downgrades, upgrades
 	int flush_pending;
-	int flush_join;
+	int L3_flush_join;
 	int downgrade;
 	int downgrade_pending;
 	int downgrade_ack;

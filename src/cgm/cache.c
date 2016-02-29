@@ -604,6 +604,27 @@ void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_p
 	return;
 }
 
+int cache_search_pending_request_get_getx_fwd(struct cache_t *cache, unsigned int address){
+
+	int i = 0;
+	int hit = 0;
+	struct cgm_packet_t *pending_request;
+
+	LIST_FOR_EACH(cache->pending_request_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		pending_request = list_get(cache->pending_request_buffer, i);
+
+		if((pending_request->address & cache->block_address_mask) == address && (pending_request->access_type == cgm_access_get_fwd || pending_request->access_type == cgm_access_getx_fwd))
+		{
+			hit++;
+		}
+	}
+
+	return hit;
+}
+
+
 struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, unsigned int address){
 
 	int i = 0;
