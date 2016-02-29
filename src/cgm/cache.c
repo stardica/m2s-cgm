@@ -1200,7 +1200,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-
 	/*set the pending bit*/
 	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
 	cgm_cache_set_block_flush_pending_bit(cache, set, way);*/
@@ -1225,12 +1224,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 	{
 		flush_packet->cpu_access_type = cgm_access_load;
 	}
-
-	/*if(flush_packet->evict_id == 10)
-	{
-		cgm_cache_dump_set(cache, set);
-		fatal("l2 f b %lld way %d\n", flush_packet->evict_id, way);
-	}*/
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
