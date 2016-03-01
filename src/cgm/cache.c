@@ -1113,15 +1113,20 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
-	/*if (cache->cache_type == l2_cache_t && set == 23 && way == 0)
-	{
-		printf("\t writing tag %d cycle %llu\n", tag, P_TIME);
-	}*/
-
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
 	cache->sets[set].blocks[way].transient_state = cgm_cache_block_invalid;
 	cache->sets[set].blocks[way].written = 1;
+
+	if (cache->cache_type == l2_cache_t && set == 69 && tag == 57)
+	{
+		printf("\t writing set %d tag %d state %d to way %d cycle %llu\n", set, tag, state, way, P_TIME);
+		cgm_cache_dump_set(cache, set);
+
+		if(way == 0)
+			run_watch_dog = 1;
+	}
+
 	return;
 }
 
@@ -1442,7 +1447,7 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 
 int cgm_cache_get_victim(struct cache_t *cache, int set){
 
-	int way = -1;
+	//int way = -1;
 	int i = 0;
 
 	struct cache_block_t *block;
@@ -3970,6 +3975,9 @@ int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
 }
 
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state){
+
+	if(cache->cache_type == l2_cache_t && set == 69 && way == 0 && state == 0)
+		printf("caught the error\n");
 
 	cache->sets[set].blocks[way].state = state;
 

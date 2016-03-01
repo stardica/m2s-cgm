@@ -296,8 +296,10 @@ void memctrl_dump_stats(void){
 
 	double ave_lat_ns = (((mem_ctrl->ave_dram_write_lat + mem_ctrl->ave_dram_read_lat)/2) *GHZ) / cpu_freq;
 
-	if(!DRAMSim == 1)
+	if(DRAMSim == 0)
+	{
 		CGM_STATS(cgm_stats_file, "; Note DRAMsim is not connected! values are output as 0\n");
+	}
 
 	CGM_STATS(cgm_stats_file, "[MemCtrl]\n");
 	CGM_STATS(cgm_stats_file, "MemCtrlBusyCycles = %llu\n", mem_ctrl->mem_ctrl_busy_cycles);
@@ -326,21 +328,21 @@ void memctrl_dump_stats(void){
 	}
 	else
 	{
-		CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", 0);
-		CGM_STATS(cgm_stats_file, "AveDramWriteLat = %.02f\n", 0);
-		CGM_STATS(cgm_stats_file, "AveDramTotalLat(cycles) = %.02f\n", 0);
-		CGM_STATS(cgm_stats_file, "AveDramTotalLat(nanoseconds) = %.02f\n", 0);
-		CGM_STATS(cgm_stats_file, "ReadMinLat = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "DramMaxQueueDepth = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "DramAveQueueDepth = %.2f\n", 0);
-		CGM_STATS(cgm_stats_file, "RxMax = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "TxMax = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", 0);
-		CGM_STATS(cgm_stats_file, "IOBusyCycles = %llu\n", 0);
+		CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", (float) 0);
+		CGM_STATS(cgm_stats_file, "AveDramWriteLat = %.02f\n", (float) 0);
+		CGM_STATS(cgm_stats_file, "AveDramTotalLat(cycles) = %.02f\n", (float) 0);
+		CGM_STATS(cgm_stats_file, "AveDramTotalLat(nanoseconds) = %.02f\n", (float) 0);
+		CGM_STATS(cgm_stats_file, "ReadMinLat = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "DramMaxQueueDepth = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "DramAveQueueDepth = %.2f\n", (float) 0);
+		CGM_STATS(cgm_stats_file, "RxMax = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "TxMax = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", (long long) 0);
+		CGM_STATS(cgm_stats_file, "IOBusyCycles = %llu\n", (long long) 0);
 		CGM_STATS(cgm_stats_file, "\n");
 	}
 

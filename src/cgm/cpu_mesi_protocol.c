@@ -983,10 +983,10 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-	struct cgm_packet_t *wb_packet;
-	enum cgm_cache_block_state_t block_trainsient_state;
-	int l3_map;
-	int error = 0;
+	//struct cgm_packet_t *wb_packet;
+	//enum cgm_cache_block_state_t block_trainsient_state;
+	//int l3_map;
+	//int error = 0;
 
 	//charge the delay
 	P_PAUSE(cache->latency);
@@ -1429,6 +1429,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 
 				//now set the block
+				assert(write_back_packet->cache_block_state == cgm_cache_block_exclusive || write_back_packet->cache_block_state == cgm_cache_block_modified);
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 
 				//cgm_cache_dump_set(cache, message_packet->set);
@@ -1569,7 +1570,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					if (pending_join->downgrade_pending == 0)
 					{
 						printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
-						getchar();
+						//getchar();
 
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
 						list_enqueue(cache->retry_queue, pending_join);
@@ -1911,7 +1912,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					if (pending_join->downgrade_pending == 0)
 					{
-						printf("pending get/getx_fwd request joined id %llu\n", pending_join->access_id);
+						//printf("pending get/getx_fwd request joined id %llu\n", pending_join->access_id);
 						//getchar();
 
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
@@ -2172,6 +2173,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				assert(reply_packet);
 
 				init_downgrade_ack_packet(reply_packet, message_packet->address);
+				reply_packet->access_id = message_packet->access_id;
 
 				//determine if this is a sharing WB
 				assert(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified);
@@ -2215,13 +2217,13 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				fatal("cgm_mesi_l2_downgrade_ack(): get_fwd should no longer see this case\n");
 
-				//block was locally dropped
+				/*//block was locally dropped
 
 				//pull the GET_FWD from the pending request buffer
 				pending_request = cache_search_pending_request_buffer(cache, message_packet->address);
-				/*if not found uh-oh...*/
+				if not found uh-oh...
 				assert(pending_request);
-				/*the address better be the same too...*/
+				the address better be the same too...
 				assert(pending_request->address == message_packet->address);
 				assert(pending_request->start_cycle != 0);
 
@@ -2234,13 +2236,13 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				//fwd reply (downgrade_nack) to L3
 				l3_map = cgm_l3_cache_map(pending_request->set);
 
-				/*here send the nack down to the L3
+				here send the nack down to the L3
 				don't change any of the source information
 
 				message_packet->l2_cache_id = l2_caches[my_pid].id;
 				message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
 				reply_packet->src_name = l2_caches[my_pid].name;
-				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);*/
+				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
 
 				pending_request->dest_name = l3_caches[l3_map].name;
 				pending_request->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
@@ -2251,10 +2253,8 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				advance(cache->cache_io_down_ec);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
-				packet_destroy(message_packet);
-
+				packet_destroy(message_packet);*/
 			}
-
 			break;
 
 		case cgm_cache_block_exclusive:
@@ -2379,15 +2379,16 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 
 	struct cgm_packet_t *getx_fwd_reply_packet;
 	struct cgm_packet_t *pending_getx_fwd_request;
-
 	struct cgm_packet_t *write_back_packet = NULL;
 
 	int l3_map;
+	int error = 0;
 
 	//charge delay
 	P_PAUSE(cache->latency);
 
 	//L1 D cache has been flushed
+
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -2417,12 +2418,11 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//check WB for line...
 			if(write_back_packet)
 			{
+				/*inval is complete for this write back so it should not be up in L1 D*/
+				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+				assert(error == 0);
 
-				/*found the packet in the write back buffer
-				data should not be in the rest of the cache*/
-
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 
 				//////////
 				//GETX_FWD
@@ -2438,13 +2438,6 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				assert(pending_getx_fwd_request->address == message_packet->address);
 				assert(pending_getx_fwd_request->start_cycle != 0);
 
-				/*//invalidate the local block
-				assert(pending_getx_fwd_request->set == message_packet->set && pending_getx_fwd_request->way == message_packet->way);
-				cgm_cache_set_block_state(cache, pending_getx_fwd_request->set, pending_getx_fwd_request->way, cgm_cache_block_invalid);*/
-
-				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-				packet_destroy(write_back_packet);
-
 				//prepare to forward the block
 				//set access type
 				pending_getx_fwd_request->access_type = cgm_access_putx;
@@ -2453,7 +2446,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
 				//set message package size if modified in L2/L1.
-				if(message_packet->cache_block_state == cgm_cache_block_modified)
+				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 				}
@@ -2488,9 +2481,10 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				assert(getx_fwd_reply_packet);
 
 				init_getx_fwd_ack_packet(getx_fwd_reply_packet, message_packet->address);
+				getx_fwd_reply_packet->access_id = message_packet->access_id;
 
 				//set message package size if modified in L2/L1.
-				if(message_packet->cache_block_state == cgm_cache_block_modified)
+				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					getx_fwd_reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 					getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
@@ -2517,6 +2511,9 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				list_enqueue(cache->Tx_queue_bottom, getx_fwd_reply_packet);
 				advance(cache->cache_io_down_ec);
 
+				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+				packet_destroy(write_back_packet);
+
 				//destroy the L1 D getx_fwd_inval_ack message because we don't need it anymore.
 				message_packet = list_remove(cache->last_queue, message_packet);
 				packet_destroy(message_packet);
@@ -2528,13 +2525,13 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				fatal("cgm_mesi_l2_getx_fwd_inval_ack(): get_fwd should no longer get this far\n");
 				/*unsigned int temp = message_packet->address;
 				temp = temp & cache->block_address_mask;
-				fatal("cgm_mesi_l2_getx_fwd_inval_ack(): line missing in L2 after downgrade block addr 0x%08x\n", temp);*/
+				fatal("cgm_mesi_l2_getx_fwd_inval_ack(): line missing in L2 after downgrade block addr 0x%08x\n", temp);
 
 				//pull the GET_FWD from the pending request buffer
 				pending_getx_fwd_request = cache_search_pending_request_buffer(cache, message_packet->address);
-				/*if not found uh-oh...*/
+				if not found uh-oh...
 				assert(pending_getx_fwd_request);
-				/*the address better be the same too...*/
+				the address better be the same too...
 				assert(pending_getx_fwd_request->address == message_packet->address);
 				assert(pending_getx_fwd_request->start_cycle != 0);
 
@@ -2547,13 +2544,13 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//fwd reply (downgrade_nack) to L3
 				l3_map = cgm_l3_cache_map(pending_getx_fwd_request->set);
 
-				/*here send the nack down to the L3
+				here send the nack down to the L3
 				don't change any of the source information
 
 				message_packet->l2_cache_id = l2_caches[my_pid].id;
 				message_packet->l2_cache_name = str_map_value(&l2_strn_map, l2_caches[my_pid].id);
 				reply_packet->src_name = l2_caches[my_pid].name;
-				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);*/
+				reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
 
 				pending_getx_fwd_request->dest_name = l3_caches[l3_map].name;
 				pending_getx_fwd_request->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
@@ -2564,7 +2561,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				advance(cache->cache_io_down_ec);
 
 				message_packet = list_remove(cache->last_queue, message_packet);
-				packet_destroy(message_packet);
+				packet_destroy(message_packet);*/
 
 			}
 
@@ -2892,13 +2889,15 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 		if(wb_packet->L3_flush_join == 0)
 		{
+
+
 			/*if there is a pending get_fwd or getx_fwd request join here*/
 			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 
 			if(pending_request_packet)
 			{
 
-				printf("%s processing get/getx_fwd join after evict access id %llu access type %d\n", cache->name, pending_request_packet->access_id, pending_request_packet->access_type);
+				//printf("%s processing get/getx_fwd join after evict access id %llu access type %d\n", cache->name, pending_request_packet->access_id, pending_request_packet->access_type);
 
 				assert(pending_request_packet->access_type == cgm_access_get_fwd || pending_request_packet->access_type == cgm_access_getx_fwd);
 				assert((pending_request_packet->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask));
@@ -3118,11 +3117,11 @@ void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
+	//int *way_ptr = &way;
 
 	int l3_map = 0;
 	int ort_status = 0;
-	struct cgm_packet_t *pending_packet;
+	//struct cgm_packet_t *pending_packet;
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
 	//probe the address for set, tag, and offset.
@@ -3209,8 +3208,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	assert(message_packet);
-
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
@@ -3219,7 +3216,8 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 		if(LEVEL == 2 || LEVEL == 3)
 		{
 			printf("block 0x%08x %s get_fwd ID %llu type %d state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					(message_packet->address & cache->block_address_mask), cache->name,
+					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 		}
 	}
 
@@ -3242,11 +3240,9 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 			cgm_cache_dump_set(cache, message_packet->set);
 
-			unsigned int temp = (unsigned int) 0x000047e4;
-			temp = temp & cache->block_address_mask;
-
 			fatal("cgm_mesi_l2_get_fwd(): %s invalid block state on get_fwd as %s set %d way %d tag %d address 0x%08x, blk_address 0x%08x\n",
-				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->set, message_packet->way, message_packet->tag, message_packet->address, temp);
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->set, message_packet->way, message_packet->tag,
+				message_packet->address, message_packet->address & cache->block_address_mask);
 			break;
 
 
@@ -3299,9 +3295,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					/*found the packet in the write back buffer
 					data should not be in the rest of the cache*/
-
-					assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-							|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
 
 					/////////
 					//GET_FWD
@@ -3377,7 +3370,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 				}
 				else
 				{
-
 					/*if the wb is flush pending we have to wait for the flush to complete and then join there*/
 					/*fatal("get_fwd with wb pending fulsh\n");*/
 
@@ -3387,46 +3379,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//message_packet->downgrade_pending = 1;
 					message_packet->L3_flush_join = 1;
 					cgm_cache_insert_pending_request_buffer(cache, message_packet);
-
-					/*wait for the flush to finish*/
-
-
-					/*//flush the L1 cache because the line may be dirty in L1
-					downgrade_packet = packet_create();
-					init_downgrade_packet(downgrade_packet, message_packet->address);
-
-					//send the L1 D cache the downgrade message
-					downgrade_packet->cpu_access_type = cgm_access_load;
-					list_enqueue(cache->Tx_queue_top, downgrade_packet);
-					advance(cache->cache_io_up_ec);*/
-
 				}
-
-				/*assert(write_back_packet->flush_pending == 0);
-				if(write_back_packet->flush_pending == 1)
-				{
-					cgm_cache_dump_set(cache, message_packet->set);
-
-					printf("pr set %d tag %d pr way %d mp set %d mp tag %d mp way %d\n",
-							write_back_packet->set, write_back_packet->tag, write_back_packet->way, message_packet->set, message_packet->tag, message_packet->way);
-
-					fatal("cgm_mesi_l2_get_fwd(): %s access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu\n",
-							cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
-							message_packet->start_cycle, message_packet->end_cycle);
-				}*/
-
-				//set the flush pending bit, to keep this block in WB until the L1 can reply.
-				//write_back_packet->flush_pending = 1;
-
-				//a GET_FWD means the block is exclusive in this core, but could also be modified
-
-				//store the get_fwd in the pending request buffer
-
-
 			}
 			else
 			{
-
 				/*its possible that a get_fwd can come in for a block while the cache is waiting for the blk after sending a request
 				if the cache is waiting for the block there will be in entry in the ORT table. L3 has already serviced the request
 				and the core has the block M/E but the packet will arrive after the get_fwd. Perform a join to prevent deadlock*/
@@ -3435,7 +3391,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					/*set the bit in the ort table to 0*/
 					ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-					printf("inserting pending get_fwd blk_addr 0x%08x\n", message_packet->address & cache->block_address_mask);
+					//printf("inserting pending get_fwd blk_addr 0x%08x\n", message_packet->address & cache->block_address_mask);
 					//getchar();
 
 					message_packet->downgrade_pending = 1;
@@ -3444,9 +3400,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					message_packet =  list_remove(cache->last_queue, message_packet);
 					list_enqueue(cache->pending_request_buffer, message_packet);
 
-					/*ort_dump(cache);
-					fatal("l2 downgrade nack set %d tag %d address 0x%08x blk addr 0x%08x\n",
-							message_packet->set, message_packet->tag, message_packet->address, message_packet->address & cache->block_address_mask);*/
 				}
 				else
 				{
@@ -3547,11 +3500,11 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
-	int *way_ptr = &way;
+	// *way_ptr = &way;
 
 	int l3_map = 0;
 	int ort_status = 0;
-	struct cgm_packet_t *pending_packet;
+	//struct cgm_packet_t *pending_packet;
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
 	//probe the address for set, tag, and offset.
@@ -3625,6 +3578,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	struct cgm_packet_t *inval_packet;
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *nack_packet = NULL;
+	struct cgm_packet_t *reply_packet = NULL;
 
 	int error = 0;
 	int ort_status = 0;
@@ -3638,15 +3592,6 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-	/*look for an access conflict, this can happen if a get_fwd beats a putx*/
-	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
-	if(ort_status != cache->mshr_size)
-	{
-		/*if there is a pending access int the ORT there better not be a block or a write back*/
-		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
-		assert(!write_back_packet);
-	}
-
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
 		if(LEVEL == 2 || LEVEL == 3)
@@ -3656,6 +3601,16 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 		}
 	}
 
+	/*look for an access conflict, this can happen if a get_fwd beats a putx*/
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*if there is a pending access int the ORT there better not be a block or a write back*/
+		assert(*cache_block_state_ptr == cgm_cache_block_invalid);
+		assert(!write_back_packet);
+	}
+
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
@@ -3663,12 +3618,9 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			cgm_cache_dump_set(cache, message_packet->set);
 
-			unsigned int temp = message_packet->address;
-			temp = temp & cache->block_address_mask;
-
 			fatal("cgm_mesi_l2_getx_fwd(): %s invalid block state on getx_fwd as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-				message_packet->access_id, message_packet->address, temp,
+				message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
 				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 			break;
 
@@ -3708,31 +3660,124 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
+				assert(*cache_block_hit_ptr == 0);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 
-				//set the flush pending bit, to keep this line in WB until the L1 can reply.
-				write_back_packet->flush_pending = 1;
+				/*check state of write back for flush*/
+				if(write_back_packet->flush_pending == 0)
+				{
 
-				//a GET_FWD means the block is exclusive in this core, but could also be modified
+					printf("\tcgm_mesi_l2_getx_fwd(): wb_f = 0 blk addr 0x%08x cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
 
-				//store the get_fwd in the pending request buffer
-				message_packet->inval_pending = 1;
-				cgm_cache_insert_pending_request_buffer(cache, message_packet);
+					/*if the flush is complete finish the getx_fwd now*/
 
-				//flush the L1 cache because the line may be dirty in L1
-				inval_packet = packet_create();
-				init_getx_fwd_inval_packet(inval_packet, message_packet->address);
+					/*flush is complete for this write back so it should not be up in L1 D*/
+					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					assert(error == 0);
 
-				//send the L1 D cache the downgrade message
-				inval_packet->cpu_access_type = cgm_access_load;
-				list_enqueue(cache->Tx_queue_top, inval_packet);
-				advance(cache->cache_io_up_ec);
+					//////////
+					//GETX_FWD
+					//////////
+
+					//forward block to requesting core
+					//set message package size
+					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					//set access type
+					message_packet->access_type = cgm_access_putx;
+
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//set message package size if modified in L2/L1.
+					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+					{
+						message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					}
+					else
+					{
+						message_packet->size = 1;
+
+					}
+
+					//fwd block to requesting core
+					//update routing headers swap dest and src
+					//requesting node
+					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+					//owning node L2
+					message_packet->src_name = cache->name;
+					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+					//transmit block to requesting node
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->Tx_queue_bottom, message_packet);
+					advance(cache->cache_io_down_ec);
+
+					///////////////
+					//getx_fwd_ack
+					///////////////
+
+					//send the getx_fwd_ack to L3 cache.
+
+					//create getx_fwd_ack packet
+					reply_packet = packet_create();
+					assert(reply_packet);
+
+					init_getx_fwd_ack_packet(reply_packet, message_packet->address);
+
+					//set message package size if modified in L2/L1.
+					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+					{
+						reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+						reply_packet->cache_block_state = cgm_cache_block_modified;
+					}
+					else
+					{
+						reply_packet->size = 1;
+						reply_packet->cache_block_state = cgm_cache_block_invalid;
+					}
+
+					//fwd reply (getx_fwd_ack) to L3
+					l3_map = cgm_l3_cache_map(message_packet->set);
+
+					//fakes src as the requester
+					reply_packet->l2_cache_id = message_packet->l2_cache_id;
+					reply_packet->l2_cache_name = message_packet->src_name;
+
+					reply_packet->src_name = cache->name;
+					reply_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					reply_packet->dest_name = l3_caches[l3_map].name;
+					reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+					write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+					packet_destroy(write_back_packet);
+
+					//transmit getx_fwd_ack to L3 (home)
+					list_enqueue(cache->Tx_queue_bottom, reply_packet);
+					advance(cache->cache_io_down_ec);
+
+				}
+				else
+				{
+
+					printf("\tcgm_mesi_l2_getx_fwd(): wb_f = 1\n");
+
+					/*if the wb is flush pending we have to wait for the flush to complete and then join there*/
+					/*fatal("get_fwd with wb pending fulsh\n");*/
+
+					/*write back is in the process of being flushed by L1*/
+					assert(write_back_packet->flush_pending == 1);
+
+					//message_packet->downgrade_pending = 1;
+					message_packet->L3_flush_join = 1;
+					cgm_cache_insert_pending_request_buffer(cache, message_packet);
+				}
 			}
 			else
 			{
 
-				fatal("Getx_fwd %s access id %llu blk_addr 0x%08x\n", cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask);
+				printf("\tcgm_mesi_l2_getx_fwd(): no wb blk addr 0x%08x \n", message_packet->address & cache->block_address_mask);
+				//fatal("Getx_fwd %s access id %llu blk_addr 0x%08x\n", cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask);
 
 
 				if(ort_status < cache->mshr_size)
@@ -3740,8 +3785,8 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					/*set the bit in the ort table to 0*/
 					ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-					printf("inserting pending getx_fwd addr 0x%08x\n", message_packet->address);
-					getchar();
+					/*printf("inserting pending getx_fwd addr 0x%08x\n", message_packet->address);
+					getchar();*/
 
 					message_packet->downgrade_pending = 1;
 
@@ -3813,6 +3858,8 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			//a GETX_FWD means the block is E/M in this core. The block will be E/M in the L1
 
+			printf("\tcgm_mesi_l2_getx_fwd(): in cache blk addr 0x%08x cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
+
 			//store the getx_fwd in the pending request buffer
 			message_packet->inval_pending = 1;
 			cgm_cache_insert_pending_request_buffer(cache, message_packet);
@@ -3822,10 +3869,13 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 			//flush the L1 cache because the line may be dirty in L1
 			inval_packet = packet_create();
+			assert(inval_packet);
 			init_getx_fwd_inval_packet(inval_packet, message_packet->address);
+
 
 			//send the L1 D cache the inval message
 			inval_packet->cpu_access_type = cgm_access_store;
+			inval_packet->access_id = message_packet->access_id;
 			list_enqueue(cache->Tx_queue_top, inval_packet);
 			advance(cache->cache_io_up_ec);
 			break;
@@ -3943,7 +3993,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			/*set the number of coalesced accesses*/
 			pending_get_fwd_getx_fwd_request->downgrade_pending = (ort_get_num_coal(cache, message_packet->tag, message_packet->set) + 1); // + 1 account for the packet that was not coalesced and went to L3
 
-			printf("L2 write block found pending get_fwd/getx_fwd join blk addr 0x%08x number accesses coal %d\n", pending_get_fwd_getx_fwd_request->address & cache->block_address_mask, pending_get_fwd_getx_fwd_request->downgrade_pending);
+			//printf("L2 write block found pending get_fwd/getx_fwd join blk addr 0x%08x number accesses coal %d\n", pending_get_fwd_getx_fwd_request->address & cache->block_address_mask, pending_get_fwd_getx_fwd_request->downgrade_pending);
 			//getchar();
 
 			/*cache_dump_request_queue(cache->pending_request_buffer);
@@ -4160,12 +4210,9 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			case cgm_cache_block_shared:
 				cgm_cache_dump_set(cache, message_packet->set);
 
-				unsigned int temp = message_packet->address;
-				temp = temp & cache->block_address_mask;
-
 				fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s wb_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 					cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-					message_packet->write_back_id, message_packet->address, temp,
+					message_packet->write_back_id, message_packet->address, message_packet->address & cache->block_address_mask,
 					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 				break;
 
@@ -4200,20 +4247,21 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				else
 				{
 
-					/*this case shouldn't happen anylonger with the new changes.*/
-					cgm_cache_dump_set(cache, message_packet->set);
+					//fatal("cgm_mesi_l2_write_back(): miss in L2 write back should no longer happen??\n");
 
-					unsigned int temp = message_packet->address;
-					temp = temp & cache->block_address_mask;
+					/*this case shouldn't happen any longer with the new changes.*/
+					//cgm_cache_dump_set(cache, message_packet->set);
+					 cache_dump_request_queue(cache->write_back_buffer);
 
-					fatal("cgm_mesi_l2_write_back(): %s invalid block state on write back as %s writeback_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+
+					fatal("cgm_mesi_l2_write_back(): %s write back missing in cache %s writeback_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 						cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-						message_packet->write_back_id, message_packet->address, temp,
+						message_packet->write_back_id, message_packet->address, message_packet->address & cache->block_address_mask,
 						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 
 					//fatal("cgm_mesi_l2_write_back(): block not in cache or wb at L2 on L1 WB. this should not be happening anymore\n");
 
-					/*it is possible for the WB from L1 D to miss at the L2. This means there was a recent L2 eviction of the block*/
+					/*it is possible for the WB from L1 D to miss at the L2. This means there was a recent L2 eviction of the block
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
@@ -4221,22 +4269,8 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 							printf("block 0x%08x %s write back fwd (to L3) ID %llu type %d cycle %llu\n",
 									(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
 						}
-					}
+					}*/
 
-					/*star todo maybe put the block in L2's write back???*/
-
-					/*fwd WB down to L3*/
-					l3_map = cgm_l3_cache_map(message_packet->set);
-					message_packet->l2_cache_id = cache->id;
-					message_packet->l2_cache_name = cache->name;
-
-					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
-					message_packet->dest_name = l3_caches[l3_map].name;
-					message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
-
-					//send the write back to the L3 cache.
-					cache_put_io_down_queue(cache, message_packet);
 				}
 				break;
 
@@ -6041,12 +6075,9 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			case cgm_cache_block_shared:
 				cgm_cache_dump_set(cache, message_packet->set);
 
-				unsigned int temp = message_packet->address;
-				temp = temp & cache->block_address_mask;
-
 				fatal("cgm_mesi_l3_write_back(): %s invalid block state on write back as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 					cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
-					message_packet->access_id, message_packet->address, temp,
+					message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
 					message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 
 				break;

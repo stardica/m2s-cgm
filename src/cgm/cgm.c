@@ -254,7 +254,12 @@ void cgm_watchdog(void){
 
 		if(run_watch_dog == 1)
 		{
-			cache_dump_request_queue(switches[2].south_queue);
+			if(l2_caches[1].sets[69].blocks[0].state == cgm_cache_block_invalid)
+			{
+				//assert(l2_caches[1].sets[69].blocks[0].tag == 57);
+				fatal("\tWD: block changed blk_addr 0x%08x\n",
+						cgm_cache_build_address(&l2_caches[1], l2_caches[1].sets[69].id, l2_caches[1].sets[69].blocks[0].tag));
+			}
 		}
 		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
 	}

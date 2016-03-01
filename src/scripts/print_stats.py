@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from tabulate import tabulate
 import ConfigParser
 from optparse import OptionParser
 
@@ -939,7 +938,7 @@ def print_switch_stats(options):
 		f.write('\n')
 
 	if int(options.NumCores) == 4:
-		for tup in table_switch_data:
+		for tup in table_switch_data_p4:
 			for item in tup[0:1]:
 				current_title_length = len(tup[0])
 				if max_title_length < current_title_length:
@@ -949,7 +948,7 @@ def print_switch_stats(options):
 		max_element_length = 0
 		current_element_length = 0
 
-		for tup in table_switch_data:
+		for tup in table_switch_data_p4:
 			for item in tup[1:5]:
 				current_element_length = len(str(item))
 				if max_element_length < current_element_length:
@@ -967,7 +966,7 @@ def print_switch_stats(options):
 		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 		#print the table's data
-		for tup in table_switch_data:
+		for tup in table_switch_data_p4:
 			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length) + '\n')
 
 		f.write('\n')
