@@ -36,6 +36,7 @@ void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, un
 void init_upgrade_inval_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
 void init_upgrade_putx_n_inval_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
 void init_downgrade_nack_packet(struct cgm_packet_t *nack_packet, unsigned int address);
+void init_upgrade_ack_packet(struct cgm_packet_t *nack_packet, unsigned int address);
 void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_getx_fwd_nack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
 void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address);
@@ -109,10 +110,10 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 /////////////////////
 /////GPU NC protocol

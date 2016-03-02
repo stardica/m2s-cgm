@@ -183,6 +183,16 @@ void init_downgrade_nack_packet(struct cgm_packet_t *nack_packet, unsigned int a
 
 }
 
+void init_upgrade_ack_packet(struct cgm_packet_t *ack_packet, unsigned int address){
+
+	ack_packet->access_type = cgm_access_upgrade_ack;
+	ack_packet->downgrade_ack = 1;
+	ack_packet->size = 1;
+	ack_packet->address = address;
+	return;
+
+}
+
 void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int address){
 
 	reply_packet->access_type = cgm_access_downgrade_ack;

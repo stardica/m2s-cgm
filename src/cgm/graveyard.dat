@@ -1,5 +1,115 @@
 
 
+		
+
+			fatal("cgm_mesi_l2_upgrade_ack(): block is invalid...\n");
+
+			/*it is possible to find the block in the invalid state here
+			if L3 has sent an eviction/upgrade_inval/getx_fwd.
+			At this point process like a standard GetX, but wait for all
+			replies because we may receive a putx from the owning core. */
+
+			//note that the block is still in a transient state as well as being marked invalid
+
+			/*//pull the upgrade from the pending request buffer
+			pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			if not found uh-oh...
+			assert(pending_packet);
+			the address better be the same too...
+			assert(pending_packet->address == message_packet->address);
+
+			//check if we are ready to perform the join
+			if(message_packet->upgrade_ack >= 0)
+			{
+				pending_packet->upgrade_inval_ack_count = (pending_packet->upgrade_inval_ack_count + message_packet->upgrade_ack);
+
+				//free the L3's upgrade_ack message packet
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+			}
+			else if(message_packet->upgrade_ack < 0)
+			{
+				pending_packet->upgrade_inval_ack_count--;
+
+				if(message_packet->upgrade_dirty == 1)
+				{
+					pending_packet->cache_block_state = cgm_cache_block_modified;
+				}
+
+				//free the other L2's upgrade_ack message packet
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+			}
+			else
+			{
+				fatal("cgm_mesi_l2_upgrade_ack(): bad upgrade_ack counter value on inval state\n");
+			}
+
+			if(pending_packet->upgrade_inval_ack_count == 0)
+			{
+				//we have received the L3 reply and the reply(s) from the other L2(s) perform the join...
+
+				if(pending_packet->cache_block_state == cgm_cache_block_modified)
+				{
+					//clear the block's transient state
+					cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+					//set local cache block and directory to modified.
+					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+
+					//pull the pending request from the pending request buffer
+					pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+
+					//set access type, block state,
+					pending_packet->access_type = cgm_access_upgrade_ack;
+					pending_packet->cache_block_state = cgm_cache_block_modified;
+
+					list_enqueue(cache->Tx_queue_top, pending_packet);
+					advance(cache->cache_io_up_ec);
+				}
+				else
+				{
+					the block didn't come over in the upgrade_ack
+					process this like a regular GetX
+
+					the ORT entry has already been made so just send the GetX down as a regular request.
+
+					//find victim
+					message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+					assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
+
+					//evict the victim
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+
+					//set access type
+					message_packet->access_type = cgm_access_getx;
+
+					//update routing headers for the packet
+					l3_map = cgm_l3_cache_map(message_packet->set);
+					message_packet->l2_cache_id = cache->id;
+					message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+					message_packet->src_name = cache->name;
+					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->dest_name = l3_caches[l3_map].name;
+					message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+					//transmit to L3
+					cache_put_io_down_queue(cache, message_packet);
+
+					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+					{
+						if(LEVEL == 2 || LEVEL == 3)
+						{
+							printf("block 0x%08x %s store miss ID %llu type %d state %d cycle %llu\n",
+									(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+									message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						}
+					}
+				}
+			}*/
+
+
 					/*star todo maybe put the block in L2's write back???*/
 
 					/*fwd WB down to L3*/
