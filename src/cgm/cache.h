@@ -153,7 +153,7 @@ void cache_access_stats(struct cache_t *cache, int hit, int state);
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);
-void cache_dump_request_queue(struct list_t *queue);
+void cache_dump_queue(struct list_t *queue);
 
 //Address Manipulations
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
@@ -231,6 +231,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 int cache_get_ORT_size(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
+int ort_get_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_dump(struct cache_t *cache);

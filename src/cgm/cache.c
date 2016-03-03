@@ -503,7 +503,7 @@ int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set){
 	return j;
 }
 
-void cache_dump_request_queue(struct list_t *queue){
+void cache_dump_queue(struct list_t *queue){
 
 	int i = 0;
 	struct cgm_packet_t *packet = NULL;
@@ -770,6 +770,17 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	return;
 }
 
+
+int ort_get_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
+
+	int status = 0;
+
+	assert(cache->ort[row][0] == tag && cache->ort[row][1] == set);
+
+	status = cache->ort[row][2];
+
+	return status;
+}
 
 void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
 

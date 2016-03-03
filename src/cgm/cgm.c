@@ -252,7 +252,7 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		if(run_watch_dog == 1)
+		/*if(run_watch_dog == 1)
 		{
 			if(l2_caches[1].sets[69].blocks[0].state == cgm_cache_block_invalid)
 			{
@@ -260,7 +260,14 @@ void cgm_watchdog(void){
 				fatal("\tWD: block changed blk_addr 0x%08x\n",
 						cgm_cache_build_address(&l2_caches[1], l2_caches[1].sets[69].id, l2_caches[1].sets[69].blocks[0].tag));
 			}
+		}*/
+
+		if(P_TIME >= 12936841)
+		{
+			cache_dump_queue(l2_caches[0].pending_request_buffer);
+			printf("\t cycle %llu\n", P_TIME);
 		}
+
 		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
 	}
 	return;
@@ -997,34 +1004,33 @@ void cgm_dump_system(void){
 	int i = 0;
 	int num_cores = x86_cpu_num_cores;
 
-	printf("---Deadlock Detected Dumping System Status---\n"
-			"---last real cycle %llu---\n"
-			"---Last committed memory lsq access %llu last committed lsq blk address 0x%08x---\n"
-			"---Last issued lsq memory access %llu last issued lsq blk address 0x%08x---\n"
-			"---Last committed memory fetch access %llu last committed fetch blk address 0x%08x---\n"
-			"---Last issued fetch memory access %llu last issued fetch blk address 0x%08x---\n",
-			(P_TIME - 1000000),
-			last_committed_lsq_access_id, last_committed_lsq_access_blk, last_issued_lsq_access_id, last_issued_lsq_access_blk,
-			last_committed_fetch_access_id, last_committed_fetch_access_blk, last_issued_fetch_access_id, last_issued_fetch_access_blk);
-
 	printf("\n---L1_d_caches---\n");
 	for(i = 0; i < num_cores; i++)
 	{
 		printf("---%s Rx top queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].Rx_queue_top));
-		cache_dump_request_queue(l1_d_caches[i].Rx_queue_top);
+		cache_dump_queue(l1_d_caches[i].Rx_queue_top);
 		printf("---%s Rx bottom queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].Rx_queue_bottom));
+		cache_dump_queue(l1_d_caches[i].Rx_queue_bottom);
 		printf("---%s Tx bottom queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].Tx_queue_bottom));
+		cache_dump_queue(l1_d_caches[i].Tx_queue_bottom);
 		printf("---%s Coherence queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].Coherance_Rx_queue));
+		cache_dump_queue(l1_d_caches[i].Coherance_Rx_queue);
 		printf("---%s Pending request queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].pending_request_buffer));
+		cache_dump_queue(l1_d_caches[i].pending_request_buffer);
+		printf("---%s Retry queue size %d---\n",
+				l1_d_caches[i].name, list_count(l1_d_caches[i].retry_queue));
+		cache_dump_queue(l1_d_caches[i].retry_queue);
 		printf("---%s Write back queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].write_back_buffer));
+		cache_dump_write_back(&l2_caches[i]);
 		printf("---%s ORT size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].ort_list));
+		cache_dump_queue(l1_d_caches[i].ort_list);
 		ort_dump(&l1_d_caches[i]);
 		printf("\n");
 	}
@@ -1034,21 +1040,31 @@ void cgm_dump_system(void){
 	{
 		printf("---%s Rx top queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].Rx_queue_top));
+		cache_dump_queue(l2_caches[i].Rx_queue_top);
 		printf("---%s Rx bottom queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].Rx_queue_bottom));
+		cache_dump_queue(l2_caches[i].Rx_queue_bottom);
 		printf("---%s Tx top queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].Tx_queue_top));
+		cache_dump_queue(l2_caches[i].Tx_queue_top);
 		printf("---%s Tx bottom queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].Tx_queue_bottom));
+		cache_dump_queue(l2_caches[i].Tx_queue_bottom);
 		printf("---%s Coherence queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].Coherance_Rx_queue));
+		cache_dump_queue(l2_caches[i].Coherance_Rx_queue);
 		printf("---%s Pending request queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].pending_request_buffer));
+		cache_dump_queue(l2_caches[i].pending_request_buffer);
+		printf("---%s Retry queue size %d---\n",
+				l2_caches[i].name, list_count(l2_caches[i].retry_queue));
+		cache_dump_queue(l2_caches[i].retry_queue);
 		printf("---%s Write back queue size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].write_back_buffer));
 		cache_dump_write_back(&l2_caches[i]);
 		printf("---%s ORT size %d---\n",
 				l2_caches[i].name, list_count(l2_caches[i].ort_list));
+		cache_dump_queue(l2_caches[i].ort_list);
 		ort_dump(&l2_caches[i]);
 		printf("\n");
 	}
@@ -1058,23 +1074,31 @@ void cgm_dump_system(void){
 	{
 		printf("---%s Rx top queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].Rx_queue_top));
-		cache_dump_request_queue(l3_caches[i].Rx_queue_top);
+		cache_dump_queue(l3_caches[i].Rx_queue_top);
 		printf("---%s Rx bottom queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].Rx_queue_bottom));
-		cache_dump_request_queue(l3_caches[i].Rx_queue_bottom);
+		cache_dump_queue(l3_caches[i].Rx_queue_bottom);
 		printf("---%s Tx top queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].Tx_queue_top));
+		cache_dump_queue(l3_caches[i].Tx_queue_top);
 		printf("---%s Tx bottom queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].Tx_queue_bottom));
+		cache_dump_queue(l3_caches[i].Tx_queue_bottom);
 		printf("---%s Coherence queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].Coherance_Rx_queue));
+		cache_dump_queue(l3_caches[i].Coherance_Rx_queue);
 		printf("---%s Pending request queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].pending_request_buffer));
+		cache_dump_queue(l3_caches[i].pending_request_buffer);
+		printf("---%s Retry queue size %d---\n",
+				l3_caches[i].name, list_count(l3_caches[i].retry_queue));
+		cache_dump_queue(l3_caches[i].retry_queue);
 		printf("---%s Write back queue size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].write_back_buffer));
 		cache_dump_write_back(&l3_caches[i]);
 		printf("---%s ORT size %d---\n",
 				l3_caches[i].name, list_count(l3_caches[i].ort_list));
+		cache_dump_queue(l3_caches[i].ort_list);
 		ort_dump(&l3_caches[i]);
 		printf("\n");
 	}

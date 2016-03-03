@@ -1,4 +1,142 @@
+////////////
+				//L3 ack
+				////////////
 
+
+
+
+				//send ack to L3 cache.
+				//create downgrade_ack
+				/*reply_packet = packet_create();
+				assert(reply_packet);
+
+				init_upgrade_ack_packet(reply_packet, message_packet->address);
+				reply_packet->access_id = message_packet->access_id;
+				reply_packet->cache_block_state = cgm_cache_block_modified;
+				reply_packet->size = 1;
+
+				//fwd reply (downgrade_ack) to L3
+				l3_map = cgm_l3_cache_map(message_packet->set);
+
+				//fakes src as the requester
+				reply_packet->l2_cache_id = l2_caches[my_pid].id;
+				reply_packet->l2_cache_id = cache->id;
+				reply_packet->l2_cache_name =  str_map_value(&l2_strn_map, cache->id);
+
+				reply_packet->src_name = cache->name;
+				reply_packet->src_id = str_map_string(&node_strn_map, cache->name);
+				reply_packet->dest_name = l3_caches[l3_map].name;
+				reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+				//transmit downgrad_ack to L3 (home)
+				list_enqueue(cache->Tx_queue_bottom, reply_packet);
+				advance(cache->cache_io_down_ec);*/
+
+/*OLD CODE
+			//set cgm_access_getx_fwd_nack
+			message_packet->access_type = cgm_access_getx_fwd_upgrade_nack;
+
+			//fwd reply (nack) to L3
+			l3_map = cgm_l3_cache_map(message_packet->set);
+
+			here send the nack down to the L3
+			don't change any of the source information
+
+			reply_packet->src_name = l2_caches[my_pid].name;
+			reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+
+			message_packet->dest_name = l3_caches[l3_map].name;
+			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+			//transmit block to L3
+			printf("l2_getx_fwd\n");
+			cache_put_io_down_queue(cache, message_packet);*/
+
+
+/*fatal("cgm_mesi_l2_get_fwd(): This case should no longer happen %s invalid block state on get_fwd as %s set %d way %d tag %d address 0x%08x, blk_address 0x%08x\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->set, message_packet->way, message_packet->tag,
+				message_packet->address, message_packet->address & cache->block_address_mask);*/
+
+
+			//------------------------------------------------------
+
+			//OLD CODE
+
+			/*//fatal("cgm_mesi_l2_get_fwd(): This case should no longer happen.\n");
+
+			star its possible to find the block in the shared state on the receipt of a get_fwd
+			if this core is waiting on a join to finish. This occurs when the L3 cache changes an
+			upgrade to a get_fwd. Nack the request back to L3 and let L3 try this request again later.
+
+			two part reply (1) send nack to L3 and (2) send nack to requesting L2
+			//set access type
+			message_packet->access_type = cgm_access_get_fwd_upgrade_nack;
+
+			//set the block state
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+
+			//set message package size
+			message_packet->size = 1;
+
+			//fwd nack to requesting core
+			//update routing headers swap dest and src
+			//requesting node
+			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
+			message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+
+			//owning node L2
+			message_packet->src_name = cache->name;
+			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+			//transmit nack to L2
+			cache_put_io_down_queue(cache, message_packet);
+
+			////////
+			//part 2
+			////////
+
+			//create downgrade_ack
+			nack_packet = packet_create();
+			assert(nack_packet);
+
+			//init_get_fwd_upgrade_nack_packet(nack_packet, message_packet->address);
+			nack_packet->access_id = message_packet->access_id;
+
+			//fwd reply (downgrade_nack) to L3
+			l3_map = cgm_l3_cache_map(message_packet->set);
+
+			nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
+			nack_packet->src_name = cache->name;
+			nack_packet->dest_name = l3_caches[l3_map].name;
+			nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+			//transmit block to L3
+			list_enqueue(cache->Tx_queue_bottom, nack_packet);
+			advance(cache->cache_io_down_ec);*/
+
+
+
+			/*------------------------------------------------------
+
+			OLD CODE
+			//set cgm_access_getx_fwd_nack
+			message_packet->access_type = cgm_access_get_fwd_upgrade_nack;
+
+			//fwd nack to L3
+			l3_map = cgm_l3_cache_map(message_packet->set);
+
+			here send the nack down to the L3
+			don't change any of the source information
+
+			reply_packet->src_name = l2_caches[my_pid].name;
+			reply_packet->src_id = str_map_string(&node_strn_map, l2_caches[my_pid].name);
+
+			message_packet->dest_name = l3_caches[l3_map].name;
+			message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+
+			//transmit block to L3
+			printf("l2_get_fwd\n");
+			cache_put_io_down_queue(cache, message_packet);*/
 
 		
 

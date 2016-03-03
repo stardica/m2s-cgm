@@ -39,12 +39,10 @@
 #include <cgm/cgm.h>
 
 static char *err_commit_stall =
-	"\tThe CPU commit stage has not received any instruction for 1M\n"
-	"\tcycles. Most likely, this means that a deadlock condition\n"
-	"\toccurred in the management of some modeled structure (network,\n"
-	"\tcache system, core queues, etc.).\n";
-
-
+	"---The CPU commit stage has not received any instruction for 1M---\n"
+	"---cycles. Most likely, this means that a deadlock condition---\n"
+	"---occurred in the management of some modeled structure (network,---\n"
+	"---cache system, core queues, etc.).---\n";
 
 /*
  * Class 'X86Thread'
@@ -66,13 +64,23 @@ int X86ThreadCanCommit(X86Thread *self)
 	if (asTiming(cpu)->cycle - self->last_commit_cycle > 1000000)
 	{
 
+		printf("\n---thread %s: simulation ended due to commit stall.---\n%s", self->name, err_commit_stall);
+
+		printf("---Deadlock Detected Dumping System Status---\n"
+			"---last real cycle %llu---\n"
+			"---Last committed memory lsq access %llu last committed lsq blk address 0x%08x---\n"
+			"---Last issued lsq memory access %llu last issued lsq blk address 0x%08x---\n"
+			"---Last committed memory fetch access %llu last committed fetch blk address 0x%08x---\n"
+			"---Last issued fetch memory access %llu last issued fetch blk address 0x%08x---\n",
+			(P_TIME - 1000000),
+			last_committed_lsq_access_id, last_committed_lsq_access_blk, last_issued_lsq_access_id, last_issued_lsq_access_blk,
+			last_committed_fetch_access_id, last_committed_fetch_access_blk, last_issued_fetch_access_id, last_issued_fetch_access_blk);
+
 		cgm_dump_system();
 
-		warning("thread %s: simulation ended due to commit stall.\n%s", self->name, err_commit_stall);
 		esim_finish = esim_finish_stall;
 
 		fflush(stdout);
-		fflush(stderr);
 
 		exit(0);
 	}
