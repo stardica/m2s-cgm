@@ -232,7 +232,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			//if both flags are set its an OpenCL syscall
 			if(opencl_syscall_flag)
 			{
-
 				if(opencl_syscall_flag == 4) //memcpy
 				{
 					uop->interrupt = opencl_syscall_flag;
@@ -246,7 +245,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 					uop->interrupt = opencl_syscall_flag;
 					uop->interrupt_type = opencl_interrupt;
 				}
-
 			}
 			else
 			{
@@ -286,6 +284,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 				fatal("X86ThreadFetchInst(): Invalid memory uop\n");
 			}
 		}
+
+		/*if(uinst->opcode == 52)
+			fatal("here\n");*/
 
 		/* Trace */
 		if (x86_tracing())

@@ -1458,6 +1458,9 @@ void sim_end(void){
 
 	//star >> execution is pretty much done here. The remainder is summary output and cleanup.
 
+	//mark that sim finished successfully
+	cgm_stat->execution_success = 1;
+
 	/* Dump statistics summary */
 	cgm_dump_summary();
 	//m2s_dump_summary(stdout);

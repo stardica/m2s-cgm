@@ -115,23 +115,27 @@ void cgm_check_config_files(char **argv){
 	return;
 }
 
-void cgm_init(int argc, char **argv){
+void cgm_stat_finish_create(int argc, char **argv){
+
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	//int gpu_group_cache_num = (num_cus/4);
 
 	char time_buff[250];
 	memset(time_buff, '\0', 250);
 	char buff[400];
 	memset(buff, '\0', 400);
 	int i = 1;
+	int j = 0;
+	//int k = 0;
 	char *bname;
-
-	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
 
 	/* Obtain current time. */
 	time_t current_time;
     struct tm *time_info;// = time(NULL);
     time(&current_time);
     time_info = localtime(&current_time);
-    strftime(time_buff, sizeof(time_buff), "%m%d%Y%H%M%S", time_info);
+    strftime(time_buff, sizeof(time_buff), "%m_%d_%Y_%H_%M_%S", time_info);
 
     cgm_stat->date_time_file = strdup(time_buff);
 
@@ -149,6 +153,22 @@ void cgm_init(int argc, char **argv){
 		sprintf(buff + strlen(buff), "%s ", argv[i++]);
 
 	cgm_stat->benchmark_name = strdup(buff);
+
+	/*configure data structures*/
+	cgm_stat->cpu_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->cpu_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->cpu_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->cpu_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->cpu_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
+
+	return;
+}
+
+void cgm_init(int argc, char **argv){
+
+	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
+
+	cgm_stat_finish_create(argc, argv);
 
 	//set up internal structures
 	cgm_access_record = list_create();
@@ -278,8 +298,7 @@ void cgm_dump_stats(void){
 	int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
-
-
+	int i = 0;
 
 	//get the time
 	cgm_stat->end_wall_time = get_wall_time();
@@ -292,6 +311,7 @@ void cgm_dump_stats(void){
 
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
+	CGM_STATS(cgm_stats_file, "ExecutionSuccessful = %s\n", (cgm_stat->execution_success == 1) ? ("Yes") : ("No"));
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
 	CGM_STATS(cgm_stats_file, "Day&Time = %s\n", cgm_stat->date_time_pretty);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
@@ -302,10 +322,29 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
-	CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->cpu_rob_stalls);
-	CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat->cpu_fetch_stalls);
-	CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat->cpu_ls_stalls);
+	long long total_stalls = 0;
+	for(i = 0; i < num_cores; i++)
+		total_stalls += cgm_stat->cpu_rob_stalls[i];
+
+	CGM_STATS(cgm_stats_file, "PercentStalled = %0.2f\n", (double)total_stalls/(double)(P_TIME * 4));
 	CGM_STATS(cgm_stats_file, "\n");
+
+	for(i = 0; i < num_cores; i++)
+	{
+		CGM_STATS(cgm_stats_file, "[CPU_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->cpu_rob_stalls[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat->cpu_rob_stall_load[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallStore = %llu\n", cgm_stat->cpu_rob_stall_store[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallSyscall = %llu\n", cgm_stat->cpu_rob_stall_syscall[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallOther = %llu\n", cgm_stat->cpu_rob_stall_other[i]);
+		CGM_STATS(cgm_stats_file, "PercentStalled = %0.2f\n", (double)cgm_stat->cpu_rob_stalls[i]/(double)P_TIME);
+		CGM_STATS(cgm_stats_file, "\n");
+	}
+
+
+	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat->cpu_fetch_stalls);
+	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat->cpu_ls_stalls);
+	//CGM_STATS(cgm_stats_file, "\n");
 	CGM_STATS(cgm_stats_file, "[GPU]\n");
 	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
 	CGM_STATS(cgm_stats_file, "\n");
@@ -405,7 +444,6 @@ void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
 
-
 	cgm_dump_stats();
 	cache_dump_stats();
 	switch_dump_stats();
@@ -419,14 +457,10 @@ void cgm_dump_summary(void){
 }
 
 void cgm_mem_run(void){
-
 	advance(sim_start);
-
 	//simulation execution
-
 	await(sim_finish, 1);
 	//dump stats on exit.
-
 	return;
 }
 

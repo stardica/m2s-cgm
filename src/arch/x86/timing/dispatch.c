@@ -80,8 +80,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 	X86Cpu *cpu = self->cpu;
 
 	struct x86_uop_t *uop;
+	struct x86_uop_t *rob_uop = NULL;
 	enum x86_dispatch_stall_t stall;
-
 
 	while (quantum)
 	{
@@ -90,7 +90,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		if (stall != x86_dispatch_stall_used)
 		{
-			//star taking some stats here
+			//star added this taking some stats here
 			if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 			{
 				//no uop
@@ -98,20 +98,37 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			}
 			else if(stall == x86_dispatch_stall_rob)
 			{
-				//ROB is full
-				cgm_stat->cpu_rob_stalls++;
+				/*ROB is full collect stats for each of the different cores*/
+				assert(self->rob_count == 64);
+				cgm_stat->cpu_rob_stalls[core->id]++;
+
+				rob_uop = list_get(self->core->rob, self->rob_head);
+
+				if(rob_uop->uinst->opcode == x86_uinst_load)
+				{
+					cgm_stat->cpu_rob_stall_load[core->id]++;
+				}
+				else if(rob_uop->uinst->opcode == x86_uinst_store)
+				{
+					cgm_stat->cpu_rob_stall_store[core->id]++;
+				}
+				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
+				{
+					cgm_stat->cpu_rob_stall_syscall[core->id]++;
+				}
+				else
+				{
+					cgm_stat->cpu_rob_stall_other[core->id]++;
+				}
 			}
 			else if(stall == x86_dispatch_stall_lsq)
 			{
 				cgm_stat->cpu_ls_stalls++;
 			}
 
-
 			core->dispatch_stall[stall] += quantum;
 			break;
 		}
-
-
 
 	
 		/* Get entry from uop queue */

@@ -67,15 +67,6 @@ void X86CoreWriteback(X86Core *self)
 		assert(uop->ready);
 		assert(!uop->completed);
 		
-		//this will find CPU core stalls.
-		/*printf("WRITE BACK i ran %d uop->id %llu etime. count %llu when %llu\n", i, uop->id, P_TIME, uop->when);
-
-		if(uop->interrupt_type == opencl_interrupt)
-		{
-			printf("\n");
-			getchar();
-		}*/
-
 
 		/* Extract element from event queue. */
 		linked_list_remove(self->event_queue);

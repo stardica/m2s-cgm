@@ -512,8 +512,8 @@ void cache_dump_queue(struct list_t *queue){
 	{
 		//get pointer to access in queue and check it's status.
 		packet = list_get(queue, i);
-		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x\n",
-				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address, packet->address & l2_caches[0].block_address_mask);
+		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x start_cycle %llu\n",
+				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address, packet->address & l2_caches[0].block_address_mask, packet->start_cycle);
 	}
 
 	return;

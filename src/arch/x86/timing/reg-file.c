@@ -441,6 +441,14 @@ void X86ThreadWriteUop(X86Thread *self, struct x86_uop_t *uop)
 	int loreg;
 	int phreg;
 
+	/*if (uop->flags & X86_UINST_MEM)
+	{
+		printf("finishing mem op ph addr 0x%08x id %llu type %d\n", uop->phy_addr, uop->id, uop->uinst->opcode);
+		if(uop->uinst->opcode == 51)
+			getchar();
+
+	}*/
+
 	assert(uop->thread == self);
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{

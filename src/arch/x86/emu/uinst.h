@@ -223,29 +223,29 @@ enum x86_uinst_opcode_t
 
 	x86_uinst_xmm_fp_add,	//43
 	x86_uinst_xmm_fp_sub,	//44
-	x86_uinst_xmm_fp_comp,	//44
-	x86_uinst_xmm_fp_mult,	//45
-	x86_uinst_xmm_fp_div,	//46
+	x86_uinst_xmm_fp_comp,	//45
+	x86_uinst_xmm_fp_mult,	//46
+	x86_uinst_xmm_fp_div,	//47
 
-	x86_uinst_xmm_fp_sqrt,	//47
+	x86_uinst_xmm_fp_sqrt,	//48
 
-	x86_uinst_xmm_move,		//48
-	x86_uinst_xmm_shuf,		//49
-	x86_uinst_xmm_conv,		//50
+	x86_uinst_xmm_move,		//49
+	x86_uinst_xmm_shuf,		//50
+	x86_uinst_xmm_conv,		//51
 
-	x86_uinst_load,			//51
-	x86_uinst_store,		//52
-	x86_uinst_prefetch,		//53
+	x86_uinst_load,			//52
+	x86_uinst_store,		//53
+	x86_uinst_prefetch,		//54
 
-	x86_uinst_call,			//54
-	x86_uinst_ret,			//55
-	x86_uinst_jump,			//56
-	x86_uinst_branch,		//57
-	x86_uinst_ibranch,		//58
+	x86_uinst_call,			//55
+	x86_uinst_ret,			//56
+	x86_uinst_jump,			//57
+	x86_uinst_branch,		//58
+	x86_uinst_ibranch,		//59
 
-	x86_uinst_syscall,		//59
+	x86_uinst_syscall,		//60
 
-	x86_uinst_opcode_count	//60
+	x86_uinst_opcode_count	//61
 };
 
 

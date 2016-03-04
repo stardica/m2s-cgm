@@ -256,7 +256,6 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 {
-
 	X86Core *core = self->core;
 	X86Cpu *cpu = self->cpu;
 

@@ -6942,6 +6942,10 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 				{
 					break;
 				}
+				else
+				{
+					pending_packet = NULL;
+				}
 			}
 
 			/*if not found uh-oh...*/
@@ -7013,6 +7017,10 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 						//printf("found the get/getx_fwd (join) in upgrade_ack blk_addr 0x%08x\n", pending_packet_join->address & cache->block_address_mask);
 						//getchar();
 						break;
+					}
+					else
+					{
+						pending_packet_join = NULL;
 					}
 				}
 
@@ -7150,6 +7158,10 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				{
 					break;
 				}
+				else
+				{
+					pending_packet = NULL;
+				}
 			}
 
 			if(pending_packet)
@@ -7164,14 +7176,12 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				}
 				else
 				{
-					if((pending_packet->address & cache->block_address_mask) == 0x0004e380)
+					/*if((pending_packet->address & cache->block_address_mask) == 0x0004e380)
 						fatal("cgm_mesi_l2_upgrade_putx_n(): %s invalid block state as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 								cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
 								message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
-								message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+								message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);*/
 					fatal("no packet\n");
-
-
 				}
 			}
 
@@ -7280,6 +7290,10 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 							//printf("found the get/getx_fwd (join) in upgrade_putx_n blk_addr 0x%08x\n", pending_packet_join->address & cache->block_address_mask);
 							//getchar();
 							break;
+						}
+						else
+						{
+							pending_packet_join = NULL;
 						}
 					}
 

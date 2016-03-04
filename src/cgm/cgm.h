@@ -53,7 +53,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0004e380
+#define WATCHBLOCK (unsigned int) 0x000def80
 #define WATCHLINE 1
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 all
 #define LEVEL 2
@@ -177,6 +177,7 @@ void cpu_gpu_run(void);
 void cgm_dump_summary(void);
 void cgm_dump_stats(void);
 void cgm_dump_histograms(void);
+void cgm_stat_finish_create(int argc, char **argv);
 
 void tick(void);
 void cgm_watchdog(void);

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
 
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
@@ -56,6 +57,8 @@ int X86ThreadCanCommit(X86Thread *self)
 	struct x86_uop_t *rob_head_uop = NULL;
 	struct cgm_packet_t *new_message = NULL;
 
+	char buff[250];
+
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
 	if (!ctx || !X86ContextGetState(ctx, X86ContextRunning))
@@ -63,24 +66,55 @@ int X86ThreadCanCommit(X86Thread *self)
 
 	if (asTiming(cpu)->cycle - self->last_commit_cycle > 1000000)
 	{
-
+		/*Print the error to the screen first*/
 		printf("\n---thread %s: simulation ended due to commit stall.---\n%s", self->name, err_commit_stall);
 
 		printf("---Deadlock Detected Dumping System Status---\n"
-			"---last real cycle %llu---\n"
+			"---Current cycle %llu---\n"
+			"---last real cycle (current minus 1M) %llu---\n"
 			"---Last committed memory lsq access %llu last committed lsq blk address 0x%08x---\n"
 			"---Last issued lsq memory access %llu last issued lsq blk address 0x%08x---\n"
 			"---Last committed memory fetch access %llu last committed fetch blk address 0x%08x---\n"
 			"---Last issued fetch memory access %llu last issued fetch blk address 0x%08x---\n",
+			P_TIME,
 			(P_TIME - 1000000),
 			last_committed_lsq_access_id, last_committed_lsq_access_blk, last_issued_lsq_access_id, last_issued_lsq_access_blk,
 			last_committed_fetch_access_id, last_committed_fetch_access_blk, last_issued_fetch_access_id, last_issued_fetch_access_blk);
 
 		cgm_dump_system();
+		cgm_dump_summary();
+		printf("---Simulation End---\n\n");
+		fflush(stdout);
+		fflush(stderr);
+
+		memset (buff,'\0' , 250);
+		sprintf(buff, "%s", cgm_stats_output_path);
+		sprintf(buff + strlen(buff), "m2s_cgm_stats_error_log_%s.txt", cgm_stat->date_time_file);
+		FILE *cgm_stats_error_file;
+		cgm_stats_error_file = fopen (buff, "w+");
+
+		/*Now print the error to an error log file*/
+		dup2(fileno(cgm_stats_error_file), fileno (stdout));
+		printf("\n---thread %s: simulation ended due to commit stall.---\n%s", self->name, err_commit_stall);
+
+		printf("---Deadlock Detected Dumping System Status---\n"
+			"---Current cycle %llu---\n"
+			"---last real cycle (current minus 1M) %llu---\n"
+			"---Last committed memory lsq access %llu last committed lsq blk address 0x%08x---\n"
+			"---Last issued lsq memory access %llu last issued lsq blk address 0x%08x---\n"
+			"---Last committed memory fetch access %llu last committed fetch blk address 0x%08x---\n"
+			"---Last issued fetch memory access %llu last issued fetch blk address 0x%08x---\n",
+			P_TIME,
+			(P_TIME - 1000000),
+			last_committed_lsq_access_id, last_committed_lsq_access_blk, last_issued_lsq_access_id, last_issued_lsq_access_blk,
+			last_committed_fetch_access_id, last_committed_fetch_access_blk, last_issued_fetch_access_id, last_issued_fetch_access_blk);
+
+		cgm_dump_system();
+		fflush(stdout);
+		fflush(stderr);
+		fclose(cgm_stats_error_file);
 
 		esim_finish = esim_finish_stall;
-
-		fflush(stdout);
 
 		exit(0);
 	}
