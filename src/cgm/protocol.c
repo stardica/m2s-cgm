@@ -125,9 +125,9 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet){
 
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, int pending, enum cgm_cache_block_state_t victim_state){
 
-	int l1_error = 0;
-	int l2_error = 0;
-	int l3_error = 0;
+	//int l1_error = 0;
+	//int l2_error = 0;
+	//int l3_error = 0;
 
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->flush_pending = pending;

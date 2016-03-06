@@ -94,31 +94,33 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 			{
 				//no uop
-				cgm_stat->cpu_fetch_stalls++;
+				if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
+					cgm_stat->core_fetch_stalls[core->id]++;
+
 			}
 			else if(stall == x86_dispatch_stall_rob)
 			{
 				/*ROB is full collect stats for each of the different cores*/
 				assert(self->rob_count == 64);
-				cgm_stat->cpu_rob_stalls[core->id]++;
+				cgm_stat->core_rob_stalls[core->id]++;
 
 				rob_uop = list_get(self->core->rob, self->rob_head);
 
 				if(rob_uop->uinst->opcode == x86_uinst_load)
 				{
-					cgm_stat->cpu_rob_stall_load[core->id]++;
+					cgm_stat->core_rob_stall_load[core->id]++;
 				}
 				else if(rob_uop->uinst->opcode == x86_uinst_store)
 				{
-					cgm_stat->cpu_rob_stall_store[core->id]++;
+					cgm_stat->core_rob_stall_store[core->id]++;
 				}
 				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
 				{
-					cgm_stat->cpu_rob_stall_syscall[core->id]++;
+					cgm_stat->core_rob_stall_syscall[core->id]++;
 				}
 				else
 				{
-					cgm_stat->cpu_rob_stall_other[core->id]++;
+					cgm_stat->core_rob_stall_other[core->id]++;
 				}
 			}
 			else if(stall == x86_dispatch_stall_lsq)

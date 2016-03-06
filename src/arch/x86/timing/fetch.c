@@ -546,6 +546,8 @@ static void X86ThreadFetch(X86Thread *self)
 			}
 		}
 	}
+
+	return;
 }
 
 
@@ -666,6 +668,8 @@ static void X86CoreFetch(X86Core *self)
 	default:
 		panic("%s: wrong fetch policy", __FUNCTION__);
 	}
+
+	return;
 }
 
 

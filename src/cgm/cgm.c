@@ -155,11 +155,16 @@ void cgm_stat_finish_create(int argc, char **argv){
 	cgm_stat->benchmark_name = strdup(buff);
 
 	/*configure data structures*/
-	cgm_stat->cpu_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat->cpu_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat->cpu_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat->cpu_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat->cpu_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_first_fetch_cycle = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_fetch_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_issued_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 
 	return;
 }
@@ -299,6 +304,10 @@ void cgm_dump_stats(void){
 	int num_threads = x86_cpu_num_threads;
 	int num_cus = si_gpu_num_compute_units;
 	int i = 0;
+	long long run_time = 0;
+	long long idle_time = 0;
+	long long busy_time = 0;
+	long long stall_time = 0;
 
 	//get the time
 	cgm_stat->end_wall_time = get_wall_time();
@@ -322,23 +331,48 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
-	long long total_stalls = 0;
 	for(i = 0; i < num_cores; i++)
-		total_stalls += cgm_stat->cpu_rob_stalls[i];
+		stall_time += cgm_stat->core_rob_stalls[i];
 
-	CGM_STATS(cgm_stats_file, "PercentStalled = %0.2f\n", (double)total_stalls/(double)(P_TIME * 4));
+	CGM_STATS(cgm_stats_file, "PercentStalled = %0.2f\n", (double)stall_time/(double)(P_TIME * 4));
 	CGM_STATS(cgm_stats_file, "\n");
 
 	for(i = 0; i < num_cores; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[CPU_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->cpu_rob_stalls[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat->cpu_rob_stall_load[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallStore = %llu\n", cgm_stat->cpu_rob_stall_store[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallSyscall = %llu\n", cgm_stat->cpu_rob_stall_syscall[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallOther = %llu\n", cgm_stat->cpu_rob_stall_other[i]);
-		CGM_STATS(cgm_stats_file, "PercentStalled = %0.2f\n", (double)cgm_stat->cpu_rob_stalls[i]/(double)P_TIME);
+		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->core_rob_stalls[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat->core_rob_stall_load[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallStore = %llu\n", cgm_stat->core_rob_stall_store[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallSyscall = %llu\n", cgm_stat->core_rob_stall_syscall[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallOther = %llu\n", cgm_stat->core_rob_stall_other[i]);
+		CGM_STATS(cgm_stats_file, "FirstFetchCycle = %llu\n", cgm_stat->core_first_fetch_cycle[i]);
+		CGM_STATS(cgm_stats_file, "LastCommit = %llu\n", cgm_stat->core_last_commit_cycle[i]);
+		CGM_STATS(cgm_stats_file, "FetchStall = %llu\n", cgm_stat->core_fetch_stalls[i]);
+		CGM_STATS(cgm_stats_file, "NumIssuedMemoryInst = %llu\n", cgm_stat->core_issued_memory_insts[i]);
+		CGM_STATS(cgm_stats_file, "NumCommitedMemoryInst = %llu\n", cgm_stat->core_commited_memory_insts[i]);
+		CGM_STATS(cgm_stats_file, "StallTime = %llu\n", cgm_stat->core_rob_stalls[i] + cgm_stat->core_fetch_stalls[i]);
+		run_time = cgm_stat->core_last_commit_cycle[i] - cgm_stat->core_first_fetch_cycle[i];
+		CGM_STATS(cgm_stats_file, "RunTime = %llu\n", run_time);
+		idle_time = P_TIME - run_time;
+		CGM_STATS(cgm_stats_file, "IdleTime = %llu\n", idle_time);
+		stall_time = (cgm_stat->core_rob_stalls[i] + cgm_stat->core_fetch_stalls[i]);
+		busy_time = (run_time - stall_time);
+		CGM_STATS(cgm_stats_file, "BusyTime = %llu\n", busy_time);
+		CGM_STATS(cgm_stats_file, "RunPct = %0.2f\n", (double)run_time/(double)P_TIME);
+		CGM_STATS(cgm_stats_file, "IdlePct = %0.2f\n", (double)idle_time/(double)P_TIME);
+		CGM_STATS(cgm_stats_file, "BusyPct = %0.2f\n", (double)busy_time/(double)run_time);
+		CGM_STATS(cgm_stats_file, "StallPct = %0.2f\n", (double)stall_time/(double)run_time);
+		CGM_STATS(cgm_stats_file, "StallfetchPct = %0.2f\n", (double)cgm_stat->core_fetch_stalls[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallLoadPct = %0.2f\n", (double)cgm_stat->core_rob_stall_load[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallStorePct = %0.2f\n", (double)cgm_stat->core_rob_stall_store[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallSyscallPct = %0.2f\n", (double)cgm_stat->core_rob_stall_syscall[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallOtherPct = %0.2f\n", (double)cgm_stat->core_rob_stall_other[i]/(double)stall_time);
 		CGM_STATS(cgm_stats_file, "\n");
+
+		run_time = 0;
+		idle_time = 0;
+		stall_time = 0;
+		busy_time = 0;
 	}
 
 
@@ -640,8 +674,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	assert(id < num_cores);
 
 	/*stats*/
+	if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
+		cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
+
 	cgm_stat->cpu_total_fetches++;
 	l1_i_caches[id].TotalAcesses++;
+
 
 	last_issued_fetch_access_id = access_id;
 	last_issued_fetch_access_blk = addr & thread->i_cache_ptr[id].block_address_mask;
@@ -733,6 +771,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	l1_d_caches[id].TotalAcesses++;
 	last_issued_lsq_access_id = access_id;
 	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
+	cgm_stat->core_issued_memory_insts[thread->core->id]++;
 
 	/*printf("\t lsq issuing access_id %llu\n", access_id);*/
 

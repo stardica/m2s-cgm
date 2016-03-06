@@ -464,16 +464,23 @@ struct cgm_stats_t{
 	double sim_time;
 
 	/*cpu stats*/
-	long long *cpu_rob_stalls;
-	long long *cpu_rob_stall_load;
-	long long *cpu_rob_stall_store;
-	long long *cpu_rob_stall_syscall;
-	long long *cpu_rob_stall_other;
+	int coue_1;
+	long long *core_rob_stalls;
+	long long *core_rob_stall_load;
+	long long *core_rob_stall_store;
+	long long *core_rob_stall_syscall;
+	long long *core_rob_stall_other;
+	long long *core_first_fetch_cycle;
+	long long *core_last_commit_cycle;
+	long long *core_fetch_stalls;
+	long long *core_issued_memory_insts;
+	long long *core_commited_memory_insts;
+
 
 	long long cpu_total_fetches;
 	long long cpu_total_loads;
 	long long cpu_total_stores;
-	long long cpu_fetch_stalls;
+
 	long long cpu_ls_stalls;
 
 	/*gpu stats*/

@@ -6559,11 +6559,11 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->upgrade_inval_ack_count = 0;
 			cgm_cache_insert_pending_request_buffer(cache, message_packet);
 
-			if((message_packet->address & cache->block_address_mask) == 0x0004e380)
+			/*if((message_packet->address & cache->block_address_mask) == 0x0004e380)
 			{
 				cache_dump_queue(cache->pending_request_buffer);
 				getchar();
-			}
+			}*/
 
 
 			//set the upgrade_pending bit to 1 in the block

@@ -171,12 +171,6 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		X86ThreadCommitUop(self, uop);
 
-		//star >> entered instrumentation here
-		//pthread_mutex_lock(&instrumentation_mutex);
-		//CommitStats(uop, ctx->pid);
-		//pthread_mutex_unlock(&instrumentation_mutex);
-
-
 		/* Branches update branch predictor and btb */
 		if (uop->flags & X86_UINST_CTRL)
 		{
@@ -185,10 +179,20 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			self->btb_writes++;
 		}
 
+		/*if(uop->interrupt > 0)
+		{
+			printf("pulled int at commit start %llu finish time %llu current time %llu\n", uop->interrupt_start, uop->when, P_TIME);
+		}*/
+
 		/* Trace cache */
 		if (x86_trace_cache_present)
 			X86ThreadRecordUopInTraceCache(self, uop);
 			
+		/*star our stats*/
+		cgm_stat->core_last_commit_cycle[self->core->id] = P_TIME;
+		if (uop->flags == X86_UINST_MEM)
+			cgm_stat->core_commited_memory_insts[self->core->id]++;
+
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;
 		self->num_committed_uinst_array[uop->uinst->opcode]++;
@@ -213,23 +217,11 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			}
 		}
 
-		if (uop->flags == X86_UINST_MEM)
-		{
-			//MEMINSTCOMMITED++;
-
-		}
-
-		/*if(uop->protection_fault == 1)
-		{
-			printf("X86ThreadCommit(): protection fault committing access_id %llu\n", uop->id);
-		}*/
-
-
 		/* Trace */
 		if (x86_tracing())
 		{
 			//testing if we enter here.
-			printf("x86_tracing()\n");
+			printf("x86_tracing() Warning getchar here\n");
 			fflush(stdout);
 			getchar();
 			x86_trace("x86.inst id=%lld core=%d stg=\"co\"\n", uop->id_in_core, core->id);

@@ -8,6 +8,7 @@
 #include <cgm/dram.h>
 #include <arch/x86/timing/cpu.h>
 
+
 int DRAMSim = 0;
 eventcount volatile *dramsim;
 task *dramsim_cpu_clock;

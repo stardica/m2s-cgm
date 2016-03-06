@@ -256,7 +256,7 @@ void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 	int last_queue_num = -1;
 	int l2_src_id = -1;
 
-	int l3_map;
+	//int l3_map;
 
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
@@ -319,7 +319,7 @@ void hub_iommu_noncoherent_ctrl(void){
 	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	int l3_map;
+	//int l3_map;
 
 	set_id((unsigned int)my_pid);
 
@@ -362,7 +362,7 @@ void hub_iommu_coherent_ctrl(void){
 	int my_pid = hub_iommu_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	int l3_map;
+	//int l3_map;
 
 	set_id((unsigned int)my_pid);
 
