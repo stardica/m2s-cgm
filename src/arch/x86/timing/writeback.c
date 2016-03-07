@@ -27,6 +27,9 @@
 #include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/writeback.h>
 
+#include <cgm/cgm.h>
+
+
 
 
 /*
@@ -56,10 +59,27 @@ void X86CoreWriteback(X86Core *self)
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equal to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
+		{
 			uop->when = asTiming(cpu)->cycle;
+		}
+
 		if (uop->when > asTiming(cpu)->cycle)
+		{
 			break;
+		}
+
+		if (uop->uinst->opcode == x86_uinst_syscall)
+			cgm_stat->core_syscall_stalls[self->id]+= uop->interrupt_lat;
+
+		/*printf("core_id %d found syscall %llu at head of writeback ROB size is %d iq size %d lsq size %d uop size %d\n",
+			self->id, uop->id, uop->thread->rob_count, uop->thread->iq_count, uop->thread->lsq_count, list_count(uop->thread->uop_queue));
+
+		printf(" iq queue size %d\n", linked_list_count(uop->thread->iq));
+
+		if(uop->id > 1986)
+			getchar();*/
 		
+
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
 		assert(uop->when == asTiming(cpu)->cycle);
@@ -67,7 +87,6 @@ void X86CoreWriteback(X86Core *self)
 		assert(uop->ready);
 		assert(!uop->completed);
 		
-
 		/* Extract element from event queue. */
 		linked_list_remove(self->event_queue);
 		uop->in_event_queue = 0;

@@ -93,6 +93,7 @@ struct x86_uop_t
 	int completed;
 	int interrupt;
 	long long interrupt_start;
+	long long interrupt_lat;
 	enum interrupt_type_t interrupt_type;
 	unsigned int int_src_ptr;
 	unsigned int int_dest_ptr;

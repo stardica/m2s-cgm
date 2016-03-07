@@ -24,7 +24,7 @@
 #include <lib/util/debug.h>
 
 
-#define BASELAT 250000
+#define BASELAT 4000
 #define OCLLAT 1000
 #define SYSLAT 1000
 
@@ -213,6 +213,7 @@ void interrupt_service_request(void){
 				//set when the interrupt should complete
 				uop = linked_list_find(core->event_queue, uop);
 				uop->interrupt_start = P_TIME;
+				uop->interrupt_lat = lat;
 				uop->when = P_TIME + lat;
 				lat = 0;
 

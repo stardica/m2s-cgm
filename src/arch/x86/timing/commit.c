@@ -179,9 +179,19 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			self->btb_writes++;
 		}
 
-		/*if(uop->interrupt > 0)
+		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			printf("pulled int at commit start %llu finish time %llu current time %llu\n", uop->interrupt_start, uop->when, P_TIME);
+			printf("pulled syscall %llu at commit rob size %d iq size %d lsq size %d cycle %llu\n",
+					uop->id, self->rob_count, self->iq_count, self->lsq_count, P_TIME);
+
+			if(self->core->rob_count > 0)
+				getchar();
+		}*/
+		/*else
+		{
+			printf("pulled oup %llu at commit rob size %d (%d) iq size %d lsq size %d cycle %llu\n",
+					uop->id, self->rob_count, list_count(self->core->rob), self->core->iq_count, self->core->lsq_count, P_TIME);
+
 		}*/
 
 		/* Trace cache */

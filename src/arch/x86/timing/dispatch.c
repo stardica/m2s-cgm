@@ -96,37 +96,56 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				//no uop
 				if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
 					cgm_stat->core_fetch_stalls[core->id]++;
-
 			}
 			else if(stall == x86_dispatch_stall_rob)
 			{
+				//printf("stall on rob\n");
 				/*ROB is full collect stats for each of the different cores*/
 				assert(self->rob_count == 64);
-				cgm_stat->core_rob_stalls[core->id]++;
-
 				rob_uop = list_get(self->core->rob, self->rob_head);
 
 				if(rob_uop->uinst->opcode == x86_uinst_load)
 				{
 					cgm_stat->core_rob_stall_load[core->id]++;
+					cgm_stat->core_rob_stalls[core->id]++;
 				}
 				else if(rob_uop->uinst->opcode == x86_uinst_store)
 				{
 					cgm_stat->core_rob_stall_store[core->id]++;
+					cgm_stat->core_rob_stalls[core->id]++;
 				}
 				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
 				{
-					cgm_stat->core_rob_stall_syscall[core->id]++;
+					//printf("syscallstalls\n");
+					//cgm_stat->core_rob_stall_syscall[core->id]++;
 				}
 				else
 				{
 					cgm_stat->core_rob_stall_other[core->id]++;
+					cgm_stat->core_rob_stalls[core->id]++;
 				}
 			}
 			else if(stall == x86_dispatch_stall_lsq)
 			{
+				//printf("stall on lsq\n");
 				cgm_stat->cpu_ls_stalls++;
 			}
+			else if (stall == x86_dispatch_stall_iq)
+			{
+				//printf("stall on iq\n");
+
+			}
+			else if (stall == x86_dispatch_stall_rename)
+			{
+				/*printf("stall on rename\n");
+				getchar();*/
+
+			}
+			else
+			{
+				fatal("X86ThreadDispatch(): invalid stall type\n");
+			}
+
 
 			core->dispatch_stall[stall] += quantum;
 			break;

@@ -419,10 +419,11 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->when = asTiming(cpu)->cycle + lat;
 		X86CoreInsertInEventQueue(core, uop);
 		
-
 		//star run the interrupt
 		if(uop->interrupt > 0)
 		{
+			assert(uop->uinst->opcode == x86_uinst_syscall);
+			cgm_stat->core_num_syscalls[self->core->id]++;
 			cgm_interrupt(self, uop);
 		}
 
