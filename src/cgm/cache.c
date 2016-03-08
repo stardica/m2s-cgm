@@ -1949,7 +1949,7 @@ void l1_d_cache_ctrl(void){
 
 			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
 
-			/*if(message_packet->access_id == 87630)
+			/*if(message_packet->access_id == 4834536)
 			{
 				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 

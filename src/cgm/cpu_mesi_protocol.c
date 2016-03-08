@@ -6818,6 +6818,11 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 	}
 
+	/*requested upgrade was nacked by L3 change to getx*/
+
+	//find the access in the ORT table and clear it.
+	ort_clear(cache, pending_packet);
+
 	//change to a getx
 	message_packet->access_type = cgm_access_getx;
 	message_packet->cpu_access_type = pending_packet->cpu_access_type;
