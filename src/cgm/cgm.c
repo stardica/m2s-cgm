@@ -341,7 +341,7 @@ void cgm_dump_stats(void){
 
 	for(i = 0; i < num_cores; i++)
 	{
-		CGM_STATS(cgm_stats_file, "[CPU_%d]\n", i);
+		CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);
 		CGM_STATS(cgm_stats_file, "NumSyscalls = %llu\n", cgm_stat->core_num_syscalls[i]);
 		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->core_rob_stalls[i]);
 		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat->core_rob_stall_load[i]);
@@ -361,7 +361,7 @@ void cgm_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "IdleTime = %llu\n", idle_time);
 
 		system_time = cgm_stat->core_syscall_stalls[i];
-		CGM_STATS(cgm_stats_file, "SystemTime(SysCalls) = %llu\n", system_time);
+		CGM_STATS(cgm_stats_file, "SystemTime = %llu\n", system_time);
 
 		stall_time = (cgm_stat->core_rob_stalls[i] + cgm_stat->core_fetch_stalls[i]);
 		CGM_STATS(cgm_stats_file, "StallTime = %llu\n", stall_time);
