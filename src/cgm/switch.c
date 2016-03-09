@@ -562,7 +562,6 @@ void switch_ctrl(void){
 		link as many inputs to outputs as possible*/
 		switch_crossbar_link(&switches[my_pid]);
 
-
 		/*crossbar state is set. now run through and move each packet as required.*/
 		if(switches[my_pid].crossbar->north_in_out_linked_queue != invalid_queue)
 		{
@@ -663,6 +662,9 @@ void switch_ctrl(void){
 		}
 
 		/*stats*/
+		if(switches[my_pid].switch_max_links < switches[my_pid].crossbar->num_pairs)
+			switches[my_pid].switch_max_links = switches[my_pid].crossbar->num_pairs;
+
 		switches[my_pid].switch_total_links += switches[my_pid].crossbar->num_pairs;
 		switches[my_pid].switch_total_wakes++;
 
@@ -1178,6 +1180,7 @@ void switch_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[i].switch_total_wakes);
 		CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.2f\n", (double) switches[i].switch_total_wakes/ (double) P_TIME);
 		CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[i].switch_total_links);
+		CGM_STATS(cgm_stats_file, "MaxNumberLinks = %d\n", switches[i].switch_max_links);
 		CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %.02f\n", (double)switches[i].switch_total_links/(double)switches[i].switch_total_wakes);
 		CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[i].switch_north_io_transfers);
 		CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[i].switch_north_io_transfer_cycles);
@@ -1214,6 +1217,7 @@ void switch_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", switches[num_cores].switch_total_wakes);
 	CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.2f\n", (double) switches[num_cores].switch_total_wakes/ (double) P_TIME);
 	CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", switches[num_cores].switch_total_links);
+	CGM_STATS(cgm_stats_file, "MaxNumberLinks = %d\n", switches[num_cores].switch_max_links);
 	CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %.02f\n", (double)switches[num_cores].switch_total_links/(double)switches[num_cores].switch_total_wakes);
 	CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", switches[num_cores].switch_north_io_transfers);
 	CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", switches[num_cores].switch_north_io_transfer_cycles);

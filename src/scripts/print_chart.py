@@ -10,15 +10,9 @@ import numpy as np
 
 def plot_cpu_stats(options):
 
-	df = pd.DataFrame(np.random.rand(10, 4), columns=['a', 'b', 'c', 'd'])
-
-	#df = df.cumsum()
-	#df.plot()
-	df.plot(kind='bar', stacked=True)
-	plt.show()
-
-	exit(0);
-
+	if int(options.NumCores) == 1:
+		print "No point in running this with less than 4 cores"	
+		exit(0)
 
 	cpu_data = ConfigParser.ConfigParser()
 	cpu_data.read(options.InFileName)
@@ -127,33 +121,33 @@ def plot_cpu_stats(options):
 		core_3_StallOtherPct = cpu_data.getfloat('Core_3', 'StallOtherPct')
 		table_P3 = [core_3_IdleTime, core_3_FetchStall, core_3_ROBStallLoad, core_3_ROBStallStore, core_3_ROBStallOther, core_3_SystemTime, core_3_BusyTime]
 
+	#["ROBStalls", core_0_ROBStalls], 
+	#["ROBStallLoad", core_0_ROBStallLoad],
+	#["ROBStallStore", core_0_ROBStallStore],
+	#["ROBStallOther", core_0_ROBStallOther],
+	#["FetchStall", core_0_FetchStall],
 
-	if int(options.NumCores) == 1:
-		print "No point in running this with less than 4 cores"	
-		exit(0)
+	#["IdleTime", core_0_IdleTime, core_1_IdleTime, core_2_IdleTime, core_3_IdleTime],
+	#["StallTime", core_0_StallTime, core_1_StallTime, core_2_StallTime, core_3_StallTime],
+	#["SystemTime(SysCalls)", core_0_SystemTime, core_1_SystemTime, core_2_SystemTime, core_3_SystemTime],
+	#["BusyTime", core_0_BusyTime, core_1_BusyTime, core_2_BusyTime, core_3_BusyTime]
 
-	###core P3###
-	if int(options.NumCores) == 4:
-	
-		df2.plot(kind='bar', stacked=True);
-	
+	table_P4 = [
+		[core_0_BusyTime, core_0_SystemTime, core_0_StallTime, core_0_IdleTime],
+		[core_1_BusyTime, core_1_SystemTime, core_1_StallTime, core_1_IdleTime],
+		[core_2_BusyTime, core_2_SystemTime, core_2_StallTime, core_2_IdleTime],
+		[core_3_BusyTime, core_3_SystemTime, core_3_StallTime, core_3_IdleTime]
+		]
 
+	#cpu_stats = np.array()
+	df = pd.DataFrame(table_P4, columns=['Busy', 'System', 'Stall', 'Idle'], index=['P0', 'P1', 'P2', 'P3'])
 
-
-	Idle_Time
-	Fetch_Stall_Time
-	Load_Stall_Time
-	Store_Stall_Time
-	Other_Stall_Time
-	system_stall_time
-	busy_time
-
-	
-	
-	
-
-
-
+	axis = df.plot(kind='bar', stacked=True, colormap='gray', title="Backprop OMP 4096", rot=0, linestyle='-')
+	axis.set(xlabel="Cores", ylabel="Total Cycles")
+	axis.grid(b=True, which='major', color='black', linestyle='--')
+	axis.grid(b=True, which='minor', color='black', linestyle='--')
+	axis.legend(loc='upper right', ncol=5)
+	plt.show()
 
 	return
 

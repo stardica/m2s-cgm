@@ -652,6 +652,7 @@ def print_switch_stats(options):
 		s_0_total_ctrl_loops = switch_data.getint('Switch_0', 'NumberSwitchCtrlLoops')
 		s_0_occupance = switch_data.getfloat('Switch_0', 'SwitchOccupance')
 		s_0_total_links_formed = switch_data.getint('Switch_0', 'NumberLinks')
+		s_0_max_links_formed = switch_data.getint('Switch_0', 'MaxNumberLinks')
 		s_0_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_0', 'AveNumberLinksPerCtrlLoop')
 		s_0_north_io_transfers = switch_data.getint('Switch_0', 'NorthIOTransfers')
 		s_0_north_io_cycles = switch_data.getint('Switch_0', 'NorthIOCycles')
@@ -686,6 +687,7 @@ def print_switch_stats(options):
 		s_1_total_ctrl_loops = switch_data.getint('Switch_1', 'NumberSwitchCtrlLoops')
 		s_1_occupance = switch_data.getfloat('Switch_1', 'SwitchOccupance')
 		s_1_total_links_formed = switch_data.getint('Switch_1', 'NumberLinks')
+		s_1_max_links_formed = switch_data.getint('Switch_1', 'MaxNumberLinks')
 		s_1_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_1', 'AveNumberLinksPerCtrlLoop')
 		s_1_north_io_transfers = switch_data.getint('Switch_1', 'NorthIOTransfers')
 		s_1_north_io_cycles = switch_data.getint('Switch_1', 'NorthIOCycles')
@@ -720,6 +722,7 @@ def print_switch_stats(options):
 		s_2_total_ctrl_loops = switch_data.getint('Switch_2', 'NumberSwitchCtrlLoops')
 		s_2_occupance = switch_data.getfloat('Switch_2', 'SwitchOccupance')
 		s_2_total_links_formed = switch_data.getint('Switch_2', 'NumberLinks')
+		s_2_max_links_formed = switch_data.getint('Switch_2', 'MaxNumberLinks')
 		s_2_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_2', 'AveNumberLinksPerCtrlLoop')
 		s_2_north_io_transfers = switch_data.getint('Switch_2', 'NorthIOTransfers')
 		s_2_north_io_cycles = switch_data.getint('Switch_2', 'NorthIOCycles')
@@ -754,6 +757,7 @@ def print_switch_stats(options):
 		s_3_total_ctrl_loops = switch_data.getint('Switch_3', 'NumberSwitchCtrlLoops')
 		s_3_occupance = switch_data.getfloat('Switch_3', 'SwitchOccupance')
 		s_3_total_links_formed = switch_data.getint('Switch_3', 'NumberLinks')
+		s_3_max_links_formed = switch_data.getint('Switch_3', 'MaxNumberLinks')
 		s_3_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_3', 'AveNumberLinksPerCtrlLoop')
 		s_3_north_io_transfers = switch_data.getint('Switch_3', 'NorthIOTransfers')
 		s_3_north_io_cycles = switch_data.getint('Switch_3', 'NorthIOCycles')
@@ -789,6 +793,7 @@ def print_switch_stats(options):
 	s_sa_total_ctrl_loops = switch_data.getint('Switch_SA', 'NumberSwitchCtrlLoops')
 	s_sa_occupance = switch_data.getfloat('Switch_SA', 'SwitchOccupance')
 	s_sa_total_links_formed = switch_data.getint('Switch_SA', 'NumberLinks')
+	s_sa_max_links_formed = switch_data.getint('Switch_SA', 'MaxNumberLinks')
 	s_sa_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_SA', 'AveNumberLinksPerCtrlLoop')
 	s_sa_north_io_transfers = switch_data.getint('Switch_SA', 'NorthIOTransfers')
 	s_sa_north_io_cycles = switch_data.getint('Switch_SA', 'NorthIOCycles')
@@ -827,7 +832,8 @@ def print_switch_stats(options):
 		table_switch_data_p0 = [
 		["TotalSwitchCtrlLoops", s_0_total_ctrl_loops, s_sa_total_ctrl_loops],
 		["SwitchOccupancy", s_0_occupance, s_sa_occupance],
-		["TotalLinksFormed", s_0_total_links_formed, s_sa_total_ctrl_loops],
+		["TotalLinksFormed", s_0_total_links_formed, s_sa_total_links_formed],
+		["MaxLinksFormed", s_0_max_links_formed, s_sa_max_links_formed],
 		["TotalAveNumberLinksPerCtrlLoop", s_0_ave_links_formed_per_ctrl_loop, s_sa_ave_links_formed_per_ctrl_loop],
 		["NorthIOTransfers", s_0_north_io_transfers, s_sa_north_io_transfers ],
 		["NorthIOCycles", s_0_north_io_cycles, s_sa_north_io_cycles],
@@ -864,6 +870,7 @@ def print_switch_stats(options):
 		["TotalSwitchCtrlLoops", s_0_total_ctrl_loops, s_1_total_ctrl_loops, s_2_total_ctrl_loops, s_3_total_ctrl_loops, s_sa_total_ctrl_loops],
 		["SwitchOccupancy", s_0_occupance, s_1_occupance, s_2_occupance, s_3_occupance, s_sa_occupance],
 		["TotalLinksFormed", s_0_total_links_formed, s_1_total_links_formed, s_2_total_links_formed, s_3_total_links_formed, s_sa_total_ctrl_loops],
+		["MaxLinksFormed", s_0_max_links_formed, s_1_max_links_formed, s_2_max_links_formed, s_3_max_links_formed, s_sa_max_links_formed],
 		["TotalAveNumberLinksPerCtrlLoop", s_0_ave_links_formed_per_ctrl_loop, s_1_ave_links_formed_per_ctrl_loop, s_2_ave_links_formed_per_ctrl_loop, s_3_ave_links_formed_per_ctrl_loop, s_sa_ave_links_formed_per_ctrl_loop],
 		["NorthIOTransfers", s_0_north_io_transfers, s_1_north_io_transfers, s_2_north_io_transfers, s_3_north_io_transfers, s_sa_north_io_transfers ],
 		["NorthIOCycles", s_0_north_io_cycles, s_1_north_io_cycles, s_2_north_io_cycles, s_3_north_io_cycles, s_sa_north_io_cycles],
