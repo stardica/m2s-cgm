@@ -132,6 +132,8 @@ def plot_cpu_stats(options):
 	#["SystemTime(SysCalls)", core_0_SystemTime, core_1_SystemTime, core_2_SystemTime, core_3_SystemTime],
 	#["BusyTime", core_0_BusyTime, core_1_BusyTime, core_2_BusyTime, core_3_BusyTime]
 
+	total_cycles = cpu_data.getfloat('General', 'TotalCycles')
+
 	table_P4 = [
 		[core_0_BusyTime, core_0_SystemTime, core_0_StallTime, core_0_IdleTime],
 		[core_1_BusyTime, core_1_SystemTime, core_1_StallTime, core_1_IdleTime],
@@ -141,12 +143,16 @@ def plot_cpu_stats(options):
 
 	#cpu_stats = np.array()
 	df = pd.DataFrame(table_P4, columns=['Busy', 'System', 'Stall', 'Idle'], index=['P0', 'P1', 'P2', 'P3'])
+	axes = df.plot(kind='bar', stacked=True, colormap='gray', title="Backprop OMP 4096", rot=0)
+	
+	y_major_ticks = np.arange(0, (total_cycles*1.4), (total_cycles*.20))
+	axes.set_yticks(y_major_ticks)
+	y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
 
-	axis = df.plot(kind='bar', stacked=True, colormap='gray', title="Backprop OMP 4096", rot=0, linestyle='-')
-	axis.set(xlabel="Cores", ylabel="Total Cycles")
-	axis.grid(b=True, which='major', color='black', linestyle='--')
-	axis.grid(b=True, which='minor', color='black', linestyle='--')
-	axis.legend(loc='upper right', ncol=5)
+	axes.set(xlabel="Cores", ylabel="Total Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
+	axes.grid(b=True, which='major', color='black', linestyle='--')
+	axes.grid(b=True, which='minor', color='black', linestyle='--')
+	axes.legend(loc='upper right', ncol=4)
 	plt.show()
 
 	return
