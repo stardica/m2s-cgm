@@ -42,6 +42,7 @@ void X86CoreWriteback(X86Core *self)
 	X86Thread *thread;
 
 	struct x86_uop_t *uop;
+	struct x86_uop_t *rob_uop;
 
 	int recover = 0;
 
@@ -68,8 +69,17 @@ void X86CoreWriteback(X86Core *self)
 			break;
 		}
 
-		if (uop->uinst->opcode == x86_uinst_syscall)
+		/*if (uop->uinst->opcode == x86_uinst_syscall)
+		{
 			cgm_stat->core_syscall_stalls[self->id]+= uop->interrupt_lat;
+			core_dump_rob(self);
+			getchar();
+			core_dump_event_queue(self);
+			getchar();
+		}*/
+
+		//core_dump_event_queue(self);
+		//getchar();
 
 		/*printf("core_id %d found syscall %llu at head of writeback ROB size is %d iq size %d lsq size %d uop size %d\n",
 			self->id, uop->id, uop->thread->rob_count, uop->thread->iq_count, uop->thread->lsq_count, list_count(uop->thread->uop_queue));
@@ -79,10 +89,12 @@ void X86CoreWriteback(X86Core *self)
 		if(uop->id > 1986)
 			getchar();*/
 		
+		/*if(uop->uinst->opcode == x86_uinst_load)*/
+		//printf("finishing id %llu op %d when %llu cycle %llu cpu cycle %llu\n", uop->id, uop->uinst->opcode, uop->when, P_TIME, asTiming(cpu)->cycle);
 
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
-		assert(uop->when == asTiming(cpu)->cycle);
+		//assert(uop->when == asTiming(cpu)->cycle);
 		assert(uop->thread->core == self);
 		assert(uop->ready);
 		assert(!uop->completed);
@@ -106,7 +118,6 @@ void X86CoreWriteback(X86Core *self)
 		/* Writeback */
 		uop->completed = 1;
 		X86ThreadWriteUop(thread, uop);
-
 
 		//star >> statistics
 		self->reg_file_int_writes += uop->ph_int_odep_count;

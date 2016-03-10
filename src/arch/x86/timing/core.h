@@ -136,5 +136,8 @@ void X86CoreDestroy(X86Core *self);
 
 void X86CoreSetName(X86Core *self, char *name);
 
+void core_dump_rob(X86Core *core);
+void core_dump_event_queue(X86Core *core);
+
 #endif
 

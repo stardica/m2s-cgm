@@ -94,6 +94,13 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 			{
 				//no uop
+				/*if(self->rob_count == 64)
+				{
+					rob_uop = list_get(self->core->rob, self->rob_head);
+
+					printf("core %d ROB dispatch full reason %d rob head %d id %llu cycle %llu\n", core->id, stall, rob_uop->uinst->opcode, rob_uop->id, P_TIME);
+				}*/
+
 				if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
 					cgm_stat->core_fetch_stalls[core->id]++;
 			}
@@ -127,16 +134,18 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			}
 			else if(stall == x86_dispatch_stall_lsq)
 			{
+				assert(self->rob_count < 64);
 				//printf("stall on lsq\n");
 				cgm_stat->cpu_ls_stalls++;
 			}
 			else if (stall == x86_dispatch_stall_iq)
 			{
-				//printf("stall on iq\n");
+				assert(self->rob_count < 64);
 
 			}
 			else if (stall == x86_dispatch_stall_rename)
 			{
+				assert(self->rob_count < 64);
 				/*printf("stall on rename\n");
 				getchar();*/
 
@@ -145,7 +154,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			{
 				fatal("X86ThreadDispatch(): invalid stall type\n");
 			}
-
 
 			core->dispatch_stall[stall] += quantum;
 			break;

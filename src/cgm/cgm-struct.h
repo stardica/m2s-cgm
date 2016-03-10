@@ -449,7 +449,6 @@ struct cache_t{
 //for general stats
 struct cgm_stats_t{
 
-
 	int execution_success;
 
 	char* stat_file_name;
@@ -464,6 +463,7 @@ struct cgm_stats_t{
 	double sim_time;
 
 	/*cpu stats*/
+	int start;
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;

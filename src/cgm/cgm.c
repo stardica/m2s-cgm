@@ -6,6 +6,8 @@
  */
 
 
+#include <arch/common/arch.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -278,7 +280,8 @@ void cgm_watchdog(void){
 		await(watchdog, t_1);
 		t_1++;
 
-		/*if(run_watch_dog == 1)
+
+		/*if()
 		{
 			if(l2_caches[1].sets[69].blocks[0].state == cgm_cache_block_invalid)
 			{
@@ -288,11 +291,6 @@ void cgm_watchdog(void){
 			}
 		}*/
 
-		if(P_TIME >= 12936841)
-		{
-			cache_dump_queue(l2_caches[0].pending_request_buffer);
-			printf("\t cycle %llu\n", P_TIME);
-		}
 
 		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
 	}

@@ -19,6 +19,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/string.h>
+#include <lib/util/linked-list.h>
 
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
@@ -27,6 +28,7 @@
 #include <arch/x86/timing/rob.h>
 #include <arch/x86/timing/thread.h>
 
+#include <cgm/cgm.h>
 
 /*
  * Class 'X86Core'
@@ -81,4 +83,43 @@ void X86CoreDestroy(X86Core *self)
 void X86CoreSetName(X86Core *self, char *name)
 {
 	self->name = str_set(self->name, name);
+}
+
+void core_dump_event_queue(X86Core *core){
+
+	struct x86_uop_t *event_queue_uop;
+	struct linked_list_iter_t *iter = linked_list_iter_create(core->event_queue);
+
+	LINKED_LIST_ITER_FOR_EACH(iter)
+	{
+		//get pointer to access in queue and check it's status.
+		event_queue_uop = linked_list_get(core->event_queue);
+		if(event_queue_uop)
+		{
+			printf("\t Core id %d event_queue_uop id %llu op_code %d cycle %llu\n",
+				core->id, event_queue_uop->id, event_queue_uop->uinst->opcode, P_TIME);
+		}
+	}
+	return;
+}
+
+
+void core_dump_rob(X86Core *core){
+
+	int i = 0;
+	struct x86_uop_t *rob_uop = NULL;
+
+	LIST_FOR_EACH(core->rob, i)
+	{
+		//get pointer to access in queue and check it's status.
+		rob_uop = list_get(core->rob, i);
+		if(rob_uop)
+		{
+			printf("\t Core id %d ROB slot %d rob_uop id %llu op_code %d %s\n",
+				core->id, i, rob_uop->id, rob_uop->uinst->opcode, (i == rob_uop->thread->rob_head) ? "<-- ROB head" : "");
+		}
+	}
+
+	//getchar();
+	return;
 }

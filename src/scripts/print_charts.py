@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 
-def plot_cpu_stats(options):
+def plot_stats(options):
 
 	if int(options.NumCores) == 1:
 		print "No point in running this with less than 4 cores"	
@@ -132,28 +132,63 @@ def plot_cpu_stats(options):
 	#["SystemTime(SysCalls)", core_0_SystemTime, core_1_SystemTime, core_2_SystemTime, core_3_SystemTime],
 	#["BusyTime", core_0_BusyTime, core_1_BusyTime, core_2_BusyTime, core_3_BusyTime]
 
-	total_cycles = cpu_data.getfloat('General', 'TotalCycles')
+	if int(options.OutChart) == 1:
+		total_cycles = cpu_data.getfloat('General', 'TotalCycles')
 
-	table_P4 = [
-		[core_0_BusyTime, core_0_SystemTime, core_0_StallTime, core_0_IdleTime],
-		[core_1_BusyTime, core_1_SystemTime, core_1_StallTime, core_1_IdleTime],
-		[core_2_BusyTime, core_2_SystemTime, core_2_StallTime, core_2_IdleTime],
-		[core_3_BusyTime, core_3_SystemTime, core_3_StallTime, core_3_IdleTime]
-		]
+		table_P4 = [
+			[core_0_BusyTime, core_0_SystemTime, core_0_FetchStall, core_0_ROBStallLoad, core_0_ROBStallStore, core_0_ROBStallOther, core_0_IdleTime],
+			[core_1_BusyTime, core_1_SystemTime, core_1_FetchStall, core_1_ROBStallLoad, core_1_ROBStallStore, core_1_ROBStallOther, core_1_IdleTime],
+			[core_2_BusyTime, core_2_SystemTime, core_2_FetchStall, core_2_ROBStallLoad, core_2_ROBStallStore, core_2_ROBStallOther, core_2_IdleTime],
+			[core_3_BusyTime, core_3_SystemTime, core_3_FetchStall, core_3_ROBStallLoad, core_3_ROBStallStore, core_3_ROBStallOther, core_3_IdleTime]
+			]
 
-	#cpu_stats = np.array()
-	df = pd.DataFrame(table_P4, columns=['Busy', 'System', 'Stall', 'Idle'], index=['P0', 'P1', 'P2', 'P3'])
-	axes = df.plot(kind='bar', stacked=True, colormap='gray', title="Backprop OMP 4096", rot=0)
+		#cpu_stats = np.array()
+		df = pd.DataFrame(table_P4, columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall', 'Idle'], index=['P0', 'P1', 'P2', 'P3'])
+		axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP 4096", rot=0)
 	
-	y_major_ticks = np.arange(0, (total_cycles*1.4), (total_cycles*.20))
-	axes.set_yticks(y_major_ticks)
-	y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
+		y_major_ticks = np.arange(0, (total_cycles*1.4), (total_cycles*.20))
+		axes.set_yticks(y_major_ticks)
+		y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
 
-	axes.set(xlabel="Cores", ylabel="Total Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
-	axes.grid(b=True, which='major', color='black', linestyle='--')
-	axes.grid(b=True, which='minor', color='black', linestyle='--')
-	axes.legend(loc='upper right', ncol=4)
-	plt.show()
+		axes.set(xlabel="Cores", ylabel="Percent Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
+		axes.grid(b=True, which='major', color='black', linestyle='--')
+		axes.grid(b=True, which='minor', color='black', linestyle='--')
+		axes.legend(loc='upper right', ncol=4)
+		plt.show()
+
+
+	if int(options.OutChart) == 2:
+		total_cycles = cpu_data.getfloat('General', 'TotalCycles')
+
+		ave_busy_time = (core_0_BusyTime + core_1_BusyTime + core_2_BusyTime + core_3_BusyTime)/int(options.NumCores)
+		ave_SystemTime = (core_0_SystemTime + core_1_SystemTime + core_2_SystemTime + core_3_SystemTime)/int(options.NumCores)
+		ave_FetchStall = (core_0_FetchStall + core_1_FetchStall + core_2_FetchStall + core_3_FetchStall)/int(options.NumCores)
+		ave_ROBStallLoad = (core_0_ROBStallLoad + core_1_ROBStallLoad + core_2_ROBStallLoad + core_3_ROBStallLoad)/int(options.NumCores)
+		ave_ROBStallStore = (core_0_ROBStallStore + core_1_ROBStallStore + core_2_ROBStallStore + core_3_ROBStallStore)/int(options.NumCores)
+		ave_ROBStallOther = (core_0_ROBStallOther + core_1_ROBStallOther + core_2_ROBStallOther + core_3_ROBStallOther)/int(options.NumCores)
+		ave_IdleTime = (core_0_IdleTime + core_1_IdleTime + core_2_IdleTime + core_3_IdleTime)/int(options.NumCores)
+
+		table_P4 = [
+			[ave_busy_time, ave_SystemTime, ave_FetchStall, ave_ROBStallLoad, ave_ROBStallStore, ave_ROBStallOther, ave_IdleTime]
+			]
+
+		print table_P4
+
+		#cpu_stats = np.array()
+		df = pd.DataFrame(table_P4, index=['Ave All CoresP0'], columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall', 'Idle'])
+		axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP 4096", rot=0)
+	
+		y_major_ticks = np.arange(0, (total_cycles*1.4), (total_cycles*.20))
+		axes.set_yticks(y_major_ticks)
+		y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
+
+		axes.set(xlabel="Cores", ylabel="Percent Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
+		axes.grid(b=True, which='major', color='black', linestyle='--')
+		axes.grid(b=True, which='minor', color='black', linestyle='--')
+		axes.legend(loc='upper right', ncol=4)
+		plt.show()
+
+
 
 	return
 
@@ -162,7 +197,7 @@ parser = OptionParser()
 parser.usage = "%prog -c numcores -i inputfile -o outputfile"
 parser.add_option("-c", "--numcores", dest="NumCores", default="", help="Specifiy the number of cores.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
-parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")
+parser.add_option("-o", "--outchart", dest="OutChart", default="1", help="Specifiy the output chart.")
 (options, args) = parser.parse_args()
 
 if not options.NumCores:
@@ -177,4 +212,4 @@ print "using Matplotlib version " + matplotlib.__version__
 print "using Pandas version " + pd.__version__
 print "using Numpy version " + np.__version__
 
-plot_cpu_stats(options)
+plot_stats(options)

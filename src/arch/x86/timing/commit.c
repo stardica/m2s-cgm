@@ -181,12 +181,18 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			printf("pulled syscall %llu at commit rob size %d iq size %d lsq size %d cycle %llu\n",
+			assert(uop->interrupt_lat == 0);
+
+			core_dump_rob(core);
+			getchar();
+		}*/
+
+			/*			printf("pulled syscall %llu at commit rob size %d iq size %d lsq size %d cycle %llu\n",
 					uop->id, self->rob_count, self->iq_count, self->lsq_count, P_TIME);
 
 			if(self->core->rob_count > 0)
-				getchar();
-		}*/
+				getchar();*/
+
 		/*else
 		{
 			printf("pulled oup %llu at commit rob size %d (%d) iq size %d lsq size %d cycle %llu\n",
