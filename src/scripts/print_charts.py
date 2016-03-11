@@ -172,8 +172,6 @@ def plot_stats(options):
 			[ave_busy_time, ave_SystemTime, ave_FetchStall, ave_ROBStallLoad, ave_ROBStallStore, ave_ROBStallOther, ave_IdleTime]
 			]
 
-		print table_P4
-
 		#cpu_stats = np.array()
 		df = pd.DataFrame(table_P4, index=['Ave All CoresP0'], columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall', 'Idle'])
 		axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP 4096", rot=0)

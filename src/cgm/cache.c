@@ -1310,22 +1310,26 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
-		/*if no core has the block dont set it as pending*/
+		/*if no core has the block don't set it as pending*/
 		if(sharers > 0)
+		{
+			//printf("write_back_packet %llu number of sharers %d\n", write_back_packet->write_back_id, sharers);
 			write_back_packet->flush_pending = 1;
+			//getchar();
+		}
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-
 	//send flush to owning cores
 	/*star todo account for different block sizes in L3 L2 L1*/
+
+	//get the presence bits from the directory
+	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
+	bit_vector = bit_vector & cache->share_mask;
+
 	for(i = 0; i < num_cores; i++)
 	{
-		//get the presence bits from the directory
-		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
-		bit_vector = bit_vector & cache->share_mask;
-
 		//for each core that has a copy of the cache block send the eviction
 		if((bit_vector & 1) == 1)
 		{
@@ -1333,15 +1337,13 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 			init_flush_packet(cache, flush_packet, set, way);
 
-			/*if(flush_packet->evict_id == 5549)
-				printf("l3 evict id %llu vict state %d cycle %llu\n", flush_packet->evict_id, victim_state, P_TIME);*/
+			/*if(flush_packet->write_back_id == 61524)
+			{
+				printf("l3 evict id %llu vict state %d cycle %llu back %d\n", flush_packet->evict_id, victim_state, P_TIME, bit_vector);
+				getchar();
+			}*/
 
 			flush_packet->cpu_access_type = cgm_access_store;
-
-			if(check == 1)
-			{
-				printf("check end evict id %llu\n", flush_packet->evict_id);
-			}
 
 			if(victim_way)
 				flush_packet->l3_victim_way = victim_way;
@@ -1359,7 +1361,6 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		//shift the vector to the next position and continue
 		bit_vector = bit_vector >> 1;
 	}
-
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
@@ -1915,7 +1916,10 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].stalls++;
 
-			/*printf("%s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);*/
+			/*if(my_pid == 0)
+			{
+				printf("%s stalling cycle %llu message packet %s l2 rx %d\n", l1_d_caches[my_pid].name, P_TIME, (message_packet) ? "pulled" : "NULL", cache_can_access_top(&l2_caches[my_pid]));
+			}*/
 			/*printf("%s stalling: l2 rx_t %d, rx_b %d, cx_b %d tx_b %d, ort size %d ORT coal size %d cycle %llu\n",
 					l1_d_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top),
 					list_count(l1_d_caches[my_pid].Rx_queue_bottom),
@@ -2272,7 +2276,7 @@ void l3_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 
-			/*printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);*/
+			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
 			l3_caches[my_pid].stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
 
