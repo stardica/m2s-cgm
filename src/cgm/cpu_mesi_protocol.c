@@ -5439,6 +5439,15 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				write_back_packet->dest_id = str_map_string(&node_strn_map, "sys_agent");
 				write_back_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);
 
+				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+				{
+					if(LEVEL == 2 || LEVEL == 3)
+					{
+						printf("block 0x%08x %s writeback sent to main memory block is shared at L3 ID %llu type %d state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					}
+				}
+
 				//transmit to SA/MC
 				list_enqueue(cache->Tx_queue_bottom, write_back_packet);
 				advance(cache->cache_io_down_ec);

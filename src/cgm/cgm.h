@@ -56,7 +56,7 @@
 #define WATCHBLOCK (unsigned int) 0x011b92c0
 #define WATCHLINE 1
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 all
-#define LEVEL 2
+#define LEVEL 3
 #define DUMP 0
 #define CPUTICK 1
 

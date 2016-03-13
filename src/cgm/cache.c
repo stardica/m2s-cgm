@@ -338,6 +338,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
 	int write_back_queue_size = list_count(cache->write_back_buffer);
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
+	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
+
 
 	//queues shouldn't exceed their sizes.
 	assert(ort_status <= cache->mshr_size);
@@ -386,8 +388,24 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//pull from the coherence queue if there is a coherence message waiting.
 	else if(coherence_queue_size > 0)
 	{
+
+
+
 		new_message = list_get(cache->Coherance_Rx_queue, 0);
 		cache->last_queue = cache->Coherance_Rx_queue;
+
+		if(retry_queue_size > 0)
+		{
+			printf("processing coherence queue new_message id %llu\n", new_message->evict_id);
+
+			cache_dump_queue(cache->retry_queue);
+
+
+			getchar();
+
+		}
+
+
 		assert(new_message);
 	}
 	//last pull from the bottom queue if no of the others have messages.
@@ -1328,38 +1346,42 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 	bit_vector = bit_vector & cache->share_mask;
 
-	for(i = 0; i < num_cores; i++)
+	//only run the loop if the bit vector has a bit set.
+	if(bit_vector > 0)
 	{
-		//for each core that has a copy of the cache block send the eviction
-		if((bit_vector & 1) == 1)
+		for(i = 0; i < num_cores; i++)
 		{
-			flush_packet = packet_create();
-
-			init_flush_packet(cache, flush_packet, set, way);
-
-			/*if(flush_packet->write_back_id == 61524)
+			//for each core that has a copy of the cache block send the eviction
+			if((bit_vector & 1) == 1)
 			{
-				printf("l3 evict id %llu vict state %d cycle %llu back %d\n", flush_packet->evict_id, victim_state, P_TIME, bit_vector);
-				getchar();
-			}*/
+				flush_packet = packet_create();
 
-			flush_packet->cpu_access_type = cgm_access_store;
+				init_flush_packet(cache, flush_packet, set, way);
 
-			if(victim_way)
-				flush_packet->l3_victim_way = victim_way;
+				/*if(flush_packet->write_back_id == 61524)
+				{
+					printf("l3 evict id %llu vict state %d cycle %llu back %d\n", flush_packet->evict_id, victim_state, P_TIME, bit_vector);
+					getchar();
+				}*/
 
-			//update routing
-			flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
-			flush_packet->dest_name = str_map_value(&l2_strn_map, flush_packet->dest_id);
-			flush_packet->src_name = cache->name;
-			flush_packet->src_id = str_map_string(&node_strn_map, cache->name);
+				flush_packet->cpu_access_type = cgm_access_store;
 
-			list_enqueue(cache->Tx_queue_top, flush_packet);
-			advance(cache->cache_io_up_ec);
+				if(victim_way)
+					flush_packet->l3_victim_way = victim_way;
+
+				//update routing
+				flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
+				flush_packet->dest_name = str_map_value(&l2_strn_map, flush_packet->dest_id);
+				flush_packet->src_name = cache->name;
+				flush_packet->src_id = str_map_string(&node_strn_map, cache->name);
+
+				list_enqueue(cache->Tx_queue_top, flush_packet);
+				advance(cache->cache_io_up_ec);
+			}
+
+			//shift the vector to the next position and continue
+			bit_vector = bit_vector >> 1;
 		}
-
-		//shift the vector to the next position and continue
-		bit_vector = bit_vector >> 1;
 	}
 
 	//set the block state to invalid
