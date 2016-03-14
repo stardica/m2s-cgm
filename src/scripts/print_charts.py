@@ -150,10 +150,17 @@ def plot_stats(options):
 		axes.set_yticks(y_major_ticks)
 		y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
 
-		axes.set(xlabel="Cores", ylabel="Percent Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
+		axes.set(xlabel="Core", ylabel="Percent of Cycles", yticklabels=['{:0.2f}'.format(y_ticks[0]/total_cycles), '{:0.2f}'.format(y_ticks[1]/total_cycles), '{:0.2f}'.format(y_ticks[2]/total_cycles), '{:0.2f}'.format(y_ticks[3]/total_cycles), '{:0.2f}'.format(y_ticks[4]/total_cycles), '{:0.2f}'.format(y_ticks[5]/total_cycles), '{:0.2f}'.format(y_ticks[6]/total_cycles), '{:0.2f}'.format(y_ticks[7]/total_cycles)])
 		axes.grid(b=True, which='major', color='black', linestyle='--')
 		axes.grid(b=True, which='minor', color='black', linestyle='--')
 		axes.legend(loc='upper right', ncol=4)
+	
+		#for container in axes.containers:
+	        #      plt.setp(container, width=0.5)
+
+		#x0, x1 = axes.get_xlim()
+		#axes.set_xlim(x0 -0.25, x1 + 0.25)
+
 		plt.show()
 
 
@@ -180,7 +187,7 @@ def plot_stats(options):
 		axes.set_yticks(y_major_ticks)
 		y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
 
-		axes.set(xlabel="Cores", ylabel="Percent Cycles", yticklabels=['{:0.2f}%'.format(y_ticks[0]/total_cycles), '{:0.2f}%'.format(y_ticks[1]/total_cycles), '{:0.2f}%'.format(y_ticks[2]/total_cycles), '{:0.2f}%'.format(y_ticks[3]/total_cycles), '{:0.2f}%'.format(y_ticks[4]/total_cycles), '{:0.2f}%'.format(y_ticks[5]/total_cycles), '{:0.2f}%'.format(y_ticks[6]/total_cycles), '{:0.2f}%'.format(y_ticks[7]/total_cycles)])
+		axes.set(xlabel="Core", ylabel="Percent of Cycles", yticklabels=['{:0.2f}'.format(y_ticks[0]/total_cycles), '{:0.2f}'.format(y_ticks[1]/total_cycles), '{:0.2f}'.format(y_ticks[2]/total_cycles), '{:0.2f}'.format(y_ticks[3]/total_cycles), '{:0.2f}'.format(y_ticks[4]/total_cycles), '{:0.2f}'.format(y_ticks[5]/total_cycles), '{:0.2f}'.format(y_ticks[6]/total_cycles), '{:0.2f}'.format(y_ticks[7]/total_cycles)])
 		axes.grid(b=True, which='major', color='black', linestyle='--')
 		axes.grid(b=True, which='minor', color='black', linestyle='--')
 		axes.legend(loc='upper right', ncol=4)

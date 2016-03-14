@@ -325,6 +325,16 @@ void cache_create_tasks(void){
 	return;
 }
 
+enum scheduler_state_t{
+
+	schedule_null = 0,
+	schdule_request,
+	scheddule_write_back,
+
+
+};
+
+
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	struct cgm_packet_t *new_message;
@@ -340,11 +350,19 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
 	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
 
+	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	{
+		int tx_top_queue_size = list_count(cache->Tx_queue_top);
+		assert(tx_top_queue_size <= QueueSize);
+	}
+
 
 	//queues shouldn't exceed their sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
 	assert(write_back_queue_size <= QueueSize);
+	assert(tx_bottom_queue_size <= QueueSize);
+
 
 
 	/*if(write_back_queue_size >= (QueueSize + 1))
@@ -386,7 +404,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		assert(new_message);
 	}
 	//pull from the coherence queue if there is a coherence message waiting.
-	else if(coherence_queue_size > 0)
+	else if(coherence_queue_size > 0 && retry_queue_size == 0)
 	{
 
 
@@ -394,7 +412,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		new_message = list_get(cache->Coherance_Rx_queue, 0);
 		cache->last_queue = cache->Coherance_Rx_queue;
 
-		if(retry_queue_size > 0)
+		/*if(retry_queue_size > 0)
 		{
 			printf("processing coherence queue new_message id %llu\n", new_message->evict_id);
 
@@ -403,7 +421,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			getchar();
 
-		}
+		}*/
 
 
 		assert(new_message);
