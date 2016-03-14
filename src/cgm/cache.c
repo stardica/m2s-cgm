@@ -327,53 +327,154 @@ void cache_create_tasks(void){
 
 enum scheduler_state_t{
 
-	schedule_null = 0,
-	schdule_request,
-	scheddule_write_back,
-
-
+	schedule_cant_process = 0,
+	schedule_can_process,
+	schedule_stall,
 };
 
 
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
-	struct cgm_packet_t *new_message;
+	struct cgm_packet_t *new_message = NULL;
+	enum scheduler_state_t state = schedule_can_process; //priority goes to processor
 
-	int wb_q = 0;
+	/*Ok, the scheduler is a little complicated, i'll add notes as I go...*/
 
-	//get various cache statuses
+	/*first get the status of the cache's various elements*/
 	int ort_status = get_ort_status(cache);
 	int ort_coalesce_size = list_count(cache->ort_list);
 	int retry_queue_size = list_count(cache->retry_queue);
+	int pending_queue_size = list_count(cache->pending_request_buffer);
 	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
 	int write_back_queue_size = list_count(cache->write_back_buffer);
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
 	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
 
-	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	{
-		int tx_top_queue_size = list_count(cache->Tx_queue_top);
-		assert(tx_top_queue_size <= QueueSize);
-	}
-
-
-	//queues shouldn't exceed their sizes.
+	//queues should never exceed their max sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
 	assert(write_back_queue_size <= QueueSize);
 	assert(tx_bottom_queue_size <= QueueSize);
 
+	/*check if a cache element is full that would prevent us from processing a request*/
+	if(ort_status == cache->mshr_size)
+		state = schedule_cant_process;
 
+	if(ort_coalesce_size == cache->max_coal)
+		state = schedule_cant_process;
 
-	/*if(write_back_queue_size >= (QueueSize + 1))
+	if(write_back_queue_size == QueueSize)
+		state = schedule_cant_process;
+
+	if(retry_queue_size == QueueSize)
+		state = schedule_cant_process;
+
+	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	{
-		printf("%s check size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
-	}*/
+		int tx_top_queue_size = list_count(cache->Tx_queue_top);
+		assert(tx_top_queue_size <= QueueSize);
+
+		if(tx_top_queue_size == QueueSize)
+			state = schedule_cant_process;
+	}
+
+	if(tx_bottom_queue_size == QueueSize)
+		state = schedule_cant_process;
+
+	if(pending_queue_size == QueueSize)
+		state = schedule_cant_process;
+
+	/*the scheduler needs to determine which queue to pull from or if a stall is needed*/
+	/*if the state is still "can process" then check queue statuses and schedule a packet*/
+	if(state == schedule_can_process)
+	{
+		if(retry_queue_size > 0)
+		{
+			/*pull from the retry queue if there is a packet in retry*/
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
+			assert(new_message);
+		}
+		else if (coherence_queue_size > 0)
+		{
+			new_message = list_get(cache->Coherance_Rx_queue, 0);
+			cache->last_queue = cache->Coherance_Rx_queue;
+			assert(new_message);
+		}
+		else
+		{
+			/*pull from the cpu side*/
+			new_message = list_get(cache->Rx_queue_top, 0);
+
+			//keep pointer to last queue
+			cache->last_queue = cache->Rx_queue_top;
+
+			if(!new_message)
+			{
+				/* if no CPU packet pull from the memory system side*/
+				new_message = list_get(cache->Rx_queue_bottom, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->Rx_queue_bottom;
+			}
+
+			assert(new_message);
+		}
+	}
+	else
+	{
+		/*there is an element in the cache that is full, so we can't process a request wait for replies*/
+		assert(state == schedule_cant_process);
+
+		/*if the write back queue is full clear a write back*/
+		if(write_back_queue_size > 0)
+		{
+			new_message = cache_search_wb_not_pending_flush(cache);
+
+			/*if all write backs are pending we can't do anything with the write backs*/
+			if(!new_message)
+			{
+				state = schedule_stall;
+			}
+			else
+			{
+				cache->last_queue = cache->write_back_buffer;
+				assert(new_message);
+			}
+		}
+		else if(retry_queue_size > 0)
+		{
+			//pull from the retry queue if we have retry accesses waiting.
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
+			assert(new_message);
+		}
+		else if (coherence_queue_size > 0)
+		{
+			new_message = list_get(cache->Coherance_Rx_queue, 0);
+			cache->last_queue = cache->Coherance_Rx_queue;
+			assert(new_message);
+		}
+		else if (bottom_queue_size > 0)
+		{
+			new_message = list_get(cache->Rx_queue_bottom, 0);
+			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else
+		{
+			state = schedule_stall;
+		}
+
+	}
+
+	return (state == schedule_stall) ? NULL : new_message;
+
 
 	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
 
 	//schedule write back if the wb queue is full.
-	if(write_back_queue_size >= QueueSize)
+	/*if(write_back_queue_size >= QueueSize)
 	{
 		new_message = cache_search_wb_not_pending_flush(cache);
 
@@ -406,27 +507,11 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//pull from the coherence queue if there is a coherence message waiting.
 	else if(coherence_queue_size > 0 && retry_queue_size == 0)
 	{
-
-
-
 		new_message = list_get(cache->Coherance_Rx_queue, 0);
 		cache->last_queue = cache->Coherance_Rx_queue;
-
-		/*if(retry_queue_size > 0)
-		{
-			printf("processing coherence queue new_message id %llu\n", new_message->evict_id);
-
-			cache_dump_queue(cache->retry_queue);
-
-
-			getchar();
-
-		}*/
-
-
 		assert(new_message);
 	}
-	//last pull from the bottom queue if no of the others have messages.
+	//last pull from the bottom queue if none of the others have messages.
 	else if ((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && bottom_queue_size > 0)
 	{
 		new_message = list_get(cache->Rx_queue_bottom, 0);
@@ -495,11 +580,11 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	{
 		//ORT is full and there are no retry or bottom queue messages so stall
 		return NULL;
-	}
+	}*/
 
 	//if we made it here we better have a message.
-	assert(new_message);
-	return new_message;
+	/*assert(new_message);
+	return new_message;*/
 }
 
 int get_ort_status(struct cache_t *cache){

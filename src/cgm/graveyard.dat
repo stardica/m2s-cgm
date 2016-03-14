@@ -1,3 +1,172 @@
+
+struct cgm_packet_t *cache_get_message(struct cache_t *cache){
+
+	struct cgm_packet_t *new_message;
+
+	int wb_q = 0;
+
+	//get various cache statuses
+	int ort_status = get_ort_status(cache);
+	int ort_coalesce_size = list_count(cache->ort_list);
+	int retry_queue_size = list_count(cache->retry_queue);
+	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
+	int write_back_queue_size = list_count(cache->write_back_buffer);
+	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
+	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
+
+	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	{
+		int tx_top_queue_size = list_count(cache->Tx_queue_top);
+		assert(tx_top_queue_size <= QueueSize);
+	}
+
+
+	//queues shouldn't exceed their sizes.
+	assert(ort_status <= cache->mshr_size);
+	assert(ort_coalesce_size <= (cache->max_coal + 1));
+	assert(write_back_queue_size <= QueueSize);
+	assert(tx_bottom_queue_size <= QueueSize);
+
+
+
+	/*if(write_back_queue_size >= (QueueSize + 1))
+	{
+		printf("%s check size %d cycle %llu\n", cache->name, write_back_queue_size, P_TIME);
+	}*/
+
+	/*if the ort or the coalescer are full we can't process a CPU request because a miss will overrun the table.*/
+
+	//schedule write back if the wb queue is full.
+	if(write_back_queue_size >= QueueSize)
+	{
+		new_message = cache_search_wb_not_pending_flush(cache);
+
+		//star todo check this
+		if(new_message == NULL)
+			return NULL;
+
+		cache->last_queue = cache->write_back_buffer;
+		assert(new_message);
+	}
+	//schedule write back if the retry queue is empty and the bottom queue is empty and the cache has nothing else to do AND the wb isn't pending a flush.
+	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && write_back_queue_size > 0)
+	{
+		new_message = cache_search_wb_not_pending_flush(cache);
+
+		//star todo check this
+		if(new_message == NULL)
+			return NULL;
+
+		cache->last_queue = cache->write_back_buffer;
+		assert(new_message);
+	}
+	//pull from the retry queue if we have retry accesses waiting.
+	else if((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && retry_queue_size > 0)
+	{
+		new_message = list_get(cache->retry_queue, 0);
+		cache->last_queue = cache->retry_queue;
+		assert(new_message);
+	}
+	//pull from the coherence queue if there is a coherence message waiting.
+	else if(coherence_queue_size > 0 && retry_queue_size == 0)
+	{
+
+
+
+		new_message = list_get(cache->Coherance_Rx_queue, 0);
+		cache->last_queue = cache->Coherance_Rx_queue;
+
+		/*if(retry_queue_size > 0)
+		{
+			printf("processing coherence queue new_message id %llu\n", new_message->evict_id);
+
+			cache_dump_queue(cache->retry_queue);
+
+
+			getchar();
+
+		}*/
+
+
+		assert(new_message);
+	}
+	//last pull from the bottom queue if no of the others have messages.
+	else if ((ort_status == cache->mshr_size || ort_coalesce_size > cache->max_coal) && bottom_queue_size > 0)
+	{
+		new_message = list_get(cache->Rx_queue_bottom, 0);
+		cache->last_queue = cache->Rx_queue_bottom;
+		assert(new_message);
+	}
+
+	//ORT is not full, we can process CPU requests and lower level cache replies in a round robin fashion.
+	else if(ort_status < cache->mshr_size && ort_coalesce_size <= cache->max_coal)
+	{
+		//pull from the retry queue first.
+		if(retry_queue_size > 0)
+		{
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
+			assert(new_message);
+		}
+		else
+		{
+			//star todo give priority to the CPU here
+			new_message = list_get(cache->next_queue, 0);
+
+			//keep pointer to last queue
+			cache->last_queue = cache->next_queue;
+
+			//rotate the queues
+			if(cache->next_queue == cache->Rx_queue_top)
+			{
+				cache->next_queue = cache->Rx_queue_bottom;
+			}
+			else if(cache->next_queue == cache->Rx_queue_bottom)
+			{
+				cache->next_queue = cache->Rx_queue_top;
+			}
+			else
+			{
+				fatal("get_message() pointers arn't working");
+			}
+
+			//if we didn't get a message try again (now that the queues are rotated)
+			if(new_message == NULL)
+			{
+
+				new_message = list_get(cache->next_queue, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->next_queue;
+
+				//rotate the queues.
+				if(cache->next_queue == cache->Rx_queue_top)
+				{
+					cache->next_queue = cache->Rx_queue_bottom;
+				}
+				else if(cache->next_queue == cache->Rx_queue_bottom)
+				{
+					cache->next_queue = cache->Rx_queue_top;
+				}
+				else
+				{
+					fatal("get_message() pointers arn't working");
+				}
+			}
+		}
+	}
+	else
+	{
+		//ORT is full and there are no retry or bottom queue messages so stall
+		return NULL;
+	}
+
+	//if we made it here we better have a message.
+	assert(new_message);
+	return new_message;
+}
+
+
 ////////////
 				//L3 ack
 				////////////
