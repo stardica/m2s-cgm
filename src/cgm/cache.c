@@ -353,21 +353,51 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
 
 	//queues should never exceed their max sizes.
-	assert(ort_status <= cache->mshr_size);
-	assert(ort_coalesce_size <= (cache->max_coal + 1));
+	//assert(ort_status <= cache->mshr_size);
+	//assert(ort_coalesce_size <= (cache->max_coal + 1));
+	//assert(rx_bottom_queue_size <= QueueSize);
+	//assert(tx_bottom_queue_size <= QueueSize);
+	//assert(retry_queue_size <= QueueSize);
+	//assert(pending_queue_size <= QueueSize);
+	//assert(write_back_queue_size <= QueueSize);
+	//assert(coherence_queue_size <= QueueSize);
+
+	/*printf warnings if a size is exceeded debugging*/
+
+	if(ort_status > cache->mshr_size)
+		warning("cache_get_message(): %s MSHR table exceeded size 16 \n", cache->name);
+
+	if(ort_coalesce_size > (cache->max_coal + 1))
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->ort_list->name, list_count(cache->ort_list));
 
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-		assert(rx_top_queue_size <= QueueSize);
+	{
+		//assert(rx_top_queue_size <= QueueSize);
+		if(rx_top_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top));
+	}
 
-	if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
-		//assert(rx_top_queue_size <= 64);
+	if(rx_bottom_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom));
 
-	assert(rx_bottom_queue_size <= QueueSize);
-	assert(tx_bottom_queue_size <= QueueSize);
-	assert(retry_queue_size <= QueueSize);
-	assert(pending_queue_size <= QueueSize);
-	assert(write_back_queue_size <= QueueSize);
-	assert(coherence_queue_size <= QueueSize);
+	if(tx_bottom_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom));
+
+	if(retry_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue));
+
+	if(pending_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer));
+
+	if(write_back_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer));
+
+	if(coherence_queue_size > QueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue));
+
+	/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
+	assert(rx_top_queue_size <= 64);*/
+
 
 
 	/*check if a cache element is full that would prevent us from processing a request*/
@@ -436,7 +466,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		}
 		else if(write_back_queue_size > 0)
 		{
-			/*if the write back queue is full clear a write back*/
 			new_message = cache_search_wb_not_pending_flush(cache);
 
 			/*if all write backs are pending we can't do anything with the write backs*/

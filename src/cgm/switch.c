@@ -916,11 +916,9 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
 					|| message_packet->access_type == cgm_access_upgrade)
 			{
-				/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
-				{
-					printf("\tswitch north moving id %llu to l2 rx_queue\n", message_packet->access_id);
 
-				}*/
+				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
 
 				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l2_cache[my_pid]);
@@ -929,6 +927,10 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
 					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack)
 			{
+
+				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
+
 				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 				advance(&l2_cache[my_pid]);
 			}
@@ -991,6 +993,9 @@ void switch_east_io_ctrl(void){
 
 		SYSTEM_PAUSE(transfer_time);
 
+		if(list_count(switches[my_pid].next_east) >= QueueSize)
+			warning("switch_east_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_east->name, list_count(switches[my_pid].next_east));
+
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_east, message_packet);
 		advance(&switches_ec[switches[my_pid].next_east_id]);
@@ -999,7 +1004,6 @@ void switch_east_io_ctrl(void){
 		switches[my_pid].switch_east_io_transfers++;
 		switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
 		switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
-
 
 		//note these stats are for the adjacent switch to the east which puts packets in the west rx_queue
 		switches[switches[my_pid].next_east_id].west_rx_inserts++;
@@ -1049,6 +1053,9 @@ void switch_west_io_ctrl(void){
 		}
 
 		SYSTEM_PAUSE(transfer_time);
+
+		if(list_count(switches[my_pid].next_west) >= QueueSize)
+			warning("switch_west_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_west->name, list_count(switches[my_pid].next_west));
 
 		//drop into next east queue.
 		list_enqueue(switches[my_pid].next_west, message_packet);
@@ -1116,10 +1123,16 @@ void switch_south_io_ctrl(void){
 			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
 					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade)
 			{
+				if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
+
 				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 			}
 			else if(message_packet->access_type == cgm_access_mc_put)
 			{
+				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
+
 				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 			}
 			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
@@ -1128,6 +1141,10 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_write_back
 					|| message_packet->access_type == cgm_access_upgrade_ack)
 			{
+
+				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+
 				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 			}
 			else

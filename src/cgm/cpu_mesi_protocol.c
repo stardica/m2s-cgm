@@ -772,11 +772,8 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 		case cgm_cache_block_shared:
 			cgm_cache_dump_set(cache, message_packet->set);
 
-			unsigned int temp = (unsigned int) 0x000422e4;
-			temp = temp & cache->block_address_mask;
-
-			fatal("cgm_mesi_l1_d_downgrade(): L1 id %d invalid block state on downgrade as %s set %d wat %d tag %d address 0x%08x\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->set, message_packet->way, message_packet->tag, temp);
+			fatal("cgm_mesi_l1_d_downgrade(): L1 id %d invalid block state on downgrade as %s set %d wat %d tag %d blk_addr 0x%08x\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->set, message_packet->way, message_packet->tag, message_packet->address & cache->block_address_mask);
 			break;
 
 		case cgm_cache_block_invalid:
@@ -788,8 +785,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			{
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive)
-						&& *cache_block_state_ptr == cgm_cache_block_invalid);
+				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 
 				if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
@@ -1569,7 +1565,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					if (pending_join->downgrade_pending == 0)
 					{
-						printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
+						//printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
 						//getchar();
 
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
@@ -2176,7 +2172,14 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				reply_packet->access_id = message_packet->access_id;
 
 				//determine if this is a sharing WB
-				assert(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified);
+				/*if(message_packet->cache_block_state != cgm_cache_block_modified || write_back_packet->cache_block_state != cgm_cache_block_modified)
+				{
+					printf("cgm_mesi_l2_downgrade_ack(): block (%d) or wb (%d) not modified block_addr 0x%08x %s downgrade ack ID %llu type %d state %d cycle %llu\n",
+							message_packet->cache_block_state,  write_back_packet->cache_block_state, (message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+				}*/
+
+				assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid
+						|| write_back_packet->cache_block_state == cgm_cache_block_modified);
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
@@ -5451,6 +5454,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				//transmit to SA/MC
 				list_enqueue(cache->Tx_queue_bottom, write_back_packet);
 				advance(cache->cache_io_down_ec);
+
+				cache->TotalWriteBacks++;
 			}
 
 			//the modified block is written to main memory we can set the block as shared now.
@@ -6281,6 +6286,8 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
+
+			cache->TotalWriteBacks++;
 		}
 		else
 		{
@@ -7046,11 +7053,11 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 					}
 				}
 
-				if(pending_packet_join)
+				/*if(pending_packet_join)
 				{
 					if((pending_packet_join->address & cache->block_address_mask) == 0x0004e380)
 						printf("here\n");
-				}
+				}*/
 
 				//validate that a join is waiting if there should be one.
 				if(ort_get_pending_join_bit(cache, ort_row, pending_packet->tag, pending_packet->set) == 0)
@@ -7319,11 +7326,11 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 						}
 					}
 
-					if(pending_packet_join)
+					/*if(pending_packet_join)
 					{
 						if((pending_packet_join->address & cache->block_address_mask) == 0x0004e380)
 							printf("here_2\n");
-					}
+					}*/
 
 					//validate that a join is waiting if there should be one.
 					if(ort_get_pending_join_bit(cache, ort_row, putx_n_coutner->tag, putx_n_coutner->set) == 0)

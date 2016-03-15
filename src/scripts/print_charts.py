@@ -199,7 +199,7 @@ def plot_stats(options):
 
 
 parser = OptionParser()
-parser.usage = "%prog -c numcores -i inputfile -o outputfile"
+parser.usage = "%prog -i inputfiles -o outputfile"
 parser.add_option("-c", "--numcores", dest="NumCores", default="", help="Specifiy the number of cores.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
 parser.add_option("-o", "--outchart", dest="OutChart", default="1", help="Specifiy the output chart.")

@@ -53,7 +53,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x00090080
+#define WATCHBLOCK (unsigned int) 0x000ca7c0
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 all
 #define LEVEL 3
@@ -61,6 +61,8 @@
 #define CPUTICK 1
 
 #define SKIP 1000000
+
+#define STATS_SYSCALL_CODE
 
 //config file
 extern char *cgm_config_file_name_and_path;

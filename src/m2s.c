@@ -1578,6 +1578,7 @@ int main(int argc, char **argv)
 	//star add these various runtimes to the runtime list
 #if GPU
 	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
+	runtime_register("M2SCGMSTATS", "M2SCGMSTATS", "m2s-cgm-stats", 330, (runtime_abi_func_t) opencl_abi_call);
 	//runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325, (runtime_abi_func_t) evg_opencl_abi_call);
 	//runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
 	//runtime_register("OpenGL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
