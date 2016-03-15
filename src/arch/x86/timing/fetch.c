@@ -275,14 +275,21 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			if(uinst->opcode == 51 || uinst->opcode == 52 || uinst->opcode == 53)
+			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53 || uop->uinst->opcode == 54)
 			{
-				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uinst->address, mmu_access_load_store);
+				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
 			}
 			else
 			{
 				fatal("X86ThreadFetchInst(): Invalid memory uop\n");
 			}
+
+			if(uop->uinst->opcode == 54)
+			{
+				fatal("caught a prefetch\n");
+
+			}
+
 		}
 
 		/*if(uinst->opcode == 52)

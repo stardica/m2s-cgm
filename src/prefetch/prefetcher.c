@@ -41,8 +41,7 @@ struct str_map_t prefetcher_type_map =
 	}
 };
 
-struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size,
-				       int prefetcher_lookup_depth, enum prefetcher_type_t type)
+struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size, int prefetcher_lookup_depth, enum prefetcher_type_t type)
 {
 	struct prefetcher_t *pref;
 
@@ -70,8 +69,7 @@ void prefetcher_free(struct prefetcher_t *pref)
 	free(pref);
 }
 
-static void get_it_index_tag(struct prefetcher_t *pref, struct mod_stack_t *stack, 
-			     int *it_index, unsigned *tag)
+static void get_it_index_tag(struct prefetcher_t *pref, struct mod_stack_t *stack, int *it_index, unsigned *tag)
 {
 	if (stack->client_info)
 	{
@@ -191,8 +189,7 @@ static int prefetcher_update_tables(struct mod_stack_t *stack, struct mod_t *tar
 	return it_index;
 }
 
-static void prefetcher_do_prefetch(struct mod_t *mod, struct mod_stack_t *stack,
-				   unsigned int prefetch_addr)
+static void prefetcher_do_prefetch(struct mod_t *mod, struct mod_stack_t *stack, unsigned int prefetch_addr)
 {
 	int set1, tag1, set2, tag2;
 

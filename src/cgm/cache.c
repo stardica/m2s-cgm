@@ -340,21 +340,35 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	/*Ok, the scheduler is a little complicated, i'll add notes as I go...*/
 
-	/*first get the status of the cache's various elements*/
+	/*first get the status of the cache's various internal elements*/
 	int ort_status = get_ort_status(cache);
 	int ort_coalesce_size = list_count(cache->ort_list);
+	int rx_top_queue_size = list_count(cache->Rx_queue_top);
+	int rx_bottom_queue_size = list_count(cache->Rx_queue_bottom);
+	//look below for tx_top_queue
+	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
 	int retry_queue_size = list_count(cache->retry_queue);
 	int pending_queue_size = list_count(cache->pending_request_buffer);
-	int bottom_queue_size = list_count(cache->Rx_queue_bottom);
 	int write_back_queue_size = list_count(cache->write_back_buffer);
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
-	int tx_bottom_queue_size = list_count(cache->Tx_queue_bottom);
 
 	//queues should never exceed their max sizes.
 	assert(ort_status <= cache->mshr_size);
 	assert(ort_coalesce_size <= (cache->max_coal + 1));
-	assert(write_back_queue_size <= QueueSize);
+
+	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+		assert(rx_top_queue_size <= QueueSize);
+
+	if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
+		//assert(rx_top_queue_size <= 64);
+
+	assert(rx_bottom_queue_size <= QueueSize);
 	assert(tx_bottom_queue_size <= QueueSize);
+	assert(retry_queue_size <= QueueSize);
+	assert(pending_queue_size <= QueueSize);
+	assert(write_back_queue_size <= QueueSize);
+	assert(coherence_queue_size <= QueueSize);
+
 
 	/*check if a cache element is full that would prevent us from processing a request*/
 	if(ort_status == cache->mshr_size)
@@ -384,6 +398,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(pending_queue_size == QueueSize)
 		state = schedule_cant_process;
 
+
 	/*the scheduler needs to determine which queue to pull from or if a stall is needed*/
 	/*if the state is still "can process" then check queue statuses and schedule a packet*/
 	if(state == schedule_can_process)
@@ -401,34 +416,27 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
-		else
+		else if(rx_top_queue_size > 0)
 		{
 			/*pull from the cpu side*/
 			new_message = list_get(cache->Rx_queue_top, 0);
 
 			//keep pointer to last queue
 			cache->last_queue = cache->Rx_queue_top;
-
-			if(!new_message)
-			{
-				/* if no CPU packet pull from the memory system side*/
-				new_message = list_get(cache->Rx_queue_bottom, 0);
-
-				//keep pointer to last queue
-				cache->last_queue = cache->Rx_queue_bottom;
-			}
-
 			assert(new_message);
 		}
-	}
-	else
-	{
-		/*there is an element in the cache that is full, so we can't process a request wait for replies*/
-		assert(state == schedule_cant_process);
-
-		/*if the write back queue is full clear a write back*/
-		if(write_back_queue_size > 0)
+		else if(rx_bottom_queue_size > 0)
 		{
+			/* if no CPU packet pull from the memory system side*/
+			new_message = list_get(cache->Rx_queue_bottom, 0);
+
+			//keep pointer to last queue
+			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else if(write_back_queue_size > 0)
+		{
+			/*if the write back queue is full clear a write back*/
 			new_message = cache_search_wb_not_pending_flush(cache);
 
 			/*if all write backs are pending we can't do anything with the write backs*/
@@ -441,6 +449,25 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 				cache->last_queue = cache->write_back_buffer;
 				assert(new_message);
 			}
+		}
+		else
+		{
+			fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
+		}
+
+	}
+	else
+	{
+		/*there is an element in the cache that is full, so we can't process a request wait for replies or do something else*/
+		assert(state == schedule_cant_process);
+
+		/*if the write back queue has a write back clear a write back*/
+		new_message = cache_search_wb_not_pending_flush(cache);
+
+		if(write_back_queue_size > 0 && new_message)
+		{
+			cache->last_queue = cache->write_back_buffer;
+			assert(new_message);
 		}
 		else if(retry_queue_size > 0)
 		{
@@ -455,7 +482,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
-		else if (bottom_queue_size > 0)
+		else if (rx_bottom_queue_size > 0)
 		{
 			new_message = list_get(cache->Rx_queue_bottom, 0);
 			cache->last_queue = cache->Rx_queue_bottom;

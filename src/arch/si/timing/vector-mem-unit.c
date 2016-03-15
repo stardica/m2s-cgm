@@ -259,10 +259,10 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 #if CGM
 
-		assert(access_kind != cgm_access_invalid);
-		cgm_vector_access(vector_mem, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness);
+			assert(access_kind != cgm_access_invalid);
+			cgm_vector_access(vector_mem, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
-		mod_access(vector_mem->compute_unit->vector_cache, access_kind_m2s, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
+			mod_access(vector_mem->compute_unit->vector_cache, access_kind_m2s, work_item_uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 #endif
 
 		}
