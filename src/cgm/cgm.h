@@ -44,7 +44,6 @@
 #include <arch/si/timing/compute-unit.h>
 
 
-
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
 #define SYSTEM_LATENCY_FACTOR 4
@@ -61,8 +60,6 @@
 #define CPUTICK 1
 
 #define SKIP 1000000
-
-#define STATS_SYSCALL_CODE
 
 //config file
 extern char *cgm_config_file_name_and_path;

@@ -204,8 +204,9 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
 
-		printf("hub-iommu access id %llu as %s first address 0x%08x set %d heading to L3 id %d \n",
-				message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_map);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu access id %llu as %s first address 0x%08x set %d heading to L3 id %d \n",
+					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_map);
 		/*getchar();*/
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
@@ -465,16 +466,20 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 			|| message_packet->access_type == cgm_access_getx)
 	{
 		/*load and stores are heading to the system agent.*/
-		printf("hub-iommu NC ACCESS vtl address in 0x%08x\n", message_packet->address);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu NC ACCESS vtl address in 0x%08x\n", message_packet->address);
 		message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
-		printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
 	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
 	{
 		/*replies coming from system agent*/
-		printf("hub-iommu NC return phy address in 0x%08x\n", message_packet->address);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu NC return phy address in 0x%08x\n", message_packet->address);
 		message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
-		printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);
 	}
 	else
 	{

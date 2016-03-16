@@ -5649,7 +5649,32 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
 	return 0;
 }
 
+/*
+ * System call 'set_robust_list' (code 325)
+ */
 
+static int x86_sys_cgm_stats_start_impl(X86Context *ctx)
+{
+
+	//start benchmark stat collection
+	cgm_stat->record_stats = 1;
+
+	return 0;
+}
+
+
+/*
+ * System call 'set_robust_list' (code 326)
+ */
+
+static int x86_sys_cgm_stats_stop_impl(X86Context *ctx)
+{
+
+	//stop benchmark stat collection
+	cgm_stat->record_stats = 0;
+
+	return 0;
+}
 
 
 /*

@@ -223,7 +223,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	tag = vtladdr & ~mmu_page_mask;
 	//prev = NULL;
 
-	if(access_type == mmu_access_gpu)
+	if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 	{
 		printf("searching for page gpu vtl_addr 0x%08x\n", vtladdr);
 	}
@@ -251,11 +251,11 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		/*printf("page id %d, page type %d\n", page->id, page->page_type);*/
 	}
 
-	if(access_type == mmu_access_gpu && gpu_page)
+	if(access_type == mmu_access_gpu && gpu_page && GPU_HUB_IOMMU == 1)
 	{
 		printf("page found\n");
 	}
-	else if(access_type == mmu_access_gpu && !gpu_page)
+	else if(access_type == mmu_access_gpu && !gpu_page && GPU_HUB_IOMMU == 1)
 	{
 		printf("page NOT found\n");
 	}
@@ -282,7 +282,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	}
 	else
 	{
-		if(access_type == mmu_access_gpu && !gpu_page)
+		if(access_type == mmu_access_gpu && !gpu_page && GPU_HUB_IOMMU == 1)
 		{
 			printf("creating page\n");
 		}
@@ -685,7 +685,7 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	}
 	else if(access_type == mmu_access_gpu)
 	{
-		if(access_type == mmu_access_gpu)
+		if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 		{
 			printf("created page %d\n", page->id);
 		}
@@ -717,7 +717,7 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	unsigned int offset;
 	unsigned int phy_addr;
 
-	if(access_type == mmu_access_gpu)
+	if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 	{
 		printf("translating gpu vtl_addr 0x%08x\n", vtl_addr);
 	}

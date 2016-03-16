@@ -678,11 +678,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	assert(id < num_cores);
 
 	/*stats*/
-	if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
-		cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
+	if(cgm_stat->record_stats)
+	{
+		if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
+			cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
 
-	cgm_stat->cpu_total_fetches++;
-	l1_i_caches[id].TotalAcesses++;
+		cgm_stat->cpu_total_fetches++;
+		l1_i_caches[id].TotalAcesses++;
+	}
 
 
 	last_issued_fetch_access_id = access_id;
@@ -772,20 +775,23 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	assert(id < num_cores);
 
 	/*stats*/
-	l1_d_caches[id].TotalAcesses++;
-	last_issued_lsq_access_id = access_id;
-	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
-	cgm_stat->core_issued_memory_insts[thread->core->id]++;
-
-	/*printf("\t lsq issuing access_id %llu\n", access_id);*/
-
-	if(access_kind == cgm_access_load)
+	if(cgm_stat->record_stats)
 	{
-		cgm_stat->cpu_total_loads++;
-	}
-	else if(access_kind == cgm_access_store)
-	{
-	 	cgm_stat->cpu_total_stores++;
+		l1_d_caches[id].TotalAcesses++;
+		last_issued_lsq_access_id = access_id;
+		last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
+		cgm_stat->core_issued_memory_insts[thread->core->id]++;
+
+		/*printf("\t lsq issuing access_id %llu\n", access_id);*/
+
+		if(access_kind == cgm_access_load)
+		{
+			cgm_stat->cpu_total_loads++;
+		}
+		else if(access_kind == cgm_access_store)
+		{
+			cgm_stat->cpu_total_stores++;
+		}
 	}
 
 	//For memory system load store request

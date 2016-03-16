@@ -20,7 +20,9 @@
 //print task related messages.
 #define TSK 0
 
-#define INT 1
+#define INT 0
+
+#define GPU_HUB_IOMMU 0
 
 //m2s prototypes
 void m2s_loop(void);

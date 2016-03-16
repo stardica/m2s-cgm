@@ -269,7 +269,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 		si_emu->video_mem_top += size;
 		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
-		printf("opencl_abi_si_mem_alloc_impl(): fix me!\n");
+		warning("opencl_abi_si_mem_alloc_impl(): this is where to fix OCL problems\n");
 	}
 
 	if(INT == 1)
@@ -393,12 +393,13 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	if(INT == 1)
 	{
-		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
+		//printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
+		//ABI opencl_abi_si_mem_write_impl() code 4 size 4100 device vtl_ptr 0x00000000 host vtl_ptr 0x08132830 host phy_ptr 0x0002b830
+		printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device vtl_ptr 0x%08x host vtl_ptr 0x%08x host phy_ptr 0x%08x\n",
+				size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
 	}
 
-	//ABI opencl_abi_si_mem_write_impl() code 4 size 4100 device vtl_ptr 0x00000000 host vtl_ptr 0x08132830 host phy_ptr 0x0002b830
-	printf("ABI opencl_abi_si_mem_write_impl() code 4 size %u device vtl_ptr 0x%08x host vtl_ptr 0x%08x host phy_ptr 0x%08x\n",
-		size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
+
 
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)

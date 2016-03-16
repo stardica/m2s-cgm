@@ -463,7 +463,7 @@ struct cgm_stats_t{
 	double sim_time;
 
 	/*cpu stats*/
-	int start;
+	int record_stats;
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;
