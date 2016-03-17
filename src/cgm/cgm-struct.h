@@ -461,9 +461,12 @@ struct cgm_stats_t{
 	double start_wall_time;
 	double end_wall_time;
 	double sim_time;
+	long long start_stats_cycle;
+	long long stop_stats_cycle;
+	long long total_parallel_cycles;
+
 
 	/*cpu stats*/
-	int record_stats;
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;

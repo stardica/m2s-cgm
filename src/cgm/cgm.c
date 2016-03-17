@@ -172,6 +172,240 @@ void cgm_stat_finish_create(int argc, char **argv){
 	return;
 }
 
+
+void cgm_store_stas(void){
+
+
+
+
+
+	return;
+}
+
+
+void cgm_reset_stats(void){
+
+	int num_cores = x86_cpu_num_cores;
+	/*int num_cus = si_gpu_num_compute_units;*/
+	//int gpu_group_cache_num = (num_cus/4);
+	int i = 0;
+
+	//reset cgm_stat
+	for(i = 0; i < num_cores; i++)
+	{
+		cgm_stat->core_num_syscalls[i] = 0;
+		cgm_stat->core_syscall_stalls[i] = 0;
+		cgm_stat->core_rob_stalls[i] = 0;
+		cgm_stat->core_rob_stall_load[i] = 0;
+		cgm_stat->core_rob_stall_store[i] = 0;
+		cgm_stat->core_rob_stall_other[i] = 0;
+		cgm_stat->core_first_fetch_cycle[i] = 0;
+		cgm_stat->core_fetch_stalls[i] = 0;
+		cgm_stat->core_last_commit_cycle[i] = 0;
+		cgm_stat->core_issued_memory_insts[i] = 0;
+		cgm_stat->core_commited_memory_insts[i] = 0;
+	}
+
+	//memory system at large
+	cgm_stat->first_mem_access_lat = 0;
+	cgm_stat->cpu_total_fetches = 0;
+	cgm_stat->fetch_l1_hits = 0;
+	cgm_stat->fetch_l2_hits = 0;
+	cgm_stat->fetch_l3_hits = 0;
+	cgm_stat->fetch_memory = 0;
+	cgm_stat->cpu_total_loads = 0;
+	cgm_stat->load_l1_hits = 0;
+	cgm_stat->load_l2_hits = 0;
+	cgm_stat->load_l3_hits = 0;
+	cgm_stat->load_memory = 0;
+	cgm_stat->load_get_fwd = 0;
+	cgm_stat->cpu_total_stores = 0;
+	cgm_stat->store_l1_hits = 0;
+	cgm_stat->store_l2_hits = 0;
+	cgm_stat->store_l3_hits = 0;
+	cgm_stat->store_memory = 0;
+	cgm_stat->store_getx_fwd = 0;
+	cgm_stat->store_upgrade = 0;
+
+	//caches
+	for(i = 0; i < num_cores; i++)
+	{
+		l1_i_caches[i].TotalThreadLoops = 0;
+		l1_i_caches[i].TotalAcesses = 0;
+		l1_i_caches[i].TotalMisses = 0;
+		l1_i_caches[i].TotalHits = 0;
+		l1_i_caches[i].TotalReads = 0;
+		l1_i_caches[i].TotalWrites = 0;
+		l1_i_caches[i].TotalGets = 0;
+		l1_i_caches[i].TotalGet = 0;
+		l1_i_caches[i].TotalGetx = 0;
+		l1_i_caches[i].TotalUpgrades = 0;
+		l1_i_caches[i].TotalReadMisses = 0;
+		l1_i_caches[i].TotalWriteMisses = 0;
+		l1_i_caches[i].TotalWriteBacks = 0;
+		l1_i_caches[i].invalid_hits = 0;
+		l1_i_caches[i].assoc_conflict = 0;
+		l1_i_caches[i].upgrade_misses = 0;
+		l1_i_caches[i].retries = 0;
+		l1_i_caches[i].coalesces = 0;
+		l1_i_caches[i].mshr_entries = 0;
+		l1_i_caches[i].stalls = 0;
+
+		l1_d_caches[i].TotalThreadLoops = 0;
+		l1_d_caches[i].TotalAcesses = 0;
+		l1_d_caches[i].TotalMisses = 0;
+		l1_d_caches[i].TotalHits = 0;
+		l1_d_caches[i].TotalReads = 0;
+		l1_d_caches[i].TotalWrites = 0;
+		l1_d_caches[i].TotalGets = 0;
+		l1_d_caches[i].TotalGet = 0;
+		l1_d_caches[i].TotalGetx = 0;
+		l1_d_caches[i].TotalUpgrades = 0;
+		l1_d_caches[i].TotalReadMisses = 0;
+		l1_d_caches[i].TotalWriteMisses = 0;
+		l1_d_caches[i].TotalWriteBacks = 0;
+		l1_d_caches[i].invalid_hits = 0;
+		l1_d_caches[i].assoc_conflict = 0;
+		l1_d_caches[i].upgrade_misses = 0;
+		l1_d_caches[i].retries = 0;
+		l1_d_caches[i].coalesces = 0;
+		l1_d_caches[i].mshr_entries = 0;
+		l1_d_caches[i].stalls = 0;
+
+		l2_caches[i].TotalThreadLoops = 0;
+		l2_caches[i].TotalAcesses = 0;
+		l2_caches[i].TotalMisses = 0;
+		l2_caches[i].TotalHits = 0;
+		l2_caches[i].TotalReads = 0;
+		l2_caches[i].TotalWrites = 0;
+		l2_caches[i].TotalGets = 0;
+		l2_caches[i].TotalGet = 0;
+		l2_caches[i].TotalGetx = 0;
+		l2_caches[i].TotalUpgrades = 0;
+		l2_caches[i].TotalReadMisses = 0;
+		l2_caches[i].TotalWriteMisses = 0;
+		l2_caches[i].TotalWriteBacks = 0;
+		l2_caches[i].invalid_hits = 0;
+		l2_caches[i].assoc_conflict = 0;
+		l2_caches[i].upgrade_misses = 0;
+		l2_caches[i].retries = 0;
+		l2_caches[i].coalesces = 0;
+		l2_caches[i].mshr_entries = 0;
+		l2_caches[i].stalls = 0;
+
+		l3_caches[i].TotalThreadLoops = 0;
+		l3_caches[i].TotalAcesses = 0;
+		l3_caches[i].TotalMisses = 0;
+		l3_caches[i].TotalHits = 0;
+		l3_caches[i].TotalReads = 0;
+		l3_caches[i].TotalWrites = 0;
+		l3_caches[i].TotalGets = 0;
+		l3_caches[i].TotalGet = 0;
+		l3_caches[i].TotalGetx = 0;
+		l3_caches[i].TotalUpgrades = 0;
+		l3_caches[i].TotalReadMisses = 0;
+		l3_caches[i].TotalWriteMisses = 0;
+		l3_caches[i].TotalWriteBacks = 0;
+		l3_caches[i].invalid_hits = 0;
+		l3_caches[i].assoc_conflict = 0;
+		l3_caches[i].upgrade_misses = 0;
+		l3_caches[i].retries = 0;
+		l3_caches[i].coalesces = 0;
+		l3_caches[i].mshr_entries = 0;
+		l3_caches[i].stalls = 0;
+	}
+
+	//switch stats
+	for(i = 0; i < (num_cores + 1); i++)
+	{
+		switches[i].switch_total_links = 0;
+		switches[i].switch_max_links = 0;
+		switches[i].switch_total_wakes = 0;
+		switches[i].switch_north_io_transfers = 0;
+		switches[i].switch_north_io_transfer_cycles = 0;
+		switches[i].switch_north_io_bytes_transfered = 0;
+		switches[i].switch_east_io_transfers = 0;
+		switches[i].switch_east_io_transfer_cycles = 0;
+		switches[i].switch_east_io_bytes_transfered = 0;
+		switches[i].switch_south_io_transfers = 0;
+		switches[i].switch_south_io_transfer_cycles = 0;
+		switches[i].switch_south_io_bytes_transfered = 0;
+		switches[i].switch_west_io_transfers = 0;
+		switches[i].switch_west_io_transfer_cycles = 0;
+		switches[i].switch_west_io_bytes_transfered = 0;
+		switches[i].north_txqueue_max_depth = 0;
+		switches[i].north_txqueue_ave_depth = 0;
+		switches[i].east_txqueue_max_depth = 0;
+		switches[i].east_txqueue_ave_depth = 0;
+		switches[i].south_txqueue_max_depth = 0;
+		switches[i].south_txqueue_ave_depth = 0;
+		switches[i].west_txqueue_max_depth = 0;
+		switches[i].west_txqueue_ave_depth = 0;
+
+		switches[i].north_tx_inserts = 0;
+		switches[i].east_tx_inserts = 0;
+		switches[i].south_tx_inserts = 0;
+		switches[i].west_tx_inserts = 0;
+
+		switches[i].north_rxqueue_max_depth = 0;
+		switches[i].north_rxqueue_ave_depth = 0;
+		switches[i].east_rxqueue_max_depth = 0;
+		switches[i].east_rxqueue_ave_depth = 0;
+		switches[i].south_rxqueue_max_depth = 0;
+		switches[i].south_rxqueue_ave_depth = 0;
+		switches[i].west_rxqueue_max_depth = 0;
+		switches[i].west_rxqueue_ave_depth = 0;
+
+		switches[i].north_rx_inserts = 0;
+		switches[i].east_rx_inserts = 0;
+		switches[i].south_rx_inserts = 0;
+		switches[i].west_rx_inserts = 0;
+	}
+
+	//system agent
+	system_agent->busy_cycles = 0;
+	system_agent->north_io_busy_cycles = 0;
+	system_agent->south_io_busy_cycles = 0;
+	system_agent->mc_loads = 0;
+	system_agent->mc_stores = 0;
+	system_agent->mc_returns = 0;
+	system_agent->max_north_rxqueue_depth = 0;
+	system_agent->ave_north_rxqueue_depth = 0;
+	system_agent->max_south_rxqueue_depth = 0;
+	system_agent->ave_south_rxqueue_depth = 0;
+	system_agent->max_north_txqueue_depth = 0;
+	system_agent->ave_north_txqueue_depth = 0;
+	system_agent->max_south_txqueue_depth = 0;
+	system_agent->ave_south_txqueue_depth = 0;
+	system_agent->north_gets = 0;
+	system_agent->south_gets = 0;
+	system_agent->north_puts = 0;
+	system_agent->south_puts = 0;
+
+	//Memory controller and DRAMSim
+	mem_ctrl->mem_ctrl_busy_cycles = 0;
+	mem_ctrl->num_reads = 0;
+	mem_ctrl->num_writes = 0;
+	mem_ctrl->ave_dram_read_lat = 0;
+	mem_ctrl->ave_dram_write_lat = 0;
+	mem_ctrl->ave_dram_total_lat = 0;
+	mem_ctrl->read_min = 0;
+	mem_ctrl->read_max = 0;
+	mem_ctrl->write_min = 0;
+	mem_ctrl->write_max = 0;
+	mem_ctrl->dram_max_queue_depth = 0;
+	mem_ctrl->dram_ave_queue_depth = 0;
+	mem_ctrl->dram_busy_cycles = 0;
+	mem_ctrl->rx_max = 0;
+	mem_ctrl->tx_max = 0;
+	mem_ctrl->bytes_read = 0;
+	mem_ctrl->bytes_wrote = 0;
+	mem_ctrl->io_busy_cycles = 0;
+
+	return;
+}
+
+
 void cgm_init(int argc, char **argv){
 
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
@@ -323,11 +557,18 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "ExecutionSuccessful = %s\n", (cgm_stat->execution_success == 1) ? ("Yes") : ("No"));
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
 	CGM_STATS(cgm_stats_file, "Day&Time = %s\n", cgm_stat->date_time_pretty);
-	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(cpu) = %.9f\n", cpu_sim_time);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/cgm_stat->sim_time);
+	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "TotalParallelCycles = %lld\n", cgm_stat->total_parallel_cycles);
+	CGM_STATS(cgm_stats_file, "ParallelSectionPct = %0.2f\n", (double)cgm_stat->total_parallel_cycles/(double)P_TIME);
+	CGM_STATS(cgm_stats_file, "ParallelStartCycle = %lld\n", cgm_stat->start_stats_cycle);
+	CGM_STATS(cgm_stats_file, "ParallelStopCycle = %lld\n", cgm_stat->stop_stats_cycle);
+	CGM_STATS(cgm_stats_file, "ParallelSectionToLastCycle = %lld\n", P_TIME - cgm_stat->stop_stats_cycle);
+
 	CGM_STATS(cgm_stats_file, "\n");
+
 	CGM_STATS(cgm_stats_file, "[CPU]\n");
 	CGM_STATS(cgm_stats_file, "NumCores = %d\n", num_cores);
 	CGM_STATS(cgm_stats_file, "ThreadsPerCore = %d\n", num_threads);
@@ -386,6 +627,8 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "[GPU]\n");
 	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
 	CGM_STATS(cgm_stats_file, "\n");
+
+
 	CGM_STATS(cgm_stats_file, "[MemSystem]\n");
 	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat->first_mem_access_lat);
 	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cgm_stat->cpu_total_fetches);
@@ -678,15 +921,11 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	assert(id < num_cores);
 
 	/*stats*/
-	if(cgm_stat->record_stats)
-	{
-		if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
-			cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
+	if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
+		cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
 
-		cgm_stat->cpu_total_fetches++;
-		l1_i_caches[id].TotalAcesses++;
-	}
-
+	cgm_stat->cpu_total_fetches++;
+	l1_i_caches[id].TotalAcesses++;
 
 	last_issued_fetch_access_id = access_id;
 	last_issued_fetch_access_blk = addr & thread->i_cache_ptr[id].block_address_mask;
@@ -775,23 +1014,20 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	assert(id < num_cores);
 
 	/*stats*/
-	if(cgm_stat->record_stats)
+	l1_d_caches[id].TotalAcesses++;
+	last_issued_lsq_access_id = access_id;
+	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
+	cgm_stat->core_issued_memory_insts[thread->core->id]++;
+
+	/*printf("\t lsq issuing access_id %llu\n", access_id);*/
+
+	if(access_kind == cgm_access_load)
 	{
-		l1_d_caches[id].TotalAcesses++;
-		last_issued_lsq_access_id = access_id;
-		last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
-		cgm_stat->core_issued_memory_insts[thread->core->id]++;
-
-		/*printf("\t lsq issuing access_id %llu\n", access_id);*/
-
-		if(access_kind == cgm_access_load)
-		{
-			cgm_stat->cpu_total_loads++;
-		}
-		else if(access_kind == cgm_access_store)
-		{
-			cgm_stat->cpu_total_stores++;
-		}
+		cgm_stat->cpu_total_loads++;
+	}
+	else if(access_kind == cgm_access_store)
+	{
+		cgm_stat->cpu_total_stores++;
 	}
 
 	//For memory system load store request

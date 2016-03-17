@@ -177,6 +177,8 @@ void cgm_dump_summary(void);
 void cgm_dump_stats(void);
 void cgm_dump_histograms(void);
 void cgm_stat_finish_create(int argc, char **argv);
+void cgm_reset_stats(void);
+void cgm_store_stas(void);
 
 void tick(void);
 void cgm_watchdog(void);

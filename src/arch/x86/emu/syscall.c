@@ -5655,9 +5655,12 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
 
 static int x86_sys_cgm_stats_start_impl(X86Context *ctx)
 {
-
 	//start benchmark stat collection
-	cgm_stat->record_stats = 1;
+	printf("---Starting stat collection---\n");
+	cgm_stat->start_stats_cycle = P_TIME;
+
+	cgm_reset_stats();
+
 
 	return 0;
 }
@@ -5671,7 +5674,10 @@ static int x86_sys_cgm_stats_stop_impl(X86Context *ctx)
 {
 
 	//stop benchmark stat collection
-	cgm_stat->record_stats = 0;
+	printf("---Stoping stat collection---\n");
+
+	cgm_stat->stop_stats_cycle =  P_TIME;
+	cgm_stat->total_parallel_cycles = cgm_stat->stop_stats_cycle - cgm_stat->start_stats_cycle;
 
 	return 0;
 }
