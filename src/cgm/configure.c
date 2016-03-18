@@ -3598,7 +3598,7 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	}
 
 	/*stats*/
-	mem_ctrl->mem_ctrl_busy_cycles = 0;
+	mem_ctrl->busy_cycles = 0;
 	mem_ctrl->num_reads = 0;
 	mem_ctrl->num_writes = 0;
 	mem_ctrl->ave_dram_read_lat = 0;

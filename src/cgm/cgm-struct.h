@@ -14,7 +14,7 @@
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
 
-
+#define HISTSIZE 20000
 
 enum protocol_case_kind_t{
 	invalid = 0,
@@ -451,9 +451,9 @@ struct cgm_stats_t{
 
 	int execution_success;
 
-	char* stat_file_name;
-	char* date_time_file;
-	char* date_time_pretty;
+	char *stat_file_name;
+	char *date_time_file;
+	char *date_time_pretty;
 
 	/*benchmark related*/
 	char *benchmark_name;
@@ -463,10 +463,10 @@ struct cgm_stats_t{
 	double sim_time;
 	long long start_stats_cycle;
 	long long stop_stats_cycle;
-	long long total_parallel_cycles;
+	long long total_parallel_section_cycles;
+	int stored;
 
-
-	/*cpu stats*/
+	/*redundant stats, this so we can save away our stats at a certain point in the benchmark's run.*/
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;
@@ -474,11 +474,203 @@ struct cgm_stats_t{
 	long long *core_rob_stall_store;
 	long long *core_rob_stall_other;
 	long long *core_first_fetch_cycle;
-	long long *core_last_commit_cycle;
 	long long *core_fetch_stalls;
+	long long *core_last_commit_cycle;
 	long long *core_issued_memory_insts;
 	long long *core_commited_memory_insts;
 
+	//memory system at large
+	int first_mem_access_lat;
+	long long fetch_lat_hist[HISTSIZE];
+	long long load_lat_hist[HISTSIZE];
+	long long store_lat_hist[HISTSIZE];
+	long long cpu_total_fetches;
+	long long fetch_l1_hits;
+	long long fetch_l2_hits;
+	long long fetch_l3_hits;
+	long long fetch_memory;
+	long long cpu_total_loads;
+	long long load_l1_hits;
+	long long load_l2_hits;
+	long long load_l3_hits;
+	long long load_memory;
+	long long load_get_fwd;
+	long long cpu_total_stores;
+	long long store_l1_hits;
+	long long store_l2_hits;
+	long long store_l3_hits;
+	long long store_memory;
+	long long store_getx_fwd;
+	long long store_upgrade;
+
+	//caches
+	long long *l1_i_TotalThreadLoops;
+	long long *l1_i_TotalAcesses;
+	long long *l1_i_TotalMisses;
+	long long *l1_i_TotalHits;
+	long long *l1_i_TotalReads;
+	long long *l1_i_TotalWrites;
+	long long *l1_i_TotalGets;
+	long long *l1_i_TotalGet;
+	long long *l1_i_TotalGetx;
+	long long *l1_i_TotalUpgrades;
+	long long *l1_i_TotalReadMisses;
+	long long *l1_i_TotalWriteMisses;
+	long long *l1_i_TotalWriteBacks;
+	long long *l1_i_invalid_hits;
+	long long *l1_i_assoc_conflict;
+	long long *l1_i_upgrade_misses;
+	long long *l1_i_retries;
+	long long *l1_i_coalesces;
+	long long *l1_i_mshr_entries;
+	long long *l1_i_stalls;
+
+	long long *l1_d_TotalThreadLoops;
+	long long *l1_d_TotalAcesses;
+	long long *l1_d_TotalMisses;
+	long long *l1_d_TotalHits;
+	long long *l1_d_TotalReads;
+	long long *l1_d_TotalWrites;
+	long long *l1_d_TotalGets;
+	long long *l1_d_TotalGet;
+	long long *l1_d_TotalGetx;
+	long long *l1_d_TotalUpgrades;
+	long long *l1_d_TotalReadMisses;
+	long long *l1_d_TotalWriteMisses;
+	long long *l1_d_TotalWriteBacks;
+	long long *l1_d_invalid_hits;
+	long long *l1_d_assoc_conflict;
+	long long *l1_d_upgrade_misses;
+	long long *l1_d_retries;
+	long long *l1_d_coalesces;
+	long long *l1_d_mshr_entries;
+	long long *l1_d_stalls;
+
+	long long *l2_TotalThreadLoops;
+	long long *l2_TotalAcesses;
+	long long *l2_TotalMisses;
+	long long *l2_TotalHits;
+	long long *l2_TotalReads;
+	long long *l2_TotalWrites;
+	long long *l2_TotalGets;
+	long long *l2_TotalGet;
+	long long *l2_TotalGetx;
+	long long *l2_TotalUpgrades;
+	long long *l2_TotalReadMisses;
+	long long *l2_TotalWriteMisses;
+	long long *l2_TotalWriteBacks;
+	long long *l2_invalid_hits;
+	long long *l2_assoc_conflict;
+	long long *l2_upgrade_misses;
+	long long *l2_retries;
+	long long *l2_coalesces;
+	long long *l2_mshr_entries;
+	long long *l2_stalls;
+
+	long long *l3_TotalThreadLoops;
+	long long *l3_TotalAcesses;
+	long long *l3_TotalMisses;
+	long long *l3_TotalHits;
+	long long *l3_TotalReads;
+	long long *l3_TotalWrites;
+	long long *l3_TotalGets;
+	long long *l3_TotalGet;
+	long long *l3_TotalGetx;
+	long long *l3_TotalUpgrades;
+	long long *l3_TotalReadMisses;
+	long long *l3_TotalWriteMisses;
+	long long *l3_TotalWriteBacks;
+	long long *l3_invalid_hits;
+	long long *l3_assoc_conflict;
+	long long *l3_upgrade_misses;
+	long long *l3_retries;
+	long long *l3_coalesces;
+	long long *l3_mshr_entries;
+	long long *l3_stalls;
+
+
+	long long *switch_total_links;
+	int *switch_max_links;
+	long long *switch_total_wakes;
+	long long *switch_north_io_transfers;
+	long long *switch_north_io_transfer_cycles;
+	long long *switch_north_io_bytes_transfered;
+	long long *switch_east_io_transfers;
+	long long *switch_east_io_transfer_cycles;
+	long long *switch_east_io_bytes_transfered;
+	long long *switch_south_io_transfers;
+	long long *switch_south_io_transfer_cycles;
+	long long *switch_south_io_bytes_transfered;
+	long long *switch_west_io_transfers;
+	long long *switch_west_io_transfer_cycles;
+	long long *switch_west_io_bytes_transfered;
+	long long *switch_north_txqueue_max_depth;
+	double *switch_north_txqueue_ave_depth;
+	long long *switch_east_txqueue_max_depth;
+	double *switch_east_txqueue_ave_depth;
+	long long *switch_south_txqueue_max_depth;
+	double *switch_south_txqueue_ave_depth;
+	long long *switch_west_txqueue_max_depth;
+	double *switch_west_txqueue_ave_depth;
+
+	long long *switch_north_tx_inserts;
+	long long *switch_east_tx_inserts;
+	long long *switch_south_tx_inserts;
+	long long *switch_west_tx_inserts;
+
+	long long *switch_north_rxqueue_max_depth;
+	double *switch_north_rxqueue_ave_depth;
+	long long *switch_east_rxqueue_max_depth;
+	double *switch_east_rxqueue_ave_depth;
+	long long *switch_south_rxqueue_max_depth;
+	double *switch_south_rxqueue_ave_depth;
+	long long *switch_west_rxqueue_max_depth;
+	double *switch_west_rxqueue_ave_depth;
+
+	long long *switch_north_rx_inserts;
+	long long *switch_east_rx_inserts;
+	long long *switch_south_rx_inserts;
+	long long *switch_west_rx_inserts;
+
+	//system agent
+	long long system_agent_busy_cycles;
+	long long system_agent_north_io_busy_cycles;
+	long long system_agent_south_io_busy_cycles;
+	long long system_agent_mc_loads;
+	long long system_agent_mc_stores;
+	long long system_agent_mc_returns;
+	int system_agent_max_north_rxqueue_depth;
+	double system_agent_ave_north_rxqueue_depth;
+	int system_agent_max_south_rxqueue_depth;
+	double system_agent_ave_south_rxqueue_depth;
+	int system_agent_max_north_txqueue_depth;
+	double system_agent_ave_north_txqueue_depth;
+	int system_agent_max_south_txqueue_depth;
+	double system_agent_ave_south_txqueue_depth;
+	/*long long system_agent_north_gets;
+	long long system_agent_south_gets;
+	long long system_agent_north_puts;
+	long long system_agent_south_puts;*/
+
+	//Memory controller and DRAMSim
+	long long mem_ctrl_busy_cycles;
+	long long mem_ctrl_num_reads;
+	long long mem_ctrl_num_writes;
+	double mem_ctrl_ave_dram_read_lat;
+	double mem_ctrl_ave_dram_write_lat;
+	double mem_ctrl_ave_dram_total_lat;
+	long long mem_ctrl_read_min;
+	long long mem_ctrl_read_max;
+	long long mem_ctrl_write_min;
+	long long mem_ctrl_write_max;
+	long long mem_ctrl_dram_max_queue_depth;
+	double mem_ctrl_dram_ave_queue_depth;
+	long long mem_ctrl_dram_busy_cycles;
+	long long mem_ctrl_rx_max;
+	long long mem_ctrl_tx_max;
+	long long mem_ctrl_bytes_read;
+	long long mem_ctrl_bytes_wrote;
+	long long mem_ctrl_io_busy_cycles;
 
 };
 

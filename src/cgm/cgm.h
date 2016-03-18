@@ -141,6 +141,27 @@ extern char *cgm_stats_file_name;
 
 extern struct cgm_stats_t *cgm_stat;
 
+struct cpu_gpu_stats_t{
+
+	/*cpu stats*/
+	long long *core_num_syscalls;
+	long long *core_syscall_stalls;
+	long long *core_rob_stalls;
+	long long *core_rob_stall_load;
+	long long *core_rob_stall_store;
+	long long *core_rob_stall_other;
+	long long *core_first_fetch_cycle;
+	long long *core_last_commit_cycle;
+	long long *core_fetch_stalls;
+	long long *core_issued_memory_insts;
+	long long *core_commited_memory_insts;
+
+	/*gpu stats*/
+};
+
+extern struct cpu_gpu_stats_t *cpu_gpu_stats;
+void init_cgm_stats(int argc, char **argv);
+void init_cpu_gpu_stats(void);
 
 //global access record
 extern struct list_t *cgm_access_record;
@@ -173,6 +194,7 @@ void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cpu_gpu_run(void);
+
 void cgm_dump_summary(void);
 void cgm_dump_stats(void);
 void cgm_dump_histograms(void);

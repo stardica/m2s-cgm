@@ -5677,7 +5677,9 @@ static int x86_sys_cgm_stats_stop_impl(X86Context *ctx)
 	printf("---Stoping stat collection---\n");
 
 	cgm_stat->stop_stats_cycle =  P_TIME;
-	cgm_stat->total_parallel_cycles = cgm_stat->stop_stats_cycle - cgm_stat->start_stats_cycle;
+	cgm_stat->total_parallel_section_cycles = cgm_stat->stop_stats_cycle - cgm_stat->start_stats_cycle;
+
+	cgm_store_stats();
 
 	return 0;
 }

@@ -46,7 +46,7 @@ struct mem_ctrl_t{
 	int bus_width;
 
 	/*stats*/
-	long long mem_ctrl_busy_cycles;
+	long long busy_cycles;
 	long long num_reads;
 	long long num_writes;
 	double ave_dram_read_lat;

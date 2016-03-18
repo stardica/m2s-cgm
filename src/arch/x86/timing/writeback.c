@@ -71,7 +71,7 @@ void X86CoreWriteback(X86Core *self)
 
 		if (uop->uinst->opcode == x86_uinst_syscall)
 		{
-			cgm_stat->core_syscall_stalls[self->id]+= uop->interrupt_lat;
+			cpu_gpu_stats->core_syscall_stalls[self->id]+= uop->interrupt_lat;
 		}
 
 		//core_dump_event_queue(self);

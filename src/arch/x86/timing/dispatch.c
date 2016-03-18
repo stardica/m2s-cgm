@@ -102,7 +102,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				}*/
 
 				if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
-					cgm_stat->core_fetch_stalls[core->id]++;
+					cpu_gpu_stats->core_fetch_stalls[core->id]++;
 			}
 			else if(stall == x86_dispatch_stall_rob)
 			{
@@ -113,13 +113,13 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 				if(rob_uop->uinst->opcode == x86_uinst_load)
 				{
-					cgm_stat->core_rob_stall_load[core->id]++;
-					cgm_stat->core_rob_stalls[core->id]++;
+					cpu_gpu_stats->core_rob_stall_load[core->id]++;
+					cpu_gpu_stats->core_rob_stalls[core->id]++;
 				}
 				else if(rob_uop->uinst->opcode == x86_uinst_store)
 				{
-					cgm_stat->core_rob_stall_store[core->id]++;
-					cgm_stat->core_rob_stalls[core->id]++;
+					cpu_gpu_stats->core_rob_stall_store[core->id]++;
+					cpu_gpu_stats->core_rob_stalls[core->id]++;
 				}
 				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
 				{
@@ -128,15 +128,15 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				}
 				else
 				{
-					cgm_stat->core_rob_stall_other[core->id]++;
-					cgm_stat->core_rob_stalls[core->id]++;
+					cpu_gpu_stats->core_rob_stall_other[core->id]++;
+					cpu_gpu_stats->core_rob_stalls[core->id]++;
 				}
 			}
 			else if(stall == x86_dispatch_stall_lsq)
 			{
 				assert(self->rob_count < 64);
 				//printf("stall on lsq\n");
-				cpu_ls_stalls++;
+				mem_system_stats->cpu_ls_stalls++;
 			}
 			else if (stall == x86_dispatch_stall_iq)
 			{

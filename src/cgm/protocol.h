@@ -15,7 +15,7 @@
 
 #include <lib/util/linked-list.h>
 
-#define HISTSIZE 20000
+
 
 extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;
@@ -24,42 +24,47 @@ extern enum protocol_kind_t cgm_cache_protocol;
 extern enum protocol_kind_t cgm_gpu_cache_protocol;
 
 /*mem system stats*/
-extern int first_mem_access_lat;
-extern long long fetch_lat_hist[HISTSIZE];
-extern long long load_lat_hist[HISTSIZE];
-extern long long store_lat_hist[HISTSIZE];
+struct mem_system_stats_t{
 
-extern long long fetch_l1_hits;
-extern long long fetch_l2_hits;
-extern long long fetch_l3_hits;
-extern long long fetch_memory;
+	int first_mem_access_lat;
+	long long fetch_lat_hist[HISTSIZE];
+	long long load_lat_hist[HISTSIZE];
+	long long store_lat_hist[HISTSIZE];
 
-extern long long load_l1_hits;
-extern long long load_l2_hits;
-extern long long load_l3_hits;
-extern long long load_memory;
-extern long long load_get_fwd;
+	long long fetch_l1_hits;
+	long long fetch_l2_hits;
+	long long fetch_l3_hits;
+	long long fetch_memory;
 
-extern long long store_l1_hits;
-extern long long store_l2_hits;
-extern long long store_l2_upgrade;
-extern long long store_l3_hits;
-extern long long store_l3_upgrade;
-extern long long store_memory;
-extern long long store_getx_fwd;
-extern long long store_upgrade;
+	long long load_l1_hits;
+	long long load_l2_hits;
+	long long load_l3_hits;
+	long long load_memory;
+	long long load_get_fwd;
 
-extern long long cpu_total_fetches;
-extern long long cpu_total_loads;
-extern long long cpu_total_stores;
+	long long store_l1_hits;
+	long long store_l2_hits;
+	long long store_l2_upgrade;
+	long long store_l3_hits;
+	long long store_l3_upgrade;
+	long long store_memory;
+	long long store_getx_fwd;
+	long long store_upgrade;
 
-extern long long cpu_ls_stalls;
+	long long cpu_total_fetches;
+	long long cpu_total_loads;
+	long long cpu_total_stores;
+	long long cpu_ls_stalls;
 
-	/*gpu stats*/
-extern long long gpu_total_loads;
-extern long long gpu_total_stores;
+	long long gpu_total_loads;
+	long long gpu_total_stores;
+
+};
+
+extern struct mem_system_stats_t *mem_system_stats;
 
 long long write_back_id;
+
 
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);

@@ -205,9 +205,9 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			X86ThreadRecordUopInTraceCache(self, uop);
 			
 		/*star our stats*/
-		cgm_stat->core_last_commit_cycle[self->core->id] = P_TIME;
+		cpu_gpu_stats->core_last_commit_cycle[self->core->id] = P_TIME;
 		if (uop->flags == X86_UINST_MEM)
-			cgm_stat->core_commited_memory_insts[self->core->id]++;
+			cpu_gpu_stats->core_commited_memory_insts[self->core->id]++;
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;

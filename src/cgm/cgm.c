@@ -87,37 +87,9 @@ long long last_committed_fetch_access_id = 0;
 unsigned int last_committed_fetch_access_blk = 0x0;
 
 struct cgm_stats_t *cgm_stat;
+struct cpu_gpu_stats_t *cpu_gpu_stats;
 
-void m2scgm_init(void){
-
-	/* Initial information*/
-	printf("---Welcome to M2S-CGM---\n");
-	printf("---A x86 Based CPU-GPU Heterogeneous Computing Simulator---\n");
-	printf("\n");
-	printf("---Simulator Init---\n");
-
-	return;
-}
-
-void cgm_check_config_files(char **argv){
-
-	if(!strcmp(x86_config_file_name, ""))
-	{
-		fatal("cgm_init(): x86 config file not specified\n");
-	}
-	else if(!strcmp(si_gpu_config_file_name, ""))
-	{
-		fatal("cgm_init(): si config file not specified\n");
-	}
-	else if(!strcmp(cgm_config_file_name_and_path, ""))
-	{
-		fatal("cgm_init(): mem config file not specified\n");
-	}
-
-	return;
-}
-
-void cgm_stat_finish_create(int argc, char **argv){
+void init_cgm_stats(int argc, char **argv){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
@@ -156,7 +128,7 @@ void cgm_stat_finish_create(int argc, char **argv){
 
 	cgm_stat->benchmark_name = strdup(buff);
 
-	/*configure data structures*/
+	/*configure data structures that are arrays*/
 	cgm_stat->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat->core_syscall_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
@@ -168,6 +140,190 @@ void cgm_stat_finish_create(int argc, char **argv){
 	cgm_stat->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat->core_issued_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat->l1_i_TotalThreadLoops = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalGets = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalGet = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalGetx = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalUpgrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalReadMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalWriteMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_retries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_coalesces = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_i_stalls = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat->l1_d_TotalThreadLoops = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalGets = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalGet = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalGetx = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalUpgrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalReadMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalWriteMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_retries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_coalesces = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l1_d_stalls = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat->l2_TotalThreadLoops = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalGets = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalGet = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalGetx = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalUpgrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalReadMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalWriteMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_retries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_coalesces = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l2_stalls = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat->l3_TotalThreadLoops = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalGets = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalGet = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalGetx = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalUpgrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalReadMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalWriteMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_retries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_coalesces = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat->l3_stalls = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
+	cgm_stat->switch_total_wakes = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_txqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_txqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_east_txqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_txqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_south_txqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_txqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_west_txqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_txqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_north_tx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_tx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_tx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_tx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_rxqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_north_rxqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_east_rxqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_rxqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_south_rxqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_rxqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_west_rxqueue_max_depth = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_rxqueue_ave_depth = (double *)calloc(num_cores + 1, sizeof(double));
+	cgm_stat->switch_north_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_east_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_south_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat->switch_west_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+
+	return;
+}
+
+
+void init_cpu_gpu_stats(void){
+
+	int num_cores = x86_cpu_num_cores;
+
+	/*configure data structures*/
+	cpu_gpu_stats->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_syscall_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_first_fetch_cycle = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_fetch_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_issued_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+
+	return;
+}
+
+
+
+void m2scgm_init(void){
+
+	/* Initial information*/
+	printf("---Welcome to M2S-CGM---\n");
+	printf("---A x86 Based CPU-GPU Heterogeneous Computing Simulator---\n");
+	printf("\n");
+	printf("---Simulator Init---\n");
+
+	return;
+}
+
+void cgm_check_config_files(char **argv){
+
+	if(!strcmp(x86_config_file_name, ""))
+	{
+		fatal("cgm_init(): x86 config file not specified\n");
+	}
+	else if(!strcmp(si_gpu_config_file_name, ""))
+	{
+		fatal("cgm_init(): si config file not specified\n");
+	}
+	else if(!strcmp(cgm_config_file_name_and_path, ""))
+	{
+		fatal("cgm_init(): mem config file not specified\n");
+	}
+
+	return;
+}
+
+void cgm_stat_finish_create(int argc, char **argv){
+
+	init_cgm_stats(argc, argv);
+	init_cpu_gpu_stats();
 
 	return;
 }
@@ -183,214 +339,222 @@ void cgm_store_stats(void){
 	//store cgm_stat
 	for(i = 0; i < num_cores; i++)
 	{
-		cgm_stat->core_num_syscalls[i] = 0;
-		cgm_stat->core_syscall_stalls[i] = 0;
-		cgm_stat->core_rob_stalls[i] = 0;
-		cgm_stat->core_rob_stall_load[i] = 0;
-		cgm_stat->core_rob_stall_store[i] = 0;
-		cgm_stat->core_rob_stall_other[i] = 0;
-		cgm_stat->core_first_fetch_cycle[i] = 0;
-		cgm_stat->core_fetch_stalls[i] = 0;
-		cgm_stat->core_last_commit_cycle[i] = 0;
-		cgm_stat->core_issued_memory_insts[i] = 0;
-		cgm_stat->core_commited_memory_insts[i] = 0;
+		cgm_stat->core_num_syscalls[i] = cpu_gpu_stats->core_num_syscalls[i];
+		cgm_stat->core_syscall_stalls[i] = cpu_gpu_stats->core_syscall_stalls[i];
+		cgm_stat->core_rob_stalls[i] = cpu_gpu_stats->core_rob_stalls[i];
+		cgm_stat->core_rob_stall_load[i] = cpu_gpu_stats->core_rob_stall_load[i];
+		cgm_stat->core_rob_stall_store[i] = cpu_gpu_stats->core_rob_stall_store[i];
+		cgm_stat->core_rob_stall_other[i] = cpu_gpu_stats->core_rob_stall_other[i];
+		cgm_stat->core_first_fetch_cycle[i] = cpu_gpu_stats->core_first_fetch_cycle[i];
+		cgm_stat->core_fetch_stalls[i] = cpu_gpu_stats->core_fetch_stalls[i];
+		cgm_stat->core_last_commit_cycle[i] = cpu_gpu_stats->core_last_commit_cycle[i];
+		cgm_stat->core_issued_memory_insts[i] = cpu_gpu_stats->core_issued_memory_insts[i];
+		cgm_stat->core_commited_memory_insts[i] = cpu_gpu_stats->core_commited_memory_insts[i];
 	}
 
 	//memory system at large
-	first_mem_access_lat = 0;
-	cpu_total_fetches = 0;
-	fetch_l1_hits = 0;
-	fetch_l2_hits = 0;
-	fetch_l3_hits = 0;
-	fetch_memory = 0;
-	cpu_total_loads = 0;
-	load_l1_hits = 0;
-	load_l2_hits = 0;
-	load_l3_hits = 0;
-	load_memory = 0;
-	load_get_fwd = 0;
-	cpu_total_stores = 0;
-	store_l1_hits = 0;
-	store_l2_hits = 0;
-	store_l3_hits = 0;
-	store_memory = 0;
-	store_getx_fwd = 0;
-	store_upgrade = 0;
+	cgm_stat->first_mem_access_lat = mem_system_stats->first_mem_access_lat;
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		cgm_stat->fetch_lat_hist[i] = mem_system_stats->fetch_lat_hist[i];
+		cgm_stat->load_lat_hist[i] = mem_system_stats->load_lat_hist[i];
+		cgm_stat->store_lat_hist[i] = mem_system_stats->store_lat_hist[i];
+	}
+
+	cgm_stat->cpu_total_fetches = mem_system_stats->cpu_total_fetches;
+	cgm_stat->fetch_l1_hits = mem_system_stats->fetch_l1_hits;
+	cgm_stat->fetch_l2_hits = mem_system_stats->fetch_l2_hits;
+	cgm_stat->fetch_l3_hits = mem_system_stats->fetch_l3_hits;
+	cgm_stat->fetch_memory = mem_system_stats->fetch_memory;
+	cgm_stat->cpu_total_loads = mem_system_stats->cpu_total_loads;
+	cgm_stat->load_l1_hits = mem_system_stats->load_l1_hits;
+	cgm_stat->load_l2_hits = mem_system_stats->load_l2_hits;
+	cgm_stat->load_l3_hits = mem_system_stats->load_l3_hits;
+	cgm_stat->load_memory = mem_system_stats->load_memory;
+	cgm_stat->load_get_fwd = mem_system_stats->load_get_fwd;
+	cgm_stat->cpu_total_stores = mem_system_stats->cpu_total_stores;
+	cgm_stat->store_l1_hits = mem_system_stats->store_l1_hits;
+	cgm_stat->store_l2_hits = mem_system_stats->store_l2_hits;
+	cgm_stat->store_l3_hits = mem_system_stats->store_l3_hits;
+	cgm_stat->store_memory = mem_system_stats->store_memory;
+	cgm_stat->store_getx_fwd = mem_system_stats->store_getx_fwd;
+	cgm_stat->store_upgrade = mem_system_stats->store_upgrade;
 
 	//caches
 	for(i = 0; i < num_cores; i++)
 	{
-		l1_i_caches[i].TotalThreadLoops = 0;
-		l1_i_caches[i].TotalAcesses = 0;
-		l1_i_caches[i].TotalMisses = 0;
-		l1_i_caches[i].TotalHits = 0;
-		l1_i_caches[i].TotalReads = 0;
-		l1_i_caches[i].TotalWrites = 0;
-		l1_i_caches[i].TotalGets = 0;
-		l1_i_caches[i].TotalGet = 0;
-		l1_i_caches[i].TotalGetx = 0;
-		l1_i_caches[i].TotalUpgrades = 0;
-		l1_i_caches[i].TotalReadMisses = 0;
-		l1_i_caches[i].TotalWriteMisses = 0;
-		l1_i_caches[i].TotalWriteBacks = 0;
-		l1_i_caches[i].invalid_hits = 0;
-		l1_i_caches[i].assoc_conflict = 0;
-		l1_i_caches[i].upgrade_misses = 0;
-		l1_i_caches[i].retries = 0;
-		l1_i_caches[i].coalesces = 0;
-		l1_i_caches[i].mshr_entries = 0;
-		l1_i_caches[i].stalls = 0;
+		cgm_stat->l1_i_TotalThreadLoops[i] = l1_i_caches[i].TotalThreadLoops;
+		cgm_stat->l1_i_TotalAcesses[i] = l1_i_caches[i].TotalAcesses;
+		cgm_stat->l1_i_TotalMisses[i] = l1_i_caches[i].TotalMisses;
+		cgm_stat->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
+		cgm_stat->l1_i_TotalReads[i] = l1_i_caches[i].TotalReads;
+		cgm_stat->l1_i_TotalWrites[i] = l1_i_caches[i].TotalWrites;
+		cgm_stat->l1_i_TotalGets[i] = l1_i_caches[i].TotalGets;
+		cgm_stat->l1_i_TotalGet[i] = l1_i_caches[i].TotalGet;
+		cgm_stat->l1_i_TotalGetx[i] = l1_i_caches[i].TotalGetx;
+		cgm_stat->l1_i_TotalUpgrades[i] = l1_i_caches[i].TotalUpgrades;
+		cgm_stat->l1_i_TotalReadMisses[i] = l1_i_caches[i].TotalReadMisses;
+		cgm_stat->l1_i_TotalWriteMisses[i] = l1_i_caches[i].TotalWriteMisses;
+		cgm_stat->l1_i_TotalWriteBacks[i] = l1_i_caches[i].TotalWriteBacks;
+		cgm_stat->l1_i_invalid_hits[i] = l1_i_caches[i].invalid_hits;
+		cgm_stat->l1_i_assoc_conflict[i] = l1_i_caches[i].assoc_conflict;
+		cgm_stat->l1_i_upgrade_misses[i] = l1_i_caches[i].upgrade_misses;
+		cgm_stat->l1_i_retries[i] = l1_i_caches[i].retries;
+		cgm_stat->l1_i_coalesces[i] = l1_i_caches[i].coalesces;
+		cgm_stat->l1_i_mshr_entries[i] = l1_i_caches[i].mshr_entries;
+		cgm_stat->l1_i_stalls[i] = l1_i_caches[i].stalls;
 
-		l1_d_caches[i].TotalThreadLoops = 0;
-		l1_d_caches[i].TotalAcesses = 0;
-		l1_d_caches[i].TotalMisses = 0;
-		l1_d_caches[i].TotalHits = 0;
-		l1_d_caches[i].TotalReads = 0;
-		l1_d_caches[i].TotalWrites = 0;
-		l1_d_caches[i].TotalGets = 0;
-		l1_d_caches[i].TotalGet = 0;
-		l1_d_caches[i].TotalGetx = 0;
-		l1_d_caches[i].TotalUpgrades = 0;
-		l1_d_caches[i].TotalReadMisses = 0;
-		l1_d_caches[i].TotalWriteMisses = 0;
-		l1_d_caches[i].TotalWriteBacks = 0;
-		l1_d_caches[i].invalid_hits = 0;
-		l1_d_caches[i].assoc_conflict = 0;
-		l1_d_caches[i].upgrade_misses = 0;
-		l1_d_caches[i].retries = 0;
-		l1_d_caches[i].coalesces = 0;
-		l1_d_caches[i].mshr_entries = 0;
-		l1_d_caches[i].stalls = 0;
+		cgm_stat->l1_d_TotalThreadLoops[i] = l1_d_caches[i].TotalThreadLoops;
+		cgm_stat->l1_d_TotalAcesses[i] = l1_d_caches[i].TotalAcesses;
+		cgm_stat->l1_d_TotalMisses[i] = l1_d_caches[i].TotalMisses;
+		cgm_stat->l1_d_TotalHits[i] = l1_d_caches[i].TotalHits;
+		cgm_stat->l1_d_TotalReads[i] = l1_d_caches[i].TotalReads;
+		cgm_stat->l1_d_TotalWrites[i] = l1_d_caches[i].TotalWrites;
+		cgm_stat->l1_d_TotalGets[i] = l1_d_caches[i].TotalGets;
+		cgm_stat->l1_d_TotalGet[i] = l1_d_caches[i].TotalGet;
+		cgm_stat->l1_d_TotalGetx[i] = l1_d_caches[i].TotalGetx;
+		cgm_stat->l1_d_TotalUpgrades[i] = l1_d_caches[i].TotalUpgrades;
+		cgm_stat->l1_d_TotalReadMisses[i] = l1_d_caches[i].TotalReadMisses;
+		cgm_stat->l1_d_TotalWriteMisses[i] = l1_d_caches[i].TotalWriteMisses;
+		cgm_stat->l1_d_TotalWriteBacks[i] = l1_d_caches[i].TotalWriteBacks;
+		cgm_stat->l1_d_invalid_hits[i] = l1_d_caches[i].invalid_hits;
+		cgm_stat->l1_d_assoc_conflict[i] = l1_d_caches[i].assoc_conflict;
+		cgm_stat->l1_d_upgrade_misses[i] = l1_d_caches[i].upgrade_misses;
+		cgm_stat->l1_d_retries[i] = l1_d_caches[i].retries;
+		cgm_stat->l1_d_coalesces[i] = l1_d_caches[i].coalesces;
+		cgm_stat->l1_d_mshr_entries[i] = l1_d_caches[i].mshr_entries;
+		cgm_stat->l1_d_stalls[i] = l1_d_caches[i].stalls;
 
-		l2_caches[i].TotalThreadLoops = 0;
-		l2_caches[i].TotalAcesses = 0;
-		l2_caches[i].TotalMisses = 0;
-		l2_caches[i].TotalHits = 0;
-		l2_caches[i].TotalReads = 0;
-		l2_caches[i].TotalWrites = 0;
-		l2_caches[i].TotalGets = 0;
-		l2_caches[i].TotalGet = 0;
-		l2_caches[i].TotalGetx = 0;
-		l2_caches[i].TotalUpgrades = 0;
-		l2_caches[i].TotalReadMisses = 0;
-		l2_caches[i].TotalWriteMisses = 0;
-		l2_caches[i].TotalWriteBacks = 0;
-		l2_caches[i].invalid_hits = 0;
-		l2_caches[i].assoc_conflict = 0;
-		l2_caches[i].upgrade_misses = 0;
-		l2_caches[i].retries = 0;
-		l2_caches[i].coalesces = 0;
-		l2_caches[i].mshr_entries = 0;
-		l2_caches[i].stalls = 0;
+		cgm_stat->l2_TotalThreadLoops[i] = l2_caches[i].TotalThreadLoops;
+		cgm_stat->l2_TotalAcesses[i] = l2_caches[i].TotalAcesses;
+		cgm_stat->l2_TotalMisses[i] = l2_caches[i].TotalMisses;
+		cgm_stat->l2_TotalHits[i] = l2_caches[i].TotalHits;
+		cgm_stat->l2_TotalReads[i] = l2_caches[i].TotalReads;
+		cgm_stat->l2_TotalWrites[i] = l2_caches[i].TotalWrites;
+		cgm_stat->l2_TotalGets[i] = l2_caches[i].TotalGets;
+		cgm_stat->l2_TotalGet[i] = l2_caches[i].TotalGet;
+		cgm_stat->l2_TotalGetx[i] = l2_caches[i].TotalGetx;
+		cgm_stat->l2_TotalUpgrades[i] = l2_caches[i].TotalUpgrades;
+		cgm_stat->l2_TotalReadMisses[i] = l2_caches[i].TotalReadMisses;
+		cgm_stat->l2_TotalWriteMisses[i] = l2_caches[i].TotalWriteMisses;
+		cgm_stat->l2_TotalWriteBacks[i] = l2_caches[i].TotalWriteBacks;
+		cgm_stat->l2_invalid_hits[i] = l2_caches[i].invalid_hits;
+		cgm_stat->l2_assoc_conflict[i] = l2_caches[i].assoc_conflict;
+		cgm_stat->l2_upgrade_misses[i] = l2_caches[i].upgrade_misses;
+		cgm_stat->l2_retries[i] = l2_caches[i].retries;
+		cgm_stat->l2_coalesces[i] = l2_caches[i].coalesces;
+		cgm_stat->l2_mshr_entries[i] = l2_caches[i].mshr_entries;
+		cgm_stat->l2_stalls[i] = l2_caches[i].stalls;
 
-		l3_caches[i].TotalThreadLoops = 0;
-		l3_caches[i].TotalAcesses = 0;
-		l3_caches[i].TotalMisses = 0;
-		l3_caches[i].TotalHits = 0;
-		l3_caches[i].TotalReads = 0;
-		l3_caches[i].TotalWrites = 0;
-		l3_caches[i].TotalGets = 0;
-		l3_caches[i].TotalGet = 0;
-		l3_caches[i].TotalGetx = 0;
-		l3_caches[i].TotalUpgrades = 0;
-		l3_caches[i].TotalReadMisses = 0;
-		l3_caches[i].TotalWriteMisses = 0;
-		l3_caches[i].TotalWriteBacks = 0;
-		l3_caches[i].invalid_hits = 0;
-		l3_caches[i].assoc_conflict = 0;
-		l3_caches[i].upgrade_misses = 0;
-		l3_caches[i].retries = 0;
-		l3_caches[i].coalesces = 0;
-		l3_caches[i].mshr_entries = 0;
-		l3_caches[i].stalls = 0;
+		cgm_stat->l3_TotalThreadLoops[i] = l3_caches[i].TotalThreadLoops;
+		cgm_stat->l3_TotalAcesses[i] = l3_caches[i].TotalAcesses;
+		cgm_stat->l3_TotalMisses[i] = l3_caches[i].TotalMisses;
+		cgm_stat->l3_TotalHits[i] = l3_caches[i].TotalHits;
+		cgm_stat->l3_TotalReads[i] = l3_caches[i].TotalReads;
+		cgm_stat->l3_TotalWrites[i] = l3_caches[i].TotalWrites;
+		cgm_stat->l3_TotalGets[i] = l3_caches[i].TotalGets;
+		cgm_stat->l3_TotalGet[i] = l3_caches[i].TotalGet;
+		cgm_stat->l3_TotalGetx[i] = l3_caches[i].TotalGetx;
+		cgm_stat->l3_TotalUpgrades[i] = l3_caches[i].TotalUpgrades;
+		cgm_stat->l3_TotalReadMisses[i] = l3_caches[i].TotalReadMisses;
+		cgm_stat->l3_TotalWriteMisses[i] = l3_caches[i].TotalWriteMisses;
+		cgm_stat->l3_TotalWriteBacks[i] = l3_caches[i].TotalWriteBacks;
+		cgm_stat->l3_invalid_hits[i] = l3_caches[i].invalid_hits;
+		cgm_stat->l3_assoc_conflict[i] = l3_caches[i].assoc_conflict;
+		cgm_stat->l3_upgrade_misses[i] = l3_caches[i].upgrade_misses;
+		cgm_stat->l3_retries[i] = l3_caches[i].retries;
+		cgm_stat->l3_coalesces[i] = l3_caches[i].coalesces;
+		cgm_stat->l3_mshr_entries[i] = l3_caches[i].mshr_entries;
+		cgm_stat->l3_stalls[i] = l3_caches[i].stalls;
 	}
 
 	//switch stats
 	for(i = 0; i < (num_cores + 1); i++)
 	{
-		switches[i].switch_total_links = 0;
-		switches[i].switch_max_links = 0;
-		switches[i].switch_total_wakes = 0;
-		switches[i].switch_north_io_transfers = 0;
-		switches[i].switch_north_io_transfer_cycles = 0;
-		switches[i].switch_north_io_bytes_transfered = 0;
-		switches[i].switch_east_io_transfers = 0;
-		switches[i].switch_east_io_transfer_cycles = 0;
-		switches[i].switch_east_io_bytes_transfered = 0;
-		switches[i].switch_south_io_transfers = 0;
-		switches[i].switch_south_io_transfer_cycles = 0;
-		switches[i].switch_south_io_bytes_transfered = 0;
-		switches[i].switch_west_io_transfers = 0;
-		switches[i].switch_west_io_transfer_cycles = 0;
-		switches[i].switch_west_io_bytes_transfered = 0;
-		switches[i].north_txqueue_max_depth = 0;
-		switches[i].north_txqueue_ave_depth = 0;
-		switches[i].east_txqueue_max_depth = 0;
-		switches[i].east_txqueue_ave_depth = 0;
-		switches[i].south_txqueue_max_depth = 0;
-		switches[i].south_txqueue_ave_depth = 0;
-		switches[i].west_txqueue_max_depth = 0;
-		switches[i].west_txqueue_ave_depth = 0;
+		cgm_stat->switch_total_links[i] = switches[i].switch_total_links;
+		cgm_stat->switch_max_links[i] = switches[i].switch_max_links;
+		cgm_stat->switch_total_wakes[i] = switches[i].switch_total_wakes;
+		cgm_stat->switch_north_io_transfers[i] = switches[i].switch_north_io_transfers;
+		cgm_stat->switch_north_io_transfer_cycles[i] = switches[i].switch_north_io_transfer_cycles;
+		cgm_stat->switch_north_io_bytes_transfered[i] = switches[i].switch_north_io_bytes_transfered;
+		cgm_stat->switch_east_io_transfers[i] = switches[i].switch_east_io_transfers;
+		cgm_stat->switch_east_io_transfer_cycles[i] = switches[i].switch_east_io_transfer_cycles;
+		cgm_stat->switch_east_io_bytes_transfered[i] = switches[i].switch_east_io_bytes_transfered;
+		cgm_stat->switch_south_io_transfers[i] = switches[i].switch_south_io_transfers;
+		cgm_stat->switch_south_io_transfer_cycles[i] = switches[i].switch_south_io_transfer_cycles;
+		cgm_stat->switch_south_io_bytes_transfered[i] = switches[i].switch_south_io_bytes_transfered;
+		cgm_stat->switch_west_io_transfers[i] = switches[i].switch_west_io_transfers;
+		cgm_stat->switch_west_io_transfer_cycles[i] = switches[i].switch_west_io_transfer_cycles;
+		cgm_stat->switch_west_io_bytes_transfered[i] = switches[i].switch_west_io_bytes_transfered;
+		cgm_stat->switch_north_txqueue_max_depth[i] = switches[i].north_txqueue_max_depth;
+		cgm_stat->switch_north_txqueue_ave_depth[i] = switches[i].north_txqueue_ave_depth;
+		cgm_stat->switch_east_txqueue_max_depth[i] = switches[i].east_txqueue_max_depth;
+		cgm_stat->switch_east_txqueue_ave_depth[i] = switches[i].east_txqueue_ave_depth;
+		cgm_stat->switch_south_txqueue_max_depth[i] = switches[i].south_txqueue_max_depth;
+		cgm_stat->switch_south_txqueue_ave_depth[i] = switches[i].south_txqueue_ave_depth;
+		cgm_stat->switch_west_txqueue_max_depth[i] = switches[i].west_txqueue_max_depth;
+		cgm_stat->switch_west_txqueue_ave_depth[i] = switches[i].west_txqueue_ave_depth;
 
-		switches[i].north_tx_inserts = 0;
-		switches[i].east_tx_inserts = 0;
-		switches[i].south_tx_inserts = 0;
-		switches[i].west_tx_inserts = 0;
+		cgm_stat->switch_north_tx_inserts[i] = switches[i].north_tx_inserts;
+		cgm_stat->switch_east_tx_inserts[i] = switches[i].east_tx_inserts;
+		cgm_stat->switch_south_tx_inserts[i] = switches[i].south_tx_inserts;
+		cgm_stat->switch_west_tx_inserts[i] = switches[i].west_tx_inserts;
 
-		switches[i].north_rxqueue_max_depth = 0;
-		switches[i].north_rxqueue_ave_depth = 0;
-		switches[i].east_rxqueue_max_depth = 0;
-		switches[i].east_rxqueue_ave_depth = 0;
-		switches[i].south_rxqueue_max_depth = 0;
-		switches[i].south_rxqueue_ave_depth = 0;
-		switches[i].west_rxqueue_max_depth = 0;
-		switches[i].west_rxqueue_ave_depth = 0;
+		cgm_stat->switch_north_rxqueue_max_depth[i] = switches[i].north_rxqueue_max_depth;
+		cgm_stat->switch_north_rxqueue_ave_depth[i] = switches[i].north_rxqueue_ave_depth;
+		cgm_stat->switch_east_rxqueue_max_depth[i] = switches[i].east_rxqueue_max_depth;
+		cgm_stat->switch_east_rxqueue_ave_depth[i] = switches[i].east_rxqueue_ave_depth;
+		cgm_stat->switch_south_rxqueue_max_depth[i] = switches[i].south_rxqueue_max_depth;
+		cgm_stat->switch_south_rxqueue_ave_depth[i] = switches[i].south_rxqueue_ave_depth;
+		cgm_stat->switch_west_rxqueue_max_depth[i] = switches[i].west_rxqueue_max_depth;
+		cgm_stat->switch_west_rxqueue_ave_depth[i] = switches[i].west_rxqueue_ave_depth;
 
-		switches[i].north_rx_inserts = 0;
-		switches[i].east_rx_inserts = 0;
-		switches[i].south_rx_inserts = 0;
-		switches[i].west_rx_inserts = 0;
+		cgm_stat->switch_north_rx_inserts[i] = switches[i].north_rx_inserts;
+		cgm_stat->switch_east_rx_inserts[i] = switches[i].east_rx_inserts;
+		cgm_stat->switch_south_rx_inserts[i] = switches[i].south_rx_inserts;
+		cgm_stat->switch_west_rx_inserts[i] = switches[i].west_rx_inserts;
 	}
 
 	//system agent
-	system_agent->busy_cycles = 0;
-	system_agent->north_io_busy_cycles = 0;
-	system_agent->south_io_busy_cycles = 0;
-	system_agent->mc_loads = 0;
-	system_agent->mc_stores = 0;
-	system_agent->mc_returns = 0;
-	system_agent->max_north_rxqueue_depth = 0;
-	system_agent->ave_north_rxqueue_depth = 0;
-	system_agent->max_south_rxqueue_depth = 0;
-	system_agent->ave_south_rxqueue_depth = 0;
-	system_agent->max_north_txqueue_depth = 0;
-	system_agent->ave_north_txqueue_depth = 0;
-	system_agent->max_south_txqueue_depth = 0;
-	system_agent->ave_south_txqueue_depth = 0;
-	system_agent->north_gets = 0;
-	system_agent->south_gets = 0;
-	system_agent->north_puts = 0;
-	system_agent->south_puts = 0;
+	cgm_stat->system_agent_busy_cycles = system_agent->busy_cycles;
+	cgm_stat->system_agent_north_io_busy_cycles = system_agent->north_io_busy_cycles;
+	cgm_stat->system_agent_south_io_busy_cycles = system_agent->south_io_busy_cycles;
+	cgm_stat->system_agent_mc_loads = system_agent->mc_loads;
+	cgm_stat->system_agent_mc_stores = system_agent->mc_stores;
+	cgm_stat->system_agent_mc_returns = system_agent->mc_returns;
+	cgm_stat->system_agent_max_north_rxqueue_depth = system_agent->max_north_rxqueue_depth;
+	cgm_stat->system_agent_ave_north_rxqueue_depth = system_agent->ave_north_rxqueue_depth;
+	cgm_stat->system_agent_max_south_rxqueue_depth = system_agent->max_south_rxqueue_depth;
+	cgm_stat->system_agent_ave_south_rxqueue_depth = system_agent->ave_south_rxqueue_depth;
+	cgm_stat->system_agent_max_north_txqueue_depth = system_agent->max_north_txqueue_depth;
+	cgm_stat->system_agent_ave_north_txqueue_depth = system_agent->ave_north_txqueue_depth;
+	cgm_stat->system_agent_max_south_txqueue_depth = system_agent->max_south_txqueue_depth;
+	cgm_stat->system_agent_ave_south_txqueue_depth = system_agent->ave_south_txqueue_depth;
+	/*cgm_stat->system_agent_north_gets = system_agent->north_gets;
+	cgm_stat->system_agent_south_gets = system_agent->south_gets;
+	cgm_stat->system_agent_north_puts = system_agent->north_puts;
+	cgm_stat->system_agent_south_puts = system_agent->south_puts;*/
 
 	//Memory controller and DRAMSim
-	mem_ctrl->mem_ctrl_busy_cycles = 0;
-	mem_ctrl->num_reads = 0;
-	mem_ctrl->num_writes = 0;
-	mem_ctrl->ave_dram_read_lat = 0;
-	mem_ctrl->ave_dram_write_lat = 0;
-	mem_ctrl->ave_dram_total_lat = 0;
-	mem_ctrl->read_min = 0;
-	mem_ctrl->read_max = 0;
-	mem_ctrl->write_min = 0;
-	mem_ctrl->write_max = 0;
-	mem_ctrl->dram_max_queue_depth = 0;
-	mem_ctrl->dram_ave_queue_depth = 0;
-	mem_ctrl->dram_busy_cycles = 0;
-	mem_ctrl->rx_max = 0;
-	mem_ctrl->tx_max = 0;
-	mem_ctrl->bytes_read = 0;
-	mem_ctrl->bytes_wrote = 0;
-	mem_ctrl->io_busy_cycles = 0;
+	cgm_stat->mem_ctrl_busy_cycles = mem_ctrl->busy_cycles;
+	cgm_stat->mem_ctrl_num_reads = mem_ctrl->num_reads;
+	cgm_stat->mem_ctrl_num_writes = mem_ctrl->num_writes;
+	cgm_stat->mem_ctrl_ave_dram_read_lat = mem_ctrl->ave_dram_read_lat;
+	cgm_stat->mem_ctrl_ave_dram_write_lat = mem_ctrl->ave_dram_write_lat;
+	cgm_stat->mem_ctrl_ave_dram_total_lat = mem_ctrl->ave_dram_total_lat;
+	cgm_stat->mem_ctrl_read_min = mem_ctrl->read_min;
+	cgm_stat->mem_ctrl_read_max = mem_ctrl->read_max;
+	cgm_stat->mem_ctrl_write_min = mem_ctrl->write_min;
+	cgm_stat->mem_ctrl_write_max = mem_ctrl->write_max;
+	cgm_stat->mem_ctrl_dram_max_queue_depth = mem_ctrl->dram_max_queue_depth;
+	cgm_stat->mem_ctrl_dram_ave_queue_depth = mem_ctrl->dram_ave_queue_depth;
+	cgm_stat->mem_ctrl_dram_busy_cycles = mem_ctrl->dram_busy_cycles;
+	cgm_stat->mem_ctrl_rx_max = mem_ctrl->rx_max;
+	cgm_stat->mem_ctrl_tx_max = mem_ctrl->tx_max;
+	cgm_stat->mem_ctrl_bytes_read = mem_ctrl->bytes_read;
+	cgm_stat->mem_ctrl_bytes_wrote = mem_ctrl->bytes_wrote;
+	cgm_stat->mem_ctrl_io_busy_cycles = mem_ctrl->io_busy_cycles;
 
 
 
@@ -409,39 +573,48 @@ void cgm_reset_stats(void){
 	//reset cgm_stat
 	for(i = 0; i < num_cores; i++)
 	{
-		cgm_stat->core_num_syscalls[i] = 0;
-		cgm_stat->core_syscall_stalls[i] = 0;
-		cgm_stat->core_rob_stalls[i] = 0;
-		cgm_stat->core_rob_stall_load[i] = 0;
-		cgm_stat->core_rob_stall_store[i] = 0;
-		cgm_stat->core_rob_stall_other[i] = 0;
-		cgm_stat->core_first_fetch_cycle[i] = 0;
-		cgm_stat->core_fetch_stalls[i] = 0;
-		cgm_stat->core_last_commit_cycle[i] = 0;
-		cgm_stat->core_issued_memory_insts[i] = 0;
-		cgm_stat->core_commited_memory_insts[i] = 0;
+		cpu_gpu_stats->core_num_syscalls[i] = 0;
+		cpu_gpu_stats->core_syscall_stalls[i] = 0;
+		cpu_gpu_stats->core_rob_stalls[i] = 0;
+		cpu_gpu_stats->core_rob_stall_load[i] = 0;
+		cpu_gpu_stats->core_rob_stall_store[i] = 0;
+		cpu_gpu_stats->core_rob_stall_other[i] = 0;
+		cpu_gpu_stats->core_first_fetch_cycle[i] = 0;
+		cpu_gpu_stats->core_fetch_stalls[i] = 0;
+		cpu_gpu_stats->core_last_commit_cycle[i] = 0;
+		cpu_gpu_stats->core_issued_memory_insts[i] = 0;
+		cpu_gpu_stats->core_commited_memory_insts[i] = 0;
 	}
 
 	//memory system at large
-	first_mem_access_lat = 0;
-	cpu_total_fetches = 0;
-	fetch_l1_hits = 0;
-	fetch_l2_hits = 0;
-	fetch_l3_hits = 0;
-	fetch_memory = 0;
-	cpu_total_loads = 0;
-	load_l1_hits = 0;
-	load_l2_hits = 0;
-	load_l3_hits = 0;
-	load_memory = 0;
-	load_get_fwd = 0;
-	cpu_total_stores = 0;
-	store_l1_hits = 0;
-	store_l2_hits = 0;
-	store_l3_hits = 0;
-	store_memory = 0;
-	store_getx_fwd = 0;
-	store_upgrade = 0;
+	//mem_system_stats->first_mem_access_lat = 0;
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		mem_system_stats->fetch_lat_hist[i] = 0;
+		mem_system_stats->load_lat_hist[i] = 0;
+		mem_system_stats->store_lat_hist[i] = 0;
+	}
+
+
+	mem_system_stats->cpu_total_fetches = 0;
+	mem_system_stats->fetch_l1_hits = 0;
+	mem_system_stats->fetch_l2_hits = 0;
+	mem_system_stats->fetch_l3_hits = 0;
+	mem_system_stats->fetch_memory = 0;
+	mem_system_stats->cpu_total_loads = 0;
+	mem_system_stats->load_l1_hits = 0;
+	mem_system_stats->load_l2_hits = 0;
+	mem_system_stats->load_l3_hits = 0;
+	mem_system_stats->load_memory = 0;
+	mem_system_stats->load_get_fwd = 0;
+	mem_system_stats->cpu_total_stores = 0;
+	mem_system_stats->store_l1_hits = 0;
+	mem_system_stats->store_l2_hits = 0;
+	mem_system_stats->store_l3_hits = 0;
+	mem_system_stats->store_memory = 0;
+	mem_system_stats->store_getx_fwd = 0;
+	mem_system_stats->store_upgrade = 0;
 
 	//caches
 	for(i = 0; i < num_cores; i++)
@@ -599,7 +772,7 @@ void cgm_reset_stats(void){
 	system_agent->south_puts = 0;
 
 	//Memory controller and DRAMSim
-	mem_ctrl->mem_ctrl_busy_cycles = 0;
+	mem_ctrl->busy_cycles = 0;
 	mem_ctrl->num_reads = 0;
 	mem_ctrl->num_writes = 0;
 	mem_ctrl->ave_dram_read_lat = 0;
@@ -625,6 +798,8 @@ void cgm_reset_stats(void){
 void cgm_init(int argc, char **argv){
 
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
+	mem_system_stats = (void *) calloc(1, sizeof(struct mem_system_stats_t));
+	cpu_gpu_stats = (void *) calloc(1, sizeof(struct cpu_gpu_stats_t));
 
 	cgm_stat_finish_create(argc, argv);
 
@@ -777,8 +952,8 @@ void cgm_dump_stats(void){
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
-	CGM_STATS(cgm_stats_file, "TotalParallelCycles = %lld\n", cgm_stat->total_parallel_cycles);
-	CGM_STATS(cgm_stats_file, "ParallelSectionPct = %0.2f\n", (double)cgm_stat->total_parallel_cycles/(double)P_TIME);
+	CGM_STATS(cgm_stats_file, "TotalParallelCycles = %lld\n", cgm_stat->total_parallel_section_cycles);
+	CGM_STATS(cgm_stats_file, "ParallelSectionPct = %0.2f\n", (double)cgm_stat->total_parallel_section_cycles/(double)P_TIME);
 	CGM_STATS(cgm_stats_file, "ParallelStartCycle = %lld\n", cgm_stat->start_stats_cycle);
 	CGM_STATS(cgm_stats_file, "ParallelStopCycle = %lld\n", cgm_stat->stop_stats_cycle);
 	CGM_STATS(cgm_stats_file, "ParallelSectionToLastCycle = %lld\n", P_TIME - cgm_stat->stop_stats_cycle);
@@ -846,25 +1021,25 @@ void cgm_dump_stats(void){
 
 
 	CGM_STATS(cgm_stats_file, "[MemSystem]\n");
-	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", first_mem_access_lat);
-	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cpu_total_fetches);
-	CGM_STATS(cgm_stats_file, "FetchesL1 = %llu\n", fetch_l1_hits);
-	CGM_STATS(cgm_stats_file, "FetchesL2 = %llu\n", fetch_l2_hits);
-	CGM_STATS(cgm_stats_file, "FetchesL3 = %llu\n", fetch_l3_hits);
-	CGM_STATS(cgm_stats_file, "FetchesMemory = %llu\n", fetch_memory);
-	CGM_STATS(cgm_stats_file, "TotalLoads = %llu\n", cpu_total_loads);
-	CGM_STATS(cgm_stats_file, "LoadsL1 = %llu\n", load_l1_hits);
-	CGM_STATS(cgm_stats_file, "LoadsL2 = %llu\n", load_l2_hits);
-	CGM_STATS(cgm_stats_file, "LoadsL3 = %llu\n", load_l3_hits);
-	CGM_STATS(cgm_stats_file, "LoadsMemory = %llu\n", load_memory);
-	CGM_STATS(cgm_stats_file, "LoadsGetFwd = %llu\n", load_get_fwd);
-	CGM_STATS(cgm_stats_file, "TotalStore = %llu\n", cpu_total_stores);
-	CGM_STATS(cgm_stats_file, "StoresL1 = %llu\n", store_l1_hits);
-	CGM_STATS(cgm_stats_file, "StoresL2 = %llu\n", store_l2_hits);
-	CGM_STATS(cgm_stats_file, "StoresL3 = %llu\n", store_l3_hits);
-	CGM_STATS(cgm_stats_file, "StoresMemory = %llu\n", store_memory);
-	CGM_STATS(cgm_stats_file, "StoresGetxFwd = %llu\n", store_getx_fwd);
-	CGM_STATS(cgm_stats_file, "StoresUpgrade = %llu\n", store_upgrade);
+	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat->first_mem_access_lat);
+	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cgm_stat->cpu_total_fetches);
+	CGM_STATS(cgm_stats_file, "FetchesL1 = %llu\n", cgm_stat->fetch_l1_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL2 = %llu\n", cgm_stat->fetch_l2_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL3 = %llu\n", cgm_stat->fetch_l3_hits);
+	CGM_STATS(cgm_stats_file, "FetchesMemory = %llu\n", cgm_stat->fetch_memory);
+	CGM_STATS(cgm_stats_file, "TotalLoads = %llu\n", cgm_stat->cpu_total_loads);
+	CGM_STATS(cgm_stats_file, "LoadsL1 = %llu\n", cgm_stat->load_l1_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL2 = %llu\n", cgm_stat->load_l2_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL3 = %llu\n", cgm_stat->load_l3_hits);
+	CGM_STATS(cgm_stats_file, "LoadsMemory = %llu\n", cgm_stat->load_memory);
+	CGM_STATS(cgm_stats_file, "LoadsGetFwd = %llu\n", cgm_stat->load_get_fwd);
+	CGM_STATS(cgm_stats_file, "TotalStore = %llu\n", cgm_stat->cpu_total_stores);
+	CGM_STATS(cgm_stats_file, "StoresL1 = %llu\n", cgm_stat->store_l1_hits);
+	CGM_STATS(cgm_stats_file, "StoresL2 = %llu\n", cgm_stat->store_l2_hits);
+	CGM_STATS(cgm_stats_file, "StoresL3 = %llu\n", cgm_stat->store_l3_hits);
+	CGM_STATS(cgm_stats_file, "StoresMemory = %llu\n", cgm_stat->store_memory);
+	CGM_STATS(cgm_stats_file, "StoresGetxFwd = %llu\n", cgm_stat->store_getx_fwd);
+	CGM_STATS(cgm_stats_file, "StoresUpgrade = %llu\n", cgm_stat->store_upgrade);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -882,52 +1057,21 @@ void cgm_dump_histograms(void){
 	//fprintf(fetch_lat_log_file, "[FetchLatHist]\n");
 	for(i = 0; i < HISTSIZE; i++)
 	{
-		if(fetch_lat_hist[i] > 0)
-			fprintf(fetch_lat_log_file, "%d %llu\n", i, fetch_lat_hist[i]);
+		if(mem_system_stats->fetch_lat_hist[i] > 0)
+			fprintf(fetch_lat_log_file, "%d %llu\n", i, mem_system_stats->fetch_lat_hist[i]);
 	}
 
 	for(i = 0; i < HISTSIZE; i++)
 	{
-		if(load_lat_hist[i] > 0)
-			fprintf(load_lat_log_file, "%d %llu\n", i, load_lat_hist[i]);
+		if(mem_system_stats->load_lat_hist[i] > 0)
+			fprintf(load_lat_log_file, "%d %llu\n", i, mem_system_stats->load_lat_hist[i]);
 	}
 
 	for(i = 0; i < HISTSIZE; i++)
 	{
-		if(store_lat_hist[i] > 0)
-			fprintf(store_lat_log_file, "%d %llu\n", i, store_lat_hist[i]);
+		if(mem_system_stats->store_lat_hist[i] > 0)
+			fprintf(store_lat_log_file, "%d %llu\n", i, mem_system_stats->store_lat_hist[i]);
 	}
-
-
-	/*OLD CODE
-	for(i = 0; i < HISTSIZE; i++)
-	{
-		while(cgm_stat->fetch_lat_hist[i] > 0)
-		{
-			fprintf(fetch_lat_log_file, "%d\n", i);
-			cgm_stat->fetch_lat_hist[i]--;
-		}
-	}
-
-	for(i = 0; i < HISTSIZE; i++)
-	{
-		while(cgm_stat->load_lat_hist[i] > 0)
-		{
-			fprintf(load_lat_log_file, "%d\n", i);
-			cgm_stat->load_lat_hist[i]--;
-		}
-	}
-
-	for(i = 0; i < HISTSIZE; i++)
-	{
-		while(cgm_stat->store_lat_hist[i] > 0)
-		{
-			fprintf(store_lat_log_file, "%d\n", i);
-			cgm_stat->store_lat_hist[i]--;
-		}
-	}*/
-
-
 
 	fclose (load_lat_log_file);
 	fclose (fetch_lat_log_file);
@@ -1137,10 +1281,10 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	assert(id < num_cores);
 
 	/*stats*/
-	if(cgm_stat->core_first_fetch_cycle[thread->core->id] == 0)
-		cgm_stat->core_first_fetch_cycle[thread->core->id] = P_TIME;
+	if(cpu_gpu_stats->core_first_fetch_cycle[thread->core->id] == 0)
+		cpu_gpu_stats->core_first_fetch_cycle[thread->core->id] = P_TIME;
 
-	cpu_total_fetches++;
+	mem_system_stats->cpu_total_fetches++;
 	l1_i_caches[id].TotalAcesses++;
 
 	last_issued_fetch_access_id = access_id;
@@ -1233,17 +1377,17 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	l1_d_caches[id].TotalAcesses++;
 	last_issued_lsq_access_id = access_id;
 	last_issued_lsq_access_blk = addr & thread->d_cache_ptr[id].block_address_mask;
-	cgm_stat->core_issued_memory_insts[thread->core->id]++;
+	cpu_gpu_stats->core_issued_memory_insts[thread->core->id]++;
 
 	/*printf("\t lsq issuing access_id %llu\n", access_id);*/
 
 	if(access_kind == cgm_access_load)
 	{
-		cpu_total_loads++;
+		mem_system_stats->cpu_total_loads++;
 	}
 	else if(access_kind == cgm_access_store)
 	{
-		cpu_total_stores++;
+		mem_system_stats->cpu_total_stores++;
 	}
 
 	//For memory system load store request
@@ -1376,12 +1520,12 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	/*stats*/
 	if(access_kind == cgm_access_load_v)
 	{
-		gpu_total_loads++;
+		mem_system_stats->gpu_total_loads++;
 	}
 
 	if(access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
 	{
-	 	gpu_total_stores++;
+	 	mem_system_stats->gpu_total_stores++;
 	}
 
 	return;
