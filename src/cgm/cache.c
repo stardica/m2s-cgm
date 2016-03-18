@@ -1836,7 +1836,7 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.2f\n", ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
 		for(j = 0; j < HISTSIZE; j++)
 		{
-			if(cgm_stat->fetch_lat_hist[j] > 0)
+			if(fetch_lat_hist[j] > 0)
 				max_fetch_lat = j;
 		}
 		CGM_STATS(cgm_stats_file, "MaxFetchLat = %d\n", max_fetch_lat);
@@ -1867,12 +1867,12 @@ void cache_dump_stats(void){
 		CGM_STATS(cgm_stats_file, "CacheUtilization = %0.2f\n", ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
 		for(j = 0; j < HISTSIZE; j++)
 		{
-			if(cgm_stat->load_lat_hist[j] > 0)
+			if(load_lat_hist[j] > 0)
 				max_load_lat = j;
 		}
 		for(j = 0; j < HISTSIZE; j++)
 		{
-			if(cgm_stat->store_lat_hist[j] > 0)
+			if(store_lat_hist[j] > 0)
 				max_store_lat = j;
 		}
 		CGM_STATS(cgm_stats_file, "MaxLoadLat = %d\n", max_load_lat);
@@ -3527,20 +3527,20 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(mem_lat >= HISTSIZE)
 		fatal("cache_l1_i_return(): increase HISTSIZE %llu\n", mem_lat);
 
-	cgm_stat->fetch_lat_hist[mem_lat]++;
+	fetch_lat_hist[mem_lat]++;
 
 	if(message_packet->access_id == 1)
-		cgm_stat->first_mem_access_lat = mem_lat;
+		first_mem_access_lat = mem_lat;
 
 	assert(message_packet->protocol_case != invalid);
 	if(message_packet->protocol_case == L1_hit)
-		cgm_stat->fetch_l1_hits++;
+		fetch_l1_hits++;
 	else if (message_packet->protocol_case == L2_hit)
-		cgm_stat->fetch_l2_hits++;
+		fetch_l2_hits++;
 	else if (message_packet->protocol_case == L3_hit)
-		cgm_stat->fetch_l3_hits++;
+		fetch_l3_hits++;
 	else if (message_packet->protocol_case == memory)
-		cgm_stat->fetch_memory++;
+		fetch_memory++;
 	else
 		fatal("cache_l1_i_return(): message_packet->protocol_case is invalid\n");
 
@@ -3576,37 +3576,37 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
-		cgm_stat->load_lat_hist[mem_lat]++;
+		load_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
-			cgm_stat->load_l1_hits++;
+			load_l1_hits++;
 		else if (message_packet->protocol_case == L2_hit)
-			cgm_stat->load_l2_hits++;
+			load_l2_hits++;
 		else if (message_packet->protocol_case == L3_hit)
-			cgm_stat->load_l3_hits++;
+			load_l3_hits++;
 		else if (message_packet->protocol_case == memory)
-			cgm_stat->load_memory++;
+			load_memory++;
 		else if (message_packet->protocol_case == get_fwd)
-			cgm_stat->load_get_fwd++;
+			load_get_fwd++;
 		else
 			fatal("cache_l1_d_return(): message_packet->protocol_case is invalid\n");
 	}
 	else if(message_packet->cpu_access_type == cgm_access_store)
 	{
-		cgm_stat->store_lat_hist[mem_lat]++;
+		store_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
-			cgm_stat->store_l1_hits++;
+			store_l1_hits++;
 		else if (message_packet->protocol_case == L2_hit)
-			cgm_stat->store_l2_hits++;
+			store_l2_hits++;
 		else if (message_packet->protocol_case == L3_hit)
-			cgm_stat->store_l3_hits++;
+			store_l3_hits++;
 		else if (message_packet->protocol_case == memory)
-			cgm_stat->store_memory++;
+			store_memory++;
 		else if (message_packet->protocol_case == getx_fwd)
-			cgm_stat->store_getx_fwd++;
+			store_getx_fwd++;
 		else
-			cgm_stat->store_upgrade++;
+			store_upgrade++;
 	}
 
 	//remove packet from cache queue, global queue, and simulator memory

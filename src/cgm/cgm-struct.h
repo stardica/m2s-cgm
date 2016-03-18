@@ -14,7 +14,7 @@
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
 
-#define HISTSIZE 20000
+
 
 enum protocol_case_kind_t{
 	invalid = 0,
@@ -479,43 +479,6 @@ struct cgm_stats_t{
 	long long *core_issued_memory_insts;
 	long long *core_commited_memory_insts;
 
-
-	long long cpu_total_fetches;
-	long long cpu_total_loads;
-	long long cpu_total_stores;
-
-	long long cpu_ls_stalls;
-
-	/*gpu stats*/
-	long long gpu_total_loads;
-	long long gpu_total_stores;
-
-	/*mem system lat stats*/
-	int first_mem_access_lat;
-	long long fetch_lat_hist[HISTSIZE];
-	long long load_lat_hist[HISTSIZE];
-	long long store_lat_hist[HISTSIZE];
-
-	/*protocol cases*/
-	long long fetch_l1_hits;
-	long long fetch_l2_hits;
-	long long fetch_l3_hits;
-	long long fetch_memory;
-
-	long long load_l1_hits;
-	long long load_l2_hits;
-	long long load_l3_hits;
-	long long load_memory;
-	long long load_get_fwd;
-
-	long long store_l1_hits;
-	long long store_l2_hits;
-	long long store_l2_upgrade;
-	long long store_l3_hits;
-	long long store_l3_upgrade;
-	long long store_memory;
-	long long store_getx_fwd;
-	long long store_upgrade;
 
 };
 

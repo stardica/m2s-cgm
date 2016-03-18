@@ -77,6 +77,35 @@ struct str_map_t cgm_mem_access_strn_map =
 		}
 };
 
+/*mem system stats*/
+int first_mem_access_lat = 0;
+long long fetch_lat_hist[HISTSIZE];
+long long load_lat_hist[HISTSIZE];
+long long store_lat_hist[HISTSIZE];
+long long fetch_l1_hits = 0;
+long long fetch_l2_hits = 0;
+long long fetch_l3_hits = 0;
+long long fetch_memory = 0;
+long long load_l1_hits = 0;
+long long load_l2_hits = 0;
+long long load_l3_hits = 0;
+long long load_memory = 0;
+long long load_get_fwd = 0;
+long long store_l1_hits = 0;
+long long store_l2_hits = 0;
+long long store_l2_upgrade = 0;
+long long store_l3_hits = 0;
+long long store_l3_upgrade = 0;
+long long store_memory = 0;
+long long store_getx_fwd = 0;
+long long store_upgrade = 0;
+long long cpu_total_fetches = 0;
+long long cpu_total_loads = 0;
+long long cpu_total_stores = 0;
+long long cpu_ls_stalls = 0;
+long long gpu_total_loads = 0;
+long long gpu_total_stores = 0;
+
 /*long long temp_access_id = 0;*/
 long long write_back_id = 1;
 long long evict_id = 1;
