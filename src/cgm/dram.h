@@ -16,6 +16,7 @@
 #define dram_system_t MultiChannelMemorySystem
 
 #define GET_BLOCK(addr) (addr & ~mem_ctrl->block_mask)
+#define KHZ 1000
 #define MHZ 1000000
 #define GHZ 1000000000
 

@@ -471,6 +471,12 @@ struct cgm_stats_t{
 	long long end_wrapup_section_cycle;
 	long long total_wrapup_section_cycles;
 
+	enum stats_dump_config_t{
+		fullSystem = 0,
+		parallelSection,
+		parallelOCLSection
+	}stats_dump_config;
+
 	enum parallel_section_t{
 		not_present = 0,
 		present

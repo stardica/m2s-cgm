@@ -389,6 +389,8 @@ int debug_finish_create(void){
 
 int stats_read_config(void* user, const char* section, const char* name, const char* value){
 
+	char *temp_strn;
+
 	if(MATCH("Stats", "CGM_Stats"))
 	{
 		cgm_stats = atoi(value);
@@ -404,10 +406,30 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats_output_path = strdup(value);
 	}
 
-	/*if(MATCH("Stats", "File_Name"))
+	if(MATCH("Stats", "DumpConfig"))
 	{
-		cgm_stats_file_name = strdup(value);
-	}*/
+		temp_strn = strdup(value);
+
+		if(strcmp(temp_strn, "FullSystem") == 0)
+		{
+			cgm_stat->stats_dump_config = fullSystem;
+			printf("---Stats will dump full system---\n");
+		}
+		else if(strcmp(temp_strn, "ParallelSection") == 0)
+		{
+			cgm_stat->stats_dump_config = parallelSection;
+			printf("---Stats will dump parallel section---\n");
+		}
+		else if(strcmp(temp_strn, "ParallelOCLSection") == 0)
+		{
+			cgm_stat->stats_dump_config = parallelOCLSection;
+			printf("---Stats will dump parallel & OCL section---\n");
+		}
+		else
+		{
+			fatal("stats_read_config(): invalid DumpConfig setting, check config file\n");
+		}
+	}
 
 	return 1;
 }

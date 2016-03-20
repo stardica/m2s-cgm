@@ -5662,7 +5662,7 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	printf("---Starting parallel section stats collection---\n");
 
 	cgm_startup_stats->end_startup_section_cycle = P_TIME;
-	assert(cgm_startup_stats->start_startup_section_cycle = 0);
+	assert(cgm_startup_stats->start_startup_section_cycle == 0);
 	cgm_startup_stats->total_startup_section_cycles = cgm_startup_stats->end_startup_section_cycle - cgm_startup_stats->start_startup_section_cycle;
 	cgm_store_stats(cgm_startup_stats);
 
