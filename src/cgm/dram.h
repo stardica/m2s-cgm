@@ -19,9 +19,6 @@
 #define MHZ 1000000
 #define GHZ 1000000000
 
-typedef int bool;
-enum {false, true};
-
 extern char *dramsim_ddr_config_path;
 extern char *dramsim_system_config_path;
 extern char *dramsim_trace_config_path;

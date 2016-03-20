@@ -16,6 +16,9 @@
 
 #define HISTSIZE 20000
 
+typedef int bool;
+enum {false, true};
+
 enum protocol_case_kind_t{
 	invalid = 0,
 	L1_hit,
@@ -431,9 +434,6 @@ struct cache_t{
 	long long TotalReadMisses;
 	long long TotalWriteMisses;
 	long long TotalWriteBacks;
-
-
-
 	long long invalid_hits;
 	long long assoc_conflict;
 	long long upgrade_misses;
@@ -449,7 +449,7 @@ struct cache_t{
 //for general stats
 struct cgm_stats_t{
 
-	int execution_success;
+	bool execution_success;
 
 	char *stat_file_name;
 	char *date_time_file;
@@ -461,10 +461,25 @@ struct cgm_stats_t{
 	double start_wall_time;
 	double end_wall_time;
 	double sim_time;
-	long long start_stats_cycle;
-	long long stop_stats_cycle;
+	long long start_startup_section_cycle;
+	long long end_startup_section_cycle;
+	long long total_startup_section_cycles;
+	long long start_parallel_section_cycle;
+	long long end_parallel_section_cycle;
 	long long total_parallel_section_cycles;
-	int stored;
+	long long start_wrapup_section_cycle;
+	long long end_wrapup_section_cycle;
+	long long total_wrapup_section_cycles;
+
+	enum parallel_section_t{
+		not_present = 0,
+		present
+	}parallel_section;
+
+	enum state_t{
+		not_consolidated = 0,
+		consolidated
+	}state;
 
 	/*redundant stats, this so we can save away our stats at a certain point in the benchmark's run.*/
 	long long *core_num_syscalls;

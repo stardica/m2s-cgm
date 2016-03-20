@@ -140,6 +140,9 @@ extern char *cgm_stats_file_name;
 				exit(0);
 
 extern struct cgm_stats_t *cgm_stat;
+extern struct cgm_stats_t *cgm_startup_stats;
+extern struct cgm_stats_t *cgm_parallel_stats;
+extern struct cgm_stats_t *cgm_wrapup_stats;
 
 struct cpu_gpu_stats_t{
 
@@ -158,6 +161,7 @@ struct cpu_gpu_stats_t{
 
 	/*gpu stats*/
 };
+
 
 extern struct cpu_gpu_stats_t *cpu_gpu_stats;
 void init_cgm_stats(int argc, char **argv);
@@ -194,13 +198,17 @@ void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cpu_gpu_run(void);
-
 void cgm_dump_summary(void);
-void cgm_dump_stats(void);
+void cgm_dump_general_stats(void);
+void cgm_dump_cpu_gpu_stats(void);
+void cgm_dump_mem_system_stats(void);
 void cgm_dump_histograms(void);
 void cgm_stat_finish_create(int argc, char **argv);
 void cgm_reset_stats(void);
-void cgm_store_stats(void);
+void cgm_store_stats(struct cgm_stats_t *cgm_startup_stats);
+void cgm_consolidate_stats(void);
+
+void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container);
 
 void tick(void);
 void cgm_watchdog(void);

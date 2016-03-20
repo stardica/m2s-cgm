@@ -89,13 +89,6 @@ int is_writeback_present(struct cgm_packet_t *writeback_packet);
 
 
 
-
-
-
-
-
-
-
 //////////////////////
 /////CPU MESI protocol
 //////////////////////

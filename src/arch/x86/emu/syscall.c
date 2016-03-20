@@ -5650,36 +5650,49 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
 }
 
 /*
- * System call 'set_robust_list' (code 325)
+ * System call 'cgm_stats_start_parallel_section' (code 325)
  */
 
-static int x86_sys_cgm_stats_start_impl(X86Context *ctx)
+static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 {
-	//start benchmark stat collection
-	printf("---Starting stat collection---\n");
-	cgm_stat->start_stats_cycle = P_TIME;
+	/*this syscall represents the beginning of the parallel section of the benchmark
+	we need to save away the current stats which contains the start up section stats.
+	Then reset all stats and commence taking stats for the parallel section*/
 
+	printf("---Starting parallel section stats collection---\n");
+
+	cgm_startup_stats->end_startup_section_cycle = P_TIME;
+	assert(cgm_startup_stats->start_startup_section_cycle = 0);
+	cgm_startup_stats->total_startup_section_cycles = cgm_startup_stats->end_startup_section_cycle - cgm_startup_stats->start_startup_section_cycle;
+	cgm_store_stats(cgm_startup_stats);
+
+	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
-
 
 	return 0;
 }
 
 
 /*
- * System call 'set_robust_list' (code 326)
+ * System call 'end_parallel_secion' (code 326)
  */
 
-static int x86_sys_cgm_stats_stop_impl(X86Context *ctx)
+static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 {
 
+	/*this syscall represents the end of the parallel section of the benchmark
+	we need to save away the current stats which contains the parallel section stats.
+	Then reset all stats and commence taking stats for the wrapup section*/
+
 	//stop benchmark stat collection
-	printf("---Stoping stat collection---\n");
+	printf("---Ending parallel section stats collection---\n");
 
-	cgm_stat->stop_stats_cycle =  P_TIME;
-	cgm_stat->total_parallel_section_cycles = cgm_stat->stop_stats_cycle - cgm_stat->start_stats_cycle;
+	cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
+	cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
+	cgm_store_stats(cgm_parallel_stats);
 
-	cgm_store_stats();
+	cgm_wrapup_stats->start_wrapup_section_cycle = P_TIME;
+	cgm_reset_stats();
 
 	return 0;
 }

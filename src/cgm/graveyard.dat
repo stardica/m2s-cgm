@@ -1,4 +1,253 @@
 
+
+
+/*take all the various stat sections and build a single stat container for the entire run*/
+
+	int num_cores = x86_cpu_num_cores;
+	/*int num_cus = si_gpu_num_compute_units;*/
+	//int gpu_group_cache_num = (num_cus/4);
+	int i = 0;
+	int max_links = 0;
+
+	/*set the state of the stats container*/
+	cgm_stat->state = consolidated;
+
+
+
+	//store cgm_stat
+	for(i = 0; i < num_cores; i++)
+	{
+		cgm_stat->core_num_syscalls[i] = JOINLL(core_num_syscalls[i]);
+
+
+
+		//cgm_stat->core_num_syscalls[i] = cgm_startup_stats->core_num_syscalls[i] + cgm_parallel_stats->core_num_syscalls[i] + cgm_wrapup_stats->core_num_syscalls[i];
+		cgm_stat->core_syscall_stalls[i] = cgm_startup_stats->core_syscall_stalls[i] + cgm_parallel_stats->core_syscall_stalls[i] + cgm_wrapup_stats->core_syscall_stalls[i];
+		cgm_stat->core_rob_stalls[i] = cgm_startup_stats->core_rob_stalls[i] + cgm_parallel_stats->core_rob_stalls[i] + cgm_wrapup_stats->core_rob_stalls[i];
+		cgm_stat->core_rob_stall_load[i] = cgm_startup_stats->core_rob_stall_load[i] + cgm_parallel_stats->core_rob_stall_load[i] + cgm_wrapup_stats->core_rob_stall_load[i];
+		cgm_stat->core_rob_stall_store[i] = cgm_startup_stats->core_rob_stall_store[i] + cgm_parallel_stats->core_rob_stall_store[i] + cgm_wrapup_stats->core_rob_stall_store[i];
+		cgm_stat->core_rob_stall_other[i] = cgm_startup_stats->core_rob_stall_other[i] + cgm_parallel_stats->core_rob_stall_other[i] + cgm_wrapup_stats->core_rob_stall_other[i];
+		cgm_stat->core_first_fetch_cycle[i] = cgm_startup_stats->core_first_fetch_cycle[i];
+		cgm_stat->core_fetch_stalls[i] = cgm_startup_stats->core_fetch_stalls[i] + cgm_parallel_stats->core_fetch_stalls[i] + cgm_wrapup_stats->core_fetch_stalls[i];
+		cgm_stat->core_issued_memory_insts[i] = cgm_startup_stats->core_issued_memory_insts[i] + cgm_parallel_stats->core_issued_memory_insts[i] + cgm_wrapup_stats->core_issued_memory_insts[i];
+		cgm_stat->core_commited_memory_insts[i] = cgm_startup_stats->core_commited_memory_insts[i] + cgm_parallel_stats->core_commited_memory_insts[i] + cgm_wrapup_stats->core_commited_memory_insts[i];
+	}
+
+	//memory system at large
+	//cgm_stat->first_mem_access_lat = mem_system_stats->first_mem_access_lat;
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		cgm_stat->fetch_lat_hist[i] = cgm_startup_stats->fetch_lat_hist[i] + cgm_parallel_stats->fetch_lat_hist[i] + cgm_wrapup_stats->fetch_lat_hist[i];
+		cgm_stat->load_lat_hist[i] = cgm_startup_stats->load_lat_hist[i] + cgm_parallel_stats->load_lat_hist[i] + cgm_wrapup_stats->fetch_lat_hist[i];
+		cgm_stat->store_lat_hist[i] = cgm_startup_stats->store_lat_hist[i] + cgm_parallel_stats->store_lat_hist[i] + cgm_wrapup_stats->fetch_lat_hist[i];
+	}
+
+	cgm_stat->cpu_total_fetches = cgm_startup_stats->cpu_total_fetches + cgm_parallel_stats->cpu_total_fetches + cgm_wrapup_stats->cpu_total_fetches;
+	cgm_stat->fetch_l1_hits = cgm_startup_stats->fetch_l1_hits + cgm_parallel_stats->fetch_l1_hits + cgm_wrapup_stats->fetch_l1_hits;
+	cgm_stat->fetch_l2_hits = cgm_startup_stats->fetch_l2_hits + cgm_parallel_stats->fetch_l2_hits + cgm_wrapup_stats->fetch_l2_hits;
+	cgm_stat->fetch_l3_hits = cgm_startup_stats->fetch_l3_hits + cgm_parallel_stats->fetch_l3_hits + cgm_wrapup_stats->fetch_l3_hits;
+	cgm_stat->fetch_memory = cgm_startup_stats->fetch_memory + cgm_parallel_stats->fetch_memory + cgm_wrapup_stats->fetch_memory;
+	cgm_stat->cpu_total_loads = cgm_startup_stats->cpu_total_loads + cgm_parallel_stats->cpu_total_loads + cgm_wrapup_stats->cpu_total_loads;
+	cgm_stat->load_l1_hits = cgm_startup_stats->load_l1_hits + cgm_parallel_stats->load_l1_hits + cgm_wrapup_stats->load_l1_hits;
+	cgm_stat->load_l2_hits = cgm_startup_stats->load_l2_hits + cgm_parallel_stats->load_l2_hits + cgm_wrapup_stats->load_l2_hits;
+	cgm_stat->load_l3_hits = cgm_startup_stats->load_l3_hits + cgm_parallel_stats->load_l3_hits + cgm_wrapup_stats->load_l3_hits;
+	cgm_stat->load_memory = cgm_startup_stats->load_memory + cgm_parallel_stats->load_memory + cgm_wrapup_stats->load_memory;
+	cgm_stat->load_get_fwd = cgm_startup_stats->load_get_fwd + cgm_parallel_stats->load_get_fwd + cgm_wrapup_stats->load_get_fwd;
+	cgm_stat->cpu_total_stores = cgm_startup_stats->cpu_total_stores + cgm_parallel_stats->cpu_total_stores + cgm_wrapup_stats->cpu_total_stores;
+	cgm_stat->store_l1_hits = cgm_startup_stats->store_l1_hits + cgm_parallel_stats->store_l1_hits + cgm_wrapup_stats->store_l1_hits;
+	cgm_stat->store_l2_hits = cgm_startup_stats->store_l2_hits + cgm_parallel_stats->store_l2_hits + cgm_wrapup_stats->store_l2_hits;
+	cgm_stat->store_l3_hits = cgm_startup_stats->store_l3_hits + cgm_parallel_stats->store_l3_hits + cgm_wrapup_stats->store_l3_hits;
+	cgm_stat->store_memory = cgm_startup_stats->store_memory + cgm_parallel_stats->store_memory + cgm_wrapup_stats->store_memory;
+	cgm_stat->store_getx_fwd = cgm_startup_stats->store_getx_fwd + cgm_parallel_stats->store_getx_fwd + cgm_wrapup_stats->store_getx_fwd;
+	cgm_stat->store_upgrade = cgm_startup_stats->store_upgrade + cgm_parallel_stats->store_upgrade + cgm_wrapup_stats->store_upgrade;
+
+	//caches
+	for(i = 0; i < num_cores; i++)
+	{
+		cgm_stat->l1_i_TotalThreadLoops[i] = cgm_startup_stats->l1_i_TotalThreadLoops[i] + cgm_parallel_stats->l1_i_TotalThreadLoops[i] + cgm_wrapup_stats->l1_i_TotalThreadLoops[i];
+		cgm_stat->l1_i_TotalAcesses[i] = cgm_startup_stats->l1_i_TotalAcesses[i] + cgm_parallel_stats->l1_i_TotalAcesses[i] + cgm_wrapup_stats->l1_i_TotalAcesses[i];
+		cgm_stat->l1_i_TotalMisses[i] = cgm_startup_stats->l1_i_TotalMisses[i] + cgm_parallel_stats->l1_i_TotalMisses[i] + cgm_wrapup_stats->l1_i_TotalMisses[i];
+		cgm_stat->l1_i_TotalHits[i] = cgm_startup_stats->l1_i_TotalHits[i] + cgm_parallel_stats->l1_i_TotalHits[i] + cgm_wrapup_stats->l1_i_TotalHits[i];
+		cgm_stat->l1_i_TotalReads[i] = cgm_startup_stats->l1_i_TotalReads[i] + cgm_parallel_stats->l1_i_TotalReads[i] + cgm_wrapup_stats->l1_i_TotalReads[i];
+		cgm_stat->l1_i_TotalWrites[i] = cgm_startup_stats->l1_i_TotalWrites[i] + cgm_parallel_stats->l1_i_TotalWrites[i] + cgm_wrapup_stats->l1_i_TotalWrites[i];
+		cgm_stat->l1_i_TotalGets[i] = cgm_startup_stats->l1_i_TotalGets[i] + cgm_parallel_stats->l1_i_TotalGets[i] + cgm_wrapup_stats->l1_i_TotalGets[i];
+		cgm_stat->l1_i_TotalGet[i] = cgm_startup_stats->l1_i_TotalGet[i] + cgm_parallel_stats->l1_i_TotalGet[i] + cgm_wrapup_stats->l1_i_TotalGet[i];
+		cgm_stat->l1_i_TotalGetx[i] = cgm_startup_stats->l1_i_TotalGetx[i] + cgm_parallel_stats->l1_i_TotalGetx[i] + cgm_wrapup_stats->l1_i_TotalGetx[i];
+		cgm_stat->l1_i_TotalUpgrades[i] = cgm_startup_stats->l1_i_TotalUpgrades[i] + cgm_parallel_stats->l1_i_TotalUpgrades[i] + cgm_wrapup_stats->l1_i_TotalUpgrades[i];
+		cgm_stat->l1_i_TotalReadMisses[i] = cgm_startup_stats->l1_i_TotalReadMisses[i] + cgm_parallel_stats->l1_i_TotalReadMisses[i] + cgm_wrapup_stats->l1_i_TotalReadMisses[i];
+		cgm_stat->l1_i_TotalWriteMisses[i] = cgm_startup_stats->l1_i_TotalWriteMisses[i] + cgm_parallel_stats->l1_i_TotalWriteMisses[i] + cgm_wrapup_stats->l1_i_TotalWriteMisses[i];
+		cgm_stat->l1_i_TotalWriteBacks[i] = cgm_startup_stats->l1_i_TotalWriteBacks[i] + cgm_parallel_stats->l1_i_TotalWriteBacks[i] + cgm_wrapup_stats->l1_i_TotalWriteBacks[i];
+		cgm_stat->l1_i_invalid_hits[i] = cgm_startup_stats->l1_i_invalid_hits[i] + cgm_parallel_stats->l1_i_invalid_hits[i] + cgm_wrapup_stats->l1_i_invalid_hits[i];
+		cgm_stat->l1_i_assoc_conflict[i] = cgm_startup_stats->l1_i_assoc_conflict[i] + cgm_parallel_stats->l1_i_assoc_conflict[i] + cgm_wrapup_stats->l1_i_assoc_conflict[i];
+		cgm_stat->l1_i_upgrade_misses[i] = cgm_startup_stats->l1_i_upgrade_misses[i] + cgm_parallel_stats->l1_i_upgrade_misses[i] + cgm_wrapup_stats->l1_i_upgrade_misses[i];
+		cgm_stat->l1_i_retries[i] = cgm_startup_stats->l1_i_retries[i] + cgm_parallel_stats->l1_i_retries[i] + cgm_wrapup_stats->l1_i_retries[i];
+		cgm_stat->l1_i_coalesces[i] = cgm_startup_stats->l1_i_coalesces[i] + cgm_parallel_stats->l1_i_coalesces[i] + cgm_wrapup_stats->l1_i_coalesces[i];
+		cgm_stat->l1_i_mshr_entries[i] = cgm_startup_stats->l1_i_mshr_entries[i] + cgm_parallel_stats->l1_i_mshr_entries[i] + cgm_wrapup_stats->l1_i_mshr_entries[i];
+		cgm_stat->l1_i_stalls[i] = cgm_startup_stats->l1_i_stalls[i] + cgm_parallel_stats->l1_i_stalls[i] + cgm_wrapup_stats->l1_i_stalls[i];
+
+		cgm_stat->l1_d_TotalThreadLoops[i] = cgm_startup_stats->l1_d_TotalThreadLoops[i] + cgm_parallel_stats->l1_d_TotalThreadLoops[i] + cgm_wrapup_stats->l1_d_TotalThreadLoops[i];
+		cgm_stat->l1_d_TotalAcesses[i] = cgm_startup_stats->l1_d_TotalAcesses[i] + cgm_parallel_stats->l1_d_TotalAcesses[i] + cgm_wrapup_stats->l1_d_TotalAcesses[i];
+		cgm_stat->l1_d_TotalMisses[i] = cgm_startup_stats->l1_d_TotalMisses[i] + cgm_parallel_stats->l1_d_TotalMisses[i] + cgm_wrapup_stats->l1_d_TotalMisses[i];
+		cgm_stat->l1_d_TotalHits[i] = cgm_startup_stats->l1_d_TotalHits[i] + cgm_parallel_stats->l1_d_TotalHits[i] + cgm_wrapup_stats->l1_d_TotalHits[i];
+		cgm_stat->l1_d_TotalReads[i] = cgm_startup_stats->l1_d_TotalReads[i] + cgm_parallel_stats->l1_d_TotalReads[i] + cgm_wrapup_stats->l1_d_TotalReads[i];
+		cgm_stat->l1_d_TotalWrites[i] = cgm_startup_stats->l1_d_TotalWrites[i] + cgm_parallel_stats->l1_d_TotalWrites[i] + cgm_wrapup_stats->l1_d_TotalWrites[i];
+		cgm_stat->l1_d_TotalGets[i] = cgm_startup_stats->l1_d_TotalGets[i] + cgm_parallel_stats->l1_d_TotalGets[i] + cgm_wrapup_stats->l1_d_TotalGets[i];
+		cgm_stat->l1_d_TotalGet[i] = cgm_startup_stats->l1_d_TotalGet[i] + cgm_parallel_stats->l1_d_TotalGet[i] + cgm_wrapup_stats->l1_d_TotalGet[i];
+		cgm_stat->l1_d_TotalGetx[i] = cgm_startup_stats->l1_d_TotalGetx[i] + cgm_parallel_stats->l1_d_TotalGetx[i] + cgm_wrapup_stats->l1_d_TotalGetx[i];
+		cgm_stat->l1_d_TotalUpgrades[i] = cgm_startup_stats->l1_d_TotalUpgrades[i] + cgm_parallel_stats->l1_d_TotalUpgrades[i] + cgm_wrapup_stats->l1_d_TotalUpgrades[i];
+		cgm_stat->l1_d_TotalReadMisses[i] = cgm_startup_stats->l1_d_TotalReadMisses[i] + cgm_parallel_stats->l1_d_TotalReadMisses[i] + cgm_wrapup_stats->l1_d_TotalReadMisses[i];
+		cgm_stat->l1_d_TotalWriteMisses[i] = cgm_startup_stats->l1_d_TotalWriteMisses[i] + cgm_parallel_stats->l1_d_TotalWriteMisses[i] + cgm_wrapup_stats->l1_d_TotalWriteMisses[i];
+		cgm_stat->l1_d_TotalWriteBacks[i] = cgm_startup_stats->l1_d_TotalWriteBacks[i] + cgm_parallel_stats->l1_d_TotalWriteBacks[i] + cgm_wrapup_stats->l1_d_TotalWriteBacks[i];
+		cgm_stat->l1_d_invalid_hits[i] = cgm_startup_stats->l1_d_invalid_hits[i] + cgm_parallel_stats->l1_d_invalid_hits[i] + cgm_wrapup_stats->l1_d_invalid_hits[i];
+		cgm_stat->l1_d_assoc_conflict[i] = cgm_startup_stats->l1_d_assoc_conflict[i] + cgm_parallel_stats->l1_d_assoc_conflict[i] + cgm_wrapup_stats->l1_d_assoc_conflict[i];
+		cgm_stat->l1_d_upgrade_misses[i] = cgm_startup_stats->l1_d_upgrade_misses[i] + cgm_parallel_stats->l1_d_upgrade_misses[i] + cgm_wrapup_stats->l1_d_upgrade_misses[i];
+		cgm_stat->l1_d_retries[i] = cgm_startup_stats->l1_d_retries[i] + cgm_parallel_stats->l1_d_retries[i] + cgm_wrapup_stats->l1_d_retries[i];
+		cgm_stat->l1_d_coalesces[i] = cgm_startup_stats->l1_d_coalesces[i] + cgm_parallel_stats->l1_d_coalesces[i] + cgm_wrapup_stats->l1_d_coalesces[i];
+		cgm_stat->l1_d_mshr_entries[i] = cgm_startup_stats->l1_d_mshr_entries[i] + cgm_parallel_stats->l1_d_mshr_entries[i] + cgm_wrapup_stats->l1_d_mshr_entries[i];
+		cgm_stat->l1_d_stalls[i] = cgm_startup_stats->l1_d_stalls[i] + cgm_parallel_stats->l1_d_stalls[i] + cgm_wrapup_stats->l1_d_stalls[i];
+
+		cgm_stat->l2_TotalThreadLoops[i] = cgm_startup_stats->l2_TotalThreadLoops[i] + cgm_parallel_stats->l2_TotalThreadLoops[i] + cgm_wrapup_stats->l2_TotalThreadLoops[i];
+		cgm_stat->l2_TotalAcesses[i] = cgm_startup_stats->l2_TotalAcesses[i] + cgm_parallel_stats->l2_TotalAcesses[i] + cgm_wrapup_stats->l2_TotalAcesses[i];
+		cgm_stat->l2_TotalMisses[i] = cgm_startup_stats->l2_TotalMisses[i] + cgm_parallel_stats->l2_TotalMisses[i] + cgm_wrapup_stats->l2_TotalMisses[i];
+		cgm_stat->l2_TotalHits[i] = cgm_startup_stats->l2_TotalHits[i] + cgm_parallel_stats->l2_TotalHits[i] + cgm_wrapup_stats->l2_TotalHits[i];
+		cgm_stat->l2_TotalReads[i] = cgm_startup_stats->l2_TotalReads[i] + cgm_parallel_stats->l2_TotalReads[i] + cgm_wrapup_stats->l2_TotalReads[i];
+		cgm_stat->l2_TotalWrites[i] = cgm_startup_stats->l2_TotalWrites[i] + cgm_parallel_stats->l2_TotalWrites[i] + cgm_wrapup_stats->l2_TotalWrites[i];
+		cgm_stat->l2_TotalGets[i] = cgm_startup_stats->l2_TotalGets[i] + cgm_parallel_stats->l2_TotalGets[i] + cgm_wrapup_stats->l2_TotalGets[i];
+		cgm_stat->l2_TotalGet[i] = cgm_startup_stats->l2_TotalGet[i] + cgm_parallel_stats->l2_TotalGet[i] + cgm_wrapup_stats->l2_TotalGet[i];
+		cgm_stat->l2_TotalGetx[i] = cgm_startup_stats->l2_TotalGetx[i] + cgm_parallel_stats->l2_TotalGetx[i] + cgm_wrapup_stats->l2_TotalGetx[i];
+		cgm_stat->l2_TotalUpgrades[i] = cgm_startup_stats->l2_TotalUpgrades[i] + cgm_parallel_stats->l2_TotalUpgrades[i] + cgm_wrapup_stats->l2_TotalUpgrades[i];
+		cgm_stat->l2_TotalReadMisses[i] = cgm_startup_stats->l2_TotalReadMisses[i] + cgm_parallel_stats->l2_TotalReadMisses[i] + cgm_wrapup_stats->l2_TotalReadMisses[i];
+		cgm_stat->l2_TotalWriteMisses[i] = cgm_startup_stats->l2_TotalWriteMisses[i] + cgm_parallel_stats->l2_TotalWriteMisses[i] + cgm_wrapup_stats->l2_TotalWriteMisses[i];
+		cgm_stat->l2_TotalWriteBacks[i] = cgm_startup_stats->l2_TotalWriteBacks[i] + cgm_parallel_stats->l2_TotalWriteBacks[i] + cgm_wrapup_stats->l2_TotalWriteBacks[i];
+		cgm_stat->l2_invalid_hits[i] = cgm_startup_stats->l2_invalid_hits[i] + cgm_parallel_stats->l2_invalid_hits[i] + cgm_wrapup_stats->l2_invalid_hits[i];
+		cgm_stat->l2_assoc_conflict[i] = cgm_startup_stats->l2_assoc_conflict[i] + cgm_parallel_stats->l2_assoc_conflict[i] + cgm_wrapup_stats->l2_assoc_conflict[i];
+		cgm_stat->l2_upgrade_misses[i] = cgm_startup_stats->l2_upgrade_misses[i] + cgm_parallel_stats->l2_upgrade_misses[i] + cgm_wrapup_stats->l2_upgrade_misses[i];
+		cgm_stat->l2_retries[i] = cgm_startup_stats->l2_retries[i] + cgm_parallel_stats->l2_retries[i] + cgm_wrapup_stats->l2_retries[i];
+		cgm_stat->l2_coalesces[i] = cgm_startup_stats->l2_coalesces[i] + cgm_parallel_stats->l2_coalesces[i] + cgm_wrapup_stats->l2_coalesces[i];
+		cgm_stat->l2_mshr_entries[i] = cgm_startup_stats->l2_mshr_entries[i] + cgm_parallel_stats->l2_mshr_entries[i] + cgm_wrapup_stats->l2_mshr_entries[i];
+		cgm_stat->l2_stalls[i] = cgm_startup_stats->l2_stalls[i] + cgm_parallel_stats->l2_stalls[i] + cgm_wrapup_stats->l2_stalls[i];
+
+		cgm_stat->l3_TotalThreadLoops[i] = cgm_startup_stats->l3_TotalThreadLoops[i] + cgm_parallel_stats->l3_TotalThreadLoops[i] + cgm_wrapup_stats->l3_TotalThreadLoops[i];
+		cgm_stat->l3_TotalAcesses[i] = cgm_startup_stats->l3_TotalAcesses[i] + cgm_parallel_stats->l3_TotalAcesses[i] + cgm_wrapup_stats->l3_TotalAcesses[i];
+		cgm_stat->l3_TotalMisses[i] = cgm_startup_stats->l3_TotalMisses[i] + cgm_parallel_stats->l3_TotalMisses[i] + cgm_wrapup_stats->l3_TotalMisses[i];
+		cgm_stat->l3_TotalHits[i] = cgm_startup_stats->l3_TotalHits[i] + cgm_parallel_stats->l3_TotalHits[i] + cgm_wrapup_stats->l3_TotalHits[i];
+		cgm_stat->l3_TotalReads[i] = cgm_startup_stats->l3_TotalReads[i] + cgm_parallel_stats->l3_TotalReads[i] + cgm_wrapup_stats->l3_TotalReads[i];
+		cgm_stat->l3_TotalWrites[i] = cgm_startup_stats->l3_TotalWrites[i] + cgm_parallel_stats->l3_TotalWrites[i] + cgm_wrapup_stats->l3_TotalWrites[i];
+		cgm_stat->l3_TotalGets[i] = cgm_startup_stats->l3_TotalGets[i] + cgm_parallel_stats->l3_TotalGets[i] + cgm_wrapup_stats->l3_TotalGets[i];
+		cgm_stat->l3_TotalGet[i] = cgm_startup_stats->l3_TotalGet[i] + cgm_parallel_stats->l3_TotalGet[i] + cgm_wrapup_stats->l3_TotalGet[i];
+		cgm_stat->l3_TotalGetx[i] = cgm_startup_stats->l3_TotalGetx[i] + cgm_parallel_stats->l3_TotalGetx[i] + cgm_wrapup_stats->l3_TotalGetx[i];
+		cgm_stat->l3_TotalUpgrades[i] = cgm_startup_stats->l3_TotalUpgrades[i] + cgm_parallel_stats->l3_TotalUpgrades[i] + cgm_wrapup_stats->l3_TotalUpgrades[i];
+		cgm_stat->l3_TotalReadMisses[i] = cgm_startup_stats->l3_TotalReadMisses[i] + cgm_parallel_stats->l3_TotalReadMisses[i] + cgm_wrapup_stats->l3_TotalReadMisses[i];
+		cgm_stat->l3_TotalWriteMisses[i] = cgm_startup_stats->l3_TotalWriteMisses[i] + cgm_parallel_stats->l3_TotalWriteMisses[i] + cgm_wrapup_stats->l3_TotalWriteMisses[i];
+		cgm_stat->l3_TotalWriteBacks[i] = cgm_startup_stats->l3_TotalWriteBacks[i] + cgm_parallel_stats->l3_TotalWriteBacks[i] + cgm_wrapup_stats->l3_TotalWriteBacks[i];
+		cgm_stat->l3_invalid_hits[i] = cgm_startup_stats->l3_invalid_hits[i] + cgm_parallel_stats->l3_invalid_hits[i] + cgm_wrapup_stats->l3_invalid_hits[i];
+		cgm_stat->l3_assoc_conflict[i] = cgm_startup_stats->l3_assoc_conflict[i] + cgm_parallel_stats->l3_assoc_conflict[i] + cgm_wrapup_stats->l3_assoc_conflict[i];
+		cgm_stat->l3_upgrade_misses[i] = cgm_startup_stats->l3_upgrade_misses[i] + cgm_parallel_stats->l3_upgrade_misses[i] + cgm_wrapup_stats->l3_upgrade_misses[i];
+		cgm_stat->l3_retries[i] = cgm_startup_stats->l3_retries[i] + cgm_parallel_stats->l3_retries[i] + cgm_wrapup_stats->l3_retries[i];
+		cgm_stat->l3_coalesces[i] = cgm_startup_stats->l3_coalesces[i] + cgm_parallel_stats->l3_coalesces[i] + cgm_wrapup_stats->l3_coalesces[i];
+		cgm_stat->l3_mshr_entries[i] = cgm_startup_stats->l3_mshr_entries[i] + cgm_parallel_stats->l3_mshr_entries[i] + cgm_wrapup_stats->l3_mshr_entries[i];
+		cgm_stat->l3_stalls[i] = cgm_startup_stats->l3_stalls[i] + cgm_parallel_stats->l3_stalls[i] + cgm_wrapup_stats->l3_stalls[i];
+	}
+
+	//switch stats
+	for(i = 0; i < (num_cores + 1); i++)
+	{
+		cgm_stat->switch_total_links[i] = cgm_startup_stats->switch_total_links[i] + cgm_parallel_stats->switch_total_links[i] + cgm_wrapup_stats->switch_total_links[i];
+
+		(cgm_startup_stats->switch_max_links[i] > cgm_parallel_stats->switch_max_links[i]) ? (max_links = cgm_startup_stats->switch_max_links[i]) : (max_links = cgm_parallel_stats->switch_max_links[i]);
+		if(cgm_wrapup_stats->switch_max_links[i] > max_links)
+			max_links = cgm_wrapup_stats->switch_max_links[i];
+
+		cgm_stat->switch_max_links[i] = max_links;
+
+		cgm_stat->switch_total_wakes[i] = switches[i].switch_total_wakes - cgm_stat->switch_total_wakes[i];
+		cgm_stat->switch_north_io_transfers[i] = switches[i].switch_north_io_transfers - cgm_stat->switch_north_io_transfers[i];
+		cgm_stat->switch_north_io_transfer_cycles[i] = switches[i].switch_north_io_transfer_cycles - cgm_stat->switch_north_io_transfer_cycles[i];
+		cgm_stat->switch_north_io_bytes_transfered[i] = switches[i].switch_north_io_bytes_transfered - cgm_stat->switch_north_io_bytes_transfered[i];
+		cgm_stat->switch_east_io_transfers[i] = switches[i].switch_east_io_transfers - cgm_stat->switch_east_io_transfers[i];
+		cgm_stat->switch_east_io_transfer_cycles[i] = switches[i].switch_east_io_transfer_cycles - cgm_stat->switch_east_io_transfer_cycles[i];
+		cgm_stat->switch_east_io_bytes_transfered[i] = switches[i].switch_east_io_bytes_transfered - cgm_stat->switch_east_io_bytes_transfered[i];
+		cgm_stat->switch_south_io_transfers[i] = switches[i].switch_south_io_transfers - cgm_stat->switch_south_io_transfers[i];
+		cgm_stat->switch_south_io_transfer_cycles[i] = switches[i].switch_south_io_transfer_cycles - cgm_stat->switch_south_io_transfer_cycles[i];
+		cgm_stat->switch_south_io_bytes_transfered[i] = switches[i].switch_south_io_bytes_transfered - cgm_stat->switch_south_io_bytes_transfered[i];
+		cgm_stat->switch_west_io_transfers[i] = switches[i].switch_west_io_transfers - cgm_stat->switch_west_io_transfers[i];
+		cgm_stat->switch_west_io_transfer_cycles[i] = switches[i].switch_west_io_transfer_cycles - cgm_stat->switch_west_io_transfer_cycles[i];
+		cgm_stat->switch_west_io_bytes_transfered[i] = switches[i].switch_west_io_bytes_transfered - cgm_stat->switch_west_io_bytes_transfered[i];
+		cgm_stat->switch_north_txqueue_max_depth[i] = switches[i].north_txqueue_max_depth - cgm_stat->switch_north_txqueue_max_depth[i];
+		cgm_stat->switch_north_txqueue_ave_depth[i] = (switches[i].north_txqueue_ave_depth + cgm_stat->switch_north_txqueue_ave_depth[i])/2;
+		cgm_stat->switch_east_txqueue_max_depth[i] = switches[i].east_txqueue_max_depth - cgm_stat->switch_east_txqueue_max_depth[i];
+		cgm_stat->switch_east_txqueue_ave_depth[i] = (switches[i].east_txqueue_ave_depth + cgm_stat->switch_east_txqueue_ave_depth[i])/2;
+		cgm_stat->switch_south_txqueue_max_depth[i] = switches[i].south_txqueue_max_depth - cgm_stat->switch_south_txqueue_max_depth[i];
+		cgm_stat->switch_south_txqueue_ave_depth[i] = (switches[i].south_txqueue_ave_depth + cgm_stat->switch_south_txqueue_ave_depth[i])/2;
+		cgm_stat->switch_west_txqueue_max_depth[i] = switches[i].west_txqueue_max_depth - cgm_stat->switch_west_txqueue_max_depth[i];
+		cgm_stat->switch_west_txqueue_ave_depth[i] = (switches[i].west_txqueue_ave_depth + cgm_stat->switch_west_txqueue_ave_depth[i])/2;
+
+		cgm_stat->switch_north_tx_inserts[i] = switches[i].north_tx_inserts - cgm_stat->switch_north_tx_inserts[i];
+		cgm_stat->switch_east_tx_inserts[i] = switches[i].east_tx_inserts - cgm_stat->switch_east_tx_inserts[i];
+		cgm_stat->switch_south_tx_inserts[i] = switches[i].south_tx_inserts - cgm_stat->switch_south_tx_inserts[i];
+		cgm_stat->switch_west_tx_inserts[i] = switches[i].west_tx_inserts - cgm_stat->switch_west_tx_inserts[i];
+
+		cgm_stat->switch_north_rxqueue_max_depth[i] = switches[i].north_rxqueue_max_depth - cgm_stat->switch_north_rxqueue_max_depth[i];
+		cgm_stat->switch_north_rxqueue_ave_depth[i] = (switches[i].north_rxqueue_ave_depth + cgm_stat->switch_north_rxqueue_ave_depth[i])/2;
+		cgm_stat->switch_east_rxqueue_max_depth[i] = switches[i].east_rxqueue_max_depth - cgm_stat->switch_east_rxqueue_max_depth[i];
+		cgm_stat->switch_east_rxqueue_ave_depth[i] = (switches[i].east_rxqueue_ave_depth + cgm_stat->switch_east_rxqueue_ave_depth[i])/2;
+
+		cgm_stat->switch_south_rxqueue_max_depth[i] = switches[i].south_rxqueue_max_depth - cgm_stat->switch_south_rxqueue_max_depth[i];
+		cgm_stat->switch_south_rxqueue_ave_depth[i] = (switches[i].south_rxqueue_ave_depth + cgm_stat->switch_south_rxqueue_ave_depth[i])/2;
+		cgm_stat->switch_west_rxqueue_max_depth[i] = switches[i].west_rxqueue_max_depth - cgm_stat->switch_west_rxqueue_max_depth[i];
+		cgm_stat->switch_west_rxqueue_ave_depth[i] = (switches[i].west_rxqueue_ave_depth + cgm_stat->switch_west_rxqueue_ave_depth[i])/2;
+
+		cgm_stat->switch_north_rx_inserts[i] = switches[i].north_rx_inserts - cgm_stat->switch_north_rx_inserts[i];
+		cgm_stat->switch_east_rx_inserts[i] = switches[i].east_rx_inserts - cgm_stat->switch_east_rx_inserts[i];
+		cgm_stat->switch_south_rx_inserts[i] = switches[i].south_rx_inserts - cgm_stat->switch_south_rx_inserts[i];
+		cgm_stat->switch_west_rx_inserts[i] = switches[i].west_rx_inserts - cgm_stat->switch_west_rx_inserts[i];
+	}
+
+	//system agent
+	cgm_stat->system_agent_busy_cycles = system_agent->busy_cycles - cgm_stat->system_agent_busy_cycles;
+	cgm_stat->system_agent_north_io_busy_cycles = system_agent->north_io_busy_cycles - cgm_stat->system_agent_north_io_busy_cycles;
+	cgm_stat->system_agent_south_io_busy_cycles = system_agent->south_io_busy_cycles - cgm_stat->system_agent_south_io_busy_cycles;
+	cgm_stat->system_agent_mc_loads = system_agent->mc_loads - cgm_stat->system_agent_mc_loads;
+	cgm_stat->system_agent_mc_stores = system_agent->mc_stores - cgm_stat->system_agent_mc_stores;
+	cgm_stat->system_agent_mc_returns = system_agent->mc_returns - cgm_stat->system_agent_mc_returns;
+	cgm_stat->system_agent_max_north_rxqueue_depth = system_agent->max_north_rxqueue_depth - cgm_stat->system_agent_max_north_rxqueue_depth;
+	cgm_stat->system_agent_ave_north_rxqueue_depth = (system_agent->ave_north_rxqueue_depth + cgm_stat->system_agent_ave_north_rxqueue_depth)/2;
+	cgm_stat->system_agent_max_south_rxqueue_depth = system_agent->max_south_rxqueue_depth - cgm_stat->system_agent_max_south_rxqueue_depth;
+	cgm_stat->system_agent_ave_south_rxqueue_depth = (system_agent->ave_south_rxqueue_depth + cgm_stat->system_agent_ave_south_rxqueue_depth)/2;
+	cgm_stat->system_agent_max_north_txqueue_depth = system_agent->max_north_txqueue_depth - cgm_stat->system_agent_max_north_txqueue_depth;
+	cgm_stat->system_agent_ave_north_txqueue_depth = (system_agent->ave_north_txqueue_depth + cgm_stat->system_agent_ave_north_txqueue_depth)/2;
+	cgm_stat->system_agent_max_south_txqueue_depth = system_agent->max_south_txqueue_depth - cgm_stat->system_agent_max_south_txqueue_depth;
+	cgm_stat->system_agent_ave_south_txqueue_depth = (system_agent->ave_south_txqueue_depth + cgm_stat->system_agent_ave_south_txqueue_depth)/2;
+	/*cgm_stat->system_agent_north_gets = system_agent->north_gets;
+	cgm_stat->system_agent_south_gets = system_agent->south_gets;
+	cgm_stat->system_agent_north_puts = system_agent->north_puts;
+	cgm_stat->system_agent_south_puts = system_agent->south_puts;*/
+
+	//Memory controller and DRAMSim
+	cgm_stat->mem_ctrl_busy_cycles = mem_ctrl->busy_cycles - cgm_stat->mem_ctrl_busy_cycles;
+	cgm_stat->mem_ctrl_num_reads = mem_ctrl->num_reads - cgm_stat->mem_ctrl_num_reads;
+	cgm_stat->mem_ctrl_num_writes = mem_ctrl->num_writes - cgm_stat->mem_ctrl_num_writes;
+	cgm_stat->mem_ctrl_ave_dram_read_lat = (mem_ctrl->ave_dram_read_lat + cgm_stat->mem_ctrl_ave_dram_read_lat)/2;
+	cgm_stat->mem_ctrl_ave_dram_write_lat = (mem_ctrl->ave_dram_write_lat + cgm_stat->mem_ctrl_ave_dram_write_lat)/2;
+	cgm_stat->mem_ctrl_ave_dram_total_lat = (mem_ctrl->ave_dram_total_lat + cgm_stat->mem_ctrl_ave_dram_total_lat)/2;
+	cgm_stat->mem_ctrl_read_min = mem_ctrl->read_min - cgm_stat->mem_ctrl_read_min;
+	cgm_stat->mem_ctrl_read_max = mem_ctrl->read_max - cgm_stat->mem_ctrl_read_max;
+	cgm_stat->mem_ctrl_write_min = mem_ctrl->write_min - cgm_stat->mem_ctrl_write_min;
+	cgm_stat->mem_ctrl_write_max = mem_ctrl->write_max - cgm_stat->mem_ctrl_write_max;
+	cgm_stat->mem_ctrl_dram_max_queue_depth = mem_ctrl->dram_max_queue_depth - cgm_stat->mem_ctrl_dram_max_queue_depth;
+	cgm_stat->mem_ctrl_dram_ave_queue_depth = (mem_ctrl->dram_ave_queue_depth + cgm_stat->mem_ctrl_dram_ave_queue_depth)/2;
+	cgm_stat->mem_ctrl_dram_busy_cycles = mem_ctrl->dram_busy_cycles - cgm_stat->mem_ctrl_dram_busy_cycles;
+	cgm_stat->mem_ctrl_rx_max = mem_ctrl->rx_max - cgm_stat->mem_ctrl_rx_max;
+	cgm_stat->mem_ctrl_tx_max = mem_ctrl->tx_max - cgm_stat->mem_ctrl_tx_max;
+	cgm_stat->mem_ctrl_bytes_read = mem_ctrl->bytes_read - cgm_stat->mem_ctrl_bytes_read;
+	cgm_stat->mem_ctrl_bytes_wrote = mem_ctrl->bytes_wrote - cgm_stat->mem_ctrl_bytes_wrote;
+	cgm_stat->mem_ctrl_io_busy_cycles = mem_ctrl->io_busy_cycles - cgm_stat->mem_ctrl_io_busy_cycles;
+
+
+
+
+
 struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	struct cgm_packet_t *new_message;
