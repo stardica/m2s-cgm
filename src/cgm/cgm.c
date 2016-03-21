@@ -89,6 +89,8 @@ unsigned int last_issued_fetch_access_blk = 0x0;
 long long last_committed_fetch_access_id = 0;
 unsigned int last_committed_fetch_access_blk = 0x0;
 
+enum stats_dump_config_t stats_dump_config;
+
 struct cgm_stats_t *cgm_stat;
 struct cgm_stats_t *cgm_startup_stats;
 struct cgm_stats_t *cgm_parallel_stats;
@@ -144,6 +146,12 @@ void init_cgm_stats(int argc, char **argv){
 	cgm_stats_alloc(cgm_startup_stats);
 	cgm_stats_alloc(cgm_parallel_stats);
 	cgm_stats_alloc(cgm_wrapup_stats);
+
+	cgm_stat->stats_type = systemStats;
+	cgm_startup_stats->stats_type = startupSection;
+	cgm_parallel_stats->stats_type = parallelSection;
+	cgm_wrapup_stats->stats_type = wrapupSection;
+
 
 	return;
 }
@@ -1232,7 +1240,7 @@ void cgm_dump_general_stats(void){
 	return;
 }
 
-void cgm_dump_section_stats(void){
+void cgm_dump_startup_section_stats(struct cgm_stats_t *cgm_stat_container){
 
 	CGM_STATS(cgm_stats_file, "[StartupSection]\n");
 	CGM_STATS(cgm_stats_file, "StartupTotalCycles = %lld\n", cgm_stat->total_startup_section_cycles);
@@ -1241,18 +1249,30 @@ void cgm_dump_section_stats(void){
 	CGM_STATS(cgm_stats_file, "StartupSectionPct = %0.2f\n", (double)cgm_stat->total_startup_section_cycles/(double)P_TIME);
 	CGM_STATS(cgm_stats_file, "\n");
 
-	CGM_STATS(cgm_stats_file, "[ParallelSection]\n");
-	CGM_STATS(cgm_stats_file, "ParallelTotalCycles = %lld\n", cgm_stat->total_parallel_section_cycles);
-	CGM_STATS(cgm_stats_file, "ParallelStartCycle = %lld\n", cgm_stat->start_parallel_section_cycle);
-	CGM_STATS(cgm_stats_file, "ParallelEndCycle = %lld\n", cgm_stat->end_parallel_section_cycle);
-	CGM_STATS(cgm_stats_file, "ParallelSectionPct = %0.2f\n", (double)cgm_stat->total_parallel_section_cycles/(double)P_TIME);
-	CGM_STATS(cgm_stats_file, "\n");
+	return;
+}
+
+void cgm_dump_wrapup_section_stats(struct cgm_stats_t *cgm_stat_container){
 
 	CGM_STATS(cgm_stats_file, "[WrapupSection]\n");
 	CGM_STATS(cgm_stats_file, "WrapupTotalCycles = %lld\n", cgm_stat->total_wrapup_section_cycles);
 	CGM_STATS(cgm_stats_file, "WrapupStartCycle = %lld\n", cgm_stat->start_wrapup_section_cycle);
 	CGM_STATS(cgm_stats_file, "WrapupEndCycle = %lld\n", cgm_stat->end_wrapup_section_cycle);
 	CGM_STATS(cgm_stats_file, "WrapupSectionPct = %0.2f\n", (double)cgm_stat->total_wrapup_section_cycles/(double)P_TIME);
+	CGM_STATS(cgm_stats_file, "\n");
+
+	return;
+}
+
+
+void cgm_dump_parallel_section_stats(struct cgm_stats_t *cgm_stat_container){
+
+	CGM_STATS(cgm_stats_file, ";Note for now we are just jamming all of the stats under one header\n");
+	CGM_STATS(cgm_stats_file, "[ParallelSection]\n");
+	CGM_STATS(cgm_stats_file, "ParallelTotalCycles = %lld\n", cgm_stat->total_parallel_section_cycles);
+	CGM_STATS(cgm_stats_file, "ParallelStartCycle = %lld\n", cgm_stat->start_parallel_section_cycle);
+	CGM_STATS(cgm_stats_file, "ParallelEndCycle = %lld\n", cgm_stat->end_parallel_section_cycle);
+	CGM_STATS(cgm_stats_file, "ParallelSectionPct = %0.2f\n", (double)cgm_stat->total_parallel_section_cycles/(double)P_TIME);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -1410,10 +1430,8 @@ void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
 
-	/*star todo figure out a better way to dump these stats out*/
-
 	/*finalize the cgm stats structure i.e. consolidate all stats
-	we did this because in simulator you may only want to instrument certain sections of a benchmark
+	we did this because in simulation you may only want to instrument certain sections of a benchmark
 	for example, this gives us the flexibility to pull stats from only the parallel section of a benchmark*/
 	cgm_wrapup_stats->end_wrapup_section_cycle = P_TIME;
 	cgm_wrapup_stats->total_wrapup_section_cycles = cgm_wrapup_stats->end_wrapup_section_cycle - cgm_wrapup_stats->start_wrapup_section_cycle;
@@ -1421,49 +1439,33 @@ void cgm_dump_summary(void){
 
 	/*There are three system dumps of interest
 	(1) full system
-	(2) parallel section only
-	(3) parallel & OCL overhead sections only*/
+	(2) parallel section
+	(3) parallel & OCL overhead sections*/
 
 	//this sets up the full system dump in cgm_stat
 	cgm_consolidate_stats();
 
-	//we have all of the individual sections in their own containers ready for use if needed
-
-	//the general stuff is always stored in cgm_stat
 	cgm_dump_general_stats();
-	cgm_dump_section_stats();
 
-	switch(cgm_stat->stats_dump_config)
-	{
-		case parallelOCLSection:
+	/*dump the full system stats*/
+	cgm_dump_cpu_gpu_stats(cgm_stat);
+	cgm_dump_mem_system_stats(cgm_stat);
+	cache_dump_stats(cgm_stat);
+	switch_dump_stats(cgm_stat);
+	sys_agent_dump_stats(cgm_stat);
+	memctrl_dump_stats(cgm_stat);
 
-			fatal("cgm_dump_summary(): stats dumping either fullsystem or parallelocl stats, but this isn't fully working yet\n");
-			break;
 
 
-		case parallelSection:
+	/*dump specific areas of interest*/
+	cgm_dump_startup_section_stats(cgm_stat);
 
-			cgm_dump_cpu_gpu_stats(cgm_parallel_stats);
-			cgm_dump_mem_system_stats(cgm_parallel_stats);
-			cache_dump_stats(cgm_parallel_stats);
-			switch_dump_stats(cgm_parallel_stats);
-			sys_agent_dump_stats(cgm_parallel_stats);
-			memctrl_dump_stats(cgm_parallel_stats);
+	cgm_dump_parallel_section_stats(cgm_stat);
 
-			break;
+	cgm_dump_wrapup_section_stats(cgm_stat);
 
-		case fullSystem:
 
-			cgm_dump_cpu_gpu_stats(cgm_stat);
-			cgm_dump_mem_system_stats(cgm_stat);
-			cache_dump_stats(cgm_stat);
-			switch_dump_stats(cgm_stat);
-			sys_agent_dump_stats(cgm_stat);
-			memctrl_dump_stats(cgm_stat);
-
-			break;
-	}
-
+	/*dump the histograms*/
 	cgm_dump_histograms();
 
 	CLOSE_FILES;

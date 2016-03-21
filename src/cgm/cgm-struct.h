@@ -451,6 +451,13 @@ struct cgm_stats_t{
 
 	bool execution_success;
 
+	enum container_type_t{
+		startupSection = 0,
+		parallelSection,
+		wrapupSection,
+		systemStats
+	}stats_type;
+
 	char *stat_file_name;
 	char *date_time_file;
 	char *date_time_pretty;
@@ -470,12 +477,6 @@ struct cgm_stats_t{
 	long long start_wrapup_section_cycle;
 	long long end_wrapup_section_cycle;
 	long long total_wrapup_section_cycles;
-
-	enum stats_dump_config_t{
-		fullSystem = 0,
-		parallelSection,
-		parallelOCLSection
-	}stats_dump_config;
 
 	enum parallel_section_t{
 		not_present = 0,

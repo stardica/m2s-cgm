@@ -412,17 +412,17 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 
 		if(strcmp(temp_strn, "FullSystem") == 0)
 		{
-			cgm_stat->stats_dump_config = fullSystem;
+			stats_dump_config = fullSystem;
 			printf("---Stats will dump full system---\n");
 		}
 		else if(strcmp(temp_strn, "ParallelSection") == 0)
 		{
-			cgm_stat->stats_dump_config = parallelSection;
+			stats_dump_config = parallel;
 			printf("---Stats will dump parallel section---\n");
 		}
 		else if(strcmp(temp_strn, "ParallelOCLSection") == 0)
 		{
-			cgm_stat->stats_dump_config = parallelOCLSection;
+			stats_dump_config = parallelOCL;
 			printf("---Stats will dump parallel & OCL section---\n");
 		}
 		else
