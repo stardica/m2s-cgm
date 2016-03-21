@@ -406,7 +406,7 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats_output_path = strdup(value);
 	}
 
-	if(MATCH("Stats", "DumpConfig"))
+	/*if(MATCH("Stats", "DumpConfig"))
 	{
 		temp_strn = strdup(value);
 
@@ -429,7 +429,7 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		{
 			fatal("stats_read_config(): invalid DumpConfig setting, check config file\n");
 		}
-	}
+	}*/
 
 	return 1;
 }

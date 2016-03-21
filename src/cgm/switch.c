@@ -1191,46 +1191,47 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	int num_cores = x86_cpu_num_cores;
 	int i = 0;
 
-	for(i = 0; i < num_cores; i++)
+	/*there is a switch for the GPU this for loop will pick it up*/
+	for(i = 0; i <= num_cores; i++)
 	{
-		CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", cgm_stat_container->switch_total_wakes[i]);
-		CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.2f\n", (double) cgm_stat_container->switch_total_wakes[i]/ (double) P_TIME);
-		CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", cgm_stat_container->switch_total_links[i]);
-		CGM_STATS(cgm_stats_file, "MaxNumberLinks = %d\n", cgm_stat_container->switch_max_links[i]);
-		CGM_STATS(cgm_stats_file, "AveNumberLinksPerCtrlLoop = %.02f\n", (double)cgm_stat_container->switch_total_links[i]/(double)cgm_stat_container->switch_total_wakes[i]);
-		CGM_STATS(cgm_stats_file, "NorthIOTransfers = %llu\n", cgm_stat_container->switch_north_io_transfers[i]);
-		CGM_STATS(cgm_stats_file, "NorthIOCycles = %llu\n", cgm_stat_container->switch_north_io_transfer_cycles[i]);
-		CGM_STATS(cgm_stats_file, "NorthIOBytesTransfered = %llu\n", cgm_stat_container->switch_north_io_bytes_transfered[i]);
-		CGM_STATS(cgm_stats_file, "NorthRxQueueMaxDepth = %llu\n", cgm_stat_container->switch_north_rxqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "NorthRxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_north_rxqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "NorthTxQueueMaxDepth = %llu\n", cgm_stat_container->switch_north_txqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "NorthTxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_north_txqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "EastIOTransfers = %llu\n", cgm_stat_container->switch_east_io_transfers[i]);
-		CGM_STATS(cgm_stats_file, "EastIOCycles = %llu\n", cgm_stat_container->switch_east_io_transfer_cycles[i]);
-		CGM_STATS(cgm_stats_file, "EastIOBytesTransfered = %llu\n", cgm_stat_container->switch_east_io_bytes_transfered[i]);
-		CGM_STATS(cgm_stats_file, "EastRxQueueMaxDepth = %llu\n", cgm_stat_container->switch_east_rxqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "EastRxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_east_rxqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "EastTxQueueMaxDepth = %llu\n", cgm_stat_container->switch_east_txqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "EastTxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_east_txqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "SouthIOTransfers = %llu\n", cgm_stat_container->switch_south_io_transfers[i]);
-		CGM_STATS(cgm_stats_file, "SouthIOCycles = %llu\n", cgm_stat_container->switch_south_io_transfer_cycles[i]);
-		CGM_STATS(cgm_stats_file, "SouthIOBytesTransfered = %llu\n", cgm_stat_container->switch_south_io_bytes_transfered[i]);
-		CGM_STATS(cgm_stats_file, "SouthRxQueueMaxDepth = %llu\n", cgm_stat_container->switch_south_rxqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "SouthRxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_south_rxqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "SouthTxQueueMaxDepth = %llu\n", cgm_stat_container->switch_south_txqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "SouthTxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_south_txqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "WestIOTransfers = %llu\n", cgm_stat_container->switch_west_io_transfers[i]);
-		CGM_STATS(cgm_stats_file, "WestIOCycles = %llu\n", cgm_stat_container->switch_west_io_transfer_cycles[i]);
-		CGM_STATS(cgm_stats_file, "WestIOBytesTransfered = %llu\n", cgm_stat_container->switch_west_io_bytes_transfered[i]);
-		CGM_STATS(cgm_stats_file, "WestRxQueueMaxDepth = %llu\n", cgm_stat_container->switch_west_rxqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "WestRxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_west_rxqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "WestTxQueueMaxDepth = %llu\n", cgm_stat_container->switch_west_txqueue_max_depth[i]);
-		CGM_STATS(cgm_stats_file, "WestTxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_west_txqueue_ave_depth[i]);
-		CGM_STATS(cgm_stats_file, "\n");
+		/*CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);*/
+		CGM_STATS(cgm_stats_file, "Switch_%d_NumberSwitchCtrlLoops = %llu\n", i, cgm_stat_container->switch_total_wakes[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SwitchOccupance = %0.2f\n", i, (double) cgm_stat_container->switch_total_wakes[i]/ (double) P_TIME);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NumberLinks = %llu\n", i, cgm_stat_container->switch_total_links[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_MaxNumberLinks = %d\n", i, cgm_stat_container->switch_max_links[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_AveNumberLinksPerCtrlLoop = %.02f\n", i, (double)cgm_stat_container->switch_total_links[i]/(double)cgm_stat_container->switch_total_wakes[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthIOTransfers = %llu\n", i, cgm_stat_container->switch_north_io_transfers[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthIOCycles = %llu\n", i, cgm_stat_container->switch_north_io_transfer_cycles[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthIOBytesTransfered = %llu\n", i, cgm_stat_container->switch_north_io_bytes_transfered[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthRxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_north_rxqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthRxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_north_rxqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthTxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_north_txqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_NorthTxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_north_txqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastIOTransfers = %llu\n", i, cgm_stat_container->switch_east_io_transfers[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastIOCycles = %llu\n", i, cgm_stat_container->switch_east_io_transfer_cycles[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastIOBytesTransfered = %llu\n", i, cgm_stat_container->switch_east_io_bytes_transfered[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastRxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_east_rxqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastRxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_east_rxqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastTxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_east_txqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_EastTxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_east_txqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthIOTransfers = %llu\n", i, cgm_stat_container->switch_south_io_transfers[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthIOCycles = %llu\n", i, cgm_stat_container->switch_south_io_transfer_cycles[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthIOBytesTransfered = %llu\n", i, cgm_stat_container->switch_south_io_bytes_transfered[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthRxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_south_rxqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthRxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_south_rxqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthTxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_south_txqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_SouthTxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_south_txqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestIOTransfers = %llu\n", i, cgm_stat_container->switch_west_io_transfers[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestIOCycles = %llu\n", i, cgm_stat_container->switch_west_io_transfer_cycles[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestIOBytesTransfered = %llu\n", i, cgm_stat_container->switch_west_io_bytes_transfered[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestRxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_west_rxqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestRxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_west_rxqueue_ave_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestTxQueueMaxDepth = %llu\n", i, cgm_stat_container->switch_west_txqueue_max_depth[i]);
+		CGM_STATS(cgm_stats_file, "Switch_%d_WestTxQueueAveDepth = %0.2f\n", i, cgm_stat_container->switch_west_txqueue_ave_depth[i]);
+		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 
-	CGM_STATS(cgm_stats_file, "[Switch_SA]\n");
+	/*CGM_STATS(cgm_stats_file, "[Switch_SA]\n");
 	CGM_STATS(cgm_stats_file, "NumberSwitchCtrlLoops = %llu\n", cgm_stat_container->switch_total_wakes[num_cores]);
 	CGM_STATS(cgm_stats_file, "SwitchOccupance = %0.2f\n", (double) cgm_stat_container->switch_total_wakes[num_cores]/ (double) P_TIME);
 	CGM_STATS(cgm_stats_file, "NumberLinks = %llu\n", cgm_stat_container->switch_total_links[num_cores]);
@@ -1264,7 +1265,7 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	CGM_STATS(cgm_stats_file, "WestRxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_west_rxqueue_ave_depth[num_cores]);
 	CGM_STATS(cgm_stats_file, "WestTxQueueMaxDepth = %llu\n", cgm_stat_container->switch_west_txqueue_max_depth[num_cores]);
 	CGM_STATS(cgm_stats_file, "WestTxQueueAveDepth = %0.2f\n", cgm_stat_container->switch_west_txqueue_ave_depth[num_cores]);
-	CGM_STATS(cgm_stats_file, "\n");
+	CGM_STATS(cgm_stats_file, "\n");*/
 
 	return;
 }
