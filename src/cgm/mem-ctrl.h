@@ -86,6 +86,6 @@ void memctrl_ctrl(void);
 void memctrl_ctrl_io(void);
 int memctrl_can_access(void);
 
-void memctrl_dump_stats(void);
+void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container);
 
 #endif /* MEMCTRL_H_ */

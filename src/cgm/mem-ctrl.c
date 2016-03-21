@@ -290,10 +290,10 @@ void memctrl_ctrl(void){
 	return;
 }
 
-void memctrl_dump_stats(void){
+void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	//cycles per nano second
-	double ave_lat_ns = (((cgm_stat->mem_ctrl_ave_dram_write_lat + cgm_stat->mem_ctrl_ave_dram_read_lat)/2) *GHZ) / cpu_freq;
+	double ave_lat_ns = (((cgm_stat_container->mem_ctrl_ave_dram_write_lat + cgm_stat_container->mem_ctrl_ave_dram_read_lat)/2) *GHZ) / cpu_freq;
 
 	if(DRAMSim == 0)
 	{
@@ -301,28 +301,28 @@ void memctrl_dump_stats(void){
 	}
 
 	CGM_STATS(cgm_stats_file, "[MemCtrl]\n");
-	CGM_STATS(cgm_stats_file, "MemCtrlBusyCycles = %llu\n", cgm_stat->mem_ctrl_busy_cycles);
-	CGM_STATS(cgm_stats_file, "DramBusyCycles = %llu\n", cgm_stat->mem_ctrl_dram_busy_cycles);
-	CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", cgm_stat->mem_ctrl_num_reads);
-	CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", cgm_stat->mem_ctrl_num_writes);
+	CGM_STATS(cgm_stats_file, "MemCtrlBusyCycles = %llu\n", cgm_stat_container->mem_ctrl_busy_cycles);
+	CGM_STATS(cgm_stats_file, "DramBusyCycles = %llu\n", cgm_stat_container->mem_ctrl_dram_busy_cycles);
+	CGM_STATS(cgm_stats_file, "TotalReads = %llu\n", cgm_stat_container->mem_ctrl_num_reads);
+	CGM_STATS(cgm_stats_file, "TotalWrites = %llu\n", cgm_stat_container->mem_ctrl_num_writes);
 
 	if(DRAMSim == 1)
 	{
-		CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", cgm_stat->mem_ctrl_ave_dram_read_lat);
-		CGM_STATS(cgm_stats_file, "AveDramWriteLat = %.02f\n", cgm_stat->mem_ctrl_ave_dram_write_lat);
-		CGM_STATS(cgm_stats_file, "AveDramTotalLat(cycles) = %.02f\n", (cgm_stat->mem_ctrl_ave_dram_write_lat + cgm_stat->mem_ctrl_ave_dram_read_lat)/2);
+		CGM_STATS(cgm_stats_file, "AveDramReadLat = %.02f\n", cgm_stat_container->mem_ctrl_ave_dram_read_lat);
+		CGM_STATS(cgm_stats_file, "AveDramWriteLat = %.02f\n", cgm_stat_container->mem_ctrl_ave_dram_write_lat);
+		CGM_STATS(cgm_stats_file, "AveDramTotalLat(cycles) = %.02f\n", (cgm_stat_container->mem_ctrl_ave_dram_write_lat + cgm_stat_container->mem_ctrl_ave_dram_read_lat)/2);
 		CGM_STATS(cgm_stats_file, "AveDramTotalLat(nanoseconds) = %.02f\n", ave_lat_ns);
-		CGM_STATS(cgm_stats_file, "ReadMinLat = %llu\n", cgm_stat->mem_ctrl_read_min);
-		CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", cgm_stat->mem_ctrl_read_max);
-		CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", cgm_stat->mem_ctrl_write_min);
-		CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", cgm_stat->mem_ctrl_write_max);
-		CGM_STATS(cgm_stats_file, "DramMaxQueueDepth = %llu\n", cgm_stat->mem_ctrl_dram_max_queue_depth);
-		CGM_STATS(cgm_stats_file, "DramAveQueueDepth = %.2f\n", cgm_stat->mem_ctrl_dram_ave_queue_depth);
-		CGM_STATS(cgm_stats_file, "RxMax = %llu\n", cgm_stat->mem_ctrl_rx_max);
-		CGM_STATS(cgm_stats_file, "TxMax = %llu\n", cgm_stat->mem_ctrl_tx_max);
-		CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", cgm_stat->mem_ctrl_bytes_read);
-		CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", cgm_stat->mem_ctrl_bytes_wrote);
-		CGM_STATS(cgm_stats_file, "IOBusyCycles = %llu\n", cgm_stat->mem_ctrl_io_busy_cycles);
+		CGM_STATS(cgm_stats_file, "ReadMinLat = %llu\n", cgm_stat_container->mem_ctrl_read_min);
+		CGM_STATS(cgm_stats_file, "ReadMaxLat = %llu\n", cgm_stat_container->mem_ctrl_read_max);
+		CGM_STATS(cgm_stats_file, "WriteMinLat = %llu\n", cgm_stat_container->mem_ctrl_write_min);
+		CGM_STATS(cgm_stats_file, "WriteMaxLat = %llu\n", cgm_stat_container->mem_ctrl_write_max);
+		CGM_STATS(cgm_stats_file, "DramMaxQueueDepth = %llu\n", cgm_stat_container->mem_ctrl_dram_max_queue_depth);
+		CGM_STATS(cgm_stats_file, "DramAveQueueDepth = %.2f\n", cgm_stat_container->mem_ctrl_dram_ave_queue_depth);
+		CGM_STATS(cgm_stats_file, "RxMax = %llu\n", cgm_stat_container->mem_ctrl_rx_max);
+		CGM_STATS(cgm_stats_file, "TxMax = %llu\n", cgm_stat_container->mem_ctrl_tx_max);
+		CGM_STATS(cgm_stats_file, "ByteRead = %llu\n", cgm_stat_container->mem_ctrl_bytes_read);
+		CGM_STATS(cgm_stats_file, "BytesWrote = %llu\n", cgm_stat_container->mem_ctrl_bytes_wrote);
+		CGM_STATS(cgm_stats_file, "IOBusyCycles = %llu\n", cgm_stat_container->mem_ctrl_io_busy_cycles);
 		CGM_STATS(cgm_stats_file, "\n");
 	}
 	else

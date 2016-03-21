@@ -364,7 +364,7 @@ void cgm_consolidate_stats(void){
 	/*int num_cus = si_gpu_num_compute_units;*/
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
-	int max_links = 0;
+	//int max_links = 0;
 
 	/*set the state of the stats container*/
 	cgm_stat->state = consolidated;
@@ -601,9 +601,6 @@ void cgm_consolidate_stats(void){
 	cgm_stat->mem_ctrl_bytes_read = JOINLL(mem_ctrl_bytes_read);
 	cgm_stat->mem_ctrl_bytes_wrote = JOINLL(mem_ctrl_bytes_wrote);
 	cgm_stat->mem_ctrl_io_busy_cycles = JOINLL(mem_ctrl_io_busy_cycles);
-
-
-
 
 	return;
 }
@@ -1262,7 +1259,7 @@ void cgm_dump_section_stats(void){
 }
 
 
-void cgm_dump_cpu_gpu_stats(void){
+void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
@@ -1287,26 +1284,26 @@ void cgm_dump_cpu_gpu_stats(void){
 	for(i = 0; i < num_cores; i++)
 	{
 		CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);
-		CGM_STATS(cgm_stats_file, "NumSyscalls = %llu\n", cgm_stat->core_num_syscalls[i]);
-		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat->core_rob_stalls[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat->core_rob_stall_load[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallStore = %llu\n", cgm_stat->core_rob_stall_store[i]);
-		CGM_STATS(cgm_stats_file, "ROBStallOther = %llu\n", cgm_stat->core_rob_stall_other[i]);
-		CGM_STATS(cgm_stats_file, "FirstFetchCycle = %llu\n", cgm_stat->core_first_fetch_cycle[i]);
-		CGM_STATS(cgm_stats_file, "LastCommitCycle = %llu\n", cgm_stat->core_last_commit_cycle[i]);
-		CGM_STATS(cgm_stats_file, "FetchStall = %llu\n", cgm_stat->core_fetch_stalls[i]);
+		CGM_STATS(cgm_stats_file, "NumSyscalls = %llu\n", cgm_stat_container->core_num_syscalls[i]);
+		CGM_STATS(cgm_stats_file, "ROBStalls = %llu\n", cgm_stat_container->core_rob_stalls[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallLoad = %llu\n", cgm_stat_container->core_rob_stall_load[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallStore = %llu\n", cgm_stat_container->core_rob_stall_store[i]);
+		CGM_STATS(cgm_stats_file, "ROBStallOther = %llu\n", cgm_stat_container->core_rob_stall_other[i]);
+		CGM_STATS(cgm_stats_file, "FirstFetchCycle = %llu\n", cgm_stat_container->core_first_fetch_cycle[i]);
+		CGM_STATS(cgm_stats_file, "LastCommitCycle = %llu\n", cgm_stat_container->core_last_commit_cycle[i]);
+		CGM_STATS(cgm_stats_file, "FetchStall = %llu\n", cgm_stat_container->core_fetch_stalls[i]);
 
-		//CGM_STATS(cgm_stats_file, "NumIssuedMemoryInst = %llu\n", cgm_stat->core_issued_memory_insts[i]);
-		//CGM_STATS(cgm_stats_file, "NumCommitedMemoryInst = %llu\n", cgm_stat->core_commited_memory_insts[i]);
-		run_time = cgm_stat->core_last_commit_cycle[i] - cgm_stat->core_first_fetch_cycle[i];
+		//CGM_STATS(cgm_stats_file, "NumIssuedMemoryInst = %llu\n", cgm_stat_container->core_issued_memory_insts[i]);
+		//CGM_STATS(cgm_stats_file, "NumCommitedMemoryInst = %llu\n", cgm_stat_container->core_commited_memory_insts[i]);
+		run_time = cgm_stat_container->core_last_commit_cycle[i] - cgm_stat_container->core_first_fetch_cycle[i];
 		CGM_STATS(cgm_stats_file, "RunTime = %llu\n", run_time);
 		idle_time = P_TIME - run_time;
 		CGM_STATS(cgm_stats_file, "IdleTime = %llu\n", idle_time);
 
-		system_time = cgm_stat->core_syscall_stalls[i];
+		system_time = cgm_stat_container->core_syscall_stalls[i];
 		CGM_STATS(cgm_stats_file, "SystemTime = %llu\n", system_time);
 
-		stall_time = (cgm_stat->core_rob_stalls[i] + cgm_stat->core_fetch_stalls[i]);
+		stall_time = (cgm_stat_container->core_rob_stalls[i] + cgm_stat_container->core_fetch_stalls[i]);
 		CGM_STATS(cgm_stats_file, "StallTime = %llu\n", stall_time);
 
 		busy_time = (run_time - (stall_time + system_time));
@@ -1317,16 +1314,16 @@ void cgm_dump_cpu_gpu_stats(void){
 		CGM_STATS(cgm_stats_file, "SystemPct = %0.2f\n", (double)system_time/(double)run_time);
 		CGM_STATS(cgm_stats_file, "StallPct = %0.2f\n", (double)stall_time/(double)run_time);
 		CGM_STATS(cgm_stats_file, "BusyPct = %0.2f\n", (double)busy_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "StallfetchPct = %0.2f\n", (double)cgm_stat->core_fetch_stalls[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "StallLoadPct = %0.2f\n", (double)cgm_stat->core_rob_stall_load[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "StallStorePct = %0.2f\n", (double)cgm_stat->core_rob_stall_store[i]/(double)stall_time);
-		//CGM_STATS(cgm_stats_file, "StallSyscallPct = %0.2f\n", (double)cgm_stat->core_rob_stall_syscall[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "StallOtherPct = %0.2f\n", (double)cgm_stat->core_rob_stall_other[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallfetchPct = %0.2f\n", (double)cgm_stat_container->core_fetch_stalls[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallLoadPct = %0.2f\n", (double)cgm_stat_container->core_rob_stall_load[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallStorePct = %0.2f\n", (double)cgm_stat_container->core_rob_stall_store[i]/(double)stall_time);
+		//CGM_STATS(cgm_stats_file, "StallSyscallPct = %0.2f\n", (double)cgm_stat_container->core_rob_stall_syscall[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "StallOtherPct = %0.2f\n", (double)cgm_stat_container->core_rob_stall_other[i]/(double)stall_time);
 		CGM_STATS(cgm_stats_file, "\n");
 	}
 
-	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat->cpu_fetch_stalls);
-	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat->cpu_ls_stalls);
+	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat_container->cpu_fetch_stalls);
+	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat_container->cpu_ls_stalls);
 	//CGM_STATS(cgm_stats_file, "\n");
 	/*CGM_STATS(cgm_stats_file, "[GPU]\n");
 	CGM_STATS(cgm_stats_file, "NumComputeUnits = %d\n", num_cus);
@@ -1336,7 +1333,7 @@ void cgm_dump_cpu_gpu_stats(void){
 }
 
 
-void cgm_dump_mem_system_stats(void){
+void cgm_dump_mem_system_stats(struct cgm_stats_t *cgm_stat_container){
 
 	/*int num_cores = x86_cpu_num_cores;
 	int num_threads = x86_cpu_num_threads;
@@ -1349,25 +1346,25 @@ void cgm_dump_mem_system_stats(void){
 	long long system_time = 0;*/
 
 	CGM_STATS(cgm_stats_file, "[MemSystem]\n");
-	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat->first_mem_access_lat);
-	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cgm_stat->cpu_total_fetches);
-	CGM_STATS(cgm_stats_file, "FetchesL1 = %llu\n", cgm_stat->fetch_l1_hits);
-	CGM_STATS(cgm_stats_file, "FetchesL2 = %llu\n", cgm_stat->fetch_l2_hits);
-	CGM_STATS(cgm_stats_file, "FetchesL3 = %llu\n", cgm_stat->fetch_l3_hits);
-	CGM_STATS(cgm_stats_file, "FetchesMemory = %llu\n", cgm_stat->fetch_memory);
-	CGM_STATS(cgm_stats_file, "TotalLoads = %llu\n", cgm_stat->cpu_total_loads);
-	CGM_STATS(cgm_stats_file, "LoadsL1 = %llu\n", cgm_stat->load_l1_hits);
-	CGM_STATS(cgm_stats_file, "LoadsL2 = %llu\n", cgm_stat->load_l2_hits);
-	CGM_STATS(cgm_stats_file, "LoadsL3 = %llu\n", cgm_stat->load_l3_hits);
-	CGM_STATS(cgm_stats_file, "LoadsMemory = %llu\n", cgm_stat->load_memory);
-	CGM_STATS(cgm_stats_file, "LoadsGetFwd = %llu\n", cgm_stat->load_get_fwd);
-	CGM_STATS(cgm_stats_file, "TotalStore = %llu\n", cgm_stat->cpu_total_stores);
-	CGM_STATS(cgm_stats_file, "StoresL1 = %llu\n", cgm_stat->store_l1_hits);
-	CGM_STATS(cgm_stats_file, "StoresL2 = %llu\n", cgm_stat->store_l2_hits);
-	CGM_STATS(cgm_stats_file, "StoresL3 = %llu\n", cgm_stat->store_l3_hits);
-	CGM_STATS(cgm_stats_file, "StoresMemory = %llu\n", cgm_stat->store_memory);
-	CGM_STATS(cgm_stats_file, "StoresGetxFwd = %llu\n", cgm_stat->store_getx_fwd);
-	CGM_STATS(cgm_stats_file, "StoresUpgrade = %llu\n", cgm_stat->store_upgrade);
+	CGM_STATS(cgm_stats_file, "FirstAccessLat(Fetch) = %d\n", cgm_stat_container->first_mem_access_lat);
+	CGM_STATS(cgm_stats_file, "TotalFetches = %llu\n", cgm_stat_container->cpu_total_fetches);
+	CGM_STATS(cgm_stats_file, "FetchesL1 = %llu\n", cgm_stat_container->fetch_l1_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL2 = %llu\n", cgm_stat_container->fetch_l2_hits);
+	CGM_STATS(cgm_stats_file, "FetchesL3 = %llu\n", cgm_stat_container->fetch_l3_hits);
+	CGM_STATS(cgm_stats_file, "FetchesMemory = %llu\n", cgm_stat_container->fetch_memory);
+	CGM_STATS(cgm_stats_file, "TotalLoads = %llu\n", cgm_stat_container->cpu_total_loads);
+	CGM_STATS(cgm_stats_file, "LoadsL1 = %llu\n", cgm_stat_container->load_l1_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL2 = %llu\n", cgm_stat_container->load_l2_hits);
+	CGM_STATS(cgm_stats_file, "LoadsL3 = %llu\n", cgm_stat_container->load_l3_hits);
+	CGM_STATS(cgm_stats_file, "LoadsMemory = %llu\n", cgm_stat_container->load_memory);
+	CGM_STATS(cgm_stats_file, "LoadsGetFwd = %llu\n", cgm_stat_container->load_get_fwd);
+	CGM_STATS(cgm_stats_file, "TotalStore = %llu\n", cgm_stat_container->cpu_total_stores);
+	CGM_STATS(cgm_stats_file, "StoresL1 = %llu\n", cgm_stat_container->store_l1_hits);
+	CGM_STATS(cgm_stats_file, "StoresL2 = %llu\n", cgm_stat_container->store_l2_hits);
+	CGM_STATS(cgm_stats_file, "StoresL3 = %llu\n", cgm_stat_container->store_l3_hits);
+	CGM_STATS(cgm_stats_file, "StoresMemory = %llu\n", cgm_stat_container->store_memory);
+	CGM_STATS(cgm_stats_file, "StoresGetxFwd = %llu\n", cgm_stat_container->store_getx_fwd);
+	CGM_STATS(cgm_stats_file, "StoresUpgrade = %llu\n", cgm_stat_container->store_upgrade);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -1432,28 +1429,42 @@ void cgm_dump_summary(void){
 
 	//we have all of the individual sections in their own containers ready for use if needed
 
+	//the general stuff is always stored in cgm_stat
+	cgm_dump_general_stats();
+	cgm_dump_section_stats();
+
 	switch(cgm_stat->stats_dump_config)
 	{
 		case parallelOCLSection:
-		case parallelSection:
+
 			fatal("cgm_dump_summary(): stats dumping either fullsystem or parallelocl stats, but this isn't fully working yet\n");
+			break;
+
+
+		case parallelSection:
+
+			cgm_dump_cpu_gpu_stats(cgm_parallel_stats);
+			cgm_dump_mem_system_stats(cgm_parallel_stats);
+			cache_dump_stats(cgm_parallel_stats);
+			switch_dump_stats(cgm_parallel_stats);
+			sys_agent_dump_stats(cgm_parallel_stats);
+			memctrl_dump_stats(cgm_parallel_stats);
+
 			break;
 
 		case fullSystem:
 
-			cgm_dump_general_stats();
-			cgm_dump_section_stats();
-			cgm_dump_cpu_gpu_stats();
-
-			cgm_dump_mem_system_stats();
-			cache_dump_stats();
-			switch_dump_stats();
-			sys_agent_dump_stats();
-			memctrl_dump_stats();
-			cgm_dump_histograms();
+			cgm_dump_cpu_gpu_stats(cgm_stat);
+			cgm_dump_mem_system_stats(cgm_stat);
+			cache_dump_stats(cgm_stat);
+			switch_dump_stats(cgm_stat);
+			sys_agent_dump_stats(cgm_stat);
+			memctrl_dump_stats(cgm_stat);
 
 			break;
 	}
+
+	cgm_dump_histograms();
 
 	CLOSE_FILES;
 
