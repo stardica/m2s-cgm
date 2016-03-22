@@ -1816,95 +1816,110 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		/*CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l1_i_TotalThreadLoops[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalAccesses = %llu\n", i, cgm_stat_container->l1_i_TotalAcesses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_MissRate = %0.2f\n", i,
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l1_i_TotalThreadLoops[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_i_TotalAcesses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l1_i_TotalMisses[i])/(double) (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalReads = %llu\n", i, cgm_stat_container->l1_i_TotalReads[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalReadMisses = %llu\n", i, cgm_stat_container->l1_i_TotalReadMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalReadMisses[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_TotalGets = %llu\n", i, cgm_stat_container->l1_i_TotalGets[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGets[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalReads = %llu\n", i, cgm_stat_container->l1_i_TotalReads[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalReadMisses = %llu\n", i, cgm_stat_container->l1_i_TotalReadMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalReadMisses[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWrites = %llu\n", i, cgm_stat_container->l1_i_TotalWrites[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l1_i_TotalWriteMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalWriteMisses[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGets = %llu\n", i, cgm_stat_container->l1_i_TotalGets[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGet = %llu\n", i, cgm_stat_container->l1_i_TotalGet[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGetx = %llu\n", i, cgm_stat_container->l1_i_TotalGetx[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGets[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGet[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGetx[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l1_i_TotalUpgrades[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalUpgrades[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBacks[i]);
 		blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_i_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+
+
+
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l1_d_TotalThreadLoops[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_d_TotalAcesses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalHits = %llu\n", i, (cgm_stat_container->l1_d_TotalAcesses[i] - cgm_stat_container->l1_d_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalMisses = %llu\n", i, cgm_stat_container->l1_d_TotalMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_MissRate = %0.2f\n", i,
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l1_d_TotalThreadLoops[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_d_TotalAcesses[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_d_TotalAcesses[i] - cgm_stat_container->l1_d_TotalMisses[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_d_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l1_d_TotalMisses[i])/(double) (cgm_stat_container->l1_d_TotalAcesses[i]- cgm_stat_container->l1_d_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalReads = %llu\n", i, cgm_stat_container->l1_d_TotalReads[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalReadMisses = %llu\n", i, cgm_stat_container->l1_d_TotalReadMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalReadMisses[i] / (double) cgm_stat_container->l1_d_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalWrites = %llu\n", i, cgm_stat_container->l1_d_TotalWrites[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l1_d_TotalWriteMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalWriteMisses[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalGet = %llu\n", i, cgm_stat_container->l1_d_TotalGet[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalGetx = %llu\n", i, cgm_stat_container->l1_d_TotalGetx[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalGet[i] / (double) cgm_stat_container->l1_d_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalGetx[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalUpgrades = %llu\n", i, cgm_stat_container->l1_d_TotalUpgrades[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalUpgrades[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBacks[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalReads = %llu\n", i, cgm_stat_container->l1_d_TotalReads[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalReadMisses = %llu\n", i, cgm_stat_container->l1_d_TotalReadMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalReadMisses[i] / (double) cgm_stat_container->l1_d_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWrites = %llu\n", i, cgm_stat_container->l1_d_TotalWrites[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l1_d_TotalWriteMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalWriteMisses[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalGets = %llu\n", i, cgm_stat_container->l1_d_TotalGets[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalGet = %llu\n", i, cgm_stat_container->l1_d_TotalGet[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalGetx = %llu\n", i, cgm_stat_container->l1_d_TotalGetx[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalGets[i] / (double) cgm_stat_container->l1_d_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalGet[i] / (double) cgm_stat_container->l1_d_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalGetx[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l1_d_TotalUpgrades[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalUpgrades[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBacks[i]);
 		blocks_written = cgm_cache_get_block_usage(&l1_d_caches[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l1_d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l2_TotalThreadLoops[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalAccesses = %llu\n", i, cgm_stat_container->l2_TotalAcesses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalHits = %llu\n", i, (cgm_stat_container->l2_TotalAcesses[i] - cgm_stat_container->l2_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalMisses = %llu\n", i, cgm_stat_container->l2_TotalMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_MissRate = %0.2f\n", i,
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l2_TotalThreadLoops[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l2_TotalAcesses[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalHits = %llu\n", i, (cgm_stat_container->l2_TotalAcesses[i] - cgm_stat_container->l2_TotalMisses[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalMisses = %llu\n", i, cgm_stat_container->l2_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l2_TotalMisses[i])/(double) (cgm_stat_container->l2_TotalAcesses[i] - cgm_stat_container->l2_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalReads = %llu\n", i, cgm_stat_container->l2_TotalReads[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalReadMisses = %llu\n", i, cgm_stat_container->l2_TotalReadMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalReadMisses[i] / (double) cgm_stat_container->l2_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalWrites = %llu\n", i, cgm_stat_container->l2_TotalWrites[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalWriteMisses = %llu\n", i, cgm_stat_container->l2_TotalWriteMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalWriteMisses[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalGets = %llu\n", i, cgm_stat_container->l2_TotalGets[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalGet = %llu\n", i, cgm_stat_container->l2_TotalGet[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalGetx = %llu\n", i, cgm_stat_container->l2_TotalGetx[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalUpgrades = %llu\n", i, cgm_stat_container->l2_TotalUpgrades[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGets[i] / (double) cgm_stat_container->l2_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGet[i] / (double) cgm_stat_container->l2_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGetx[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalUpgrades[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_TotalWriteBacks = %llu\n", i, cgm_stat_container->l2_TotalWriteBacks[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalReads = %llu\n", i, cgm_stat_container->l2_TotalReads[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalReadMisses = %llu\n", i, cgm_stat_container->l2_TotalReadMisses[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalReadMisses[i] / (double) cgm_stat_container->l2_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalWrites = %llu\n", i, cgm_stat_container->l2_TotalWrites[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l2_TotalWriteMisses[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalWriteMisses[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalGets = %llu\n", i, cgm_stat_container->l2_TotalGets[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalGet = %llu\n", i, cgm_stat_container->l2_TotalGet[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalGetx = %llu\n", i, cgm_stat_container->l2_TotalGetx[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l2_TotalUpgrades[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGets[i] / (double) cgm_stat_container->l2_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGet[i] / (double) cgm_stat_container->l2_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGetx[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalUpgrades[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l2_TotalWriteBacks[i]);
 		blocks_written = cgm_cache_get_block_usage(&l2_caches[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l2_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l3_TotalThreadLoops[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalAccesses = %llu\n", i, cgm_stat_container->l3_TotalAcesses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalHits = %llu\n", i, (cgm_stat_container->l3_TotalAcesses[i] - cgm_stat_container->l3_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalMisses = %llu\n", i, cgm_stat_container->l3_TotalMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_MissRate = %0.2f\n", i,
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalCacheCtrlLoops = %llu\n", i, cgm_stat_container->l3_TotalThreadLoops[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l3_TotalAcesses[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalHits = %llu\n", i, (cgm_stat_container->l3_TotalAcesses[i] - cgm_stat_container->l3_TotalMisses[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalMisses = %llu\n", i, cgm_stat_container->l3_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l3_TotalMisses[i])/(double) (cgm_stat_container->l3_TotalAcesses[i] - cgm_stat_container->l3_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalReads = %llu\n", i, cgm_stat_container->l3_TotalReads[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalReadMisses = %llu\n", i, cgm_stat_container->l3_TotalReadMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalReadMisses[i] / (double) cgm_stat_container->l3_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalWrites = %llu\n", i, cgm_stat_container->l3_TotalWrites[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalWriteMisses = %llu\n", i, cgm_stat_container->l3_TotalWriteMisses[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalWriteMisses[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalGets = %llu\n", i, cgm_stat_container->l3_TotalGets[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalGet = %llu\n", i, cgm_stat_container->l3_TotalGet[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalGetx = %llu\n", i, cgm_stat_container->l3_TotalGetx[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalUpgrades = %llu\n", i, cgm_stat_container->l3_TotalUpgrades[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGets[i] / (double) cgm_stat_container->l3_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGet[i] / (double) cgm_stat_container->l3_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGetx[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalUpgrades[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_TotalWriteBacks = %llu\n", i, cgm_stat_container->l3_TotalWriteBacks[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalReads = %llu\n", i, cgm_stat_container->l3_TotalReads[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalReadMisses = %llu\n", i, cgm_stat_container->l3_TotalReadMisses[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalReadMisses[i] / (double) cgm_stat_container->l3_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalWrites = %llu\n", i, cgm_stat_container->l3_TotalWrites[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l3_TotalWriteMisses[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalWriteMisses[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalGets = %llu\n", i, cgm_stat_container->l3_TotalGets[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalGet = %llu\n", i, cgm_stat_container->l3_TotalGet[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalGetx = %llu\n", i, cgm_stat_container->l3_TotalGetx[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l3_TotalUpgrades[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGets[i] / (double) cgm_stat_container->l3_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGet[i] / (double) cgm_stat_container->l3_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGetx[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalUpgrades[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l3_TotalWriteBacks[i]);
 		blocks_written = cgm_cache_get_block_usage(&l3_caches[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_l3_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 

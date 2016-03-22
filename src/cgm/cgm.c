@@ -1215,6 +1215,8 @@ void cgm_watchdog(void){
 
 void cgm_dump_general_stats(void){
 
+	int num_cores = x86_cpu_num_cores;
+	int num_threads = x86_cpu_num_threads;
 	double cpu_sim_time = 0;
 	unsigned int cpu_freq_hz = 0;
 
@@ -1236,6 +1238,9 @@ void cgm_dump_general_stats(void){
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "SimulatedCyclesPerSec = %.2f\n", (double)P_TIME/cgm_stat->sim_time);
 	CGM_STATS(cgm_stats_file, "TotalCycles = %lld\n", P_TIME);
+	CGM_STATS(cgm_stats_file, "CPU_NumCores = %d\n", num_cores);
+	CGM_STATS(cgm_stats_file, "CPU_ThreadsPerCore = %d\n", num_threads);
+	CGM_STATS(cgm_stats_file, "CPU_FreqGHz = %u\n", (cpu_freq_hz)/(GHZ));
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -1292,89 +1297,77 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	long long stall_time = 0;
 	long long system_time = 0;
 
-	unsigned int cpu_freq_hz = 0;
-
-	cpu_freq_hz = (unsigned int) x86_cpu_frequency * (unsigned int) MHZ;
-
-	/*CPU stats*/
-	/*CGM_STATS(cgm_stats_file, "[CPU]\n");*/
-	CGM_STATS(cgm_stats_file, "CPU_NumCores = %d\n", num_cores);
-	CGM_STATS(cgm_stats_file, "CPU_ThreadsPerCore = %d\n", num_threads);
-	CGM_STATS(cgm_stats_file, "CPU_FrequencyGHz = %u\n", (cpu_freq_hz)/(GHZ));
-	/*CGM_STATS(cgm_stats_file, "\n");*/
-
-
 	/*core stats*/
 	for(i = 0; i < num_cores; i++)
 	{
 		/*CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "Core_%d_NumSyscalls = %llu\n", i, cgm_stat_container->core_num_syscalls[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_ROBStalls = %llu\n", i, cgm_stat_container->core_rob_stalls[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_ROBStallLoad = %llu\n", i, cgm_stat_container->core_rob_stall_load[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_ROBStallStore = %llu\n", i, cgm_stat_container->core_rob_stall_store[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_ROBStallOther = %llu\n", i, cgm_stat_container->core_rob_stall_other[i]);
-		CGM_STATS(cgm_stats_file, "Core_%d_FetchStall = %llu\n", i, cgm_stat_container->core_fetch_stalls[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_NumSyscalls = %llu\n", i, cgm_stat_container->core_num_syscalls[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_ROBStalls = %llu\n", i, cgm_stat_container->core_rob_stalls[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_ROBStallLoad = %llu\n", i, cgm_stat_container->core_rob_stall_load[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_ROBStallStore = %llu\n", i, cgm_stat_container->core_rob_stall_store[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_ROBStallOther = %llu\n", i, cgm_stat_container->core_rob_stall_other[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_FetchStall = %llu\n", i, cgm_stat_container->core_fetch_stalls[i]);
 
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 
-			CGM_STATS(cgm_stats_file, "Core_%d_FirstFetchCycle = %llu\n", i,  cgm_stat_container->core_first_fetch_cycle[i]);
-			CGM_STATS(cgm_stats_file, "Core_%d_LastCommitCycle = %llu\n", i, cgm_stat_container->core_last_commit_cycle[i]);
+			CGM_STATS(cgm_stats_file, "core_%d_FirstFetchCycle = %llu\n", i,  cgm_stat_container->core_first_fetch_cycle[i]);
+			CGM_STATS(cgm_stats_file, "core_%d_LastCommitCycle = %llu\n", i, cgm_stat_container->core_last_commit_cycle[i]);
 
 			//CGM_STATS(cgm_stats_file, "NumIssuedMemoryInst = %llu\n", cgm_stat_container->core_issued_memory_insts[i]);
 			//CGM_STATS(cgm_stats_file, "NumCommitedMemoryInst = %llu\n", cgm_stat_container->core_commited_memory_insts[i]);
 			run_time = cgm_stat_container->core_last_commit_cycle[i] - cgm_stat_container->core_first_fetch_cycle[i];
-			CGM_STATS(cgm_stats_file, "Core_%d_RunTime = %llu\n", i, run_time);
+			CGM_STATS(cgm_stats_file, "core_%d_RunTime = %llu\n", i, run_time);
 
 			idle_time = P_TIME - run_time;
-			CGM_STATS(cgm_stats_file, "Core_%d_IdleTime = %llu\n", i, idle_time);
+			CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, idle_time);
 
 			system_time = cgm_stat_container->core_syscall_stalls[i];
-			CGM_STATS(cgm_stats_file, "Core_%d_SystemTime = %llu\n", i, system_time);
+			CGM_STATS(cgm_stats_file, "core_%d_SystemTime = %llu\n", i, system_time);
 
 			stall_time = (cgm_stat_container->core_rob_stalls[i] + cgm_stat_container->core_fetch_stalls[i]);
-			CGM_STATS(cgm_stats_file, "Core_%d_StallTime = %llu\n", i, stall_time);
+			CGM_STATS(cgm_stats_file, "core_%d_StallTime = %llu\n", i, stall_time);
 
 			busy_time = (run_time - (stall_time + system_time));
-			CGM_STATS(cgm_stats_file, "Core_%d_BusyTime = %llu\n", i, busy_time);
+			CGM_STATS(cgm_stats_file, "core_%d_BusyTime = %llu\n", i, busy_time);
 
-			CGM_STATS(cgm_stats_file, "Core_%d_IdlePct = %0.2f\n", i, (double)idle_time/(double)P_TIME);
-			CGM_STATS(cgm_stats_file, "Core_%d_RunPct = %0.2f\n", i, (double)run_time/(double)P_TIME);
+			CGM_STATS(cgm_stats_file, "core_%d_IdlePct = %0.2f\n", i, (double)idle_time/(double)P_TIME);
+			CGM_STATS(cgm_stats_file, "core_%d_RunPct = %0.2f\n", i, (double)run_time/(double)P_TIME);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 
 			run_time = cgm_stat_container->total_parallel_section_cycles;
-			CGM_STATS(cgm_stats_file, "Core_%d_RunTime = %llu\n", i, run_time);
+			CGM_STATS(cgm_stats_file, "core_%d_RunTime = %llu\n", i, run_time);
 
 			idle_time = 0;
-			CGM_STATS(cgm_stats_file, "Core_%d_IdleTime = %llu\n", i, idle_time);
+			CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, idle_time);
 
 			system_time = cgm_stat_container->core_syscall_stalls[i];
-			CGM_STATS(cgm_stats_file, "Core_%d_SystemTime = %llu\n", i, system_time);
+			CGM_STATS(cgm_stats_file, "core_%d_SystemTime = %llu\n", i, system_time);
 
 			stall_time = (cgm_stat_container->core_rob_stalls[i] + cgm_stat_container->core_fetch_stalls[i]);
-			CGM_STATS(cgm_stats_file, "Core_%d_StallTime = %llu\n", i, stall_time);
+			CGM_STATS(cgm_stats_file, "core_%d_StallTime = %llu\n", i, stall_time);
 
 			busy_time = (run_time - (stall_time + system_time));
-			CGM_STATS(cgm_stats_file, "Core_%d_BusyTime = %llu\n", i, busy_time);
+			CGM_STATS(cgm_stats_file, "core_%d_BusyTime = %llu\n", i, busy_time);
 
-			CGM_STATS(cgm_stats_file, "Core_%d_IdlePct = %0.2f\n", i, (double)idle_time/(double)run_time);
-			CGM_STATS(cgm_stats_file, "Core_%d_RunPct = %0.2f\n", i, (double)run_time/(double)run_time);
+			CGM_STATS(cgm_stats_file, "core_%d_IdlePct = %0.2f\n", i, (double)idle_time/(double)run_time);
+			CGM_STATS(cgm_stats_file, "core_%d_RunPct = %0.2f\n", i, (double)run_time/(double)run_time);
 		}
 		else
 		{
 			fatal("cgm_dump_cpu_gpu_stats(): not set up for these stats yet\n");
 		}
 
-		CGM_STATS(cgm_stats_file, "Core_%d_SystemPct = %0.2f\n", i, (double)system_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_StallPct = %0.2f\n", i, (double)stall_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_BusyPct = %0.2f\n", i, (double)busy_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_StallfetchPct = %0.2f\n", i, (double)cgm_stat_container->core_fetch_stalls[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_StallLoadPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_load[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_StallStorePct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_store[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "core_%d_SystemPct = %0.2f\n", i, (double)system_time/(double)run_time);
+		CGM_STATS(cgm_stats_file, "core_%d_StallPct = %0.2f\n", i, (double)stall_time/(double)run_time);
+		CGM_STATS(cgm_stats_file, "core_%d_BusyPct = %0.2f\n", i, (double)busy_time/(double)run_time);
+		CGM_STATS(cgm_stats_file, "core_%d_StallfetchPct = %0.2f\n", i, (double)cgm_stat_container->core_fetch_stalls[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "core_%d_StallLoadPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_load[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "core_%d_StallStorePct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_store[i]/(double)stall_time);
 		//CGM_STATS(cgm_stats_file, "StallSyscallPct = %0.2f\n", (double)cgm_stat_container->core_rob_stall_syscall[i]/(double)stall_time);
-		CGM_STATS(cgm_stats_file, "Core_%d_StallOtherPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_other[i]/(double)stall_time);
+		CGM_STATS(cgm_stats_file, "core_%d_StallOtherPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_other[i]/(double)stall_time);
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 
