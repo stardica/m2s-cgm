@@ -1337,6 +1337,9 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 
+			CGM_STATS(cgm_stats_file, "core_%d_FirstFetchCycle = %llu\n", i, (long long) 0);
+			CGM_STATS(cgm_stats_file, "core_%d_LastCommitCycle = %llu\n", i, (long long) 0);
+
 			run_time = cgm_stat_container->total_parallel_section_cycles;
 			CGM_STATS(cgm_stats_file, "core_%d_RunTime = %llu\n", i, run_time);
 
@@ -1496,7 +1499,6 @@ void cgm_dump_summary(void){
 
 	CGM_STATS(cgm_stats_file, "[ParallelStats]\n");
 	cgm_dump_parallel_section_stats(cgm_parallel_stats);
-
 	cgm_dump_cpu_gpu_stats(cgm_parallel_stats);
 	cgm_dump_mem_system_stats(cgm_parallel_stats);
 	cache_dump_stats(cgm_parallel_stats);
@@ -1505,9 +1507,7 @@ void cgm_dump_summary(void){
 	memctrl_dump_stats(cgm_parallel_stats);
 	CGM_STATS(cgm_stats_file, "\n");
 
-
 	//wrapup stats
-
 	CGM_STATS(cgm_stats_file, "[WrapupStats]\n");
 	cgm_dump_wrapup_section_stats(cgm_wrapup_stats);
 	CGM_STATS(cgm_stats_file, "\n");

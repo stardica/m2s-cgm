@@ -139,83 +139,42 @@ def print_cache_stats(options):
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	###print stats for 1 core (P0)###
-	if int(options.NumCores) == 1:
-	
-		max_title_length = len('Cache stats P0')
-		current_title_length = 0
+	#get the largest title length	
+	max_title_length = len('Cache stats combined')
+	current_title_length = 0
 
-		for tup in table_P0:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
+	for tup in table_cache_combined:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
 
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
 
-		for tup in table_P0:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
+	for tup in table_cache_combined:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
 
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
 
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
 
-		#print the title and bars
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Cache stats P0",'I$', 'D$', 'L2$', 'L3$', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Cache stats combined",'I$', 'D$', 'L2$', 'L3$', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-		#print the table's data
-		for tup in table_P0:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the table's data
+	for tup in table_cache_combined:
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
 
-		f.write('\n')
-
-	###print stats combined 4 cores###
-	if int(options.NumCores) == 4:
-		#get the largest title length	
-		max_title_length = len('Cache stats combined')
-		current_title_length = 0
-
-		for tup in table_cache_combined:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
-
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
-
-		for tup in table_cache_combined:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
-
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
-
-		#print the title and bars
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Cache stats combined",'I$', 'D$', 'L2$', 'L3$', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		#print the table's data
-		for tup in table_cache_combined:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		f.write('\n')
+	f.write('\n')
 		
 	f.close()
 
@@ -281,75 +240,40 @@ def print_switch_stats(options):
 	max_title_length = len('Stat Switches')
 	current_title_length = 0
 
-	if int(options.NumCores) == 1:
-		for tup in table_switch_data_p0:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
-
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
-
-		for tup in table_switch_data_p0:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
-
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
 	
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
+	for tup in table_switch_data_p4:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
 
-		#print the title and bars
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
 
-		#print the table's data
-		for tup in table_switch_data_p0:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], title_width=max_title_length, data_width=max_element_length) + '\n')
+	for tup in table_switch_data_p4:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
 
-		f.write('\n')
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
 
-	if int(options.NumCores) == 4:
-		for tup in table_switch_data_p4:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
 
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', 'S2', 'S3', 'S4', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-		for tup in table_switch_data_p4:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
+	#print the table's data
+	for tup in table_switch_data_p4:
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length) + '\n')
 
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
+	f.write('\n')
 	
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
-
-		#print the title and bars
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', 'S2', 'S3', 'S4', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		#print the table's data
-		for tup in table_switch_data_p4:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		f.write('\n')
-	
-
 	f.close
 	return
 
@@ -357,76 +281,50 @@ def print_switch_stats(options):
 
 def print_samc_stats(options):
 
-	sa_data = ConfigParser.ConfigParser()
-	sa_data.read(options.InFileName)
+	samc_data = ConfigParser.ConfigParser()
+	samc_data.optionxform = str 
+	samc_data.read(options.InFileName)
 
-	sa_total_ctrl_loops = sa_data.getint('SystemAgent', 'TotalCtrlLoops')
-	sa_total_mc_loads = sa_data.getint('SystemAgent', 'MCLoads')
-	sa_total_mc_stores = sa_data.getint('SystemAgent', 'MCStores')
-	sa_total_mc_returns = sa_data.getint('SystemAgent', 'MCReturns')
-	sa_total_north_io_busy_cycles = sa_data.getint('SystemAgent', 'NorthIOBusyCycles')
-	sa_max_north_rx_queue_depth = sa_data.getint('SystemAgent', 'MaxNorthRxQueueDepth')
-	sa_ave_north_rx_queue_depth = sa_data.getfloat('SystemAgent', 'AveNorthRxQueueDepth')
-	sa_max_north_tx_queue_depth = sa_data.getint('SystemAgent', 'MaxNorthTxQueueDepth')
-	sa_ave_north_tx_queue_depth = sa_data.getfloat('SystemAgent', 'AveNorthTxQueueDepth')
-	sa_total_south_io_busy_cycles = sa_data.getint('SystemAgent', 'SouthIOBusyCycles')
-	sa_max_soutth_rx_queue_depth = sa_data.getint('SystemAgent', 'MaxSouthRxQueueDepth')
-	sa_ave_south_rx_queue_depth = sa_data.getfloat('SystemAgent', 'AveSouthRxQueueDepth')
-	sa_max_south_tx_queue_depth = sa_data.getint('SystemAgent', 'MaxSouthTxQueueDepth')
-	sa_ave_south_tx_queue_depth = sa_data.getfloat('SystemAgent', 'AveSouthTxQueueDepth')
+	#pull of the memory system stats 	
+	samc_stats = dict(samc_data.items('FullRunStats'))
 
-	mc_total_ctrl_loops = sa_data.getint('MemCtrl', 'MemCtrlBusyCycles')
-	mc_total_reads = sa_data.getint('MemCtrl', 'TotalReads')
-	mc_total_writes = sa_data.getint('MemCtrl', 'TotalWrites')
-	mc_io_busy_cycles = sa_data.getint('MemCtrl', 'IOBusyCycles')
-	mc_max_north_rx_queue_depth = sa_data.getint('MemCtrl', 'RxMax')
-	mc_max_north_tx_queue_depth = sa_data.getint('MemCtrl', 'TxMax')
-	mc_dram_busy_cycles = sa_data.getint('MemCtrl', 'DramBusyCycles')
-	mc_dram_ave_read_lat = sa_data.getfloat('MemCtrl', 'AveDramReadLat')
-	mc_dram_ave_write_lat = sa_data.getfloat('MemCtrl', 'AveDramWriteLat')
-	mc_dram_ave_total_lat_cyc = sa_data.getfloat('MemCtrl', 'AveDramTotalLat(cycles)')
-	mc_dram_ave_total_lat_ns = sa_data.getfloat('MemCtrl', 'AveDramTotalLat(nanoseconds)')
-	mc_dram_read_min_lat = sa_data.getint('MemCtrl', 'ReadMinLat')
-	mc_dram_read_max_lat = sa_data.getint('MemCtrl', 'ReadMaxLat')
-	mc_dram_write_min_lat = sa_data.getint('MemCtrl', 'WriteMinLat')
-	mc_dram_write_max_lat = sa_data.getint('MemCtrl', 'WriteMaxLat')
-	mc_dram_max_queue_depth = sa_data.getint('MemCtrl', 'DramMaxQueueDepth')
-	mc_dram_ave_queue_depth = sa_data.getfloat('MemCtrl', 'DramAveQueueDepth')
-	mc_dram_total_bytes_read = sa_data.getint('MemCtrl', 'ByteRead')
-	mc_dram_total_bytes_written = sa_data.getint('MemCtrl', 'BytesWrote')
+	for key, value in samc_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			samc_stats[key] = int(value)
+		except ValueError:
+			samc_stats[key] = float(value)
 
 	#bridge some of the stats so we can put evetyhing in one table...
-	sa_0 = 0;
-	mc_0 = 0;
+	samc_0 = 0;
 
 	table_sa_data = [
-	["TotalCtrlLoops", sa_total_ctrl_loops, mc_total_ctrl_loops],
-	["TotalLoads", sa_total_mc_loads, mc_total_reads],
-	["TotalStores",sa_total_mc_stores, mc_total_writes],
-	["TotalReturns", sa_total_mc_returns, mc_0],
-	["NorthIOCycles", sa_total_north_io_busy_cycles, mc_io_busy_cycles],
-	["NorthMaxRxQueueDepth", sa_max_north_rx_queue_depth, mc_max_north_rx_queue_depth],
-	["NorthAveRxQueueDepth", sa_ave_north_rx_queue_depth, mc_0],
-	["NorthMaxTxQueueDepth", sa_max_north_tx_queue_depth, mc_max_north_tx_queue_depth],
-	["NorthAveTxQueueDepth", sa_ave_north_tx_queue_depth, mc_0],
-	["SouthIOCycles", sa_total_south_io_busy_cycles, mc_0],
-	["SouthMaxRxQueueDepth", sa_max_soutth_rx_queue_depth, mc_0],
-	["SouthAveRxQueueDepth", sa_ave_south_rx_queue_depth, mc_0],
-	["SouthMaxTxQueueDepth", sa_max_south_tx_queue_depth, mc_0],
-	["SouthAveTxQueueDepth", sa_ave_south_tx_queue_depth, mc_0],
-	["DramBusyCycles", sa_0, mc_dram_busy_cycles],
-	["DramAveReadLat", sa_0, mc_dram_ave_read_lat],
-	["DramAveWriteLat", sa_0, mc_dram_ave_write_lat],
-	["DramAveTotalLat(cyc)", sa_0, mc_dram_ave_total_lat_cyc],
-	["DramAveTotalLat(ns)", sa_0, mc_dram_ave_total_lat_ns],
-	["DramReadMinLat", sa_0, mc_dram_read_min_lat],
-	["DramReadMaxLat", sa_0, mc_dram_read_max_lat],
-	["DramWriteMinLat", sa_0, mc_dram_write_min_lat],
-	["DramWriteMaxLat", sa_0, mc_dram_write_max_lat],
-	["DramMaxQueueDepth", sa_0, mc_dram_max_queue_depth],
-	["DramAveQueueDepth", sa_0, mc_dram_ave_queue_depth],
-	["DramTotalBytesRead", sa_0, mc_dram_total_bytes_read],
-	["DramTotalBytesWritten", sa_0, mc_dram_total_bytes_written],
+	["TotalCtrlLoops", samc_stats['sa_TotalCtrlLoops'], samc_stats['mc_MemCtrlBusyCycles']],
+	["TotalLoads", samc_stats['sa_MCLoads'], samc_stats['mc_TotalReads']],
+	["TotalStores", samc_stats['sa_MCStores'], samc_stats['mc_TotalWrites']],
+	["TotalReturns", samc_stats['sa_MCReturns'], samc_0],
+	["NorthIOCycles", samc_stats['sa_NorthIOBusyCycles'], samc_stats['mc_IOBusyCycles']],
+	["NorthMaxRxQueueDepth", samc_stats['sa_MaxNorthRxQueueDepth'], samc_stats['mc_RxMax']],
+	["NorthAveRxQueueDepth", samc_stats['sa_AveNorthRxQueueDepth'], samc_0],
+	["NorthMaxTxQueueDepth", samc_stats['sa_MaxNorthTxQueueDepth'], samc_stats['mc_TxMax']],
+	["NorthAveTxQueueDepth", samc_stats['sa_AveNorthTxQueueDepth'], samc_0],
+	["SouthIOCycles", samc_stats['sa_SouthIOBusyCycles'], samc_0],
+	["SouthMaxRxQueueDepth", samc_stats['sa_MaxSouthRxQueueDepth'], samc_0],
+	["SouthAveRxQueueDepth", samc_stats['sa_AveSouthRxQueueDepth'], samc_0],
+	["SouthMaxTxQueueDepth", samc_stats['sa_MaxSouthTxQueueDepth'], samc_0],
+	["SouthAveTxQueueDepth", samc_stats['sa_AveSouthTxQueueDepth'], samc_0],
+	["DramBusyCycles", samc_0, samc_stats['mc_DramBusyCycles']],
+	["DramAveReadLat", samc_0, samc_stats['mc_AveDramReadLat']],
+	["DramAveWriteLat", samc_0, samc_stats['mc_AveDramWriteLat']],
+	["DramAveTotalLat(cyc)", samc_0, samc_stats['mc_AveDramTotalLat(cycles)']],
+	["DramAveTotalLat(ns)", samc_0, samc_stats['mc_AveDramTotalLat(ns)']],
+	["DramReadMinLat", samc_0, samc_stats['mc_ReadMinLat']],
+	["DramReadMaxLat", samc_0, samc_stats['mc_ReadMaxLat']],
+	["DramWriteMinLat", samc_0, samc_stats['mc_WriteMinLat']],
+	["DramWriteMaxLat", samc_0, samc_stats['mc_WriteMaxLat']],
+	["DramMaxQueueDepth", samc_0, samc_stats['mc_DramMaxQueueDepth']],
+	["DramAveQueueDepth", samc_0, samc_stats['mc_DramAveQueueDepth']],
+	["DramTotalBytesRead", samc_0, samc_stats['mc_ByteRead']],
+	["DramTotalBytesWritten", samc_0, samc_stats['mc_BytesWrote']],
 	]
 
 	f = open(options.OutFileName, 'a')
@@ -552,6 +450,8 @@ def print_mem_system_stats(options):
 
 def print_general_stats(options):
 
+
+
 	general_data = ConfigParser.ConfigParser()
 	general_data.optionxform = str 
 	general_data.read(options.InFileName)
@@ -630,11 +530,17 @@ def print_general_stats(options):
 def print_cpu_stats(options):
 
 	cpu_data = ConfigParser.ConfigParser()
-	cpu_data.optionxform = str 
+	cpu_data.optionxform = str
 	cpu_data.read(options.InFileName)
 	
-	#pull of the general stats 	
-	cpu_stats = dict(cpu_data.items('FullRunStats'))
+	#pull stats
+	if options.PrintSection == 'FullRunStats':
+		cpu_stats = dict(cpu_data.items('FullRunStats'))
+	elif options.PrintSection == 'ParallelStats':
+		cpu_stats = dict(cpu_data.items('ParallelStats'))
+	else:
+		print "print_cpu_stats(): invalid section"
+		exit(0)
 
 	table_P4 = [
 		["NumSyscalls", cpu_stats['core_0_NumSyscalls'], cpu_stats['core_1_NumSyscalls'], cpu_stats['core_2_NumSyscalls'], cpu_stats['core_3_NumSyscalls']],
@@ -666,106 +572,62 @@ def print_cpu_stats(options):
 
 	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-
-
-	###print stats for 1 core (P0)###
-	if int(options.NumCores) == 1:
 	
-		max_title_length = len('CPU Stats Core_0')
-		current_title_length = 0
+	#get the largest title length	
+	max_title_length = len('CPU Stats All Cores')
+	current_title_length = 0
 
-		for tup in table_P0:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
+	for tup in table_P4:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
 
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
 
-		for tup in table_P0:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
+	for tup in table_P4:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
 
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
 
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
 
-		#print the title and bars
-		#print the title and barss
-		f.write("{:<{title_width}}{:>{data_width}}".format("CPU Stats Core_0",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("CPU Stats All Cores",'Core_0', 'Core_1', 'Core_2', 'Core_3', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-		#print the table's data
-		for tup in table_P0:
-			f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the table's data
+	for tup in table_P4:
+		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
 
-
-	###print stats combined 4 cores###
-	if int(options.NumCores) == 4:
-		#get the largest title length	
-		max_title_length = len('CPU Stats All Cores')
-		current_title_length = 0
-
-		for tup in table_P4:
-			for item in tup[0:1]:
-				current_title_length = len(tup[0])
-				if max_title_length < current_title_length:
-					max_title_length = current_title_length
-
-		#get the largest data element length
-		max_element_length = 0
-		current_element_length = 0
-
-		for tup in table_P4:
-			for item in tup[1:5]:
-				current_element_length = len(str(item))
-				if max_element_length < current_element_length:
-					max_element_length = current_element_length
-
-		max_title_length += 2
-		max_element_length += 2
-		#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
-		title_bar = '-' * (max_title_length - 1)
-		data_bar = '-' * (max_element_length - 1)
-
-		#print the title and bars
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("CPU Stats All Cores",'Core_0', 'Core_1', 'Core_2', 'Core_3', title_width=max_title_length, data_width=max_element_length) + '\n')
-		f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		#print the table's data
-		for tup in table_P4:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
-
-		f.write('\n')
+	f.write('\n')
 
 	f.close
-	
 	return
 
 
 parser = OptionParser()
-parser.usage = "%prog -c numcores -i inputfile -o outputfile"
-parser.add_option("-c", "--numcores", dest="NumCores", default="", help="Specifiy the number of cores.")
+parser.usage = "%prog -i inputfile -o outputfile"
+parser.add_option("-s", "--section", dest="PrintSection", default="", help="Specifiy the stats section to parse.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
 parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")
 (options, args) = parser.parse_args()
 
-if not options.NumCores:
+if not options.PrintSection:
 	parser.print_usage()
 	exit(0)
 
 if not options.InFileName:
 	parser.print_usage()
 	exit(0)
-
 
 print_general_stats(options)
 print_cpu_stats(options)

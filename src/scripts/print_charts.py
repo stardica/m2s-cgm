@@ -198,18 +198,132 @@ def plot_stats(options):
 	return
 
 
+def plot_stats_omp(options):
+
+	p1_data = ConfigParser.ConfigParser()
+	p1_data.optionxform = str
+	p1_data.read(options.InFileName1)
+
+	p2_data = ConfigParser.ConfigParser()
+	p2_data.optionxform = str
+	p2_data.read(options.InFileName2)
+
+	p4_data = ConfigParser.ConfigParser()
+	p4_data.optionxform = str
+	p4_data.read(options.InFileName3)
+
+	#pull stats 	
+	p1_stats = dict(p1_data.items('ParallelStats'))
+	for key, value in p1_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			p1_stats[key] = int(value)
+		except ValueError:
+			p1_stats[key] = float(value)
+
+	p2_stats = dict(p2_data.items('ParallelStats'))
+	for key, value in p2_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			p2_stats[key] = int(value)
+		except ValueError:
+			p2_stats[key] = float(value)
+
+	#p4_stats = dict(p4_data.items('ParallelStats'))
+	#for key, value in p4_stats.items(): #get the (key, value) tuples one at a time
+	#	try:
+	#		p4_stats[key] = int(value)
+	#	except ValueError:
+	#		p4_stats[key] = float(value)
+	
+	p1_ave_data = [[p1_stats['core_0_BusyTime'], p1_stats['core_0_SystemTime'], p1_stats['core_0_FetchStall'], p1_stats['core_0_ROBStallLoad'], p1_stats['core_0_ROBStallStore'], p1_stats['core_0_ROBStallOther']]]
+
+	p2_ave_data = [(p2_stats['core_0_BusyTime'] + p2_stats['core_1_BusyTime'])/2, (p2_stats['core_0_SystemTime'] + p2_stats['core_1_SystemTime'])/2, (p2_stats['core_0_FetchStall'] + p2_stats['core_1_FetchStall'])/2, (p2_stats['core_0_ROBStallLoad'] + p2_stats['core_1_ROBStallLoad'])/2, (p2_stats['core_0_ROBStallStore'] + p2_stats['core_1_ROBStallStore'])/2, (p2_stats['core_1_ROBStallOther'] + p2_stats['core_0_ROBStallOther'])/2]
+
+
+	p1_ave_data.append(p2_ave_data)
+	
+	print p1_ave_data
+
+	total_cycles = p1_stats['core_0_RunTime']
+
+	#cpu_stats = np.array()
+	df = pd.DataFrame(p1_ave_data, index=['Benchmark @ P1'], columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall'])
+	axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP P1 4096", rot=0)
+
+	y_major_ticks = np.arange(0, (total_cycles*1.4), (total_cycles*.20))
+	axes.set_yticks(y_major_ticks)
+	y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
+
+	axes.set(xlabel="Core", ylabel="Percent of Cycles", yticklabels=['{:0.2f}'.format(y_ticks[0]/total_cycles), '{:0.2f}'.format(y_ticks[1]/total_cycles), '{:0.2f}'.format(y_ticks[2]/total_cycles), '{:0.2f}'.format(y_ticks[3]/total_cycles), '{:0.2f}'.format(y_ticks[4]/total_cycles), '{:0.2f}'.format(y_ticks[5]/total_cycles), '{:0.2f}'.format(y_ticks[6]/total_cycles), '{:0.2f}'.format(y_ticks[7]/total_cycles)])
+	axes.grid(b=True, which='major', color='black', linestyle='--')
+	axes.grid(b=True, which='minor', color='black', linestyle='--')
+	axes.legend(loc='upper right', ncol=4)
+	plt.show()
+	
+
+	ave_busy_time = (core_0_BusyTime + core_1_BusyTime + core_2_BusyTime + core_3_BusyTime)/int(options.NumCores)
+	ave_SystemTime = (core_0_SystemTime + core_1_SystemTime + core_2_SystemTime + core_3_SystemTime)/int(options.NumCores)
+	ave_FetchStall = (core_0_FetchStall + core_1_FetchStall + core_2_FetchStall + core_3_FetchStall)/int(options.NumCores)
+	ave_ROBStallLoad = (core_0_ROBStallLoad + core_1_ROBStallLoad + core_2_ROBStallLoad + core_3_ROBStallLoad)/int(options.NumCores)
+	ave_ROBStallStore = (core_0_ROBStallStore + core_1_ROBStallStore + core_2_ROBStallStore + core_3_ROBStallStore)/int(options.NumCores)
+	ave_ROBStallOther = (core_0_ROBStallOther + core_1_ROBStallOther + core_2_ROBStallOther + core_3_ROBStallOther)/int(options.NumCores)
+	ave_IdleTime = (core_0_IdleTime + core_1_IdleTime + core_2_IdleTime + core_3_IdleTime)/int(options.NumCores)
+
+	table_P4 = [
+		[ave_busy_time, ave_SystemTime, ave_FetchStall, ave_ROBStallLoad, ave_ROBStallStore, ave_ROBStallOther,]
+		]
+	
+	
+	core_0_NumSyscalls = cpu_data.getint('Core_0', 'NumSyscalls')
+	core_0_ROBStalls = cpu_data.getint('Core_0', 'ROBStalls')
+	core_0_ROBStallLoad = cpu_data.getint('Core_0', 'ROBStallLoad')
+	core_0_ROBStallStore = cpu_data.getint('Core_0', 'ROBStallStore')
+	core_0_ROBStallOther = cpu_data.getint('Core_0', 'ROBStallOther')
+	core_0_FirstFetchCycle = cpu_data.getint('Core_0', 'FirstFetchCycle')
+	core_0_LastCommitCycle = cpu_data.getint('Core_0', 'FirstFetchCycle')
+	core_0_FetchStall = cpu_data.getint('Core_0', 'FetchStall')
+	core_0_RunTime = cpu_data.getint('Core_0', 'RunTime')
+	core_0_IdleTime = cpu_data.getint('Core_0', 'IdleTime')
+	core_0_SystemTime = cpu_data.getint('Core_0', 'SystemTime')
+	core_0_StallTime = cpu_data.getint('Core_0', 'StallTime')
+	core_0_BusyTime = cpu_data.getint('Core_0', 'BusyTime')
+	core_0_IdlePct = cpu_data.getfloat('Core_0', 'IdlePct')
+	core_0_RunPct = cpu_data.getfloat('Core_0', 'RunPct')
+	core_0_SystemPct = cpu_data.getfloat('Core_0', 'SystemPct')
+	core_0_StallPct = cpu_data.getfloat('Core_0', 'StallPct')
+	core_0_BusyPct = cpu_data.getfloat('Core_0', 'BusyPct')
+	core_0_StallfetchPct = cpu_data.getfloat('Core_0', 'StallfetchPct')
+	core_0_StallLoadPct = cpu_data.getfloat('Core_0', 'StallLoadPct')
+	core_0_StallStorePct = cpu_data.getfloat('Core_0', 'StallStorePct')
+	core_0_StallOtherPct = cpu_data.getfloat('Core_0', 'StallOtherPct')
+	table_P0 = [core_0_IdleTime, core_0_FetchStall, core_0_ROBStallLoad, core_0_ROBStallStore, core_0_ROBStallOther, core_0_SystemTime, core_0_BusyTime]
+
+	
+	#if int(options.OutChart) == 2:
+	#ave_busy_time = (core_0_BusyTime + core_1_BusyTime + core_2_BusyTime + core_3_BusyTime)/int(options.NumCores)
+	#ave_SystemTime = (core_0_SystemTime + core_1_SystemTime + core_2_SystemTime + core_3_SystemTime)/int(options.NumCores)
+	#ave_FetchStall = (core_0_FetchStall + core_1_FetchStall + core_2_FetchStall + core_3_FetchStall)/int(options.NumCores)
+	#ave_ROBStallLoad = (core_0_ROBStallLoad + core_1_ROBStallLoad + core_2_ROBStallLoad + core_3_ROBStallLoad)/int(options.NumCores)
+	#ave_ROBStallStore = (core_0_ROBStallStore + core_1_ROBStallStore + core_2_ROBStallStore + core_3_ROBStallStore)/int(options.NumCores)
+	#ave_ROBStallOther = (core_0_ROBStallOther + core_1_ROBStallOther + core_2_ROBStallOther + core_3_ROBStallOther)/int(options.NumCores)
+	#ave_IdleTime = (core_0_IdleTime + core_1_IdleTime + core_2_IdleTime + core_3_IdleTime)/int(options.NumCores)
+
+	return
+
+
 parser = OptionParser()
-parser.usage = "%prog -c numberofcores -i inputfiles -o outputfile"
-parser.add_option("-c", "--numcores", dest="NumCores", default="", help="Specifiy the number of cores.")
-parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
+parser.usage = "%prog -m mode -1 inputfile1 -2 inputfile2 -3 inputfile3 -g graphtype"
+parser.add_option("-m", "--mode", dest="Mode", default="omp", help="Specifiy the mode.")
+parser.add_option("-1", "--infile1", dest="InFileName1", default="", help="Specifiy the 1st stats file and path to parse.")
+parser.add_option("-2", "--infile2", dest="InFileName2", default="", help="Specifiy the 2nd stats file and path to parse.")
+parser.add_option("-3", "--infile3", dest="InFileName3", default="", help="Specifiy the 3rd stats file and path to parse.")
 parser.add_option("-o", "--outchart", dest="OutChart", default="1", help="Specifiy the output chart.")
 (options, args) = parser.parse_args()
 
-if not options.NumCores:
+if not options.Mode:
 	parser.print_usage()
 	exit(0)
 
-if not options.InFileName:
+if not options.InFileName1:
 	parser.print_usage()
 	exit(0)
 
@@ -217,4 +331,18 @@ print "using Matplotlib version " + matplotlib.__version__
 print "using Pandas version " + pd.__version__
 print "using Numpy version " + np.__version__
 
-plot_stats(options)
+if options.Mode == 'fixme':
+	print "bad mode"
+	exit(0)
+	plot_stats(options)
+
+elif options.Mode == 'omp':
+
+	#if not (options.InFileName1 and options.InFileName2 and options.InFileName3):
+	#	parser.print_usage()
+	#	exit(0)
+
+	plot_stats_omp(options)
+else:
+	print "bad mode"
+	exit(0)
