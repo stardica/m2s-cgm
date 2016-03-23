@@ -15,13 +15,14 @@ def print_cache_stats(options):
 	#pull of the memory system stats 	
 	cache_stats = dict(cache_data.items('FullRunStats'))
 
-	#for key, value in cache_stats.items(): # get the (key, value) tuples one at a time
-	#	cache_stats[key] = float(value)
-	
+	for key, value in cache_stats.items(): # get the (key, value) tuples one at a time
+		try:
+			cache_stats[key] = int(value)
+		except ValueError:
+			cache_stats[key] = float(value)
 		
-		
 	
-	l1_i_TotalCacheCtrlLoops = int(cache_stats['l1_i_0_TotalCacheCtrlLoops'] + cache_stats['l1_i_1_TotalCacheCtrlLoops'] + cache_stats['l1_i_2_TotalCacheCtrlLoops'] + cache_stats['l1_i_3_TotalCacheCtrlLoops'])
+	l1_i_TotalCacheCtrlLoops = cache_stats['l1_i_0_TotalCacheCtrlLoops'] + cache_stats['l1_i_1_TotalCacheCtrlLoops'] + cache_stats['l1_i_2_TotalCacheCtrlLoops'] + cache_stats['l1_i_3_TotalCacheCtrlLoops']
 	l1_i_TotalAccesses = cache_stats['l1_i_0_TotalAccesses'] + cache_stats['l1_i_1_TotalAccesses'] + cache_stats['l1_i_2_TotalAccesses'] + cache_stats['l1_i_3_TotalAccesses']
 	l1_i_TotalHits = cache_stats['l1_i_0_TotalHits'] + cache_stats['l1_i_1_TotalHits'] + cache_stats['l1_i_2_TotalHits'] + cache_stats['l1_i_3_TotalHits']
 	l1_i_TotalMisses = cache_stats['l1_i_0_TotalMisses'] + cache_stats['l1_i_1_TotalMisses'] + cache_stats['l1_i_2_TotalMisses'] + cache_stats['l1_i_3_TotalMisses']
@@ -221,263 +222,56 @@ def print_cache_stats(options):
 	return
 
 def print_switch_stats(options):
+	
 	switch_data = ConfigParser.ConfigParser()
+	switch_data.optionxform = str 
 	switch_data.read(options.InFileName)
 
-	###print stats core 1 switch###
-	if int(options.NumCores) == 1 or int(options.NumCores) == 2 or int(options.NumCores) == 3 or int(options.NumCores) == 4:
-		s_0_total_ctrl_loops = switch_data.getint('Switch_0', 'NumberSwitchCtrlLoops')
-		s_0_occupance = switch_data.getfloat('Switch_0', 'SwitchOccupance')
-		s_0_total_links_formed = switch_data.getint('Switch_0', 'NumberLinks')
-		s_0_max_links_formed = switch_data.getint('Switch_0', 'MaxNumberLinks')
-		s_0_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_0', 'AveNumberLinksPerCtrlLoop')
-		s_0_north_io_transfers = switch_data.getint('Switch_0', 'NorthIOTransfers')
-		s_0_north_io_cycles = switch_data.getint('Switch_0', 'NorthIOCycles')
-		s_0_north_io_bytes_transfered = switch_data.getfloat('Switch_0', 'NorthIOBytesTransfered')
-		s_0_north_rxqueue_max_depth = switch_data.getint('Switch_0', 'NorthRxQueueMaxDepth')
-		s_0_north_rxqueue_ave_depth = switch_data.getfloat('Switch_0', 'NorthRxQueueAveDepth')
-		s_0_north_txqueue_max_depth = switch_data.getint('Switch_0', 'NorthTxQueueMaxDepth')
-		s_0_north_txqueue_ave_depth = switch_data.getfloat('Switch_0', 'NorthTxQueueAveDepth')
-		s_0_east_io_transfers = switch_data.getint('Switch_0', 'EastIOTransfers')
-		s_0_east_io_cycles = switch_data.getint('Switch_0', 'EastIOCycles')
-		s_0_east_io_bytes_transfered = switch_data.getint('Switch_0', 'EastIOBytesTransfered')
-		s_0_east_rxqueue_max_depth = switch_data.getint('Switch_0', 'EastRxQueueMaxDepth')
-		s_0_east_rxqueue_ave_depth = switch_data.getfloat('Switch_0', 'EastRxQueueAveDepth')
-		s_0_east_txqueue_max_depth = switch_data.getint('Switch_0', 'EastTxQueueMaxDepth')
-		s_0_east_txqueue_ave_depth = switch_data.getfloat('Switch_0', 'EastTxQueueAveDepth')
-		s_0_south_io_transfers = switch_data.getint('Switch_0', 'SouthIOTransfers')
-		s_0_south_io_cycles = switch_data.getint('Switch_0', 'SouthIOCycles')
-		s_0_south_io_bytes_transfered = switch_data.getint('Switch_0', 'SouthIOBytesTransfered')
-		s_0_south_rxqueue_max_depth = switch_data.getint('Switch_0', 'SouthRxQueueMaxDepth')
-		s_0_south_rxqueue_ave_depth = switch_data.getfloat('Switch_0', 'SouthRxQueueAveDepth')
-		s_0_south_txqueue_max_depth = switch_data.getint('Switch_0', 'SouthTxQueueMaxDepth')
-		s_0_south_txqueue_ave_depth = switch_data.getfloat('Switch_0', 'SouthTxQueueAveDepth')
-		s_0_west_io_transfers = switch_data.getint('Switch_0', 'WestIOTransfers')
-		s_0_west_io_cycles = switch_data.getint('Switch_0', 'WestIOCycles')
-		s_0_west_io_bytes_transfered = switch_data.getint('Switch_0', 'WestIOBytesTransfered')
-		s_0_west_rxqueue_max_depth = switch_data.getint('Switch_0', 'WestRxQueueMaxDepth')
-		s_0_west_rxqueue_ave_depth = switch_data.getfloat('Switch_0', 'WestRxQueueAveDepth')
-		s_0_west_txqueue_max_depth = switch_data.getint('Switch_0', 'WestTxQueueMaxDepth')
-		s_0_west_txqueue_ave_depth = switch_data.getfloat('Switch_0', 'WestTxQueueAveDepth')
+	#pull of the memory system stats 	
+	switch_stats = dict(switch_data.items('FullRunStats'))
 
-	if int(options.NumCores) == 2 or int(options.NumCores) == 3 or int(options.NumCores) == 4:
-		s_1_total_ctrl_loops = switch_data.getint('Switch_1', 'NumberSwitchCtrlLoops')
-		s_1_occupance = switch_data.getfloat('Switch_1', 'SwitchOccupance')
-		s_1_total_links_formed = switch_data.getint('Switch_1', 'NumberLinks')
-		s_1_max_links_formed = switch_data.getint('Switch_1', 'MaxNumberLinks')
-		s_1_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_1', 'AveNumberLinksPerCtrlLoop')
-		s_1_north_io_transfers = switch_data.getint('Switch_1', 'NorthIOTransfers')
-		s_1_north_io_cycles = switch_data.getint('Switch_1', 'NorthIOCycles')
-		s_1_north_io_bytes_transfered = switch_data.getint('Switch_1', 'NorthIOBytesTransfered')
-		s_1_north_rxqueue_max_depth = switch_data.getint('Switch_1', 'NorthRxQueueMaxDepth')
-		s_1_north_rxqueue_ave_depth = switch_data.getfloat('Switch_1', 'NorthRxQueueAveDepth')
-		s_1_north_txqueue_max_depth = switch_data.getint('Switch_1', 'NorthTxQueueMaxDepth')
-		s_1_north_txqueue_ave_depth = switch_data.getfloat('Switch_1', 'NorthTxQueueAveDepth')
-		s_1_east_io_transfers = switch_data.getint('Switch_1', 'EastIOTransfers')
-		s_1_east_io_cycles = switch_data.getint('Switch_1', 'EastIOCycles')
-		s_1_east_io_bytes_transfered = switch_data.getint('Switch_1', 'EastIOBytesTransfered')
-		s_1_east_rxqueue_max_depth = switch_data.getint('Switch_1', 'EastRxQueueMaxDepth')
-		s_1_east_rxqueue_ave_depth = switch_data.getfloat('Switch_1', 'EastRxQueueAveDepth')
-		s_1_east_txqueue_max_depth = switch_data.getint('Switch_1', 'EastTxQueueMaxDepth')
-		s_1_east_txqueue_ave_depth = switch_data.getfloat('Switch_1', 'EastTxQueueAveDepth')
-		s_1_south_io_transfers = switch_data.getint('Switch_1', 'SouthIOTransfers')
-		s_1_south_io_cycles = switch_data.getint('Switch_1', 'SouthIOCycles')
-		s_1_south_io_bytes_transfered = switch_data.getint('Switch_1', 'SouthIOBytesTransfered')
-		s_1_south_rxqueue_max_depth = switch_data.getint('Switch_1', 'SouthRxQueueMaxDepth')
-		s_1_south_rxqueue_ave_depth = switch_data.getfloat('Switch_1', 'SouthRxQueueAveDepth')
-		s_1_south_txqueue_max_depth = switch_data.getint('Switch_1', 'SouthTxQueueMaxDepth')
-		s_1_south_txqueue_ave_depth = switch_data.getfloat('Switch_1', 'SouthTxQueueAveDepth')
-		s_1_west_io_transfers = switch_data.getint('Switch_1', 'WestIOTransfers')
-		s_1_west_io_cycles = switch_data.getint('Switch_1', 'WestIOCycles')
-		s_1_west_io_bytes_transfered = switch_data.getint('Switch_1', 'WestIOBytesTransfered')
-		s_1_west_rxqueue_max_depth = switch_data.getint('Switch_1', 'WestRxQueueMaxDepth')
-		s_1_west_rxqueue_ave_depth = switch_data.getfloat('Switch_1', 'WestRxQueueAveDepth')
-		s_1_west_txqueue_max_depth = switch_data.getint('Switch_1', 'WestTxQueueMaxDepth')
-		s_1_west_txqueue_ave_depth = switch_data.getfloat('Switch_1', 'WestTxQueueAveDepth')
-
-	if int(options.NumCores) == 3 or int(options.NumCores) == 4:
-		s_2_total_ctrl_loops = switch_data.getint('Switch_2', 'NumberSwitchCtrlLoops')
-		s_2_occupance = switch_data.getfloat('Switch_2', 'SwitchOccupance')
-		s_2_total_links_formed = switch_data.getint('Switch_2', 'NumberLinks')
-		s_2_max_links_formed = switch_data.getint('Switch_2', 'MaxNumberLinks')
-		s_2_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_2', 'AveNumberLinksPerCtrlLoop')
-		s_2_north_io_transfers = switch_data.getint('Switch_2', 'NorthIOTransfers')
-		s_2_north_io_cycles = switch_data.getint('Switch_2', 'NorthIOCycles')
-		s_2_north_io_bytes_transfered = switch_data.getint('Switch_2', 'NorthIOBytesTransfered')
-		s_2_north_rxqueue_max_depth = switch_data.getint('Switch_2', 'NorthRxQueueMaxDepth')
-		s_2_north_rxqueue_ave_depth = switch_data.getfloat('Switch_2', 'NorthRxQueueAveDepth')
-		s_2_north_txqueue_max_depth = switch_data.getint('Switch_2', 'NorthTxQueueMaxDepth')
-		s_2_north_txqueue_ave_depth = switch_data.getfloat('Switch_2', 'NorthTxQueueAveDepth')
-		s_2_east_io_transfers = switch_data.getint('Switch_2', 'EastIOTransfers')
-		s_2_east_io_cycles = switch_data.getint('Switch_2', 'EastIOCycles')
-		s_2_east_io_bytes_transfered = switch_data.getint('Switch_2', 'EastIOBytesTransfered')
-		s_2_east_rxqueue_max_depth = switch_data.getint('Switch_2', 'EastRxQueueMaxDepth')
-		s_2_east_rxqueue_ave_depth = switch_data.getfloat('Switch_2', 'EastRxQueueAveDepth')
-		s_2_east_txqueue_max_depth = switch_data.getint('Switch_2', 'EastTxQueueMaxDepth')
-		s_2_east_txqueue_ave_depth = switch_data.getfloat('Switch_2', 'EastTxQueueAveDepth')
-		s_2_south_io_transfers = switch_data.getint('Switch_2', 'SouthIOTransfers')
-		s_2_south_io_cycles = switch_data.getint('Switch_2', 'SouthIOCycles')
-		s_2_south_io_bytes_transfered = switch_data.getint('Switch_2', 'SouthIOBytesTransfered')
-		s_2_south_rxqueue_max_depth = switch_data.getint('Switch_2', 'SouthRxQueueMaxDepth')
-		s_2_south_rxqueue_ave_depth = switch_data.getfloat('Switch_2', 'SouthRxQueueAveDepth')
-		s_2_south_txqueue_max_depth = switch_data.getint('Switch_2', 'SouthTxQueueMaxDepth')
-		s_2_south_txqueue_ave_depth = switch_data.getfloat('Switch_2', 'SouthTxQueueAveDepth')
-		s_2_west_io_transfers = switch_data.getint('Switch_2', 'WestIOTransfers')
-		s_2_west_io_cycles = switch_data.getint('Switch_2', 'WestIOCycles')
-		s_2_west_io_bytes_transfered = switch_data.getint('Switch_2', 'WestIOBytesTransfered')
-		s_2_west_rxqueue_max_depth = switch_data.getint('Switch_2', 'WestRxQueueMaxDepth')
-		s_2_west_rxqueue_ave_depth = switch_data.getfloat('Switch_2', 'WestRxQueueAveDepth')
-		s_2_west_txqueue_max_depth = switch_data.getint('Switch_2', 'WestTxQueueMaxDepth')
-		s_2_west_txqueue_ave_depth = switch_data.getfloat('Switch_2', 'WestTxQueueAveDepth')
-
-	if int(options.NumCores) == 4:
-		s_3_total_ctrl_loops = switch_data.getint('Switch_3', 'NumberSwitchCtrlLoops')
-		s_3_occupance = switch_data.getfloat('Switch_3', 'SwitchOccupance')
-		s_3_total_links_formed = switch_data.getint('Switch_3', 'NumberLinks')
-		s_3_max_links_formed = switch_data.getint('Switch_3', 'MaxNumberLinks')
-		s_3_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_3', 'AveNumberLinksPerCtrlLoop')
-		s_3_north_io_transfers = switch_data.getint('Switch_3', 'NorthIOTransfers')
-		s_3_north_io_cycles = switch_data.getint('Switch_3', 'NorthIOCycles')
-		s_3_north_io_bytes_transfered = switch_data.getint('Switch_3', 'NorthIOBytesTransfered')
-		s_3_north_rxqueue_max_depth = switch_data.getint('Switch_3', 'NorthRxQueueMaxDepth')
-		s_3_north_rxqueue_ave_depth = switch_data.getfloat('Switch_3', 'NorthRxQueueAveDepth')
-		s_3_north_txqueue_max_depth = switch_data.getint('Switch_3', 'NorthTxQueueMaxDepth')
-		s_3_north_txqueue_ave_depth = switch_data.getfloat('Switch_3', 'NorthTxQueueAveDepth')
-		s_3_east_io_transfers = switch_data.getint('Switch_3', 'EastIOTransfers')
-		s_3_east_io_cycles = switch_data.getint('Switch_3', 'EastIOCycles')
-		s_3_east_io_bytes_transfered = switch_data.getint('Switch_3', 'EastIOBytesTransfered')
-		s_3_east_io_bytes_transfered = switch_data.getint('Switch_3', 'EastIOBytesTransfered')
-		s_3_east_rxqueue_max_depth = switch_data.getint('Switch_3', 'EastRxQueueMaxDepth')
-		s_3_east_rxqueue_ave_depth = switch_data.getfloat('Switch_3', 'EastRxQueueAveDepth')
-		s_3_east_txqueue_max_depth = switch_data.getint('Switch_3', 'EastTxQueueMaxDepth')
-		s_3_east_txqueue_ave_depth = switch_data.getfloat('Switch_3', 'EastTxQueueAveDepth')
-		s_3_south_io_transfers = switch_data.getint('Switch_3', 'SouthIOTransfers')
-		s_3_south_io_cycles = switch_data.getint('Switch_3', 'SouthIOCycles')
-		s_3_south_io_bytes_transfered = switch_data.getint('Switch_3', 'SouthIOBytesTransfered')
-		s_3_south_rxqueue_max_depth = switch_data.getint('Switch_3', 'SouthRxQueueMaxDepth')
-		s_3_south_rxqueue_ave_depth = switch_data.getfloat('Switch_3', 'SouthRxQueueAveDepth')
-		s_3_south_txqueue_max_depth = switch_data.getint('Switch_3', 'SouthTxQueueMaxDepth')
-		s_3_south_txqueue_ave_depth = switch_data.getfloat('Switch_3', 'SouthTxQueueAveDepth')
-		s_3_west_io_transfers = switch_data.getint('Switch_3', 'WestIOTransfers')
-		s_3_west_io_cycles = switch_data.getint('Switch_3', 'WestIOCycles')
-		s_3_west_io_bytes_transfered = switch_data.getint('Switch_3', 'WestIOBytesTransfered')
-		s_3_west_rxqueue_max_depth = switch_data.getint('Switch_3', 'WestRxQueueMaxDepth')
-		s_3_west_rxqueue_ave_depth = switch_data.getfloat('Switch_3', 'WestRxQueueAveDepth')
-		s_3_west_txqueue_max_depth = switch_data.getint('Switch_3', 'WestTxQueueMaxDepth')
-		s_3_west_txqueue_ave_depth = switch_data.getfloat('Switch_3', 'WestTxQueueAveDepth')
-
-
-	s_sa_total_ctrl_loops = switch_data.getint('Switch_SA', 'NumberSwitchCtrlLoops')
-	s_sa_occupance = switch_data.getfloat('Switch_SA', 'SwitchOccupance')
-	s_sa_total_links_formed = switch_data.getint('Switch_SA', 'NumberLinks')
-	s_sa_max_links_formed = switch_data.getint('Switch_SA', 'MaxNumberLinks')
-	s_sa_ave_links_formed_per_ctrl_loop = switch_data.getfloat('Switch_SA', 'AveNumberLinksPerCtrlLoop')
-	s_sa_north_io_transfers = switch_data.getint('Switch_SA', 'NorthIOTransfers')
-	s_sa_north_io_cycles = switch_data.getint('Switch_SA', 'NorthIOCycles')
-	s_sa_north_io_bytes_transfered = switch_data.getint('Switch_SA', 'NorthIOBytesTransfered')
-	s_sa_north_rxqueue_max_depth = switch_data.getint('Switch_SA', 'NorthRxQueueMaxDepth')
-	s_sa_north_rxqueue_ave_depth = switch_data.getfloat('Switch_SA', 'NorthRxQueueAveDepth')
-	s_sa_north_txqueue_max_depth = switch_data.getint('Switch_SA', 'NorthTxQueueMaxDepth')
-	s_sa_north_txqueue_ave_depth = switch_data.getfloat('Switch_SA', 'NorthTxQueueAveDepth')
-	s_sa_east_io_transfers = switch_data.getint('Switch_SA', 'EastIOTransfers')
-	s_sa_east_io_cycles = switch_data.getint('Switch_SA', 'EastIOCycles')
-	s_sa_east_io_bytes_transfered = switch_data.getint('Switch_SA', 'EastIOBytesTransfered')
-	s_sa_east_io_bytes_transfered = switch_data.getint('Switch_SA', 'EastIOBytesTransfered')
-	s_sa_east_io_bytes_transfered = switch_data.getint('Switch_SA', 'EastIOBytesTransfered')
-	s_sa_east_rxqueue_max_depth = switch_data.getint('Switch_SA', 'EastRxQueueMaxDepth')
-	s_sa_east_rxqueue_ave_depth = switch_data.getfloat('Switch_SA', 'EastRxQueueAveDepth')
-	s_sa_east_txqueue_max_depth = switch_data.getint('Switch_SA', 'EastTxQueueMaxDepth')
-	s_sa_east_txqueue_ave_depth = switch_data.getfloat('Switch_SA', 'EastTxQueueAveDepth')
-	s_sa_south_io_transfers = switch_data.getint('Switch_SA', 'SouthIOTransfers')
-	s_sa_south_io_cycles = switch_data.getint('Switch_SA', 'SouthIOCycles')
-	s_sa_south_io_bytes_transfered = switch_data.getint('Switch_SA', 'SouthIOBytesTransfered')
-	s_sa_south_io_bytes_transfered = switch_data.getint('Switch_SA', 'SouthIOBytesTransfered')
-	s_sa_south_rxqueue_max_depth = switch_data.getint('Switch_SA', 'SouthRxQueueMaxDepth')
-	s_sa_south_rxqueue_ave_depth = switch_data.getfloat('Switch_SA', 'SouthRxQueueAveDepth')
-	s_sa_south_txqueue_max_depth = switch_data.getint('Switch_SA', 'SouthTxQueueMaxDepth')
-	s_sa_south_txqueue_ave_depth = switch_data.getfloat('Switch_SA', 'SouthTxQueueAveDepth')
-	s_sa_west_io_transfers = switch_data.getint('Switch_SA', 'WestIOTransfers')
-	s_sa_west_io_cycles = switch_data.getint('Switch_SA', 'WestIOCycles')
-	s_sa_west_io_bytes_transfered = switch_data.getint('Switch_SA', 'WestIOBytesTransfered')
-	s_sa_west_io_bytes_transfered = switch_data.getint('Switch_SA', 'WestIOBytesTransfered')
-	s_sa_west_rxqueue_max_depth = switch_data.getint('Switch_SA', 'WestRxQueueMaxDepth')
-	s_sa_west_rxqueue_ave_depth = switch_data.getfloat('Switch_SA', 'WestRxQueueAveDepth')
-	s_sa_west_txqueue_max_depth = switch_data.getint('Switch_SA', 'WestTxQueueMaxDepth')
-	s_sa_west_txqueue_ave_depth = switch_data.getfloat('Switch_SA', 'WestTxQueueAveDepth')
-
-	if int(options.NumCores) == 1:
-		table_switch_data_p0 = [
-		["TotalSwitchCtrlLoops", s_0_total_ctrl_loops, s_sa_total_ctrl_loops],
-		["SwitchOccupancy", s_0_occupance, s_sa_occupance],
-		["TotalLinksFormed", s_0_total_links_formed, s_sa_total_links_formed],
-		["MaxLinksFormed", s_0_max_links_formed, s_sa_max_links_formed],
-		["TotalAveNumberLinksPerCtrlLoop", s_0_ave_links_formed_per_ctrl_loop, s_sa_ave_links_formed_per_ctrl_loop],
-		["NorthIOTransfers", s_0_north_io_transfers, s_sa_north_io_transfers ],
-		["NorthIOCycles", s_0_north_io_cycles, s_sa_north_io_cycles],
-		["NorthIOBytesTransfered", s_0_north_io_bytes_transfered, s_sa_north_io_bytes_transfered],
-		["NorthRxQueueMaxDepth", s_0_north_rxqueue_max_depth, s_sa_north_rxqueue_max_depth],
-		["NorthRxQueueAveDepth", s_0_north_rxqueue_ave_depth, s_sa_north_rxqueue_ave_depth],
-		["NorthTxQueueMaxDepth", s_0_north_txqueue_max_depth, s_sa_north_txqueue_max_depth],
-		["NorthTxQueueAveDepth", s_0_north_txqueue_ave_depth, s_sa_north_txqueue_ave_depth],
-		["EastIOTransfers", s_0_east_io_transfers, s_sa_east_io_transfers],
-		["EastIOCycles", s_0_east_io_cycles, s_sa_east_io_cycles],
-		["EastIOBytesTransfered", s_0_east_io_bytes_transfered, s_sa_east_io_bytes_transfered],
-		["EastRxQueueMaxDepth", s_0_east_rxqueue_max_depth, s_sa_east_rxqueue_max_depth],
-		["EastRxQueueAveDepth", s_0_east_rxqueue_ave_depth, s_sa_east_rxqueue_ave_depth],
-		["EastTxQueueMaxDepth", s_0_east_txqueue_max_depth, s_sa_east_txqueue_max_depth],
-		["EastTxQueueAveDepth", s_0_east_txqueue_ave_depth, s_sa_east_txqueue_ave_depth],
-		["SouthIOTransfers", s_0_south_io_transfers, s_sa_south_io_transfers],
-		["SouthIOCycles", s_0_south_io_cycles, s_sa_south_io_cycles],
-		["SouthIOBytesTransfered", s_0_south_io_bytes_transfered, s_sa_south_io_bytes_transfered],
-		["SouthRxQueueMaxDepth", s_0_south_rxqueue_max_depth, s_sa_south_rxqueue_max_depth],
-		["SouthRxQueueAveDepth", s_0_south_rxqueue_ave_depth, s_sa_south_rxqueue_ave_depth],
-		["SouthTxQueueMaxDepth", s_0_south_txqueue_max_depth, s_sa_south_txqueue_max_depth],
-		["SouthTxQueueAveDepth", s_0_south_txqueue_ave_depth, s_sa_south_txqueue_ave_depth],
-		["WestIOTransfers", s_0_west_io_transfers, s_sa_west_io_transfers],
-		["WestIOCycles", s_0_west_io_cycles, s_sa_west_io_cycles],
-		["WestIOBytesTransfered", s_0_west_io_bytes_transfered, s_sa_west_io_bytes_transfered],
-		["WestRxQueueMaxDepth", s_0_west_rxqueue_max_depth, s_sa_west_rxqueue_max_depth],
-		["WestRxQueueAveDepth", s_0_west_rxqueue_ave_depth, s_sa_west_rxqueue_ave_depth],
-		["WestTxQueueMaxDepth", s_0_west_txqueue_max_depth, s_sa_west_txqueue_max_depth],
-		["WestTxQueueAveDepth", s_0_west_txqueue_ave_depth, s_sa_west_txqueue_ave_depth],
-		]
-
-	if int(options.NumCores) == 4:
-		table_switch_data_p4 = [
-		["TotalSwitchCtrlLoops", s_0_total_ctrl_loops, s_1_total_ctrl_loops, s_2_total_ctrl_loops, s_3_total_ctrl_loops, s_sa_total_ctrl_loops],
-		["SwitchOccupancy", s_0_occupance, s_1_occupance, s_2_occupance, s_3_occupance, s_sa_occupance],
-		["TotalLinksFormed", s_0_total_links_formed, s_1_total_links_formed, s_2_total_links_formed, s_3_total_links_formed, s_sa_total_ctrl_loops],
-		["MaxLinksFormed", s_0_max_links_formed, s_1_max_links_formed, s_2_max_links_formed, s_3_max_links_formed, s_sa_max_links_formed],
-		["TotalAveNumberLinksPerCtrlLoop", s_0_ave_links_formed_per_ctrl_loop, s_1_ave_links_formed_per_ctrl_loop, s_2_ave_links_formed_per_ctrl_loop, s_3_ave_links_formed_per_ctrl_loop, s_sa_ave_links_formed_per_ctrl_loop],
-		["NorthIOTransfers", s_0_north_io_transfers, s_1_north_io_transfers, s_2_north_io_transfers, s_3_north_io_transfers, s_sa_north_io_transfers ],
-		["NorthIOCycles", s_0_north_io_cycles, s_1_north_io_cycles, s_2_north_io_cycles, s_3_north_io_cycles, s_sa_north_io_cycles],
-		["NorthIOBytesTransfered", s_0_north_io_bytes_transfered, s_1_north_io_bytes_transfered, s_2_north_io_bytes_transfered, s_3_north_io_bytes_transfered, s_sa_north_io_bytes_transfered],
-		["NorthRxQueueMaxDepth", s_0_north_rxqueue_max_depth, s_1_north_rxqueue_max_depth, s_2_north_rxqueue_max_depth, s_3_north_rxqueue_max_depth, s_sa_north_rxqueue_max_depth],
-		["NorthRxQueueAveDepth", s_0_north_rxqueue_ave_depth, s_1_north_rxqueue_ave_depth, s_2_north_rxqueue_ave_depth, s_3_north_rxqueue_ave_depth, s_sa_north_rxqueue_ave_depth],
-		["NorthTxQueueMaxDepth", s_0_north_txqueue_max_depth, s_1_north_txqueue_max_depth, s_2_north_txqueue_max_depth, s_3_north_txqueue_max_depth, s_sa_north_txqueue_max_depth],
-		["NorthTxQueueAveDepth", s_0_north_txqueue_ave_depth, s_1_north_txqueue_ave_depth, s_2_north_txqueue_ave_depth, s_3_north_txqueue_ave_depth, s_sa_north_txqueue_ave_depth],
-		["EastIOTransfers", s_0_east_io_transfers, s_1_east_io_transfers, s_2_east_io_transfers, s_3_east_io_transfers, s_sa_east_io_transfers],
-		["EastIOCycles", s_0_east_io_cycles, s_1_east_io_cycles, s_2_east_io_cycles, s_3_east_io_cycles, s_sa_east_io_cycles],
-		["EastIOBytesTransfered", s_0_east_io_bytes_transfered, s_1_east_io_bytes_transfered, s_2_east_io_bytes_transfered, s_3_east_io_bytes_transfered, s_sa_east_io_bytes_transfered],
-		["EastRxQueueMaxDepth", s_0_east_rxqueue_max_depth, s_1_east_rxqueue_max_depth, s_2_east_rxqueue_max_depth, s_3_east_rxqueue_max_depth, s_sa_east_rxqueue_max_depth],
-		["EastRxQueueAveDepth", s_0_east_rxqueue_ave_depth, s_1_east_rxqueue_ave_depth, s_2_east_rxqueue_ave_depth, s_3_east_rxqueue_ave_depth, s_sa_east_rxqueue_ave_depth],
-		["EastTxQueueMaxDepth", s_0_east_txqueue_max_depth, s_1_east_txqueue_max_depth, s_2_east_txqueue_max_depth, s_3_east_txqueue_max_depth, s_sa_east_txqueue_max_depth],
-		["EastTxQueueAveDepth", s_0_east_txqueue_ave_depth, s_1_east_txqueue_ave_depth, s_2_east_txqueue_ave_depth, s_3_east_txqueue_ave_depth, s_sa_east_txqueue_ave_depth],
-		["SouthIOTransfers", s_0_south_io_transfers, s_1_south_io_transfers, s_2_south_io_transfers, s_3_south_io_transfers, s_sa_south_io_transfers],
-		["SouthIOCycles", s_0_south_io_cycles, s_1_south_io_cycles, s_2_south_io_cycles, s_3_south_io_cycles, s_sa_south_io_cycles],
-		["SouthIOBytesTransfered", s_0_south_io_bytes_transfered, s_1_south_io_bytes_transfered, s_2_south_io_bytes_transfered, s_3_south_io_bytes_transfered, s_sa_south_io_bytes_transfered],
-		["SouthRxQueueMaxDepth", s_0_south_rxqueue_max_depth, s_1_south_rxqueue_max_depth, s_2_south_rxqueue_max_depth, s_3_south_rxqueue_max_depth, s_sa_south_rxqueue_max_depth],
-		["SouthRxQueueAveDepth", s_0_south_rxqueue_ave_depth, s_1_south_rxqueue_ave_depth, s_2_south_rxqueue_ave_depth, s_3_south_rxqueue_ave_depth, s_sa_south_rxqueue_ave_depth],
-		["SouthTxQueueMaxDepth", s_0_south_txqueue_max_depth, s_1_south_txqueue_max_depth, s_2_south_txqueue_max_depth, s_3_south_txqueue_max_depth, s_sa_south_txqueue_max_depth],
-		["SouthTxQueueAveDepth", s_0_south_txqueue_ave_depth, s_1_south_txqueue_ave_depth, s_2_south_txqueue_ave_depth, s_3_south_txqueue_ave_depth, s_sa_south_txqueue_ave_depth],
-		["WestIOTransfers", s_0_west_io_transfers, s_1_west_io_transfers, s_2_west_io_transfers, s_3_west_io_transfers, s_sa_west_io_transfers],
-		["WestIOCycles", s_0_west_io_cycles, s_1_west_io_cycles, s_2_west_io_cycles, s_3_west_io_cycles, s_sa_west_io_cycles],
-		["WestIOBytesTransfered", s_0_west_io_bytes_transfered, s_1_west_io_bytes_transfered, s_2_west_io_bytes_transfered, s_3_west_io_bytes_transfered, s_sa_west_io_bytes_transfered],
-		["WestRxQueueMaxDepth", s_0_west_rxqueue_max_depth, s_1_west_rxqueue_max_depth, s_2_west_rxqueue_max_depth, s_3_west_rxqueue_max_depth, s_sa_west_rxqueue_max_depth],
-		["WestRxQueueAveDepth", s_0_west_rxqueue_ave_depth, s_1_west_rxqueue_ave_depth, s_2_west_rxqueue_ave_depth, s_3_west_rxqueue_ave_depth, s_sa_west_rxqueue_ave_depth],
-		["WestTxQueueMaxDepth", s_0_west_txqueue_max_depth, s_1_west_txqueue_max_depth, s_2_west_txqueue_max_depth, s_3_west_txqueue_max_depth, s_sa_west_txqueue_max_depth],
-		["WestTxQueueAveDepth", s_0_west_txqueue_ave_depth, s_1_west_txqueue_ave_depth, s_2_west_txqueue_ave_depth, s_3_west_txqueue_ave_depth, s_sa_west_txqueue_ave_depth],
-		]
+	for key, value in switch_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			switch_stats[key] = int(value)
+		except ValueError:
+			switch_stats[key] = float(value)
+	
+	
+	table_switch_data_p4 = [
+	["TotalSwitchCtrlLoops", switch_stats['s_0_TotalSwitchCtrlLoops'], switch_stats['s_1_TotalSwitchCtrlLoops'], switch_stats['s_2_TotalSwitchCtrlLoops'], switch_stats['s_3_TotalSwitchCtrlLoops'], switch_stats['s_4_TotalSwitchCtrlLoops']],
+	["SwitchOccupancy", switch_stats['s_0_SwitchOccupance'], switch_stats['s_1_SwitchOccupance'], switch_stats['s_2_SwitchOccupance'], switch_stats['s_3_SwitchOccupance'], switch_stats['s_4_SwitchOccupance']],
+	["NumberLinks", switch_stats['s_0_NumberLinks'], switch_stats['s_1_NumberLinks'], switch_stats['s_2_NumberLinks'], switch_stats['s_3_NumberLinks'], switch_stats['s_4_NumberLinks']],
+	["MaxNumberLinks", switch_stats['s_0_MaxNumberLinks'], switch_stats['s_1_MaxNumberLinks'], switch_stats['s_2_MaxNumberLinks'], switch_stats['s_3_MaxNumberLinks'], switch_stats['s_4_MaxNumberLinks']],
+	["AveNumberLinksPerAccess", switch_stats['s_0_AveNumberLinksPerAccess'], switch_stats['s_1_AveNumberLinksPerAccess'], switch_stats['s_2_AveNumberLinksPerAccess'], switch_stats['s_3_AveNumberLinksPerAccess'], switch_stats['s_4_AveNumberLinksPerAccess']],
+	["NorthIOTransfers", switch_stats['s_0_NorthIOTransfers'], switch_stats['s_1_NorthIOTransfers'], switch_stats['s_2_NorthIOTransfers'], switch_stats['s_3_NorthIOTransfers'], switch_stats['s_4_NorthIOTransfers']],
+	["NorthIOCycles", switch_stats['s_0_NorthIOCycles'], switch_stats['s_1_NorthIOCycles'], switch_stats['s_2_NorthIOCycles'], switch_stats['s_3_NorthIOCycles'], switch_stats['s_4_NorthIOCycles']],
+	["NorthIOBytesTransfered", switch_stats['s_0_NorthIOBytesTransfered'], switch_stats['s_1_NorthIOBytesTransfered'], switch_stats['s_2_NorthIOBytesTransfered'], switch_stats['s_3_NorthIOBytesTransfered'], switch_stats['s_4_NorthIOBytesTransfered']],
+	["NorthRxQueueMaxDepth", switch_stats['s_0_NorthRxQueueMaxDepth'], switch_stats['s_1_NorthRxQueueMaxDepth'], switch_stats['s_2_NorthRxQueueMaxDepth'], switch_stats['s_3_NorthRxQueueMaxDepth'], switch_stats['s_4_NorthRxQueueMaxDepth']],
+	["NorthRxQueueAveDepth", switch_stats['s_0_NorthRxQueueAveDepth'], switch_stats['s_1_NorthRxQueueAveDepth'], switch_stats['s_2_NorthRxQueueAveDepth'], switch_stats['s_3_NorthRxQueueAveDepth'], switch_stats['s_4_NorthRxQueueAveDepth']],
+	["NorthTxQueueMaxDepth", switch_stats['s_0_NorthTxQueueMaxDepth'], switch_stats['s_1_NorthTxQueueMaxDepth'], switch_stats['s_2_NorthTxQueueMaxDepth'], switch_stats['s_3_NorthTxQueueMaxDepth'], switch_stats['s_4_NorthTxQueueMaxDepth']],
+	["NorthTxQueueAveDepth", switch_stats['s_0_NorthTxQueueAveDepth'], switch_stats['s_1_NorthTxQueueAveDepth'], switch_stats['s_2_NorthTxQueueAveDepth'], switch_stats['s_3_NorthTxQueueAveDepth'], switch_stats['s_4_NorthTxQueueAveDepth']],
+	["EastIOTransfers", switch_stats['s_0_EastIOTransfers'], switch_stats['s_1_EastIOTransfers'], switch_stats['s_2_EastIOTransfers'], switch_stats['s_3_EastIOTransfers'], switch_stats['s_4_EastIOTransfers']],
+	["EastIOCycles", switch_stats['s_0_EastIOCycles'], switch_stats['s_1_EastIOCycles'], switch_stats['s_2_EastIOCycles'], switch_stats['s_3_EastIOCycles'], switch_stats['s_4_EastIOCycles']],
+	["EastIOBytesTransfered", switch_stats['s_0_EastIOBytesTransfered'], switch_stats['s_1_EastIOBytesTransfered'], switch_stats['s_2_EastIOBytesTransfered'], switch_stats['s_3_EastIOBytesTransfered'], switch_stats['s_4_EastIOBytesTransfered']],
+	["EastRxQueueMaxDepth", switch_stats['s_0_EastRxQueueMaxDepth'], switch_stats['s_1_EastRxQueueMaxDepth'], switch_stats['s_2_EastRxQueueMaxDepth'], switch_stats['s_3_EastRxQueueMaxDepth'], switch_stats['s_4_EastRxQueueMaxDepth']],
+	["EastRxQueueAveDepth", switch_stats['s_0_EastRxQueueAveDepth'], switch_stats['s_1_EastRxQueueAveDepth'], switch_stats['s_2_EastRxQueueAveDepth'], switch_stats['s_3_EastRxQueueAveDepth'], switch_stats['s_4_EastRxQueueAveDepth']],
+	["EastTxQueueMaxDepth", switch_stats['s_0_EastTxQueueMaxDepth'], switch_stats['s_1_EastTxQueueMaxDepth'], switch_stats['s_2_EastTxQueueMaxDepth'], switch_stats['s_3_EastTxQueueMaxDepth'], switch_stats['s_4_EastTxQueueMaxDepth']],
+	["EastTxQueueAveDepth", switch_stats['s_0_EastTxQueueAveDepth'], switch_stats['s_1_EastTxQueueAveDepth'], switch_stats['s_2_EastTxQueueAveDepth'], switch_stats['s_3_EastTxQueueAveDepth'], switch_stats['s_4_EastTxQueueAveDepth']],
+	["SouthIOTransfers", switch_stats['s_0_SouthIOTransfers'], switch_stats['s_1_SouthIOTransfers'], switch_stats['s_2_SouthIOTransfers'], switch_stats['s_3_SouthIOTransfers'], switch_stats['s_4_SouthIOTransfers']],
+	["SouthIOCycles", switch_stats['s_0_SouthIOCycles'], switch_stats['s_1_SouthIOCycles'], switch_stats['s_2_SouthIOCycles'], switch_stats['s_3_SouthIOCycles'], switch_stats['s_4_SouthIOCycles']],
+	["SouthIOBytesTransfered", switch_stats['s_0_SouthIOBytesTransfered'], switch_stats['s_1_SouthIOBytesTransfered'], switch_stats['s_2_SouthIOBytesTransfered'], switch_stats['s_3_SouthIOBytesTransfered'], switch_stats['s_4_SouthIOBytesTransfered']],
+	["SouthRxQueueMaxDepth", switch_stats['s_0_SouthRxQueueMaxDepth'], switch_stats['s_1_SouthRxQueueMaxDepth'], switch_stats['s_2_SouthRxQueueMaxDepth'], switch_stats['s_3_SouthRxQueueMaxDepth'], switch_stats['s_4_SouthRxQueueMaxDepth']],
+	["SouthRxQueueAveDepth", switch_stats['s_0_SouthRxQueueAveDepth'], switch_stats['s_1_SouthRxQueueAveDepth'], switch_stats['s_2_SouthRxQueueAveDepth'], switch_stats['s_3_SouthRxQueueAveDepth'], switch_stats['s_4_SouthRxQueueAveDepth']],
+	["SouthTxQueueMaxDepth", switch_stats['s_0_SouthTxQueueMaxDepth'], switch_stats['s_1_SouthTxQueueMaxDepth'], switch_stats['s_2_SouthTxQueueMaxDepth'], switch_stats['s_3_SouthTxQueueMaxDepth'], switch_stats['s_4_SouthTxQueueMaxDepth']],
+	["SouthTxQueueAveDepth", switch_stats['s_0_SouthTxQueueAveDepth'], switch_stats['s_1_SouthTxQueueAveDepth'], switch_stats['s_2_SouthTxQueueAveDepth'], switch_stats['s_3_SouthTxQueueAveDepth'], switch_stats['s_4_SouthTxQueueAveDepth']],
+	["WestIOTransfers", switch_stats['s_0_WestIOTransfers'], switch_stats['s_1_WestIOTransfers'], switch_stats['s_2_WestIOTransfers'], switch_stats['s_3_WestIOTransfers'], switch_stats['s_4_WestIOTransfers']],
+	["WestIOCycles", switch_stats['s_0_WestIOCycles'], switch_stats['s_1_WestIOCycles'], switch_stats['s_2_WestIOCycles'], switch_stats['s_3_WestIOCycles'], switch_stats['s_4_WestIOCycles']],
+	["WestIOBytesTransfered", switch_stats['s_0_WestIOBytesTransfered'], switch_stats['s_1_WestIOBytesTransfered'], switch_stats['s_2_WestIOBytesTransfered'], switch_stats['s_3_WestIOBytesTransfered'], switch_stats['s_4_WestIOBytesTransfered']],
+	["WestRxQueueMaxDepth", switch_stats['s_0_WestRxQueueMaxDepth'], switch_stats['s_1_WestRxQueueMaxDepth'], switch_stats['s_2_WestRxQueueMaxDepth'], switch_stats['s_3_WestRxQueueMaxDepth'], switch_stats['s_4_WestRxQueueMaxDepth']],
+	["WestRxQueueAveDepth", switch_stats['s_0_WestRxQueueAveDepth'], switch_stats['s_1_WestRxQueueAveDepth'], switch_stats['s_2_WestRxQueueAveDepth'], switch_stats['s_3_WestRxQueueAveDepth'], switch_stats['s_4_WestRxQueueAveDepth']],
+	["WestTxQueueMaxDepth", switch_stats['s_0_WestTxQueueMaxDepth'], switch_stats['s_1_WestTxQueueMaxDepth'], switch_stats['s_2_WestTxQueueMaxDepth'], switch_stats['s_3_WestTxQueueMaxDepth'], switch_stats['s_4_WestTxQueueMaxDepth']],
+	["WestTxQueueAveDepth", switch_stats['s_0_WestTxQueueAveDepth'], switch_stats['s_1_WestTxQueueAveDepth'], switch_stats['s_2_WestTxQueueAveDepth'], switch_stats['s_3_WestTxQueueAveDepth'], switch_stats['s_4_WestTxQueueAveDepth']],
+	]
 
 	f = open(options.OutFileName, 'a')
 	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
@@ -683,7 +477,7 @@ def print_samc_stats(options):
 def print_mem_system_stats(options):
 
 	ms_data = ConfigParser.ConfigParser()
-	ms_data.optionxform = str 
+	ms_data.optionxform = str
 	ms_data.read(options.InFileName)
 
 	#pull of the memory system stats 	

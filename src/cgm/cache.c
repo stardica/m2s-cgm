@@ -1810,7 +1810,6 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	int i = 0;
 	int blocks_written = 0;
 
-
 	/*CPU caches*/
 	for(i = 0; i < num_cores; i++)
 	{
@@ -1824,18 +1823,24 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 				(double) (cgm_stat_container->l1_i_TotalMisses[i])/(double) (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalReads = %llu\n", i, cgm_stat_container->l1_i_TotalReads[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalReadMisses = %llu\n", i, cgm_stat_container->l1_i_TotalReadMisses[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalReadMisses[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWrites = %llu\n", i, cgm_stat_container->l1_i_TotalWrites[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l1_i_TotalWriteMisses[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalWriteMisses[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_ReadMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalReadMisses[i]/(double) cgm_stat_container->l1_i_TotalReads[i]));
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWrites = %llu\n", i, cgm_stat_container->l1_i_TotalWrites[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWrites = %llu\n", i, (long long)0);
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteMisses = %llu\n", i, cgm_stat_container->l1_i_TotalWriteMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteMisses = %llu\n", i, (long long)0);
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_WriteMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalWriteMisses[i]/(double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_WriteMissRate = %0.2f\n", i, (float)0);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGets = %llu\n", i, cgm_stat_container->l1_i_TotalGets[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGet = %llu\n", i, cgm_stat_container->l1_i_TotalGet[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGetx = %llu\n", i, cgm_stat_container->l1_i_TotalGetx[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGets[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "l1_i_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGet[i] / (double) cgm_stat_container->l1_i_TotalReads[i]));
-		CGM_STATS(cgm_stats_file, "l1_i_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGetx[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetsMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGets[i]/(double) cgm_stat_container->l1_i_TotalReads[i]));
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_GetMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGet[i]/(double) cgm_stat_container->l1_i_TotalReads[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetMissRate = %0.2f\n", i, (float)0);
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalGetx[i]/(double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_GetxMissRate = %0.2f\n", i, (float)0);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l1_i_TotalUpgrades[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalUpgrades[i] / (double) cgm_stat_container->l1_i_TotalWrites[i]));
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalUpgrades[i]/(double) cgm_stat_container->l1_i_TotalWrites[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, (float)0);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBacks[i]);
 		blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
