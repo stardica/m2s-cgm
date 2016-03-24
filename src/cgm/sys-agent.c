@@ -380,6 +380,31 @@ void sys_agent_ctrl(void){
 	return;
 }
 
+void sys_agent_reset_stats(void){
+
+	//system agent
+	system_agent->busy_cycles = 0;
+	system_agent->north_io_busy_cycles = 0;
+	system_agent->south_io_busy_cycles = 0;
+	system_agent->mc_loads = 0;
+	system_agent->mc_stores = 0;
+	system_agent->mc_returns = 0;
+	system_agent->max_north_rxqueue_depth = 0;
+	system_agent->ave_north_rxqueue_depth = 0;
+	system_agent->max_south_rxqueue_depth = 0;
+	system_agent->ave_south_rxqueue_depth = 0;
+	system_agent->max_north_txqueue_depth = 0;
+	system_agent->ave_north_txqueue_depth = 0;
+	system_agent->max_south_txqueue_depth = 0;
+	system_agent->ave_south_txqueue_depth = 0;
+	system_agent->north_gets = 0;
+	system_agent->south_gets = 0;
+	system_agent->north_puts = 0;
+	system_agent->south_puts = 0;
+
+	return;
+}
+
 void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	/*CGM_STATS(cgm_stats_file, "[SystemAgent]\n");*/

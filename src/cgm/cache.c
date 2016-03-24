@@ -1802,6 +1802,102 @@ void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk
 	}
 }
 
+void cache_reset_stats(void){
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
+	//caches
+	for(i = 0; i < num_cores; i++)
+	{
+		l1_i_caches[i].TotalThreadLoops = 0;
+		l1_i_caches[i].TotalAcesses = 0;
+		l1_i_caches[i].TotalMisses = 0;
+		l1_i_caches[i].TotalHits = 0;
+		l1_i_caches[i].TotalReads = 0;
+		l1_i_caches[i].TotalWrites = 0;
+		l1_i_caches[i].TotalGets = 0;
+		l1_i_caches[i].TotalGet = 0;
+		l1_i_caches[i].TotalGetx = 0;
+		l1_i_caches[i].TotalUpgrades = 0;
+		l1_i_caches[i].TotalReadMisses = 0;
+		l1_i_caches[i].TotalWriteMisses = 0;
+		l1_i_caches[i].TotalWriteBacks = 0;
+		l1_i_caches[i].invalid_hits = 0;
+		l1_i_caches[i].assoc_conflict = 0;
+		l1_i_caches[i].upgrade_misses = 0;
+		l1_i_caches[i].retries = 0;
+		l1_i_caches[i].coalesces = 0;
+		l1_i_caches[i].mshr_entries = 0;
+		l1_i_caches[i].stalls = 0;
+
+		l1_d_caches[i].TotalThreadLoops = 0;
+		l1_d_caches[i].TotalAcesses = 0;
+		l1_d_caches[i].TotalMisses = 0;
+		l1_d_caches[i].TotalHits = 0;
+		l1_d_caches[i].TotalReads = 0;
+		l1_d_caches[i].TotalWrites = 0;
+		l1_d_caches[i].TotalGets = 0;
+		l1_d_caches[i].TotalGet = 0;
+		l1_d_caches[i].TotalGetx = 0;
+		l1_d_caches[i].TotalUpgrades = 0;
+		l1_d_caches[i].TotalReadMisses = 0;
+		l1_d_caches[i].TotalWriteMisses = 0;
+		l1_d_caches[i].TotalWriteBacks = 0;
+		l1_d_caches[i].invalid_hits = 0;
+		l1_d_caches[i].assoc_conflict = 0;
+		l1_d_caches[i].upgrade_misses = 0;
+		l1_d_caches[i].retries = 0;
+		l1_d_caches[i].coalesces = 0;
+		l1_d_caches[i].mshr_entries = 0;
+		l1_d_caches[i].stalls = 0;
+
+		l2_caches[i].TotalThreadLoops = 0;
+		l2_caches[i].TotalAcesses = 0;
+		l2_caches[i].TotalMisses = 0;
+		l2_caches[i].TotalHits = 0;
+		l2_caches[i].TotalReads = 0;
+		l2_caches[i].TotalWrites = 0;
+		l2_caches[i].TotalGets = 0;
+		l2_caches[i].TotalGet = 0;
+		l2_caches[i].TotalGetx = 0;
+		l2_caches[i].TotalUpgrades = 0;
+		l2_caches[i].TotalReadMisses = 0;
+		l2_caches[i].TotalWriteMisses = 0;
+		l2_caches[i].TotalWriteBacks = 0;
+		l2_caches[i].invalid_hits = 0;
+		l2_caches[i].assoc_conflict = 0;
+		l2_caches[i].upgrade_misses = 0;
+		l2_caches[i].retries = 0;
+		l2_caches[i].coalesces = 0;
+		l2_caches[i].mshr_entries = 0;
+		l2_caches[i].stalls = 0;
+
+		l3_caches[i].TotalThreadLoops = 0;
+		l3_caches[i].TotalAcesses = 0;
+		l3_caches[i].TotalMisses = 0;
+		l3_caches[i].TotalHits = 0;
+		l3_caches[i].TotalReads = 0;
+		l3_caches[i].TotalWrites = 0;
+		l3_caches[i].TotalGets = 0;
+		l3_caches[i].TotalGet = 0;
+		l3_caches[i].TotalGetx = 0;
+		l3_caches[i].TotalUpgrades = 0;
+		l3_caches[i].TotalReadMisses = 0;
+		l3_caches[i].TotalWriteMisses = 0;
+		l3_caches[i].TotalWriteBacks = 0;
+		l3_caches[i].invalid_hits = 0;
+		l3_caches[i].assoc_conflict = 0;
+		l3_caches[i].upgrade_misses = 0;
+		l3_caches[i].retries = 0;
+		l3_caches[i].coalesces = 0;
+		l3_caches[i].mshr_entries = 0;
+		l3_caches[i].stalls = 0;
+	}
+
+	return;
+}
+
 void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;

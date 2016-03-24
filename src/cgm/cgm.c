@@ -132,15 +132,15 @@ void init_cgm_stats(int argc, char **argv){
     cgm_stat->date_time_pretty = strdup(time_buff);
 	cgm_stat->start_wall_time = get_wall_time();
 
-	//get the benchmark name and args
+	//get the benchmark name
 	bname = basename(argv[i++]);
 	sprintf(buff + strlen(buff), "%s ", bname);
 
+	cgm_stat->benchmark_name = strdup(buff);
+
+	//now get the benchamrk's args
 	while(i < argc)
 		sprintf(buff + strlen(buff), "%s ", argv[i++]);
-
-	cgm_stat->execution_success = false;
-	cgm_stat->benchmark_name = strdup(buff);
 
 	cgm_stats_alloc(cgm_stat);
 	cgm_stats_alloc(cgm_startup_stats);
@@ -149,6 +149,7 @@ void init_cgm_stats(int argc, char **argv){
 
 	//assign a type to our containers
 	cgm_stat->stats_type = systemStats;
+	cgm_stat->execution_success = false;
 	cgm_startup_stats->stats_type = startupSection;
 	cgm_parallel_stats->stats_type = parallelSection;
 	cgm_wrapup_stats->stats_type = wrapupSection;
@@ -872,209 +873,11 @@ void cgm_reset_stats(void){
 		cpu_gpu_stats->core_commited_memory_insts[i] = 0;
 	}
 
-	//memory system at large
-	mem_system_stats->first_mem_access_lat = 0;
-
-	for(i = 0; i < HISTSIZE; i++)
-	{
-		mem_system_stats->fetch_lat_hist[i] = 0;
-		mem_system_stats->load_lat_hist[i] = 0;
-		mem_system_stats->store_lat_hist[i] = 0;
-	}
-
-	mem_system_stats->cpu_total_fetches = 0;
-	mem_system_stats->fetch_l1_hits = 0;
-	mem_system_stats->fetch_l2_hits = 0;
-	mem_system_stats->fetch_l3_hits = 0;
-	mem_system_stats->fetch_memory = 0;
-	mem_system_stats->cpu_total_loads = 0;
-	mem_system_stats->load_l1_hits = 0;
-	mem_system_stats->load_l2_hits = 0;
-	mem_system_stats->load_l3_hits = 0;
-	mem_system_stats->load_memory = 0;
-	mem_system_stats->load_get_fwd = 0;
-	mem_system_stats->cpu_total_stores = 0;
-	mem_system_stats->store_l1_hits = 0;
-	mem_system_stats->store_l2_hits = 0;
-	mem_system_stats->store_l3_hits = 0;
-	mem_system_stats->store_memory = 0;
-	mem_system_stats->store_getx_fwd = 0;
-	mem_system_stats->store_upgrade = 0;
-
-	//caches
-	for(i = 0; i < num_cores; i++)
-	{
-		l1_i_caches[i].TotalThreadLoops = 0;
-		l1_i_caches[i].TotalAcesses = 0;
-		l1_i_caches[i].TotalMisses = 0;
-		l1_i_caches[i].TotalHits = 0;
-		l1_i_caches[i].TotalReads = 0;
-		l1_i_caches[i].TotalWrites = 0;
-		l1_i_caches[i].TotalGets = 0;
-		l1_i_caches[i].TotalGet = 0;
-		l1_i_caches[i].TotalGetx = 0;
-		l1_i_caches[i].TotalUpgrades = 0;
-		l1_i_caches[i].TotalReadMisses = 0;
-		l1_i_caches[i].TotalWriteMisses = 0;
-		l1_i_caches[i].TotalWriteBacks = 0;
-		l1_i_caches[i].invalid_hits = 0;
-		l1_i_caches[i].assoc_conflict = 0;
-		l1_i_caches[i].upgrade_misses = 0;
-		l1_i_caches[i].retries = 0;
-		l1_i_caches[i].coalesces = 0;
-		l1_i_caches[i].mshr_entries = 0;
-		l1_i_caches[i].stalls = 0;
-
-		l1_d_caches[i].TotalThreadLoops = 0;
-		l1_d_caches[i].TotalAcesses = 0;
-		l1_d_caches[i].TotalMisses = 0;
-		l1_d_caches[i].TotalHits = 0;
-		l1_d_caches[i].TotalReads = 0;
-		l1_d_caches[i].TotalWrites = 0;
-		l1_d_caches[i].TotalGets = 0;
-		l1_d_caches[i].TotalGet = 0;
-		l1_d_caches[i].TotalGetx = 0;
-		l1_d_caches[i].TotalUpgrades = 0;
-		l1_d_caches[i].TotalReadMisses = 0;
-		l1_d_caches[i].TotalWriteMisses = 0;
-		l1_d_caches[i].TotalWriteBacks = 0;
-		l1_d_caches[i].invalid_hits = 0;
-		l1_d_caches[i].assoc_conflict = 0;
-		l1_d_caches[i].upgrade_misses = 0;
-		l1_d_caches[i].retries = 0;
-		l1_d_caches[i].coalesces = 0;
-		l1_d_caches[i].mshr_entries = 0;
-		l1_d_caches[i].stalls = 0;
-
-		l2_caches[i].TotalThreadLoops = 0;
-		l2_caches[i].TotalAcesses = 0;
-		l2_caches[i].TotalMisses = 0;
-		l2_caches[i].TotalHits = 0;
-		l2_caches[i].TotalReads = 0;
-		l2_caches[i].TotalWrites = 0;
-		l2_caches[i].TotalGets = 0;
-		l2_caches[i].TotalGet = 0;
-		l2_caches[i].TotalGetx = 0;
-		l2_caches[i].TotalUpgrades = 0;
-		l2_caches[i].TotalReadMisses = 0;
-		l2_caches[i].TotalWriteMisses = 0;
-		l2_caches[i].TotalWriteBacks = 0;
-		l2_caches[i].invalid_hits = 0;
-		l2_caches[i].assoc_conflict = 0;
-		l2_caches[i].upgrade_misses = 0;
-		l2_caches[i].retries = 0;
-		l2_caches[i].coalesces = 0;
-		l2_caches[i].mshr_entries = 0;
-		l2_caches[i].stalls = 0;
-
-		l3_caches[i].TotalThreadLoops = 0;
-		l3_caches[i].TotalAcesses = 0;
-		l3_caches[i].TotalMisses = 0;
-		l3_caches[i].TotalHits = 0;
-		l3_caches[i].TotalReads = 0;
-		l3_caches[i].TotalWrites = 0;
-		l3_caches[i].TotalGets = 0;
-		l3_caches[i].TotalGet = 0;
-		l3_caches[i].TotalGetx = 0;
-		l3_caches[i].TotalUpgrades = 0;
-		l3_caches[i].TotalReadMisses = 0;
-		l3_caches[i].TotalWriteMisses = 0;
-		l3_caches[i].TotalWriteBacks = 0;
-		l3_caches[i].invalid_hits = 0;
-		l3_caches[i].assoc_conflict = 0;
-		l3_caches[i].upgrade_misses = 0;
-		l3_caches[i].retries = 0;
-		l3_caches[i].coalesces = 0;
-		l3_caches[i].mshr_entries = 0;
-		l3_caches[i].stalls = 0;
-	}
-
-	//switch stats
-	for(i = 0; i < (num_cores + 1); i++)
-	{
-		switches[i].switch_total_links = 0;
-		switches[i].switch_max_links = 0;
-		switches[i].switch_total_wakes = 0;
-		switches[i].switch_north_io_transfers = 0;
-		switches[i].switch_north_io_transfer_cycles = 0;
-		switches[i].switch_north_io_bytes_transfered = 0;
-		switches[i].switch_east_io_transfers = 0;
-		switches[i].switch_east_io_transfer_cycles = 0;
-		switches[i].switch_east_io_bytes_transfered = 0;
-		switches[i].switch_south_io_transfers = 0;
-		switches[i].switch_south_io_transfer_cycles = 0;
-		switches[i].switch_south_io_bytes_transfered = 0;
-		switches[i].switch_west_io_transfers = 0;
-		switches[i].switch_west_io_transfer_cycles = 0;
-		switches[i].switch_west_io_bytes_transfered = 0;
-		switches[i].north_txqueue_max_depth = 0;
-		switches[i].north_txqueue_ave_depth = 0;
-		switches[i].east_txqueue_max_depth = 0;
-		switches[i].east_txqueue_ave_depth = 0;
-		switches[i].south_txqueue_max_depth = 0;
-		switches[i].south_txqueue_ave_depth = 0;
-		switches[i].west_txqueue_max_depth = 0;
-		switches[i].west_txqueue_ave_depth = 0;
-
-		switches[i].north_tx_inserts = 0;
-		switches[i].east_tx_inserts = 0;
-		switches[i].south_tx_inserts = 0;
-		switches[i].west_tx_inserts = 0;
-
-		switches[i].north_rxqueue_max_depth = 0;
-		switches[i].north_rxqueue_ave_depth = 0;
-		switches[i].east_rxqueue_max_depth = 0;
-		switches[i].east_rxqueue_ave_depth = 0;
-		switches[i].south_rxqueue_max_depth = 0;
-		switches[i].south_rxqueue_ave_depth = 0;
-		switches[i].west_rxqueue_max_depth = 0;
-		switches[i].west_rxqueue_ave_depth = 0;
-
-		switches[i].north_rx_inserts = 0;
-		switches[i].east_rx_inserts = 0;
-		switches[i].south_rx_inserts = 0;
-		switches[i].west_rx_inserts = 0;
-	}
-
-	//system agent
-	system_agent->busy_cycles = 0;
-	system_agent->north_io_busy_cycles = 0;
-	system_agent->south_io_busy_cycles = 0;
-	system_agent->mc_loads = 0;
-	system_agent->mc_stores = 0;
-	system_agent->mc_returns = 0;
-	system_agent->max_north_rxqueue_depth = 0;
-	system_agent->ave_north_rxqueue_depth = 0;
-	system_agent->max_south_rxqueue_depth = 0;
-	system_agent->ave_south_rxqueue_depth = 0;
-	system_agent->max_north_txqueue_depth = 0;
-	system_agent->ave_north_txqueue_depth = 0;
-	system_agent->max_south_txqueue_depth = 0;
-	system_agent->ave_south_txqueue_depth = 0;
-	system_agent->north_gets = 0;
-	system_agent->south_gets = 0;
-	system_agent->north_puts = 0;
-	system_agent->south_puts = 0;
-
-	//Memory controller and DRAMSim
-	mem_ctrl->busy_cycles = 0;
-	mem_ctrl->num_reads = 0;
-	mem_ctrl->num_writes = 0;
-	mem_ctrl->ave_dram_read_lat = 0;
-	mem_ctrl->ave_dram_write_lat = 0;
-	mem_ctrl->ave_dram_total_lat = 0;
-	mem_ctrl->read_min = 0;
-	mem_ctrl->read_max = 0;
-	mem_ctrl->write_min = 0;
-	mem_ctrl->write_max = 0;
-	mem_ctrl->dram_max_queue_depth = 0;
-	mem_ctrl->dram_ave_queue_depth = 0;
-	mem_ctrl->dram_busy_cycles = 0;
-	mem_ctrl->rx_max = 0;
-	mem_ctrl->tx_max = 0;
-	mem_ctrl->bytes_read = 0;
-	mem_ctrl->bytes_wrote = 0;
-	mem_ctrl->io_busy_cycles = 0;
+	reset_mem_system_stats();
+	cache_reset_stats();
+	switch_reset_stats();
+	sys_agent_reset_stats();
+	memctrl_reset_stats();
 
 	return;
 }

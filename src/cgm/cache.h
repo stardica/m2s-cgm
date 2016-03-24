@@ -108,6 +108,7 @@ void cache_init(void);
 void cache_create(void);
 void cache_create_tasks(void);
 void cache_dump_stats(struct cgm_stats_t *cgm_stat_container);
+void cache_reset_stats(void);
 
 //cpu
 void l1_i_cache_ctrl(void);

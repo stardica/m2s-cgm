@@ -126,6 +126,42 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet){
 	return;
 }
 
+void reset_mem_system_stats(void){
+
+	int i = 0;
+
+	//memory system at large
+	mem_system_stats->first_mem_access_lat = 0;
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		mem_system_stats->fetch_lat_hist[i] = 0;
+		mem_system_stats->load_lat_hist[i] = 0;
+		mem_system_stats->store_lat_hist[i] = 0;
+	}
+
+	mem_system_stats->cpu_total_fetches = 0;
+	mem_system_stats->fetch_l1_hits = 0;
+	mem_system_stats->fetch_l2_hits = 0;
+	mem_system_stats->fetch_l3_hits = 0;
+	mem_system_stats->fetch_memory = 0;
+	mem_system_stats->cpu_total_loads = 0;
+	mem_system_stats->load_l1_hits = 0;
+	mem_system_stats->load_l2_hits = 0;
+	mem_system_stats->load_l3_hits = 0;
+	mem_system_stats->load_memory = 0;
+	mem_system_stats->load_get_fwd = 0;
+	mem_system_stats->cpu_total_stores = 0;
+	mem_system_stats->store_l1_hits = 0;
+	mem_system_stats->store_l2_hits = 0;
+	mem_system_stats->store_l3_hits = 0;
+	mem_system_stats->store_memory = 0;
+	mem_system_stats->store_getx_fwd = 0;
+	mem_system_stats->store_upgrade = 0;
+
+	return;
+}
+
 void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_back_packet, int set, int way, int pending, enum cgm_cache_block_state_t victim_state){
 
 	//int l1_error = 0;

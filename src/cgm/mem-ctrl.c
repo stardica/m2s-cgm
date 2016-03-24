@@ -290,6 +290,31 @@ void memctrl_ctrl(void){
 	return;
 }
 
+void memctrl_reset_stats(void){
+
+	//Memory controller and DRAMSim
+	mem_ctrl->busy_cycles = 0;
+	mem_ctrl->num_reads = 0;
+	mem_ctrl->num_writes = 0;
+	mem_ctrl->ave_dram_read_lat = 0;
+	mem_ctrl->ave_dram_write_lat = 0;
+	mem_ctrl->ave_dram_total_lat = 0;
+	mem_ctrl->read_min = 0;
+	mem_ctrl->read_max = 0;
+	mem_ctrl->write_min = 0;
+	mem_ctrl->write_max = 0;
+	mem_ctrl->dram_max_queue_depth = 0;
+	mem_ctrl->dram_ave_queue_depth = 0;
+	mem_ctrl->dram_busy_cycles = 0;
+	mem_ctrl->rx_max = 0;
+	mem_ctrl->tx_max = 0;
+	mem_ctrl->bytes_read = 0;
+	mem_ctrl->bytes_wrote = 0;
+	mem_ctrl->io_busy_cycles = 0;
+
+	return;
+}
+
 void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	//cycles per nano second

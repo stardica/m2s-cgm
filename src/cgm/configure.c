@@ -444,7 +444,7 @@ int stats_finish_create(void){
 		memset (buff_path,'\0' , 250);
 		memset (buff_file,'\0' , 250);
 		sprintf(buff_path, "%s", cgm_stats_output_path);
-		sprintf(buff_file, "m2s_cgm_stats_%s.txt", cgm_stat->date_time_file);
+		sprintf(buff_file, "%s_%s.txt", cgm_stat->benchmark_name, cgm_stat->date_time_file);
 		sprintf(buff_path + strlen(buff_path), "%s", buff_file);
 		cgm_stat->stat_file_name = strdup(buff_file);
 		cgm_stats_file = fopen (buff_path, "w+");

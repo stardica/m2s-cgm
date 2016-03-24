@@ -87,6 +87,8 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 unsigned int get_block_address(unsigned int address, unsigned int cache_address_mask);
 int is_writeback_present(struct cgm_packet_t *writeback_packet);
 
+void reset_mem_system_stats(void);
+
 
 
 //////////////////////

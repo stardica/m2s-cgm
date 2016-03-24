@@ -109,5 +109,6 @@ void sys_agent_ctrl_io_down(void);
 void sys_agent_ctrl_io_up(void);
 
 void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container);
+void sys_agent_reset_stats(void);
 
 #endif /* SYSAGENT_H_ */

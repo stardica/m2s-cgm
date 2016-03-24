@@ -1,4 +1,51 @@
 
+ave_busy_time = (core_0_BusyTime + core_1_BusyTime + core_2_BusyTime + core_3_BusyTime)/int(options.NumCores)
+	ave_SystemTime = (core_0_SystemTime + core_1_SystemTime + core_2_SystemTime + core_3_SystemTime)/int(options.NumCores)
+	ave_FetchStall = (core_0_FetchStall + core_1_FetchStall + core_2_FetchStall + core_3_FetchStall)/int(options.NumCores)
+	ave_ROBStallLoad = (core_0_ROBStallLoad + core_1_ROBStallLoad + core_2_ROBStallLoad + core_3_ROBStallLoad)/int(options.NumCores)
+	ave_ROBStallStore = (core_0_ROBStallStore + core_1_ROBStallStore + core_2_ROBStallStore + core_3_ROBStallStore)/int(options.NumCores)
+	ave_ROBStallOther = (core_0_ROBStallOther + core_1_ROBStallOther + core_2_ROBStallOther + core_3_ROBStallOther)/int(options.NumCores)
+	ave_IdleTime = (core_0_IdleTime + core_1_IdleTime + core_2_IdleTime + core_3_IdleTime)/int(options.NumCores)
+
+	table_P4 = [
+		[ave_busy_time, ave_SystemTime, ave_FetchStall, ave_ROBStallLoad, ave_ROBStallStore, ave_ROBStallOther,]
+		]
+	
+	
+	core_0_NumSyscalls = cpu_data.getint('Core_0', 'NumSyscalls')
+	core_0_ROBStalls = cpu_data.getint('Core_0', 'ROBStalls')
+	core_0_ROBStallLoad = cpu_data.getint('Core_0', 'ROBStallLoad')
+	core_0_ROBStallStore = cpu_data.getint('Core_0', 'ROBStallStore')
+	core_0_ROBStallOther = cpu_data.getint('Core_0', 'ROBStallOther')
+	core_0_FirstFetchCycle = cpu_data.getint('Core_0', 'FirstFetchCycle')
+	core_0_LastCommitCycle = cpu_data.getint('Core_0', 'FirstFetchCycle')
+	core_0_FetchStall = cpu_data.getint('Core_0', 'FetchStall')
+	core_0_RunTime = cpu_data.getint('Core_0', 'RunTime')
+	core_0_IdleTime = cpu_data.getint('Core_0', 'IdleTime')
+	core_0_SystemTime = cpu_data.getint('Core_0', 'SystemTime')
+	core_0_StallTime = cpu_data.getint('Core_0', 'StallTime')
+	core_0_BusyTime = cpu_data.getint('Core_0', 'BusyTime')
+	core_0_IdlePct = cpu_data.getfloat('Core_0', 'IdlePct')
+	core_0_RunPct = cpu_data.getfloat('Core_0', 'RunPct')
+	core_0_SystemPct = cpu_data.getfloat('Core_0', 'SystemPct')
+	core_0_StallPct = cpu_data.getfloat('Core_0', 'StallPct')
+	core_0_BusyPct = cpu_data.getfloat('Core_0', 'BusyPct')
+	core_0_StallfetchPct = cpu_data.getfloat('Core_0', 'StallfetchPct')
+	core_0_StallLoadPct = cpu_data.getfloat('Core_0', 'StallLoadPct')
+	core_0_StallStorePct = cpu_data.getfloat('Core_0', 'StallStorePct')
+	core_0_StallOtherPct = cpu_data.getfloat('Core_0', 'StallOtherPct')
+	table_P0 = [core_0_IdleTime, core_0_FetchStall, core_0_ROBStallLoad, core_0_ROBStallStore, core_0_ROBStallOther, core_0_SystemTime, core_0_BusyTime]
+
+	
+	#if int(options.OutChart) == 2:
+	#ave_busy_time = (core_0_BusyTime + core_1_BusyTime + core_2_BusyTime + core_3_BusyTime)/int(options.NumCores)
+	#ave_SystemTime = (core_0_SystemTime + core_1_SystemTime + core_2_SystemTime + core_3_SystemTime)/int(options.NumCores)
+	#ave_FetchStall = (core_0_FetchStall + core_1_FetchStall + core_2_FetchStall + core_3_FetchStall)/int(options.NumCores)
+	#ave_ROBStallLoad = (core_0_ROBStallLoad + core_1_ROBStallLoad + core_2_ROBStallLoad + core_3_ROBStallLoad)/int(options.NumCores)
+	#ave_ROBStallStore = (core_0_ROBStallStore + core_1_ROBStallStore + core_2_ROBStallStore + core_3_ROBStallStore)/int(options.NumCores)
+	#ave_ROBStallOther = (core_0_ROBStallOther + core_1_ROBStallOther + core_2_ROBStallOther + core_3_ROBStallOther)/int(options.NumCores)
+	#ave_IdleTime = (core_0_IdleTime + core_1_IdleTime + core_2_IdleTime + core_3_IdleTime)/int(options.NumCores)
+
 core_0_NumSyscalls = cpu_data.getint('Core_0', 'NumSyscalls')
 	core_0_ROBStalls = cpu_data.getint('Core_0', 'ROBStalls')
 	core_0_ROBStallLoad = cpu_data.getint('Core_0', 'ROBStallLoad')
