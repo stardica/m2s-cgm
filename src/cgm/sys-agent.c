@@ -380,6 +380,31 @@ void sys_agent_ctrl(void){
 	return;
 }
 
+void sys_agent_store_stats(struct cgm_stats_t *cgm_stat_container){
+
+	//system agent
+	cgm_stat_container->system_agent_busy_cycles = system_agent->busy_cycles;
+	cgm_stat_container->system_agent_north_io_busy_cycles = system_agent->north_io_busy_cycles;
+	cgm_stat_container->system_agent_south_io_busy_cycles = system_agent->south_io_busy_cycles;
+	cgm_stat_container->system_agent_mc_loads = system_agent->mc_loads;
+	cgm_stat_container->system_agent_mc_stores = system_agent->mc_stores;
+	cgm_stat_container->system_agent_mc_returns = system_agent->mc_returns;
+	cgm_stat_container->system_agent_max_north_rxqueue_depth = system_agent->max_north_rxqueue_depth;
+	cgm_stat_container->system_agent_ave_north_rxqueue_depth = system_agent->ave_north_rxqueue_depth;
+	cgm_stat_container->system_agent_max_south_rxqueue_depth = system_agent->max_south_rxqueue_depth;
+	cgm_stat_container->system_agent_ave_south_rxqueue_depth = system_agent->ave_south_rxqueue_depth;
+	cgm_stat_container->system_agent_max_north_txqueue_depth = system_agent->max_north_txqueue_depth;
+	cgm_stat_container->system_agent_ave_north_txqueue_depth = system_agent->ave_north_txqueue_depth;
+	cgm_stat_container->system_agent_max_south_txqueue_depth = system_agent->max_south_txqueue_depth;
+	cgm_stat_container->system_agent_ave_south_txqueue_depth = system_agent->ave_south_txqueue_depth;
+	/*cgm_stat_container->system_agent_north_gets = system_agent->north_gets;
+	cgm_stat_container->system_agent_south_gets = system_agent->south_gets;
+	cgm_stat_container->system_agent_north_puts = system_agent->north_puts;
+	cgm_stat_container->system_agent_south_puts = system_agent->south_puts;*/
+
+	return;
+}
+
 void sys_agent_reset_stats(void){
 
 	//system agent

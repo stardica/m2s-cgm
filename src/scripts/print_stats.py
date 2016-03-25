@@ -12,8 +12,15 @@ def print_cache_stats(options):
 	cache_data.optionxform = str 
 	cache_data.read(options.InFileName)
 
-	#pull of the memory system stats 	
-	cache_stats = dict(cache_data.items('FullRunStats'))
+	#pull stats
+	if options.PrintSection == 'FullRunStats':
+		cache_stats = dict(cache_data.items('FullRunStats'))
+	elif options.PrintSection == 'ParallelStats':
+		cache_stats = dict(cache_data.items('ParallelStats'))
+	else:
+		print "print_cache_stats(): invalid section"
+		exit(0)
+
 
 	for key, value in cache_stats.items(): # get the (key, value) tuples one at a time
 		try:
@@ -22,7 +29,9 @@ def print_cache_stats(options):
 			cache_stats[key] = float(value)
 		
 	
-	l1_i_TotalCacheCtrlLoops = cache_stats['l1_i_0_TotalCacheCtrlLoops'] + cache_stats['l1_i_1_TotalCacheCtrlLoops'] + cache_stats['l1_i_2_TotalCacheCtrlLoops'] + cache_stats['l1_i_3_TotalCacheCtrlLoops']
+	l1_i_Occupancy = cache_stats['l1_i_0_Occupancy'] + cache_stats['l1_i_1_Occupancy'] + cache_stats['l1_i_2_Occupancy'] + cache_stats['l1_i_3_Occupancy']
+	l1_i_OccupancyPct = cache_stats['l1_i_0_OccupancyPct'] + cache_stats['l1_i_1_OccupancyPct'] + cache_stats['l1_i_2_OccupancyPct'] + cache_stats['l1_i_3_OccupancyPct']
+	l1_i_TotalAdvances = cache_stats['l1_i_0_TotalAdvances'] + cache_stats['l1_i_1_TotalAdvances'] + cache_stats['l1_i_2_TotalAdvances'] + cache_stats['l1_i_3_TotalAdvances']
 	l1_i_TotalAccesses = cache_stats['l1_i_0_TotalAccesses'] + cache_stats['l1_i_1_TotalAccesses'] + cache_stats['l1_i_2_TotalAccesses'] + cache_stats['l1_i_3_TotalAccesses']
 	l1_i_TotalHits = cache_stats['l1_i_0_TotalHits'] + cache_stats['l1_i_1_TotalHits'] + cache_stats['l1_i_2_TotalHits'] + cache_stats['l1_i_3_TotalHits']
 	l1_i_TotalMisses = cache_stats['l1_i_0_TotalMisses'] + cache_stats['l1_i_1_TotalMisses'] + cache_stats['l1_i_2_TotalMisses'] + cache_stats['l1_i_3_TotalMisses']
@@ -44,7 +53,9 @@ def print_cache_stats(options):
 	l1_i_TotalWriteBacks = cache_stats['l1_i_0_TotalWriteBacks'] + cache_stats['l1_i_1_TotalWriteBacks'] + cache_stats['l1_i_2_TotalWriteBacks'] + cache_stats['l1_i_3_TotalWriteBacks']
 	l1_i_CacheUtilization = cache_stats['l1_i_0_CacheUtilization'] + cache_stats['l1_i_1_CacheUtilization'] + cache_stats['l1_i_2_CacheUtilization'] + cache_stats['l1_i_3_CacheUtilization']
 
-	l1_d_TotalCacheCtrlLoops = cache_stats['l1_d_0_TotalCacheCtrlLoops'] + cache_stats['l1_d_1_TotalCacheCtrlLoops'] + cache_stats['l1_d_2_TotalCacheCtrlLoops'] + cache_stats['l1_d_3_TotalCacheCtrlLoops']
+	l1_d_Occupancy = cache_stats['l1_d_0_Occupancy'] + cache_stats['l1_d_1_Occupancy'] + cache_stats['l1_d_2_Occupancy'] + cache_stats['l1_d_3_Occupancy']
+	l1_d_OccupancyPct = cache_stats['l1_d_0_OccupancyPct'] + cache_stats['l1_d_1_OccupancyPct'] + cache_stats['l1_d_2_OccupancyPct'] + cache_stats['l1_d_3_OccupancyPct']
+	l1_d_TotalAdvances = cache_stats['l1_d_0_TotalAdvances'] + cache_stats['l1_d_1_TotalAdvances'] + cache_stats['l1_d_2_TotalAdvances'] + cache_stats['l1_d_3_TotalAdvances']
 	l1_d_TotalAccesses = cache_stats['l1_d_0_TotalAccesses'] + cache_stats['l1_d_1_TotalAccesses'] + cache_stats['l1_d_2_TotalAccesses'] + cache_stats['l1_d_3_TotalAccesses']
 	l1_d_TotalHits = cache_stats['l1_d_0_TotalHits'] + cache_stats['l1_d_1_TotalHits'] + cache_stats['l1_d_2_TotalHits'] + cache_stats['l1_d_3_TotalHits']
 	l1_d_TotalMisses = cache_stats['l1_d_0_TotalMisses'] + cache_stats['l1_d_1_TotalMisses'] + cache_stats['l1_d_2_TotalMisses'] + cache_stats['l1_d_3_TotalMisses']
@@ -66,7 +77,9 @@ def print_cache_stats(options):
 	l1_d_TotalWriteBacks = cache_stats['l1_d_0_TotalWriteBacks'] + cache_stats['l1_d_1_TotalWriteBacks'] + cache_stats['l1_d_2_TotalWriteBacks'] + cache_stats['l1_d_3_TotalWriteBacks']
 	l1_d_CacheUtilization = cache_stats['l1_d_0_CacheUtilization'] + cache_stats['l1_d_1_CacheUtilization'] + cache_stats['l1_d_2_CacheUtilization'] + cache_stats['l1_d_3_CacheUtilization']
 
-	l2_TotalCacheCtrlLoops = cache_stats['l2_0_TotalCacheCtrlLoops'] + cache_stats['l2_1_TotalCacheCtrlLoops'] + cache_stats['l2_2_TotalCacheCtrlLoops'] + cache_stats['l2_3_TotalCacheCtrlLoops']
+	l2_Occupancy = cache_stats['l2_0_Occupancy'] + cache_stats['l2_1_Occupancy'] + cache_stats['l2_2_Occupancy'] + cache_stats['l2_3_Occupancy']
+	l2_OccupancyPct = cache_stats['l2_0_OccupancyPct'] + cache_stats['l2_1_OccupancyPct'] + cache_stats['l2_2_OccupancyPct'] + cache_stats['l2_3_OccupancyPct']
+	l2_TotalAdvances = cache_stats['l2_0_TotalAdvances'] + cache_stats['l2_1_TotalAdvances'] + cache_stats['l2_2_TotalAdvances'] + cache_stats['l2_3_TotalAdvances']
 	l2_TotalAccesses = cache_stats['l2_0_TotalAccesses'] + cache_stats['l2_1_TotalAccesses'] + cache_stats['l2_2_TotalAccesses'] + cache_stats['l2_3_TotalAccesses']
 	l2_TotalHits = cache_stats['l2_0_TotalHits'] + cache_stats['l2_1_TotalHits'] + cache_stats['l2_2_TotalHits'] + cache_stats['l2_3_TotalHits']
 	l2_TotalMisses = cache_stats['l2_0_TotalMisses'] + cache_stats['l2_1_TotalMisses'] + cache_stats['l2_2_TotalMisses'] + cache_stats['l2_3_TotalMisses']
@@ -88,7 +101,9 @@ def print_cache_stats(options):
 	l2_TotalWriteBacks = cache_stats['l2_0_TotalWriteBacks'] + cache_stats['l2_1_TotalWriteBacks'] + cache_stats['l2_2_TotalWriteBacks'] + cache_stats['l2_3_TotalWriteBacks']
 	l2_CacheUtilization = cache_stats['l2_0_CacheUtilization'] + cache_stats['l2_1_CacheUtilization'] + cache_stats['l2_2_CacheUtilization'] + cache_stats['l2_3_CacheUtilization']
 
-	l3_TotalCacheCtrlLoops = cache_stats['l3_0_TotalCacheCtrlLoops'] + cache_stats['l3_1_TotalCacheCtrlLoops'] + cache_stats['l3_2_TotalCacheCtrlLoops'] + cache_stats['l3_3_TotalCacheCtrlLoops']
+	l3_Occupancy = cache_stats['l3_0_Occupancy'] + cache_stats['l3_1_Occupancy'] + cache_stats['l3_2_Occupancy'] + cache_stats['l3_3_Occupancy']
+	l3_OccupancyPct = cache_stats['l3_0_OccupancyPct'] + cache_stats['l3_1_OccupancyPct'] + cache_stats['l3_2_OccupancyPct'] + cache_stats['l3_3_OccupancyPct']
+	l3_TotalAdvances = cache_stats['l3_0_TotalAdvances'] + cache_stats['l3_1_TotalAdvances'] + cache_stats['l3_2_TotalAdvances'] + cache_stats['l3_3_TotalAdvances']
 	l3_TotalAccesses = cache_stats['l3_0_TotalAccesses'] + cache_stats['l3_1_TotalAccesses'] + cache_stats['l3_2_TotalAccesses'] + cache_stats['l3_3_TotalAccesses']
 	l3_TotalHits = cache_stats['l3_0_TotalHits'] + cache_stats['l3_1_TotalHits'] + cache_stats['l3_2_TotalHits'] + cache_stats['l3_3_TotalHits']
 	l3_TotalMisses = cache_stats['l3_0_TotalMisses'] + cache_stats['l3_1_TotalMisses'] + cache_stats['l3_2_TotalMisses'] + cache_stats['l3_3_TotalMisses']
@@ -111,28 +126,30 @@ def print_cache_stats(options):
 	l3_CacheUtilization = cache_stats['l3_0_CacheUtilization'] + cache_stats['l3_1_CacheUtilization'] + cache_stats['l3_2_CacheUtilization'] + cache_stats['l3_3_CacheUtilization']
 
 	table_cache_combined = [
-	["TotalCacheCtrlLoops", l1_i_TotalCacheCtrlLoops, l1_d_TotalCacheCtrlLoops, l2_TotalCacheCtrlLoops, l3_TotalCacheCtrlLoops],
-	["TotalAccesses", l1_i_TotalAccesses, l1_d_TotalAccesses, l2_TotalAccesses, l3_TotalAccesses], 
-	["TotalHits", l1_i_TotalHits, l1_d_TotalHits, l2_TotalHits, l3_TotalHits],
-	["TotalMisses", l1_i_TotalMisses, l1_d_TotalMisses, l2_TotalMisses, l3_TotalMisses],
-	["MissRate", l1_i_MissRate, l1_d_MissRate, l2_MissRate, l3_MissRate],
-	["TotalReads", l1_i_TotalReads, l1_d_TotalReads, l2_TotalReads, l3_TotalReads],
-	["TotalReadMisses", l1_i_TotalReadMisses, l1_d_TotalReadMisses, l2_TotalReadMisses, l3_TotalReadMisses],
-	["ReadMissRate", l1_i_ReadMissRate, l1_d_ReadMissRate, l2_ReadMissRate, l3_ReadMissRate],
-	["TotalWrites", l1_i_TotalWrites, l1_d_TotalWrites, l2_TotalWrites, l3_TotalWrites],
-	["TotalWriteMisses", l1_i_TotalWriteMisses, l1_d_TotalWriteMisses, l2_TotalWriteMisses, l3_TotalWriteMisses],
-	["WriteMissRate", l1_i_WriteMissRate, l1_d_WriteMissRate, l2_WriteMissRate, l3_WriteMissRate],
-	["TotalGet", l1_i_TotalGets, l1_d_TotalGets, l2_TotalGets, l3_TotalGets],
-	["TotalGet", l1_i_TotalGet, l1_d_TotalGet, l2_TotalGet, l3_TotalGet],
-	["TotalGetx", l1_i_TotalGetx, l1_d_TotalGetx, l2_TotalGetx, l3_TotalGetx],
-	["GetMissRate", l1_i_GetsMissRate, l1_d_GetsMissRate, l2_GetsMissRate, l3_GetsMissRate],
-	["GetMissRate", l1_i_GetMissRate, l1_d_GetMissRate, l2_GetMissRate, l3_GetMissRate],
-	["GetxMissRate", l1_i_GetxMissRate, l1_d_GetxMissRate, l2_GetxMissRate, l3_GetxMissRate],
-	["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
-	["UpgradeMissRate", l1_i_UpgradeMissRate, l1_d_UpgradeMissRate, l2_UpgradeMissRate, l3_UpgradeMissRate],
-	["TotalWriteBacks", l1_i_TotalWriteBacks, l1_d_TotalWriteBacks, l2_TotalWriteBacks, l3_TotalWriteBacks],
-	["CacheUtilization", l1_i_CacheUtilization, l1_d_CacheUtilization, l2_CacheUtilization, l3_CacheUtilization]
-	]
+			["Occupancy", l1_i_Occupancy, l1_d_Occupancy, l2_Occupancy, l3_Occupancy],
+			["OccupancyPct(X.XX%)", l1_i_OccupancyPct, l1_d_OccupancyPct, l2_OccupancyPct, l3_OccupancyPct],
+			["TotalAdvances", l1_i_TotalAdvances, l1_d_TotalAdvances, l2_TotalAdvances, l3_TotalAdvances],
+			["TotalAccesses", l1_i_TotalAccesses, l1_d_TotalAccesses, l2_TotalAccesses, l3_TotalAccesses], 
+			["TotalHits", l1_i_TotalHits, l1_d_TotalHits, l2_TotalHits, l3_TotalHits],
+			["TotalMisses", l1_i_TotalMisses, l1_d_TotalMisses, l2_TotalMisses, l3_TotalMisses],
+			["MissRate", l1_i_MissRate, l1_d_MissRate, l2_MissRate, l3_MissRate],
+			["TotalReads", l1_i_TotalReads, l1_d_TotalReads, l2_TotalReads, l3_TotalReads],
+			["TotalReadMisses", l1_i_TotalReadMisses, l1_d_TotalReadMisses, l2_TotalReadMisses, l3_TotalReadMisses],
+			["ReadMissRate", l1_i_ReadMissRate, l1_d_ReadMissRate, l2_ReadMissRate, l3_ReadMissRate],
+			["TotalWrites", l1_i_TotalWrites, l1_d_TotalWrites, l2_TotalWrites, l3_TotalWrites],
+			["TotalWriteMisses", l1_i_TotalWriteMisses, l1_d_TotalWriteMisses, l2_TotalWriteMisses, l3_TotalWriteMisses],
+			["WriteMissRate", l1_i_WriteMissRate, l1_d_WriteMissRate, l2_WriteMissRate, l3_WriteMissRate],
+			["TotalGet", l1_i_TotalGets, l1_d_TotalGets, l2_TotalGets, l3_TotalGets],
+			["TotalGet", l1_i_TotalGet, l1_d_TotalGet, l2_TotalGet, l3_TotalGet],
+			["TotalGetx", l1_i_TotalGetx, l1_d_TotalGetx, l2_TotalGetx, l3_TotalGetx],
+			["GetMissRate", l1_i_GetsMissRate, l1_d_GetsMissRate, l2_GetsMissRate, l3_GetsMissRate],
+			["GetMissRate", l1_i_GetMissRate, l1_d_GetMissRate, l2_GetMissRate, l3_GetMissRate],
+			["GetxMissRate", l1_i_GetxMissRate, l1_d_GetxMissRate, l2_GetxMissRate, l3_GetxMissRate],
+			["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
+			["UpgradeMissRate", l1_i_UpgradeMissRate, l1_d_UpgradeMissRate, l2_UpgradeMissRate, l3_UpgradeMissRate],
+			["TotalWriteBacks", l1_i_TotalWriteBacks, l1_d_TotalWriteBacks, l2_TotalWriteBacks, l3_TotalWriteBacks],
+			["CacheUtilization", l1_i_CacheUtilization, l1_d_CacheUtilization, l2_CacheUtilization, l3_CacheUtilization]
+			]
 
 	f = open(options.OutFileName, 'a')
 
@@ -168,11 +185,15 @@ def print_cache_stats(options):
 
 	#print the title and bars
 	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Cache stats combined",'I$', 'D$', 'L2$', 'L3$', title_width=max_title_length, data_width=max_element_length) + '\n')
+
 	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	#print the table's data
 	for tup in table_cache_combined:
-		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+		if isinstance(tup[1], int):
+			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+		else:
+			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	f.write('\n')
 		
@@ -378,7 +399,7 @@ def print_mem_system_stats(options):
 	ms_data.optionxform = str
 	ms_data.read(options.InFileName)
 
-	#pull of the memory system stats 	
+	#memory system stats 	
 	ms_stats = dict(ms_data.items('FullRunStats'))
 			
 	table_mem_system_data = [
@@ -448,84 +469,7 @@ def print_mem_system_stats(options):
 
 	return
 
-def print_general_stats(options):
 
-
-
-	general_data = ConfigParser.ConfigParser()
-	general_data.optionxform = str 
-	general_data.read(options.InFileName)
-	
-	#pull of the general stats 	
-	general_stats = dict(general_data.items('General'))
-
-	#bench_args = general_data.get('General', 'Benchmark')
-	#day_time = general_data.get('General', 'Day&Time')
-	#total_cycles = general_data.getint('General', 'TotalCycles')
-	#run_time_cpu = general_data.getfloat('General', 'SimulationRunTimeSeconds(cpu)')
-	#run_time_wall = general_data.getfloat('General', 'SimulationRunTimeSeconds(wall)')
-	#simulated_cycles_per_sec = general_data.getfloat('General', 'SimulatedCyclesPerSec')
-	#cpu_num_cores = general_data.getint('General', 'CPU_NumCores')
-	#cpu_threads_per_core = general_data.getint('General', 'CPU_ThreadsPerCore')
-	#cpu_freq_ghz = general_data.getint('General', 'CPU_FreqGHz')
-	
-	table_general_data = [
-	["BenchmarkArgs", general_stats['Benchmark']],
-	["DateTime", general_stats['Day&Time']],
-	["ExeSuccessful", general_stats['ExecutionSuccessful']],
-	["TotalCycles", general_stats['TotalCycles']],
-	["CPURunTime(sec)", general_stats['SimulationRunTimeSeconds(cpu)']],
-	["WallRunTime(sec)", general_stats['SimulationRunTimeSeconds(wall)']],
-	["SimulatedCyclesPerSec", general_stats['SimulatedCyclesPerSec']],
-	["CPUNumCores", general_stats['CPU_NumCores']],
-	["CPUThreadsPerCore", general_stats['CPU_ThreadsPerCore']],
-	["CPUFreqGhz", general_stats['CPU_FreqGHz']]
-	]
-		
-	f = open(options.OutFileName, 'w')
-
-	f.write("//General Stats////////////////////////////////////////////////" + '\n')
-	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-
-	#get the largest title length	
-	max_title_length = len('General Stats')
-	current_title_length = 0
-
-	for tup in table_general_data:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in table_general_data:
-		for item in tup[1:2]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
-	title_bar = '-' * (max_title_length - 1)
-	data_bar = '-' * (max_element_length - 1)
-
-	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}".format("General Stats",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
-	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
-
-	#print the table's data
-	for tup in table_general_data:
-		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
-
-	f.write('\n')
-	f.close
-		
-	return
 
 def print_cpu_stats(options):
 
@@ -613,9 +557,89 @@ def print_cpu_stats(options):
 	f.close
 	return
 
+def print_general_stats(options):
+
+
+
+	general_data = ConfigParser.ConfigParser()
+	general_data.optionxform = str 
+	general_data.read(options.InFileName)
+	
+	#pull of the general stats 	
+	general_stats = dict(general_data.items('General'))
+
+	#bench_args = general_data.get('General', 'Benchmark')
+	#day_time = general_data.get('General', 'Day&Time')
+	#total_cycles = general_data.getint('General', 'TotalCycles')
+	#run_time_cpu = general_data.getfloat('General', 'SimulationRunTimeSeconds(cpu)')
+	#run_time_wall = general_data.getfloat('General', 'SimulationRunTimeSeconds(wall)')
+	#simulated_cycles_per_sec = general_data.getfloat('General', 'SimulatedCyclesPerSec')
+	#cpu_num_cores = general_data.getint('General', 'CPU_NumCores')
+	#cpu_threads_per_core = general_data.getint('General', 'CPU_ThreadsPerCore')
+	#cpu_freq_ghz = general_data.getint('General', 'CPU_FreqGHz')
+	
+	table_general_data = [
+	["BenchmarkArgs", general_stats['Benchmark']],
+	["DateTime", general_stats['Day&Time']],
+	["ExeSuccessful", general_stats['ExecutionSuccessful']],
+	["TotalCycles", general_stats['TotalCycles']],
+	["ParallelSectionCycles", general_stats['ParallelSectionCycles']],
+	["CPURunTime(sec)", general_stats['SimulationRunTimeSeconds(cpu)']],
+	["WallRunTime(sec)", general_stats['SimulationRunTimeSeconds(wall)']],
+	["SimulatedCyclesPerSec", general_stats['SimulatedCyclesPerSec']],
+	["CPUNumCores", general_stats['CPU_NumCores']],
+	["CPUThreadsPerCore", general_stats['CPU_ThreadsPerCore']],
+	["CPUFreqGhz", general_stats['CPU_FreqGHz']]
+	]
+		
+	f = open(options.OutFileName, 'w')
+
+	f.write("//General Stats////////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+
+	#get the largest title length	
+	max_title_length = len('General Stats')
+	current_title_length = 0
+
+	for tup in table_general_data:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in table_general_data:
+		for item in tup[1:2]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("General Stats",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in table_general_data:
+		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write('\n')
+	f.close
+		
+	return
+
 
 parser = OptionParser()
-parser.usage = "%prog -i inputfile -o outputfile"
+parser.usage = "%prog -s section -i inputfile -o outputfile"
 parser.add_option("-s", "--section", dest="PrintSection", default="", help="Specifiy the stats section to parse.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
 parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")

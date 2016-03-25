@@ -126,7 +126,43 @@ void status_packet_destroy(struct cgm_packet_status_t *status_packet){
 	return;
 }
 
-void reset_mem_system_stats(void){
+void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container){
+
+	int i = 0;
+
+	//memory system at large
+	cgm_stat_container->first_mem_access_lat = mem_system_stats->first_mem_access_lat;
+
+	for(i = 0; i < HISTSIZE; i++)
+	{
+		cgm_stat_container->fetch_lat_hist[i] = mem_system_stats->fetch_lat_hist[i];
+		cgm_stat_container->load_lat_hist[i] = mem_system_stats->load_lat_hist[i];
+		cgm_stat_container->store_lat_hist[i] = mem_system_stats->store_lat_hist[i];
+	}
+
+	cgm_stat_container->cpu_total_fetches = mem_system_stats->cpu_total_fetches;
+	cgm_stat_container->fetch_l1_hits = mem_system_stats->fetch_l1_hits;
+	cgm_stat_container->fetch_l2_hits = mem_system_stats->fetch_l2_hits;
+	cgm_stat_container->fetch_l3_hits = mem_system_stats->fetch_l3_hits;
+	cgm_stat_container->fetch_memory = mem_system_stats->fetch_memory;
+	cgm_stat_container->cpu_total_loads = mem_system_stats->cpu_total_loads;
+	cgm_stat_container->load_l1_hits = mem_system_stats->load_l1_hits;
+	cgm_stat_container->load_l2_hits = mem_system_stats->load_l2_hits;
+	cgm_stat_container->load_l3_hits = mem_system_stats->load_l3_hits;
+	cgm_stat_container->load_memory = mem_system_stats->load_memory;
+	cgm_stat_container->load_get_fwd = mem_system_stats->load_get_fwd;
+	cgm_stat_container->cpu_total_stores = mem_system_stats->cpu_total_stores;
+	cgm_stat_container->store_l1_hits = mem_system_stats->store_l1_hits;
+	cgm_stat_container->store_l2_hits = mem_system_stats->store_l2_hits;
+	cgm_stat_container->store_l3_hits = mem_system_stats->store_l3_hits;
+	cgm_stat_container->store_memory = mem_system_stats->store_memory;
+	cgm_stat_container->store_getx_fwd = mem_system_stats->store_getx_fwd;
+	cgm_stat_container->store_upgrade = mem_system_stats->store_upgrade;
+
+	return;
+}
+
+void mem_system_reset_stats(void){
 
 	int i = 0;
 

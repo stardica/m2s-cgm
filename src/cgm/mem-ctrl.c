@@ -290,6 +290,31 @@ void memctrl_ctrl(void){
 	return;
 }
 
+void memctrl_store_stats(struct cgm_stats_t *cgm_stat_container){
+
+	//Memory controller and DRAMSim
+	cgm_stat_container->mem_ctrl_busy_cycles = mem_ctrl->busy_cycles;
+	cgm_stat_container->mem_ctrl_num_reads = mem_ctrl->num_reads;
+	cgm_stat_container->mem_ctrl_num_writes = mem_ctrl->num_writes;
+	cgm_stat_container->mem_ctrl_ave_dram_read_lat = mem_ctrl->ave_dram_read_lat;
+	cgm_stat_container->mem_ctrl_ave_dram_write_lat = mem_ctrl->ave_dram_write_lat;
+	cgm_stat_container->mem_ctrl_ave_dram_total_lat = mem_ctrl->ave_dram_total_lat;
+	cgm_stat_container->mem_ctrl_read_min = mem_ctrl->read_min;
+	cgm_stat_container->mem_ctrl_read_max = mem_ctrl->read_max;
+	cgm_stat_container->mem_ctrl_write_min = mem_ctrl->write_min;
+	cgm_stat_container->mem_ctrl_write_max = mem_ctrl->write_max;
+	cgm_stat_container->mem_ctrl_dram_max_queue_depth = mem_ctrl->dram_max_queue_depth;
+	cgm_stat_container->mem_ctrl_dram_ave_queue_depth = mem_ctrl->dram_ave_queue_depth;
+	cgm_stat_container->mem_ctrl_dram_busy_cycles = mem_ctrl->dram_busy_cycles;
+	cgm_stat_container->mem_ctrl_rx_max = mem_ctrl->rx_max;
+	cgm_stat_container->mem_ctrl_tx_max = mem_ctrl->tx_max;
+	cgm_stat_container->mem_ctrl_bytes_read = mem_ctrl->bytes_read;
+	cgm_stat_container->mem_ctrl_bytes_wrote = mem_ctrl->bytes_wrote;
+	cgm_stat_container->mem_ctrl_io_busy_cycles = mem_ctrl->io_busy_cycles;
+
+	return;
+}
+
 void memctrl_reset_stats(void){
 
 	//Memory controller and DRAMSim

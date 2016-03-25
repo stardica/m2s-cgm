@@ -355,6 +355,7 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 
 void switch_dump_stats(struct cgm_stats_t *cgm_stat_container);
 void switch_reset_stats(void);
+void switch_store_stats(struct cgm_stats_t *cgm_stat_container);
 
 //void route_create(void);
 //void get_path(void);

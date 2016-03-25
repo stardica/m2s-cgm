@@ -339,6 +339,115 @@ def plot_stats_omp_2(options):
 
 	return
 
+def plot_stats_ocl_1(options):
+
+
+	p1_data = ConfigParser.ConfigParser()
+	p1_data.optionxform = str
+	p1_data.read(options.InFileName1)
+
+	p2_data = ConfigParser.ConfigParser()
+	p2_data.optionxform = str
+	p2_data.read(options.InFileName2)
+
+	p4_data = ConfigParser.ConfigParser()
+	p4_data.optionxform = str
+	p4_data.read(options.InFileName3)
+
+	gpu_data = ConfigParser.ConfigParser()
+	gpu_data.optionxform = str
+	gpu_data.read(options.InFileName4)
+
+	#pull stats 	
+	p1_stats = dict(p1_data.items('ParallelStats'))
+	for key, value in p1_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			p1_stats[key] = int(value)
+		except ValueError:
+			p1_stats[key] = float(value)
+
+	p2_stats = dict(p2_data.items('ParallelStats'))
+	for key, value in p2_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			p2_stats[key] = int(value)
+		except ValueError:
+			p2_stats[key] = float(value)
+
+	p4_stats = dict(p4_data.items('ParallelStats'))
+	for key, value in p4_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			p4_stats[key] = int(value)
+		except ValueError:
+			p4_stats[key] = float(value)
+
+	gpu_stats = dict(gpu_data.items('ParallelStats'))
+	for key, value in gpu_stats.items(): #get the (key, value) tuples one at a time
+		try:
+			gpu_stats[key] = int(value)
+		except ValueError:
+			gpu_stats[key] = float(value)
+	
+	total_cycles_table = [
+			[p1_stats['core_0_BusyTime'], 
+			p1_stats['core_0_SystemTime'], 
+			p1_stats['core_0_FetchStall'], 
+			p1_stats['core_0_ROBStallLoad'], 
+			p1_stats['core_0_ROBStallStore'], 
+			p1_stats['core_0_ROBStallOther']],
+			[(p2_stats['core_0_BusyTime'] + p2_stats['core_1_BusyTime'])/2, 
+			(p2_stats['core_0_SystemTime'] + p2_stats['core_1_SystemTime'])/2, 
+			(p2_stats['core_0_FetchStall'] + p2_stats['core_1_FetchStall'])/2, 
+			(p2_stats['core_0_ROBStallLoad'] + p2_stats['core_1_ROBStallLoad'])/2, 
+			(p2_stats['core_0_ROBStallStore'] + p2_stats['core_1_ROBStallStore'])/2, 
+			(p2_stats['core_0_ROBStallOther'] + p2_stats['core_1_ROBStallOther'])/2],
+			[(p4_stats['core_0_BusyTime'] + p4_stats['core_1_BusyTime'] + p4_stats['core_2_BusyTime'] + p4_stats['core_3_BusyTime'])/4, 
+			(p4_stats['core_0_SystemTime'] + p4_stats['core_1_SystemTime'] + p4_stats['core_2_SystemTime'] + p4_stats['core_3_SystemTime'])/4, 
+			(p4_stats['core_0_FetchStall'] + p4_stats['core_1_FetchStall'] + p4_stats['core_2_FetchStall'] + p4_stats['core_3_FetchStall'])/4, 
+			(p4_stats['core_0_ROBStallLoad'] + p4_stats['core_1_ROBStallLoad'] + p4_stats['core_2_ROBStallLoad'] + p4_stats['core_3_ROBStallLoad'])/4, 
+			(p4_stats['core_0_ROBStallStore'] + p4_stats['core_1_ROBStallStore'] + p4_stats['core_2_ROBStallStore'] + p4_stats['core_3_ROBStallStore'])/4, 
+			(p4_stats['core_0_ROBStallOther'] + p4_stats['core_1_ROBStallOther'] + p4_stats['core_2_ROBStallOther'] + p4_stats['core_3_ROBStallOther'])/4],
+			[(gpu_stats['core_0_BusyTime'] + gpu_stats['core_3_BusyTime'])/2, 
+			(gpu_stats['core_0_SystemTime'] + gpu_stats['core_3_SystemTime'])/2, 
+			(gpu_stats['core_0_FetchStall'] + gpu_stats['core_3_FetchStall'])/2, 
+			(gpu_stats['core_0_ROBStallLoad'] + gpu_stats['core_3_ROBStallLoad'])/2, 
+			(gpu_stats['core_0_ROBStallStore'] + gpu_stats['core_3_ROBStallStore'])/2, 
+			(gpu_stats['core_0_ROBStallOther'] + gpu_stats['core_3_ROBStallOther'])/2]
+			]
+
+	total_cycles = p1_stats['core_0_RunTime']
+	
+	speed_up_table = [
+		[p1_stats['core_0_RunTime']/p1_stats['core_0_RunTime'], 
+		p1_stats['core_0_RunTime']/p2_stats['core_0_RunTime'],
+		p1_stats['core_0_RunTime']/p4_stats['core_0_RunTime'],				
+		p1_stats['core_0_RunTime']/gpu_stats['core_0_RunTime']]
+		]
+
+			
+
+
+	#cpu_stats = np.array()
+	#df = pd.DataFrame(total_cycles, index=['Benchmark @ P1'], columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall'])
+	#axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP P1 4096", rot=0)
+
+	df = pd.DataFrame(total_cycles_table, index=['P1', 'P2', 'P4', 'P4_GPGPU'], columns=['Busy', 'System', 'Fetch stall', 'Load stall', 'Store stall', 'Functional stall'],)
+
+	#tb = pd.DataFrame(speed_up_table, index=['Speed Up'], columns=['', '', '' , ''])
+
+	axes = df.plot(kind='bar', stacked=True, colormap='bone', title="Backprop OMP/OCL 4096 (Parallel section)", rot=0)
+
+	y_major_ticks = np.arange(0, (total_cycles*1.2), (total_cycles*.20))
+	axes.set_yticks(y_major_ticks)
+	y_ticks = [0, total_cycles*0.2, total_cycles*0.4, total_cycles*0.6, total_cycles*0.8, total_cycles*1.0, total_cycles*1.2, total_cycles*1.4]
+
+	axes.set(xlabel="Num Threads", ylabel="Percent of Cycles", yticklabels=['{:0.0f}%'.format((y_ticks[0]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[1]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[2]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[3]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[4]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[5]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[6]/total_cycles)*100), '{:0.0f}%'.format((y_ticks[7]/total_cycles)*100)])
+	axes.grid(b=True, which='major', color='black', linestyle='--')
+	axes.grid(b=True, which='minor', color='black', linestyle='--')
+	axes.legend(loc='upper right', ncol=3)
+	plt.show()
+
+	return
+
 
 
 parser = OptionParser()
@@ -348,6 +457,7 @@ parser.add_option("-n", "--name", dest="Name", default="", help="Specifiy the be
 parser.add_option("-1", "--infile1", dest="InFileName1", default="", help="Specifiy the 1st stats file and path to parse.")
 parser.add_option("-2", "--infile2", dest="InFileName2", default="", help="Specifiy the 2nd stats file and path to parse.")
 parser.add_option("-3", "--infile3", dest="InFileName3", default="", help="Specifiy the 3rd stats file and path to parse.")
+parser.add_option("-4", "--infile4", dest="InFileName4", default="", help="Specifiy the 4th stats file and path to parse.")
 parser.add_option("-o", "--outchart", dest="OutChart", default="1", help="Specifiy the output chart.")
 (options, args) = parser.parse_args()
 
@@ -386,6 +496,20 @@ elif options.Mode == 'omp':
 	if int(options.OutChart) == 2:
 		plot_stats_omp_2(options)
 
+elif options.Mode == 'ocl':
+
+	if not (options.InFileName1 and options.InFileName2 and options.InFileName3 and options.InFileName4):
+		parser.print_usage()
+		exit(0)
+
+	if int(options.OutChart) <= 0 or int(options.OutChart) > 2:
+		parser.print_usage()
+		exit(0)
+
+	#print the chart for total cycles
+	if int(options.OutChart) == 1:
+		plot_stats_ocl_1(options)
+	
 else:
 	print "bad mode"
 	exit(0)

@@ -421,7 +421,9 @@ struct cache_t{
 	/*unsigned int *outstanding_addresses;*/
 
 	//statistics
-	long long TotalThreadLoops; //this is an error check...
+	long long occupancy;
+
+	long long TotalAdvances; //this is an error check...
 	long long TotalAcesses;
 	long long TotalMisses;
 	long long TotalHits;
@@ -526,7 +528,8 @@ struct cgm_stats_t{
 	long long store_upgrade;
 
 	//caches
-	long long *l1_i_TotalThreadLoops;
+	long long *l1_i_occupancy;
+	long long *l1_i_TotalAdvances;
 	long long *l1_i_TotalAcesses;
 	long long *l1_i_TotalMisses;
 	long long *l1_i_TotalHits;
@@ -547,7 +550,8 @@ struct cgm_stats_t{
 	long long *l1_i_mshr_entries;
 	long long *l1_i_stalls;
 
-	long long *l1_d_TotalThreadLoops;
+	long long *l1_d_occupancy;
+	long long *l1_d_TotalAdvances;
 	long long *l1_d_TotalAcesses;
 	long long *l1_d_TotalMisses;
 	long long *l1_d_TotalHits;
@@ -568,7 +572,8 @@ struct cgm_stats_t{
 	long long *l1_d_mshr_entries;
 	long long *l1_d_stalls;
 
-	long long *l2_TotalThreadLoops;
+	long long *l2_occupancy;
+	long long *l2_TotalAdvances;
 	long long *l2_TotalAcesses;
 	long long *l2_TotalMisses;
 	long long *l2_TotalHits;
@@ -589,7 +594,8 @@ struct cgm_stats_t{
 	long long *l2_mshr_entries;
 	long long *l2_stalls;
 
-	long long *l3_TotalThreadLoops;
+	long long *l3_occupancy;
+	long long *l3_TotalAdvances;
 	long long *l3_TotalAcesses;
 	long long *l3_TotalMisses;
 	long long *l3_TotalHits;

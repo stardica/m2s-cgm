@@ -1186,6 +1186,62 @@ void switch_south_io_ctrl(void){
 	return;
 }
 
+void switch_store_stats(struct cgm_stats_t *cgm_stat_container){
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
+	//switch stats
+	for(i = 0; i < (num_cores + 1); i++)
+	{
+		cgm_stat_container->switch_total_links[i] = switches[i].switch_total_links;
+		cgm_stat_container->switch_max_links[i] = switches[i].switch_max_links;
+		cgm_stat_container->switch_total_wakes[i] = switches[i].switch_total_wakes;
+		cgm_stat_container->switch_north_io_transfers[i] = switches[i].switch_north_io_transfers;
+		cgm_stat_container->switch_north_io_transfer_cycles[i] = switches[i].switch_north_io_transfer_cycles;
+		cgm_stat_container->switch_north_io_bytes_transfered[i] = switches[i].switch_north_io_bytes_transfered;
+		cgm_stat_container->switch_east_io_transfers[i] = switches[i].switch_east_io_transfers;
+		cgm_stat_container->switch_east_io_transfer_cycles[i] = switches[i].switch_east_io_transfer_cycles;
+		cgm_stat_container->switch_east_io_bytes_transfered[i] = switches[i].switch_east_io_bytes_transfered;
+		cgm_stat_container->switch_south_io_transfers[i] = switches[i].switch_south_io_transfers;
+		cgm_stat_container->switch_south_io_transfer_cycles[i] = switches[i].switch_south_io_transfer_cycles;
+		cgm_stat_container->switch_south_io_bytes_transfered[i] = switches[i].switch_south_io_bytes_transfered;
+		cgm_stat_container->switch_west_io_transfers[i] = switches[i].switch_west_io_transfers;
+		cgm_stat_container->switch_west_io_transfer_cycles[i] = switches[i].switch_west_io_transfer_cycles;
+		cgm_stat_container->switch_west_io_bytes_transfered[i] = switches[i].switch_west_io_bytes_transfered;
+		cgm_stat_container->switch_north_txqueue_max_depth[i] = switches[i].north_txqueue_max_depth;
+		cgm_stat_container->switch_north_txqueue_ave_depth[i] = switches[i].north_txqueue_ave_depth;
+		cgm_stat_container->switch_east_txqueue_max_depth[i] = switches[i].east_txqueue_max_depth;
+		cgm_stat_container->switch_east_txqueue_ave_depth[i] = switches[i].east_txqueue_ave_depth;
+		cgm_stat_container->switch_south_txqueue_max_depth[i] = switches[i].south_txqueue_max_depth;
+		cgm_stat_container->switch_south_txqueue_ave_depth[i] = switches[i].south_txqueue_ave_depth;
+		cgm_stat_container->switch_west_txqueue_max_depth[i] = switches[i].west_txqueue_max_depth;
+		cgm_stat_container->switch_west_txqueue_ave_depth[i] = switches[i].west_txqueue_ave_depth;
+
+		cgm_stat_container->switch_north_tx_inserts[i] = switches[i].north_tx_inserts;
+		cgm_stat_container->switch_east_tx_inserts[i] = switches[i].east_tx_inserts;
+		cgm_stat_container->switch_south_tx_inserts[i] = switches[i].south_tx_inserts;
+		cgm_stat_container->switch_west_tx_inserts[i] = switches[i].west_tx_inserts;
+
+		cgm_stat_container->switch_north_rxqueue_max_depth[i] = switches[i].north_rxqueue_max_depth;
+		cgm_stat_container->switch_north_rxqueue_ave_depth[i] = switches[i].north_rxqueue_ave_depth;
+		cgm_stat_container->switch_east_rxqueue_max_depth[i] = switches[i].east_rxqueue_max_depth;
+		cgm_stat_container->switch_east_rxqueue_ave_depth[i] = switches[i].east_rxqueue_ave_depth;
+
+		cgm_stat_container->switch_south_rxqueue_max_depth[i] = switches[i].south_rxqueue_max_depth;
+		cgm_stat_container->switch_south_rxqueue_ave_depth[i] = switches[i].south_rxqueue_ave_depth;
+		cgm_stat_container->switch_west_rxqueue_max_depth[i] = switches[i].west_rxqueue_max_depth;
+		cgm_stat_container->switch_west_rxqueue_ave_depth[i] = switches[i].west_rxqueue_ave_depth;
+
+		cgm_stat_container->switch_north_rx_inserts[i] = switches[i].north_rx_inserts;
+		cgm_stat_container->switch_east_rx_inserts[i] = switches[i].east_rx_inserts;
+		cgm_stat_container->switch_south_rx_inserts[i] = switches[i].south_rx_inserts;
+		cgm_stat_container->switch_west_rx_inserts[i] = switches[i].west_rx_inserts;
+	}
+
+	return;
+}
+
 void switch_reset_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
