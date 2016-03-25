@@ -2761,7 +2761,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 				else if(wb_packet->flush_pending == 1)
 				{
 					//waiting on flush to finish insert into pending request buffer
-					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state != cgm_cache_block_modified);
+					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
 
 					/*set flush_join bit*/
 					wb_packet->L3_flush_join = 1;
@@ -6029,7 +6029,18 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	assert(error == 0);
 
 	/*block should not be in L3 cache either*/
-	assert(*cache_block_state_ptr == 0);
+	if(cache_block_hit_ptr == 1)
+	{
+		ort_dump(cache);
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		fatal("cgm_mesi_l3_flush_block_ack(): %s flush block found block in l3 cache access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+
+		assert(*cache_block_hit_ptr == 0);
+	}
+
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -6051,7 +6062,7 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		/*if incoming data from core data is dirty*/
 		if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 		{
-			/*no join bit at L3 so this sould be clear*/
+			/*no join bit at L3 so this should be clear*/
 			assert(wb_packet->L3_flush_join == 0);
 
 			//merge the block.
@@ -6068,7 +6079,6 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 			packet_destroy(wb_packet);
 		}
 	}
-
 
 	//free the message packet
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -6825,11 +6835,8 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 		ort_dump(cache);
 		cgm_cache_dump_set(cache, message_packet->set);
 
-		unsigned int temp = message_packet->address;
-		temp = temp & cache->block_address_mask;
-
 		fatal("cgm_mesi_l2_upgrade_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
-			cache->name, message_packet->access_id, message_packet->address, temp,
+			cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
 			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
 	}
 

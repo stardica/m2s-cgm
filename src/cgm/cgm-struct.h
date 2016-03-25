@@ -14,7 +14,7 @@
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
 
-#define HISTSIZE 20000
+#define HISTSIZE 40000
 
 typedef int bool;
 enum {false, true};
