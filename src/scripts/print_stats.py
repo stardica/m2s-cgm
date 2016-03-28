@@ -30,6 +30,8 @@ def print_cache_stats(options):
 		
 	
 	l1_i_Occupancy = cache_stats['l1_i_0_Occupancy'] + cache_stats['l1_i_1_Occupancy'] + cache_stats['l1_i_2_Occupancy'] + cache_stats['l1_i_3_Occupancy']
+	l1_i_Stalls = cache_stats['l1_i_0_Stalls'] + cache_stats['l1_i_1_Stalls'] + cache_stats['l1_i_2_Stalls'] + cache_stats['l1_i_3_Stalls']
+	l1_i_Coalesces = cache_stats['l1_i_0_Coalesces'] + cache_stats['l1_i_1_Coalesces'] + cache_stats['l1_i_2_Coalesces'] + cache_stats['l1_i_3_Coalesces']
 	l1_i_OccupancyPct = cache_stats['l1_i_0_OccupancyPct'] + cache_stats['l1_i_1_OccupancyPct'] + cache_stats['l1_i_2_OccupancyPct'] + cache_stats['l1_i_3_OccupancyPct']
 	l1_i_TotalAdvances = cache_stats['l1_i_0_TotalAdvances'] + cache_stats['l1_i_1_TotalAdvances'] + cache_stats['l1_i_2_TotalAdvances'] + cache_stats['l1_i_3_TotalAdvances']
 	l1_i_TotalAccesses = cache_stats['l1_i_0_TotalAccesses'] + cache_stats['l1_i_1_TotalAccesses'] + cache_stats['l1_i_2_TotalAccesses'] + cache_stats['l1_i_3_TotalAccesses']
@@ -54,6 +56,8 @@ def print_cache_stats(options):
 	l1_i_CacheUtilization = cache_stats['l1_i_0_CacheUtilization'] + cache_stats['l1_i_1_CacheUtilization'] + cache_stats['l1_i_2_CacheUtilization'] + cache_stats['l1_i_3_CacheUtilization']
 
 	l1_d_Occupancy = cache_stats['l1_d_0_Occupancy'] + cache_stats['l1_d_1_Occupancy'] + cache_stats['l1_d_2_Occupancy'] + cache_stats['l1_d_3_Occupancy']
+	l1_d_Stalls = cache_stats['l1_d_0_Stalls'] + cache_stats['l1_d_1_Stalls'] + cache_stats['l1_d_2_Stalls'] + cache_stats['l1_d_3_Stalls']
+	l1_d_Coalesces = cache_stats['l1_d_0_Coalesces'] + cache_stats['l1_d_1_Coalesces'] + cache_stats['l1_d_2_Coalesces'] + cache_stats['l1_d_3_Coalesces']
 	l1_d_OccupancyPct = cache_stats['l1_d_0_OccupancyPct'] + cache_stats['l1_d_1_OccupancyPct'] + cache_stats['l1_d_2_OccupancyPct'] + cache_stats['l1_d_3_OccupancyPct']
 	l1_d_TotalAdvances = cache_stats['l1_d_0_TotalAdvances'] + cache_stats['l1_d_1_TotalAdvances'] + cache_stats['l1_d_2_TotalAdvances'] + cache_stats['l1_d_3_TotalAdvances']
 	l1_d_TotalAccesses = cache_stats['l1_d_0_TotalAccesses'] + cache_stats['l1_d_1_TotalAccesses'] + cache_stats['l1_d_2_TotalAccesses'] + cache_stats['l1_d_3_TotalAccesses']
@@ -78,6 +82,8 @@ def print_cache_stats(options):
 	l1_d_CacheUtilization = cache_stats['l1_d_0_CacheUtilization'] + cache_stats['l1_d_1_CacheUtilization'] + cache_stats['l1_d_2_CacheUtilization'] + cache_stats['l1_d_3_CacheUtilization']
 
 	l2_Occupancy = cache_stats['l2_0_Occupancy'] + cache_stats['l2_1_Occupancy'] + cache_stats['l2_2_Occupancy'] + cache_stats['l2_3_Occupancy']
+	l2_Stalls = cache_stats['l2_0_Stalls'] + cache_stats['l2_1_Stalls'] + cache_stats['l2_2_Stalls'] + cache_stats['l2_3_Stalls']
+	l2_Coalesces = cache_stats['l2_0_Coalesces'] + cache_stats['l2_1_Coalesces'] + cache_stats['l2_2_Coalesces'] + cache_stats['l2_3_Coalesces']
 	l2_OccupancyPct = cache_stats['l2_0_OccupancyPct'] + cache_stats['l2_1_OccupancyPct'] + cache_stats['l2_2_OccupancyPct'] + cache_stats['l2_3_OccupancyPct']
 	l2_TotalAdvances = cache_stats['l2_0_TotalAdvances'] + cache_stats['l2_1_TotalAdvances'] + cache_stats['l2_2_TotalAdvances'] + cache_stats['l2_3_TotalAdvances']
 	l2_TotalAccesses = cache_stats['l2_0_TotalAccesses'] + cache_stats['l2_1_TotalAccesses'] + cache_stats['l2_2_TotalAccesses'] + cache_stats['l2_3_TotalAccesses']
@@ -102,6 +108,8 @@ def print_cache_stats(options):
 	l2_CacheUtilization = cache_stats['l2_0_CacheUtilization'] + cache_stats['l2_1_CacheUtilization'] + cache_stats['l2_2_CacheUtilization'] + cache_stats['l2_3_CacheUtilization']
 
 	l3_Occupancy = cache_stats['l3_0_Occupancy'] + cache_stats['l3_1_Occupancy'] + cache_stats['l3_2_Occupancy'] + cache_stats['l3_3_Occupancy']
+	l3_Stalls = cache_stats['l3_0_Stalls'] + cache_stats['l3_1_Stalls'] + cache_stats['l3_2_Stalls'] + cache_stats['l3_3_Stalls']
+	l3_Coalesces = cache_stats['l3_0_Coalesces'] + cache_stats['l3_1_Coalesces'] + cache_stats['l3_2_Coalesces'] + cache_stats['l3_3_Coalesces']
 	l3_OccupancyPct = cache_stats['l3_0_OccupancyPct'] + cache_stats['l3_1_OccupancyPct'] + cache_stats['l3_2_OccupancyPct'] + cache_stats['l3_3_OccupancyPct']
 	l3_TotalAdvances = cache_stats['l3_0_TotalAdvances'] + cache_stats['l3_1_TotalAdvances'] + cache_stats['l3_2_TotalAdvances'] + cache_stats['l3_3_TotalAdvances']
 	l3_TotalAccesses = cache_stats['l3_0_TotalAccesses'] + cache_stats['l3_1_TotalAccesses'] + cache_stats['l3_2_TotalAccesses'] + cache_stats['l3_3_TotalAccesses']
@@ -127,6 +135,8 @@ def print_cache_stats(options):
 
 	table_cache_combined = [
 			["Occupancy", l1_i_Occupancy, l1_d_Occupancy, l2_Occupancy, l3_Occupancy],
+			["Stalls", l1_i_Stalls, l1_d_Stalls, l2_Stalls, l3_Stalls],
+			["Coalesces", l1_i_Coalesces, l1_d_Coalesces, l2_Coalesces, l3_Coalesces],
 			["OccupancyPct(X.XX%)", l1_i_OccupancyPct, l1_d_OccupancyPct, l2_OccupancyPct, l3_OccupancyPct],
 			["TotalAdvances", l1_i_TotalAdvances, l1_d_TotalAdvances, l2_TotalAdvances, l3_TotalAdvances],
 			["TotalAccesses", l1_i_TotalAccesses, l1_d_TotalAccesses, l2_TotalAccesses, l3_TotalAccesses], 
@@ -395,34 +405,51 @@ def print_samc_stats(options):
 
 def print_mem_system_stats(options):
 
-	ms_data = ConfigParser.ConfigParser()
-	ms_data.optionxform = str
+
+	ms_data = ConfigParser.RawConfigParser()
+	ms_data.optionxform = str 
 	ms_data.read(options.InFileName)
 
-	#memory system stats 	
-	ms_stats = dict(ms_data.items('FullRunStats'))
-			
+	#pull stats
+	if options.PrintSection == 'FullRunStats':
+		ms_stats = dict(ms_data.items('FullRunStats'))
+	elif options.PrintSection == 'ParallelStats':
+		ms_stats = dict(ms_data.items('ParallelStats'))
+	else:
+		print "print_cache_stats(): invalid section"
+		exit(0)
+
+
+	for key, value in ms_stats.items(): # get the (key, value) tuples one at a time
+		try:
+			ms_stats[key] = int(value)
+		except ValueError:
+			ms_stats[key] = float(value)
+
 	table_mem_system_data = [
-	["FirstAccessLat(Fetch)", ms_stats['MemSystem_FirstAccessLat(Fetch)']],
-	["TotalFetches", ms_stats['MemSystem_TotalFetches']],
-	["FetchesL1", ms_stats['MemSystem_FetchesL1']],
-	["FetchesL2", ms_stats['MemSystem_FetchesL2']],
-	["FetchesL3", ms_stats['MemSystem_FetchesL3']],
-	["FetchesMemory", ms_stats['MemSystem_FetchesMemory']],
-	["TotalLoads", ms_stats['MemSystem_TotalLoads']],
-	["LoadsL1", ms_stats['MemSystem_LoadsL1']],
-	["LoadsL2", ms_stats['MemSystem_LoadsL2']],
-	["LoadsL3", ms_stats['MemSystem_LoadsL3']],
-	["LoadsMemory", ms_stats['MemSystem_LoadsMemory']],
-	["LoadsGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
-	["TotalStore", ms_stats['MemSystem_TotalStore']],
-	["StoresL1", ms_stats['MemSystem_StoresL1']],
-	["StoresL2", ms_stats['MemSystem_StoresL2']],
-	["StoresL3", ms_stats['MemSystem_StoresL3']],
-	["StoresMemory", ms_stats['MemSystem_StoresMemory']],
-	["StoresGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
-	["StoresUpgrade", ms_stats['MemSystem_StoresUpgrade']]
-	]
+			["FirstAccessLat(Fetch)", ms_stats['MemSystem_FirstAccessLat(Fetch)']],
+			["TotalCPUFetchRequests", ms_stats['MemSystem_TotalCPUFetchRequests']],
+			["TotalCPUFetchReplys", ms_stats['MemSystem_TotalCPUFetchReplys']],
+			["L1FetchHits", ms_stats['MemSystem_L1FetchHits']],
+			["L2TotalFetches", ms_stats['MemSystem_L2TotalFetches']],
+			["L2FetchHits", ms_stats['MemSystem_L2FetchHits']],
+			["L3TotalFetches", ms_stats['MemSystem_L3TotalFetches']],
+			["L3FetchHits", ms_stats['MemSystem_L3FetchHits']],
+			["MMFetches", ms_stats['MemSystem_FetchesMemory']],
+			["TotalLoads", ms_stats['MemSystem_TotalLoads']],
+			["LoadsL1", ms_stats['MemSystem_LoadsL1']],
+			["LoadsL2", ms_stats['MemSystem_LoadsL2']],
+			["LoadsL3", ms_stats['MemSystem_LoadsL3']],
+			["LoadsMemory", ms_stats['MemSystem_LoadsMemory']],
+			["LoadsGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
+			["TotalStore", ms_stats['MemSystem_TotalStore']],
+			["StoresL1", ms_stats['MemSystem_StoresL1']],
+			["StoresL2", ms_stats['MemSystem_StoresL2']],
+			["StoresL3", ms_stats['MemSystem_StoresL3']],
+			["StoresMemory", ms_stats['MemSystem_StoresMemory']],
+			["StoresGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
+			["StoresUpgrade", ms_stats['MemSystem_StoresUpgrade']]
+			]
 
 	f = open(options.OutFileName, 'a')
 

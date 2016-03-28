@@ -421,10 +421,13 @@ void cgm_consolidate_stats(void){
 		cgm_stat->store_lat_hist[i] = JOINLL(store_lat_hist[i]);
 	}
 
-	cgm_stat->cpu_total_fetches = JOINLL(cpu_total_fetches);
+	cgm_stat->cpu_total_fetch_requests = JOINLL(cpu_total_fetch_requests);
+	cgm_stat->cpu_total_fetch_replys = JOINLL(cpu_total_fetch_replys);
 	cgm_stat->fetch_l1_hits = JOINLL(fetch_l1_hits);
 	cgm_stat->fetch_l2_hits = JOINLL(fetch_l2_hits);
+	cgm_stat->l2_total_fetch_requests = JOINLL(l2_total_fetch_requests);
 	cgm_stat->fetch_l3_hits = JOINLL(fetch_l3_hits);
+	cgm_stat->l3_total_fetch_requests = JOINLL(l3_total_fetch_requests);
 	cgm_stat->fetch_memory = JOINLL(fetch_memory);
 	cgm_stat->cpu_total_loads = JOINLL(cpu_total_loads);
 	cgm_stat->load_l1_hits = JOINLL(load_l1_hits);
@@ -444,10 +447,12 @@ void cgm_consolidate_stats(void){
 	for(i = 0; i < num_cores; i++)
 	{
 		cgm_stat->l1_i_occupancy[i] = JOINLL(l1_i_occupancy[i]);
+		cgm_stat->l1_i_coalesces[i] = JOINLL(l1_i_coalesces[i]);
+		cgm_stat->l1_i_TotalHits[i] = JOINLL(l1_i_TotalHits[i]);
+		cgm_stat->l1_i_TotalMisses[i] = JOINLL(l1_i_TotalMisses[i]);
+
 		cgm_stat->l1_i_TotalAdvances[i] = JOINLL(l1_i_TotalAdvances[i]);
 		cgm_stat->l1_i_TotalAcesses[i] = JOINLL(l1_i_TotalAcesses[i]);
-		cgm_stat->l1_i_TotalMisses[i] = JOINLL(l1_i_TotalMisses[i]);
-		cgm_stat->l1_i_TotalHits[i] = JOINLL(l1_i_TotalHits[i]);
 		cgm_stat->l1_i_TotalReads[i] = JOINLL(l1_i_TotalReads[i]);
 		cgm_stat->l1_i_TotalWrites[i] = JOINLL(l1_i_TotalWrites[i]);
 		cgm_stat->l1_i_TotalGets[i] = JOINLL(l1_i_TotalGets[i]);
@@ -461,7 +466,6 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_i_assoc_conflict[i] = JOINLL(l1_i_assoc_conflict[i]);
 		cgm_stat->l1_i_upgrade_misses[i] = JOINLL(l1_i_upgrade_misses[i]);
 		cgm_stat->l1_i_retries[i] = JOINLL(l1_i_retries[i]);
-		cgm_stat->l1_i_coalesces[i] = JOINLL(l1_i_coalesces[i]);
 		cgm_stat->l1_i_mshr_entries[i] = JOINLL(l1_i_mshr_entries[i]);
 		cgm_stat->l1_i_stalls[i] = JOINLL(l1_i_stalls[i]);
 
@@ -1005,44 +1009,6 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	return;
 }
 
-
-void cgm_dump_mem_system_stats(struct cgm_stats_t *cgm_stat_container){
-
-	/*int num_cores = x86_cpu_num_cores;
-	int num_threads = x86_cpu_num_threads;
-	int num_cus = si_gpu_num_compute_units;
-	int i = 0;
-	long long run_time = 0;
-	long long idle_time = 0;
-	long long busy_time = 0;
-	long long stall_time = 0;
-	long long system_time = 0;*/
-
-	/*CGM_STATS(cgm_stats_file, "[MemSystem]\n");*/
-	CGM_STATS(cgm_stats_file, "MemSystem_FirstAccessLat(Fetch) = %d\n", cgm_stat_container->first_mem_access_lat);
-	CGM_STATS(cgm_stats_file, "MemSystem_TotalFetches = %llu\n", cgm_stat_container->cpu_total_fetches);
-	CGM_STATS(cgm_stats_file, "MemSystem_FetchesL1 = %llu\n", cgm_stat_container->fetch_l1_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_FetchesL2 = %llu\n", cgm_stat_container->fetch_l2_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_FetchesL3 = %llu\n", cgm_stat_container->fetch_l3_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_FetchesMemory = %llu\n", cgm_stat_container->fetch_memory);
-	CGM_STATS(cgm_stats_file, "MemSystem_TotalLoads = %llu\n", cgm_stat_container->cpu_total_loads);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL1 = %llu\n", cgm_stat_container->load_l1_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL2 = %llu\n", cgm_stat_container->load_l2_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL3 = %llu\n", cgm_stat_container->load_l3_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsMemory = %llu\n", cgm_stat_container->load_memory);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsGetFwd = %llu\n", cgm_stat_container->load_get_fwd);
-	CGM_STATS(cgm_stats_file, "MemSystem_TotalStore = %llu\n", cgm_stat_container->cpu_total_stores);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresL1 = %llu\n", cgm_stat_container->store_l1_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresL2 = %llu\n", cgm_stat_container->store_l2_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresL3 = %llu\n", cgm_stat_container->store_l3_hits);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresMemory = %llu\n", cgm_stat_container->store_memory);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresGetxFwd = %llu\n", cgm_stat_container->store_getx_fwd);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresUpgrade = %llu\n", cgm_stat_container->store_upgrade);
-	/*CGM_STATS(cgm_stats_file, "\n");*/
-
-	return;
-}
-
 void cgm_dump_histograms(void){
 
 	int i = 0;
@@ -1104,7 +1070,7 @@ void cgm_dump_summary(void){
 	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
 	CGM_STATS(cgm_stats_file, "[FullRunStats]\n");
 	cgm_dump_cpu_gpu_stats(cgm_stat);
-	cgm_dump_mem_system_stats(cgm_stat);
+	mem_system_dump_stats(cgm_stat);
 	cache_dump_stats(cgm_stat);
 	switch_dump_stats(cgm_stat);
 	sys_agent_dump_stats(cgm_stat);
@@ -1115,7 +1081,7 @@ void cgm_dump_summary(void){
 	CGM_STATS(cgm_stats_file, "[ParallelStats]\n");
 	cgm_dump_parallel_section_stats(cgm_parallel_stats);
 	cgm_dump_cpu_gpu_stats(cgm_parallel_stats);
-	cgm_dump_mem_system_stats(cgm_parallel_stats);
+	mem_system_dump_stats(cgm_parallel_stats);
 	cache_dump_stats(cgm_parallel_stats);
 	switch_dump_stats(cgm_parallel_stats);
 	sys_agent_dump_stats(cgm_parallel_stats);
@@ -1329,7 +1295,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	if(cpu_gpu_stats->core_first_fetch_cycle[thread->core->id] == 0)
 		cpu_gpu_stats->core_first_fetch_cycle[thread->core->id] = P_TIME;
 
-	mem_system_stats->cpu_total_fetches++;
+	mem_system_stats->cpu_total_fetch_requests++;
 	l1_i_caches[id].TotalAcesses++;
 
 	last_issued_fetch_access_id = access_id;

@@ -23,6 +23,8 @@ int is_writeback_present(struct cgm_packet_t *writeback_packet){
 	return return_val;
 }
 
+long long coal = 0;
+long long ortpull = 0;
 
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -51,10 +53,12 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	/*stats*/
 	if(*cache_block_hit_ptr == 0)
 	{
-		cache->TotalMisses++;
+
 		cache->TotalReadMisses++;
 		cache->TotalGets++;
 	}
+
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -76,17 +80,27 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
+
+				coal++;
+
+				warning("%s ORT coal num %llu\n", cache->name, coal);
+
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
 					if(LEVEL == 1 || LEVEL == 3)
 					{
 						printf("block 0x%08x %s fetch miss coalesce ID %llu type %d state %d cycle %llu\n",
-								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+								message_packet->access_type, *cache_block_state_ptr, P_TIME);
 					}
 				}
 
+				/*stats*/
+				cache->coalesces++;
 				return;
 			}
+
+
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_gets;
@@ -102,7 +116,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				if(LEVEL == 1 || LEVEL == 3)
 				{
 					printf("block 0x%08x %s fetch miss ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+						message_packet->access_type, *cache_block_state_ptr, P_TIME);
 				}
 			}
 
@@ -110,6 +125,9 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			assert(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l1_victim_way) == cgm_cache_block_shared
 					|| cgm_cache_get_block_state(cache, message_packet->set, message_packet->l1_victim_way) == cgm_cache_block_invalid);
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->l1_victim_way, cgm_cache_block_invalid);
+
+			/*stats*/
+			cache->TotalMisses++;
 
 			//transmit to L2
 			cache_put_io_down_queue(cache, message_packet);
@@ -125,6 +143,9 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				//charge a delay only in the event of a retry.
 				P_PAUSE(cache->latency);
 
+				ortpull++;
+				warning("%s ORT lookup %llu\n", cache->name, ortpull);
+
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 			}
@@ -134,7 +155,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				if(LEVEL == 1 || LEVEL == 3)
 				{
 					printf("block 0x%08x %s fetch hit ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+						message_packet->access_type, *cache_block_state_ptr, P_TIME);
 				}
 			}
 
@@ -142,6 +164,10 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			message_packet->end_cycle = P_TIME;
 			if(!message_packet->protocol_case)
 				message_packet->protocol_case = L1_hit;
+
+			if(message_packet->coalesced == 0)
+				cache->TotalHits++;
+
 			cache_l1_i_return(cache,message_packet);
 			break;
 
@@ -150,11 +176,15 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	return;
 }
 
+long long write_block = 0;
+
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//check the packet for integrity
 	assert(cache->cache_type == l1_i_cache_t);
 	assert(message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared);
+
+	P_PAUSE(cache->latency);
 
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
@@ -175,6 +205,9 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//set retry state
 	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+
+	write_block++;
+	warning("l1 writeblock %llu\n", write_block);
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);

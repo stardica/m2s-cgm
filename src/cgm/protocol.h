@@ -31,8 +31,12 @@ struct mem_system_stats_t{
 	long long load_lat_hist[HISTSIZE];
 	long long store_lat_hist[HISTSIZE];
 
+	long long cpu_total_fetch_requests;
+	long long cpu_total_fetch_replys;
 	long long fetch_l1_hits;
+	long long l2_total_fetch_requests;
 	long long fetch_l2_hits;
+	long long l3_total_fetch_requests;
 	long long fetch_l3_hits;
 	long long fetch_memory;
 
@@ -51,7 +55,7 @@ struct mem_system_stats_t{
 	long long store_getx_fwd;
 	long long store_upgrade;
 
-	long long cpu_total_fetches;
+
 	long long cpu_total_loads;
 	long long cpu_total_stores;
 	long long cpu_ls_stalls;
@@ -88,6 +92,7 @@ unsigned int get_block_address(unsigned int address, unsigned int cache_address_
 int is_writeback_present(struct cgm_packet_t *writeback_packet);
 
 
+void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container);
 void mem_system_reset_stats(void);
 void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container);
 

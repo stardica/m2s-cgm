@@ -208,11 +208,12 @@ void cgm_configure(struct mem_t *mem);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cpu_gpu_run(void);
+
 void cgm_dump_summary(void);
 void cgm_dump_section_stats(struct cgm_stats_t *cgm_stat_container);
 void cgm_dump_general_stats(void);
 void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container);
-void cgm_dump_mem_system_stats(struct cgm_stats_t *cgm_stat_container);
+
 void cgm_dump_histograms(void);
 void cgm_stat_finish_create(int argc, char **argv);
 

@@ -422,11 +422,14 @@ struct cache_t{
 
 	//statistics
 	long long occupancy;
+	long long coalesces;
+	long long TotalHits;
+	long long TotalMisses;
 
+
+	long long Totalfetches;
 	long long TotalAdvances; //this is an error check...
 	long long TotalAcesses;
-	long long TotalMisses;
-	long long TotalHits;
 	long long TotalReads;
 	long long TotalWrites;
 	long long TotalGets;
@@ -440,7 +443,7 @@ struct cache_t{
 	long long assoc_conflict;
 	long long upgrade_misses;
 	long long retries;
-	long long coalesces;
+
 	long long mshr_entries;
 	long long stalls;
 	unsigned int *fetch_address_history;
@@ -508,10 +511,13 @@ struct cgm_stats_t{
 	long long fetch_lat_hist[HISTSIZE];
 	long long load_lat_hist[HISTSIZE];
 	long long store_lat_hist[HISTSIZE];
-	long long cpu_total_fetches;
+	long long cpu_total_fetch_requests;
+	long long cpu_total_fetch_replys;
 	long long fetch_l1_hits;
 	long long fetch_l2_hits;
+	long long l2_total_fetch_requests;
 	long long fetch_l3_hits;
+	long long l3_total_fetch_requests;
 	long long fetch_memory;
 	long long cpu_total_loads;
 	long long load_l1_hits;
@@ -529,10 +535,12 @@ struct cgm_stats_t{
 
 	//caches
 	long long *l1_i_occupancy;
-	long long *l1_i_TotalAdvances;
-	long long *l1_i_TotalAcesses;
+	long long *l1_i_coalesces;
 	long long *l1_i_TotalMisses;
 	long long *l1_i_TotalHits;
+
+	long long *l1_i_TotalAdvances;
+	long long *l1_i_TotalAcesses;
 	long long *l1_i_TotalReads;
 	long long *l1_i_TotalWrites;
 	long long *l1_i_TotalGets;
@@ -546,15 +554,17 @@ struct cgm_stats_t{
 	long long *l1_i_assoc_conflict;
 	long long *l1_i_upgrade_misses;
 	long long *l1_i_retries;
-	long long *l1_i_coalesces;
+
 	long long *l1_i_mshr_entries;
 	long long *l1_i_stalls;
 
 	long long *l1_d_occupancy;
+	long long *l1_d_coalesces;
+	long long *l1_d_TotalHits;
+	long long *l1_d_TotalMisses;
+
 	long long *l1_d_TotalAdvances;
 	long long *l1_d_TotalAcesses;
-	long long *l1_d_TotalMisses;
-	long long *l1_d_TotalHits;
 	long long *l1_d_TotalReads;
 	long long *l1_d_TotalWrites;
 	long long *l1_d_TotalGets;
@@ -568,7 +578,6 @@ struct cgm_stats_t{
 	long long *l1_d_assoc_conflict;
 	long long *l1_d_upgrade_misses;
 	long long *l1_d_retries;
-	long long *l1_d_coalesces;
 	long long *l1_d_mshr_entries;
 	long long *l1_d_stalls;
 

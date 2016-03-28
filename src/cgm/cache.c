@@ -1812,10 +1812,12 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 	for(i = 0; i < num_cores; i++)
 	{
 		cgm_stat_container->l1_i_occupancy[i] = l1_i_caches[i].occupancy;
+		cgm_stat_container->l1_i_coalesces[i] = l1_i_caches[i].coalesces;
+		cgm_stat_container->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
+		cgm_stat_container->l1_i_TotalMisses[i] = l1_i_caches[i].TotalMisses;
+
 		cgm_stat_container->l1_i_TotalAdvances[i] = l1_i_caches[i].TotalAdvances;
 		cgm_stat_container->l1_i_TotalAcesses[i] = l1_i_caches[i].TotalAcesses;
-		cgm_stat_container->l1_i_TotalMisses[i] = l1_i_caches[i].TotalMisses;
-		cgm_stat_container->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
 		cgm_stat_container->l1_i_TotalReads[i] = l1_i_caches[i].TotalReads;
 		cgm_stat_container->l1_i_TotalWrites[i] = l1_i_caches[i].TotalWrites;
 		cgm_stat_container->l1_i_TotalGets[i] = l1_i_caches[i].TotalGets;
@@ -1829,7 +1831,6 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_i_assoc_conflict[i] = l1_i_caches[i].assoc_conflict;
 		cgm_stat_container->l1_i_upgrade_misses[i] = l1_i_caches[i].upgrade_misses;
 		cgm_stat_container->l1_i_retries[i] = l1_i_caches[i].retries;
-		cgm_stat_container->l1_i_coalesces[i] = l1_i_caches[i].coalesces;
 		cgm_stat_container->l1_i_mshr_entries[i] = l1_i_caches[i].mshr_entries;
 		cgm_stat_container->l1_i_stalls[i] = l1_i_caches[i].stalls;
 
@@ -1912,10 +1913,15 @@ void cache_reset_stats(void){
 	for(i = 0; i < num_cores; i++)
 	{
 		l1_i_caches[i].occupancy = 0;
+		l1_i_caches[i].coalesces = 0;
+		l1_i_caches[i].TotalHits = 0;
+		l1_i_caches[i].TotalMisses = 0;
+
+
 		l1_i_caches[i].TotalAdvances = 0;
 		l1_i_caches[i].TotalAcesses = 0;
-		l1_i_caches[i].TotalMisses = 0;
-		l1_i_caches[i].TotalHits = 0;
+
+
 		l1_i_caches[i].TotalReads = 0;
 		l1_i_caches[i].TotalWrites = 0;
 		l1_i_caches[i].TotalGets = 0;
@@ -1929,7 +1935,7 @@ void cache_reset_stats(void){
 		l1_i_caches[i].assoc_conflict = 0;
 		l1_i_caches[i].upgrade_misses = 0;
 		l1_i_caches[i].retries = 0;
-		l1_i_caches[i].coalesces = 0;
+
 		l1_i_caches[i].mshr_entries = 0;
 		l1_i_caches[i].stalls = 0;
 
@@ -2016,7 +2022,13 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		/*CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
+		printf("l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Coalesces = %llu\n", i, cgm_stat_container->l1_i_coalesces[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalHits[i]));
+
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) P_TIME)*100);
@@ -2032,8 +2044,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l1_i_TotalAdvances[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_i_TotalAcesses[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
+
+
 		CGM_STATS(cgm_stats_file, "l1_i_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l1_i_TotalMisses[i])/(double) (cgm_stat_container->l1_i_TotalAcesses[i] - cgm_stat_container->l1_i_TotalMisses[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalReads = %llu\n", i, cgm_stat_container->l1_i_TotalReads[i]);
@@ -2063,6 +2075,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_Coalesces = %llu\n", i, cgm_stat_container->l1_d_coalesces[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_occupancy[i]/(double)P_TIME)*100);
@@ -2104,6 +2118,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_Coalesces = %llu\n", i, cgm_stat_container->l2_coalesces[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/(double)P_TIME)*100);
@@ -2144,6 +2160,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_Coalesces = %llu\n", i, cgm_stat_container->l3_coalesces[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l3_occupancy[i]/(double)P_TIME)*100);
@@ -2214,7 +2232,6 @@ void l1_i_cache_ctrl(void){
 		await(&l1_i_cache[my_pid], step);
 
 		/*stats*/
-		l1_i_caches[my_pid].TotalAdvances = l1_i_cache[my_pid].count;
 		occ_start = P_TIME;
 
 		//peak at a message from the input queues.
@@ -2226,6 +2243,8 @@ void l1_i_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall
 			l1_i_caches[my_pid].stalls++;
+
+			warning("l1_i_cache_ctrl(): %s stalling \n", l1_i_caches[my_pid].name);
 
 			/*printf("L1 I %d stalling\n", l1_i_caches[my_pid].id);*/
 
@@ -2242,6 +2261,8 @@ void l1_i_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			/*stats*/
 
 			///////////protocol v2
 			if (access_type == cgm_access_fetch || access_type == cgm_access_fetch_retry)
@@ -2305,6 +2326,8 @@ void l1_d_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].stalls++;
+
+			warning("l1_d_cache_ctrl(): %s stalling \n", l1_d_caches[my_pid].name);
 
 			/*if(my_pid == 0)
 			{
@@ -2477,7 +2500,7 @@ void l2_cache_ctrl(void){
 				|| !cache_can_access_Tx_bottom(&(l2_caches[my_pid])) || !cache_can_access_Tx_top(&(l2_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			printf("%s stalling\n", l2_caches[my_pid].name);
+			warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 			l2_caches[my_pid].stalls++;
 			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
 					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
@@ -2505,6 +2528,11 @@ void l2_cache_ctrl(void){
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
+
+			/*stats*/
+			if(message_packet->access_type == cgm_access_gets)
+				mem_system_stats->l2_total_fetch_requests++;
+
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -2679,6 +2707,8 @@ void l3_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 
+			warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
+
 			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
 			l3_caches[my_pid].stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
@@ -2706,6 +2736,11 @@ void l3_cache_ctrl(void){
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l3_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
+
+			/*stats*/
+			if(message_packet->access_type == cgm_access_gets)
+				mem_system_stats->l3_total_fetch_requests++;
+
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
@@ -3756,6 +3791,7 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(mem_lat >= HISTSIZE)
 		fatal("cache_l1_i_return(): increase HISTSIZE %llu\n", mem_lat);
 
+	mem_system_stats->cpu_total_fetch_replys++;
 	mem_system_stats->fetch_lat_hist[mem_lat]++;
 
 	if(message_packet->access_id == 1)
@@ -3900,7 +3936,6 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->access_id, message_packet->access_type, message_packet->set,
 				message_packet->tag, message_packet->way, message_packet->assoc_conflict, P_TIME);
 	}*/
-
 
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
@@ -4059,6 +4094,9 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	return;
 }
+
+long long ort_pull = 0;
+long long assoc = 0;
 
 void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 

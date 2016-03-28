@@ -140,10 +140,13 @@ void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->store_lat_hist[i] = mem_system_stats->store_lat_hist[i];
 	}
 
-	cgm_stat_container->cpu_total_fetches = mem_system_stats->cpu_total_fetches;
+	cgm_stat_container->cpu_total_fetch_requests = mem_system_stats->cpu_total_fetch_requests;
+	cgm_stat_container->cpu_total_fetch_replys = mem_system_stats->cpu_total_fetch_replys;
 	cgm_stat_container->fetch_l1_hits = mem_system_stats->fetch_l1_hits;
 	cgm_stat_container->fetch_l2_hits = mem_system_stats->fetch_l2_hits;
+	cgm_stat_container->l2_total_fetch_requests = mem_system_stats->l2_total_fetch_requests;
 	cgm_stat_container->fetch_l3_hits = mem_system_stats->fetch_l3_hits;
+	cgm_stat_container->l3_total_fetch_requests = mem_system_stats->l3_total_fetch_requests;
 	cgm_stat_container->fetch_memory = mem_system_stats->fetch_memory;
 	cgm_stat_container->cpu_total_loads = mem_system_stats->cpu_total_loads;
 	cgm_stat_container->load_l1_hits = mem_system_stats->load_l1_hits;
@@ -162,6 +165,46 @@ void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container){
 	return;
 }
 
+void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container){
+
+	/*int num_cores = x86_cpu_num_cores;
+	int num_threads = x86_cpu_num_threads;
+	int num_cus = si_gpu_num_compute_units;
+	int i = 0;
+	long long run_time = 0;
+	long long idle_time = 0;
+	long long busy_time = 0;
+	long long stall_time = 0;
+	long long system_time = 0;*/
+
+	/*CGM_STATS(cgm_stats_file, "[MemSystem]\n");*/
+	CGM_STATS(cgm_stats_file, "MemSystem_FirstAccessLat(Fetch) = %d\n", cgm_stat_container->first_mem_access_lat);
+	CGM_STATS(cgm_stats_file, "MemSystem_TotalCPUFetchRequests = %llu\n", cgm_stat_container->cpu_total_fetch_requests);
+	CGM_STATS(cgm_stats_file, "MemSystem_TotalCPUFetchReplys = %llu\n", cgm_stat_container->cpu_total_fetch_replys);
+	CGM_STATS(cgm_stats_file, "MemSystem_L1FetchHits = %llu\n", cgm_stat_container->fetch_l1_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_L2TotalFetches = %llu\n", cgm_stat_container->l2_total_fetch_requests);
+	CGM_STATS(cgm_stats_file, "MemSystem_L2FetchHits = %llu\n", cgm_stat_container->fetch_l2_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_L3TotalFetches = %llu\n", cgm_stat_container->l3_total_fetch_requests);
+	CGM_STATS(cgm_stats_file, "MemSystem_L3FetchHits = %llu\n", cgm_stat_container->fetch_l3_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_FetchesMemory = %llu\n", cgm_stat_container->fetch_memory);
+	CGM_STATS(cgm_stats_file, "MemSystem_TotalLoads = %llu\n", cgm_stat_container->cpu_total_loads);
+	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL1 = %llu\n", cgm_stat_container->load_l1_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL2 = %llu\n", cgm_stat_container->load_l2_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_LoadsL3 = %llu\n", cgm_stat_container->load_l3_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_LoadsMemory = %llu\n", cgm_stat_container->load_memory);
+	CGM_STATS(cgm_stats_file, "MemSystem_LoadsGetFwd = %llu\n", cgm_stat_container->load_get_fwd);
+	CGM_STATS(cgm_stats_file, "MemSystem_TotalStore = %llu\n", cgm_stat_container->cpu_total_stores);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresL1 = %llu\n", cgm_stat_container->store_l1_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresL2 = %llu\n", cgm_stat_container->store_l2_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresL3 = %llu\n", cgm_stat_container->store_l3_hits);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresMemory = %llu\n", cgm_stat_container->store_memory);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresGetxFwd = %llu\n", cgm_stat_container->store_getx_fwd);
+	CGM_STATS(cgm_stats_file, "MemSystem_StoresUpgrade = %llu\n", cgm_stat_container->store_upgrade);
+	/*CGM_STATS(cgm_stats_file, "\n");*/
+
+	return;
+}
+
 void mem_system_reset_stats(void){
 
 	int i = 0;
@@ -176,10 +219,13 @@ void mem_system_reset_stats(void){
 		mem_system_stats->store_lat_hist[i] = 0;
 	}
 
-	mem_system_stats->cpu_total_fetches = 0;
+	mem_system_stats->cpu_total_fetch_requests = 0;
+	mem_system_stats->cpu_total_fetch_replys = 0;
 	mem_system_stats->fetch_l1_hits = 0;
 	mem_system_stats->fetch_l2_hits = 0;
+	mem_system_stats->l2_total_fetch_requests = 0;
 	mem_system_stats->fetch_l3_hits = 0;
+	mem_system_stats->l3_total_fetch_requests = 0;
 	mem_system_stats->fetch_memory = 0;
 	mem_system_stats->cpu_total_loads = 0;
 	mem_system_stats->load_l1_hits = 0;
