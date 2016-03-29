@@ -184,6 +184,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_i_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_WbMerges = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_EvictInv = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
@@ -197,7 +199,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_i_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat_container->l1_i_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_UpgradeMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_retries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
@@ -207,6 +209,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_d_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_WbMerges = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_EvictInv = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
@@ -219,7 +223,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_d_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat_container->l1_d_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_UpgradeMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_retries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
@@ -229,6 +233,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l2_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_WbMerges = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_EvictInv = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
@@ -241,7 +247,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l2_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat_container->l2_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_UpgradeMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_retries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
@@ -251,6 +257,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_WbMerges = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_EvictInv = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalHits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalReads = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWrites = (long long *)calloc(num_cores, sizeof(long long));
@@ -263,7 +271,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat_container->l3_upgrade_misses = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_UpgradeMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_retries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
@@ -460,6 +468,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_i_coalesces[i] = JOINLL(l1_i_coalesces[i]);
 		cgm_stat->l1_i_TotalHits[i] = JOINLL(l1_i_TotalHits[i]);
 		cgm_stat->l1_i_TotalMisses[i] = JOINLL(l1_i_TotalMisses[i]);
+		cgm_stat->l1_i_WbMerges[i] = JOINLL(l1_i_WbMerges[i]);
+		cgm_stat->l1_i_EvictInv[i] = JOINLL(l1_i_EvictInv[i]);
 
 		cgm_stat->l1_i_TotalAdvances[i] = JOINLL(l1_i_TotalAdvances[i]);
 		cgm_stat->l1_i_TotalAcesses[i] = JOINLL(l1_i_TotalAcesses[i]);
@@ -474,7 +484,7 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_i_TotalWriteBacks[i] = JOINLL(l1_i_TotalWriteBacks[i]);
 		cgm_stat->l1_i_invalid_hits[i] = JOINLL(l1_i_invalid_hits[i]);
 		cgm_stat->l1_i_assoc_conflict[i] = JOINLL(l1_i_assoc_conflict[i]);
-		cgm_stat->l1_i_upgrade_misses[i] = JOINLL(l1_i_upgrade_misses[i]);
+		cgm_stat->l1_i_UpgradeMisses[i] = JOINLL(l1_i_UpgradeMisses[i]);
 		cgm_stat->l1_i_retries[i] = JOINLL(l1_i_retries[i]);
 		cgm_stat->l1_i_mshr_entries[i] = JOINLL(l1_i_mshr_entries[i]);
 		cgm_stat->l1_i_stalls[i] = JOINLL(l1_i_stalls[i]);
@@ -482,6 +492,7 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_d_occupancy[i] = JOINLL(l1_d_occupancy[i]);
 		cgm_stat->l1_d_TotalAdvances[i] = JOINLL(l1_d_TotalAdvances[i]);
 		cgm_stat->l1_d_TotalAcesses[i] = JOINLL(l1_d_TotalAcesses[i]);
+		cgm_stat->l1_d_WbMerges[i] = JOINLL(l1_d_WbMerges[i]);
 		cgm_stat->l1_d_TotalMisses[i] = JOINLL(l1_d_TotalMisses[i]);
 		cgm_stat->l1_d_TotalHits[i] = JOINLL(l1_d_TotalHits[i]);
 		cgm_stat->l1_d_TotalReads[i] = JOINLL(l1_d_TotalReads[i]);
@@ -495,15 +506,17 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_d_TotalWriteBacks[i] = JOINLL(l1_d_TotalWriteBacks[i]);
 		cgm_stat->l1_d_invalid_hits[i] = JOINLL(l1_d_invalid_hits[i]);
 		cgm_stat->l1_d_assoc_conflict[i] = JOINLL(l1_d_assoc_conflict[i]);
-		cgm_stat->l1_d_upgrade_misses[i] = JOINLL(l1_d_upgrade_misses[i]);
+		cgm_stat->l1_d_UpgradeMisses[i] = JOINLL(l1_d_UpgradeMisses[i]);
 		cgm_stat->l1_d_retries[i] = JOINLL(l1_d_retries[i]);
 		cgm_stat->l1_d_coalesces[i] = JOINLL(l1_d_coalesces[i]);
 		cgm_stat->l1_d_mshr_entries[i] = JOINLL(l1_d_mshr_entries[i]);
 		cgm_stat->l1_d_stalls[i] = JOINLL(l1_d_stalls[i]);
+		cgm_stat->l1_d_EvictInv[i] = JOINLL(l1_d_EvictInv[i]);
 
 		cgm_stat->l2_occupancy[i] = JOINLL(l2_occupancy[i]);
 		cgm_stat->l2_TotalAdvances[i] = JOINLL(l2_TotalAdvances[i]);
 		cgm_stat->l2_TotalAcesses[i] = JOINLL(l2_TotalAcesses[i]);
+		cgm_stat->l2_WbMerges[i] = JOINLL(l2_WbMerges[i]);
 		cgm_stat->l2_TotalMisses[i] = JOINLL(l2_TotalMisses[i]);
 		cgm_stat->l2_TotalHits[i] = JOINLL(l2_TotalHits[i]);
 		cgm_stat->l2_TotalReads[i] = JOINLL(l2_TotalReads[i]);
@@ -517,15 +530,17 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l2_TotalWriteBacks[i] = JOINLL(l2_TotalWriteBacks[i]);
 		cgm_stat->l2_invalid_hits[i] = JOINLL(l2_invalid_hits[i]);
 		cgm_stat->l2_assoc_conflict[i] = JOINLL(l2_assoc_conflict[i]);
-		cgm_stat->l2_upgrade_misses[i] = JOINLL(l2_upgrade_misses[i]);
+		cgm_stat->l2_UpgradeMisses[i] = JOINLL(l2_UpgradeMisses[i]);
 		cgm_stat->l2_retries[i] = JOINLL(l2_retries[i]);
 		cgm_stat->l2_coalesces[i] = JOINLL(l2_coalesces[i]);
 		cgm_stat->l2_mshr_entries[i] = JOINLL(l2_mshr_entries[i]);
 		cgm_stat->l2_stalls[i] = JOINLL(l2_stalls[i]);
+		cgm_stat->l2_EvictInv[i] = JOINLL(l2_EvictInv[i]);
 
 		cgm_stat->l3_occupancy[i] = JOINLL(l3_occupancy[i]);
 		cgm_stat->l3_TotalAdvances[i] = JOINLL(l3_TotalAdvances[i]);
 		cgm_stat->l3_TotalAcesses[i] = JOINLL(l3_TotalAcesses[i]);
+		cgm_stat->l3_WbMerges[i] = JOINLL(l3_WbMerges[i]);
 		cgm_stat->l3_TotalMisses[i] = JOINLL(l3_TotalMisses[i]);
 		cgm_stat->l3_TotalHits[i] = JOINLL(l3_TotalHits[i]);
 		cgm_stat->l3_TotalReads[i] = JOINLL(l3_TotalReads[i]);
@@ -539,11 +554,12 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l3_TotalWriteBacks[i] = JOINLL(l3_TotalWriteBacks[i]);
 		cgm_stat->l3_invalid_hits[i] = JOINLL(l3_invalid_hits[i]);
 		cgm_stat->l3_assoc_conflict[i] = JOINLL(l3_assoc_conflict[i]);
-		cgm_stat->l3_upgrade_misses[i] = JOINLL(l3_upgrade_misses[i]);
+		cgm_stat->l3_UpgradeMisses[i] = JOINLL(l3_UpgradeMisses[i]);
 		cgm_stat->l3_retries[i] = JOINLL(l3_retries[i]);
 		cgm_stat->l3_coalesces[i] = JOINLL(l3_coalesces[i]);
 		cgm_stat->l3_mshr_entries[i] = JOINLL(l3_mshr_entries[i]);
 		cgm_stat->l3_stalls[i] = JOINLL(l3_stalls[i]);
+		cgm_stat->l3_EvictInv[i] = JOINLL(l3_EvictInv[i]);
 	}
 
 	//switch stats

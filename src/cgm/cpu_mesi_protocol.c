@@ -23,9 +23,6 @@ int is_writeback_present(struct cgm_packet_t *writeback_packet){
 	return return_val;
 }
 
-long long coal = 0;
-long long ortpull = 0;
-
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	/*printf("l1 i %d fetching\n", cache->id);
@@ -80,10 +77,6 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
-
-				coal++;
-
-				warning("%s ORT coal num %llu\n", cache->name, coal);
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -142,9 +135,6 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			{
 				//charge a delay only in the event of a retry.
 				P_PAUSE(cache->latency);
-
-				ortpull++;
-				warning("%s ORT lookup %llu\n", cache->name, ortpull);
 
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -206,8 +196,8 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	//set retry state
 	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
 
-	write_block++;
-	warning("l1 writeblock %llu\n", write_block);
+	/*write_block++;
+	warning("l1 writeblock %llu\n", write_block);*/
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
@@ -281,9 +271,11 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				//if not then we must coalesce
 				if(write_back_packet->l1_victim_way == -1)
 				{
-
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
+
+					/*stats*/
+					cache->coalesces++;
 
 					assert(message_packet->coalesced == 1);
 					if(message_packet->coalesced == 1)
@@ -332,6 +324,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				}
 
 				/*stats*/
+				cache->WbMerges++;
 				message_packet->end_cycle = P_TIME;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L1_hit;
@@ -356,6 +349,10 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 									(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 						}
 					}
+
+					/*stats*/
+					cache->coalesces++;
+
 					return;
 				}
 
@@ -422,6 +419,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
+
+				/*stats*/
+				cache->coalesces++;
 
 				if(message_packet->coalesced == 1)
 					return;
@@ -545,7 +545,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					assert(message_packet->coalesced == 1);
+					/*stats*/
+					cache->coalesces++;
+
 					if(message_packet->coalesced == 1)
 					{
 						return;
@@ -594,6 +596,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				}
 
 				/*stats*/
+				cache->WbMerges++;
 				message_packet->end_cycle = P_TIME;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L1_hit;
@@ -609,6 +612,10 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 				if(message_packet->coalesced == 1)
 				{
+
+					/*stats*/
+					cache->coalesces++;
+
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 1 || LEVEL == 3)
@@ -677,6 +684,10 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			if(message_packet->coalesced == 1)
 			{
+
+				/*stats*/
+				cache->coalesces++;
+
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
 					if(LEVEL == 1 || LEVEL == 3)
@@ -689,14 +700,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				return;
 			}
 
-			/*if(message_packet->access_id == 87630)
-			{
-				cgm_cache_dump_set(cache, message_packet->set);
-				printf("%s id %llu upgrade miss set %d way %d tag %d cycle %llu\n",
-						cache->name, message_packet->access_id, message_packet->set, message_packet->way, message_packet->tag, P_TIME);
-				getchar();
-			}*/
-
 			//set block transient state, but don't evict because the block is valid and just needs to be upgraded
 			cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_transient);
 
@@ -705,6 +708,11 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 			//set access type
 			message_packet->access_type = cgm_access_upgrade;
+
+			/*stats*/
+			cache->UpgradeMisses++;
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L1_upgrade;
 
 			//transmit upgrade request to L2
 			cache_put_io_down_queue(cache, message_packet);
@@ -717,6 +725,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 				}
 			}
+
 			break;
 
 		case cgm_cache_block_exclusive:
@@ -1074,7 +1083,6 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	//charge the delay
 	P_PAUSE(cache->latency);
 
-
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -1087,10 +1095,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 		}
 	}
 
-
-
 	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
-
 
 	//first check the cache for the block
 	switch(*cache_block_state_ptr)
@@ -1126,8 +1131,6 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 				}
 				else
 				{
-
-
 
 					/*Dropped if exclusive or shared
 					 Also WB may be in the pipe between L1 and L2 if Modified This will flush it out*/
@@ -1176,8 +1179,6 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 		case cgm_cache_block_shared:
 
-
-
 			//invalidate the local block
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
@@ -1187,6 +1188,9 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 			break;
 
 	}
+
+	/*stats*/
+	cache->EvictInv++;
 
 	return;
 }
@@ -1301,7 +1305,11 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_check_ORT(cache, message_packet);
 
 			if(message_packet->coalesced == 1)
+			{
+				/*stats*/
+				cache->coalesces++;
 				return;
+			}
 
 			//find victim, on return OK to just drop the block this is I$ traffic
 
@@ -1425,15 +1433,13 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					assert(message_packet->coalesced == 1);
+					/*stats*/
+					cache->coalesces++;
+
 					if(message_packet->coalesced == 1)
-					{
 						return;
-					}
 					else
-					{
 						fatal("cgm_mesi_l2_get(): write failed to coalesce when all ways are transient...\n");
-					}
 				}
 
 				/*stats*/
@@ -1497,8 +1503,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
 				packet_destroy(write_back_packet);
 
-				/*stats*/
-				cache->TotalReads++;
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -1509,7 +1513,10 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					}
 				}
 
+
 				/*stats*/
+				cache->WbMerges++;
+				cache->TotalReads++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L2_hit;
 
@@ -1523,6 +1530,9 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(message_packet->coalesced == 1)
 				{
+					/*stats*/
+					cache->coalesces++;
+
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
@@ -1787,15 +1797,13 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					assert(message_packet->coalesced == 1);
+					/*stats*/
+					cache->coalesces++;
+
 					if(message_packet->coalesced == 1)
-					{
 						return 1;
-					}
 					else
-					{
 						fatal("cgm_mesi_l2_getx(): write failed to coalesce when all ways are transient...\n");
-					}
 				}
 
 				cache->TotalMisses--;
@@ -1860,6 +1868,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				/*stats*/
+				cache->WbMerges++;
 				cache->TotalReads++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L2_hit;
@@ -1874,6 +1883,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(message_packet->coalesced == 1)
 				{
+					/*stats*/
+					cache->coalesces++;
+
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
@@ -1979,6 +1991,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 				}
 			}
+
 			break;
 
 		case cgm_cache_block_shared:
@@ -1996,6 +2009,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->access_type = cgm_access_upgrade;
 
 			/*stats*/
+			cache->UpgradeMisses++;
 			if(!message_packet->protocol_case)
 				message_packet->protocol_case = L2_upgrade;
 
@@ -4148,7 +4162,12 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cache_check_ORT(cache, message_packet);
 
 			if(message_packet->coalesced == 1)
+			{
+				/*stats*/
+				cache->coalesces++;
+
 				return;
+			}
 
 			//find the victim.
 			message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set);
@@ -4357,6 +4376,11 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				packet_destroy(message_packet);
 				break;
 		}
+
+		/*stats*/
+		cache->TotalWriteBackRecieved++;
+
+
 	}
 	//if here the L2 generated it's own write back.
 	else if(cache->last_queue == cache->write_back_buffer)
@@ -4414,7 +4438,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			cache_put_io_down_queue(cache, message_packet);
 
 
-			cache->TotalWriteBacks++;
+			cache->TotalWriteBackSent++;
 		}
 		else
 		{
@@ -4545,16 +4569,13 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					assert(message_packet->coalesced == 1);
+					/*stats*/
+					cache->coalesces++;
 
 					if(message_packet->coalesced == 1)
-					{
 						return;
-					}
 					else
-					{
 						fatal("cgm_mesi_l3_get(): write failed to coalesce when all ways are transient...\n");
-					}
 				}
 
 				cache->TotalMisses--;
@@ -4648,6 +4669,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(message_packet->coalesced == 1)
 				{
+					/*stats*/
+					cache->coalesces++;
+
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
@@ -5293,9 +5317,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 		case cgm_cache_block_shared:
 
-			//stats
-			cache->upgrade_misses++;
-
 			if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(LEVEL == 2 || LEVEL == 3)
@@ -5307,6 +5328,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			/*access was a miss at the L1 and L2 but hit as shared in L3
 			we need to process an upgrade as a putx with n number of invals*/
+
+			//stats
+			cache->UpgradeMisses++;
 
 			/*there should always be at least one sharer
 			but no more than the number of cores.*/
