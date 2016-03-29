@@ -136,7 +136,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			{
 				assert(self->rob_count < 64);
 				//printf("stall on lsq\n");
-				mem_system_stats->cpu_ls_stalls++;
+				//mem_system_stats->cpu_ls_stalls++;
 			}
 			else if (stall == x86_dispatch_stall_iq)
 			{

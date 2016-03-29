@@ -33,6 +33,7 @@ def print_cache_stats(options):
 	l1_i_Stalls = cache_stats['l1_i_0_Stalls'] + cache_stats['l1_i_1_Stalls'] + cache_stats['l1_i_2_Stalls'] + cache_stats['l1_i_3_Stalls']
 	l1_i_Coalesces = cache_stats['l1_i_0_Coalesces'] + cache_stats['l1_i_1_Coalesces'] + cache_stats['l1_i_2_Coalesces'] + cache_stats['l1_i_3_Coalesces']
 	l1_i_OccupancyPct = cache_stats['l1_i_0_OccupancyPct'] + cache_stats['l1_i_1_OccupancyPct'] + cache_stats['l1_i_2_OccupancyPct'] + cache_stats['l1_i_3_OccupancyPct']
+	l1_i_AveCyclesPerAdvance = cache_stats['l1_i_0_AveCyclesPerAdvance'] + cache_stats['l1_i_1_AveCyclesPerAdvance'] + cache_stats['l1_i_2_AveCyclesPerAdvance'] + cache_stats['l1_i_3_AveCyclesPerAdvance']
 	l1_i_TotalAdvances = cache_stats['l1_i_0_TotalAdvances'] + cache_stats['l1_i_1_TotalAdvances'] + cache_stats['l1_i_2_TotalAdvances'] + cache_stats['l1_i_3_TotalAdvances']
 	l1_i_TotalAccesses = cache_stats['l1_i_0_TotalAccesses'] + cache_stats['l1_i_1_TotalAccesses'] + cache_stats['l1_i_2_TotalAccesses'] + cache_stats['l1_i_3_TotalAccesses']
 	l1_i_TotalHits = cache_stats['l1_i_0_TotalHits'] + cache_stats['l1_i_1_TotalHits'] + cache_stats['l1_i_2_TotalHits'] + cache_stats['l1_i_3_TotalHits']
@@ -59,6 +60,7 @@ def print_cache_stats(options):
 	l1_d_Stalls = cache_stats['l1_d_0_Stalls'] + cache_stats['l1_d_1_Stalls'] + cache_stats['l1_d_2_Stalls'] + cache_stats['l1_d_3_Stalls']
 	l1_d_Coalesces = cache_stats['l1_d_0_Coalesces'] + cache_stats['l1_d_1_Coalesces'] + cache_stats['l1_d_2_Coalesces'] + cache_stats['l1_d_3_Coalesces']
 	l1_d_OccupancyPct = cache_stats['l1_d_0_OccupancyPct'] + cache_stats['l1_d_1_OccupancyPct'] + cache_stats['l1_d_2_OccupancyPct'] + cache_stats['l1_d_3_OccupancyPct']
+	l1_d_AveCyclesPerAdvance = cache_stats['l1_d_0_AveCyclesPerAdvance'] + cache_stats['l1_d_1_AveCyclesPerAdvance'] + cache_stats['l1_d_2_AveCyclesPerAdvance'] + cache_stats['l1_d_3_AveCyclesPerAdvance']
 	l1_d_TotalAdvances = cache_stats['l1_d_0_TotalAdvances'] + cache_stats['l1_d_1_TotalAdvances'] + cache_stats['l1_d_2_TotalAdvances'] + cache_stats['l1_d_3_TotalAdvances']
 	l1_d_TotalAccesses = cache_stats['l1_d_0_TotalAccesses'] + cache_stats['l1_d_1_TotalAccesses'] + cache_stats['l1_d_2_TotalAccesses'] + cache_stats['l1_d_3_TotalAccesses']
 	l1_d_TotalHits = cache_stats['l1_d_0_TotalHits'] + cache_stats['l1_d_1_TotalHits'] + cache_stats['l1_d_2_TotalHits'] + cache_stats['l1_d_3_TotalHits']
@@ -85,6 +87,7 @@ def print_cache_stats(options):
 	l2_Stalls = cache_stats['l2_0_Stalls'] + cache_stats['l2_1_Stalls'] + cache_stats['l2_2_Stalls'] + cache_stats['l2_3_Stalls']
 	l2_Coalesces = cache_stats['l2_0_Coalesces'] + cache_stats['l2_1_Coalesces'] + cache_stats['l2_2_Coalesces'] + cache_stats['l2_3_Coalesces']
 	l2_OccupancyPct = cache_stats['l2_0_OccupancyPct'] + cache_stats['l2_1_OccupancyPct'] + cache_stats['l2_2_OccupancyPct'] + cache_stats['l2_3_OccupancyPct']
+	l2_AveCyclesPerAdvance = cache_stats['l2_0_AveCyclesPerAdvance'] + cache_stats['l2_1_AveCyclesPerAdvance'] + cache_stats['l2_2_AveCyclesPerAdvance'] + cache_stats['l2_3_AveCyclesPerAdvance']
 	l2_TotalAdvances = cache_stats['l2_0_TotalAdvances'] + cache_stats['l2_1_TotalAdvances'] + cache_stats['l2_2_TotalAdvances'] + cache_stats['l2_3_TotalAdvances']
 	l2_TotalAccesses = cache_stats['l2_0_TotalAccesses'] + cache_stats['l2_1_TotalAccesses'] + cache_stats['l2_2_TotalAccesses'] + cache_stats['l2_3_TotalAccesses']
 	l2_TotalHits = cache_stats['l2_0_TotalHits'] + cache_stats['l2_1_TotalHits'] + cache_stats['l2_2_TotalHits'] + cache_stats['l2_3_TotalHits']
@@ -111,6 +114,7 @@ def print_cache_stats(options):
 	l3_Stalls = cache_stats['l3_0_Stalls'] + cache_stats['l3_1_Stalls'] + cache_stats['l3_2_Stalls'] + cache_stats['l3_3_Stalls']
 	l3_Coalesces = cache_stats['l3_0_Coalesces'] + cache_stats['l3_1_Coalesces'] + cache_stats['l3_2_Coalesces'] + cache_stats['l3_3_Coalesces']
 	l3_OccupancyPct = cache_stats['l3_0_OccupancyPct'] + cache_stats['l3_1_OccupancyPct'] + cache_stats['l3_2_OccupancyPct'] + cache_stats['l3_3_OccupancyPct']
+	l3_AveCyclesPerAdvance = cache_stats['l3_0_AveCyclesPerAdvance'] + cache_stats['l3_1_AveCyclesPerAdvance'] + cache_stats['l3_2_AveCyclesPerAdvance'] + cache_stats['l3_3_AveCyclesPerAdvance']
 	l3_TotalAdvances = cache_stats['l3_0_TotalAdvances'] + cache_stats['l3_1_TotalAdvances'] + cache_stats['l3_2_TotalAdvances'] + cache_stats['l3_3_TotalAdvances']
 	l3_TotalAccesses = cache_stats['l3_0_TotalAccesses'] + cache_stats['l3_1_TotalAccesses'] + cache_stats['l3_2_TotalAccesses'] + cache_stats['l3_3_TotalAccesses']
 	l3_TotalHits = cache_stats['l3_0_TotalHits'] + cache_stats['l3_1_TotalHits'] + cache_stats['l3_2_TotalHits'] + cache_stats['l3_3_TotalHits']
@@ -138,6 +142,7 @@ def print_cache_stats(options):
 			["Stalls", l1_i_Stalls, l1_d_Stalls, l2_Stalls, l3_Stalls],
 			["Coalesces", l1_i_Coalesces, l1_d_Coalesces, l2_Coalesces, l3_Coalesces],
 			["OccupancyPct(X.XX%)", l1_i_OccupancyPct, l1_d_OccupancyPct, l2_OccupancyPct, l3_OccupancyPct],
+			["AveCyclesPerAdvance", l1_i_AveCyclesPerAdvance, l1_d_AveCyclesPerAdvance, l2_AveCyclesPerAdvance, l3_AveCyclesPerAdvance],
 			["TotalAdvances", l1_i_TotalAdvances, l1_d_TotalAdvances, l2_TotalAdvances, l3_TotalAdvances],
 			["TotalAccesses", l1_i_TotalAccesses, l1_d_TotalAccesses, l2_TotalAccesses, l3_TotalAccesses], 
 			["TotalHits", l1_i_TotalHits, l1_d_TotalHits, l2_TotalHits, l3_TotalHits],
@@ -436,20 +441,31 @@ def print_mem_system_stats(options):
 			["L3TotalFetches", ms_stats['MemSystem_L3TotalFetches']],
 			["L3FetchHits", ms_stats['MemSystem_L3FetchHits']],
 			["MMFetches", ms_stats['MemSystem_FetchesMemory']],
-			["TotalLoads", ms_stats['MemSystem_TotalLoads']],
-			["LoadsL1", ms_stats['MemSystem_LoadsL1']],
-			["LoadsL2", ms_stats['MemSystem_LoadsL2']],
-			["LoadsL3", ms_stats['MemSystem_LoadsL3']],
-			["LoadsMemory", ms_stats['MemSystem_LoadsMemory']],
-			["LoadsGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
-			["TotalStore", ms_stats['MemSystem_TotalStore']],
-			["StoresL1", ms_stats['MemSystem_StoresL1']],
-			["StoresL2", ms_stats['MemSystem_StoresL2']],
-			["StoresL3", ms_stats['MemSystem_StoresL3']],
-			["StoresMemory", ms_stats['MemSystem_StoresMemory']],
-			["StoresGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
-			["StoresUpgrade", ms_stats['MemSystem_StoresUpgrade']]
+
+			["TotalCPULoadRequests", ms_stats['MemSystem_TotalCPULoadRequests']],
+			["TotalCPULoadReplys", ms_stats['MemSystem_TotalCPULoadReplys']],
+			["L1LoadHits", ms_stats['MemSystem_L1LoadHits']],
+			["L2TotalLoads", ms_stats['MemSystem_L2TotalLoads']],
+			["L2LoadHits", ms_stats['MemSystem_L2LoadHits']],
+			["L3TotalLoads", ms_stats['MemSystem_L3TotalLoads']],
+			["L3LoadHits", ms_stats['MemSystem_L3LoadHits']],
+			["MMLoads", ms_stats['MemSystem_LoadsMemory']],
+			["LoadGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
+			["LoadNacks", ms_stats['MemSystem_LoadsNacked']],
+
+			["TotalCPUStoreRequests", ms_stats['MemSystem_TotalCPUStoreRequests']],
+			["TotalCPUStoreReplys", ms_stats['MemSystem_TotalCPUStoreReplys']],
+			["L1StoreHits", ms_stats['MemSystem_L1StoreHits']],
+			["L2TotalStores", ms_stats['MemSystem_L2TotalStores']],
+			["L2StoreHits", ms_stats['MemSystem_L2StoreHits']],
+			["L3TotalStores", ms_stats['MemSystem_L3TotalStores']],
+			["L3StoreHits", ms_stats['MemSystem_L3StoreHits']],
+			["MMStores", ms_stats['MemSystem_StoresMemory']],
+			["StoreGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
+			["StoreUpgrade", ms_stats['MemSystem_StoresUpgrade']],
+			["StoreNacks", ms_stats['MemSystem_StoresNacked']],
 			]
+
 
 	f = open(options.OutFileName, 'a')
 

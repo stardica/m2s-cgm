@@ -301,7 +301,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				cache->TotalReadMisses--;
 				cache->TotalGet--;
 
-				//we are writting in a block so evict the victim
+				//we are writing in a block so evict the victim
 				assert(write_back_packet->l1_victim_way >= 0 && write_back_packet->l1_victim_way < cache->assoc);
 
 				//first evict the old block if it isn't invalid already

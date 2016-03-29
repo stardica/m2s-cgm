@@ -446,6 +446,7 @@ struct cache_t{
 
 	long long mshr_entries;
 	long long stalls;
+
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;
 	unsigned int *store_address_history;
@@ -519,19 +520,30 @@ struct cgm_stats_t{
 	long long fetch_l3_hits;
 	long long l3_total_fetch_requests;
 	long long fetch_memory;
-	long long cpu_total_loads;
+
+	long long cpu_total_load_requests;
+	long long cpu_total_load_replys;
 	long long load_l1_hits;
+	long long l2_total_load_requests;
 	long long load_l2_hits;
+	long long l3_total_load_requests;
 	long long load_l3_hits;
 	long long load_memory;
 	long long load_get_fwd;
-	long long cpu_total_stores;
+	long long load_nack;
+
+	long long cpu_total_store_requests;
+	long long cpu_total_store_replys;
 	long long store_l1_hits;
+	long long l2_total_store_requests;
 	long long store_l2_hits;
+	long long l3_total_store_requests;
 	long long store_l3_hits;
 	long long store_memory;
 	long long store_getx_fwd;
 	long long store_upgrade;
+	long long store_nack;
+
 
 	//caches
 	long long *l1_i_occupancy;
@@ -557,6 +569,7 @@ struct cgm_stats_t{
 
 	long long *l1_i_mshr_entries;
 	long long *l1_i_stalls;
+
 
 	long long *l1_d_occupancy;
 	long long *l1_d_coalesces;

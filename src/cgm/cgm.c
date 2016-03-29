@@ -429,19 +429,29 @@ void cgm_consolidate_stats(void){
 	cgm_stat->fetch_l3_hits = JOINLL(fetch_l3_hits);
 	cgm_stat->l3_total_fetch_requests = JOINLL(l3_total_fetch_requests);
 	cgm_stat->fetch_memory = JOINLL(fetch_memory);
-	cgm_stat->cpu_total_loads = JOINLL(cpu_total_loads);
+
+	cgm_stat->cpu_total_load_requests = JOINLL(cpu_total_load_requests);
+	cgm_stat->cpu_total_load_replys = JOINLL(cpu_total_load_replys);
 	cgm_stat->load_l1_hits = JOINLL(load_l1_hits);
+	cgm_stat->l2_total_load_requests = JOINLL(l2_total_load_requests);
 	cgm_stat->load_l2_hits = JOINLL(load_l2_hits);
+	cgm_stat->l3_total_load_requests = JOINLL(l3_total_load_requests);
 	cgm_stat->load_l3_hits = JOINLL(load_l3_hits);
 	cgm_stat->load_memory = JOINLL(load_memory);
 	cgm_stat->load_get_fwd = JOINLL(load_get_fwd);
-	cgm_stat->cpu_total_stores = JOINLL(cpu_total_stores);
+	cgm_stat->load_nack = JOINLL(load_nack);
+
+	cgm_stat->cpu_total_store_requests = JOINLL(cpu_total_store_requests);
+	cgm_stat->cpu_total_store_replys = JOINLL(cpu_total_store_replys);
 	cgm_stat->store_l1_hits = JOINLL(store_l1_hits);
+	cgm_stat->l2_total_store_requests = JOINLL(l2_total_store_requests);
 	cgm_stat->store_l2_hits = JOINLL(store_l2_hits);
+	cgm_stat->l3_total_store_requests = JOINLL(l3_total_store_requests);
 	cgm_stat->store_l3_hits = JOINLL(store_l3_hits);
 	cgm_stat->store_memory = JOINLL(store_memory);
 	cgm_stat->store_getx_fwd = JOINLL(store_getx_fwd);
 	cgm_stat->store_upgrade = JOINLL(store_upgrade);
+	cgm_stat->store_nack = JOINLL(store_nack);
 
 	//caches
 	for(i = 0; i < num_cores; i++)
@@ -1394,11 +1404,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	if(access_kind == cgm_access_load)
 	{
-		mem_system_stats->cpu_total_loads++;
+		mem_system_stats->cpu_total_load_requests++;
 	}
 	else if(access_kind == cgm_access_store)
 	{
-		mem_system_stats->cpu_total_stores++;
+		mem_system_stats->cpu_total_store_requests++;
 	}
 
 	//For memory system load store request

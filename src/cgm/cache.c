@@ -2024,25 +2024,24 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
 		printf("l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_stalls[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_Coalesces = %llu\n", i, cgm_stat_container->l1_i_coalesces[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalHits[i]));
-
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) P_TIME)*100);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
-
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Coalesces = %llu\n", i, cgm_stat_container->l1_i_coalesces[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalHits[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l1_i_TotalAdvances[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/ (double) cgm_stat_container->l1_i_TotalAdvances[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_i_TotalAcesses[i]);
 
 
@@ -2077,6 +2076,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_occupancy[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_stalls[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Coalesces = %llu\n", i, cgm_stat_container->l1_d_coalesces[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_d_occupancy[i]/ (double) cgm_stat_container->l1_d_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_occupancy[i]/(double)P_TIME)*100);
@@ -2120,6 +2120,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_occupancy[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_stalls[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_Coalesces = %llu\n", i, cgm_stat_container->l2_coalesces[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/ (double) cgm_stat_container->l2_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/(double)P_TIME)*100);
@@ -2162,6 +2163,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_occupancy[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_stalls[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_Coalesces = %llu\n", i, cgm_stat_container->l3_coalesces[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l3_occupancy[i]/ (double) cgm_stat_container->l3_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l3_occupancy[i]/(double)P_TIME)*100);
@@ -2297,7 +2299,7 @@ void l1_d_cache_ctrl(void){
 
 	int my_pid = l1_d_pid++;
 	int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;
+	//int num_cus = si_gpu_num_compute_units;
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
@@ -2532,6 +2534,11 @@ void l2_cache_ctrl(void){
 			/*stats*/
 			if(message_packet->access_type == cgm_access_gets)
 				mem_system_stats->l2_total_fetch_requests++;
+			else if(message_packet->access_type == cgm_access_get)
+				mem_system_stats->l2_total_load_requests++;
+			else if(message_packet->access_type == cgm_access_get)
+				mem_system_stats->l2_total_store_requests++;
+
 
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
@@ -2740,6 +2747,8 @@ void l3_cache_ctrl(void){
 			/*stats*/
 			if(message_packet->access_type == cgm_access_gets)
 				mem_system_stats->l3_total_fetch_requests++;
+			else if(message_packet->access_type == cgm_access_get)
+				mem_system_stats->l3_total_load_requests++;
 
 
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
@@ -3838,9 +3847,9 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
 
-
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
+		mem_system_stats->cpu_total_load_replys++;
 		mem_system_stats->load_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
@@ -3858,6 +3867,7 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	}
 	else if(message_packet->cpu_access_type == cgm_access_store)
 	{
+		mem_system_stats->cpu_total_store_replys++;
 		mem_system_stats->store_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
@@ -3874,12 +3884,11 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 			mem_system_stats->store_upgrade++;
 	}
 
-	//remove packet from cache queue, global queue, and simulator memory
-	message_packet = list_remove(cache->last_queue, message_packet);
-
 	last_committed_lsq_access_id = message_packet->access_id;
 	last_committed_lsq_access_blk = message_packet->address & cache->block_address_mask;
 
+	//remove packet from cache queue, global queue, and simulator memory
+	message_packet = list_remove(cache->last_queue, message_packet);
 	linked_list_add(message_packet->event_queue, message_packet->data);
 
 	/*printf("access_id %llu finished cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/

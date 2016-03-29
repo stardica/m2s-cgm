@@ -40,25 +40,28 @@ struct mem_system_stats_t{
 	long long fetch_l3_hits;
 	long long fetch_memory;
 
+	long long cpu_total_load_requests;
+	long long cpu_total_load_replys;
 	long long load_l1_hits;
+	long long l2_total_load_requests;
 	long long load_l2_hits;
+	long long l3_total_load_requests;
 	long long load_l3_hits;
 	long long load_memory;
 	long long load_get_fwd;
+	long long load_nack;
 
+	long long cpu_total_store_requests;
+	long long cpu_total_store_replys;
 	long long store_l1_hits;
+	long long l2_total_store_requests;
 	long long store_l2_hits;
-	long long store_l2_upgrade;
+	long long l3_total_store_requests;
 	long long store_l3_hits;
-	long long store_l3_upgrade;
 	long long store_memory;
 	long long store_getx_fwd;
 	long long store_upgrade;
-
-
-	long long cpu_total_loads;
-	long long cpu_total_stores;
-	long long cpu_ls_stalls;
+	long long store_nack;
 
 	long long gpu_total_loads;
 	long long gpu_total_stores;
