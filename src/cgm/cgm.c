@@ -204,6 +204,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_i_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l1_d_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -228,6 +230,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_d_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l2_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -252,6 +256,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l2_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l3_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -276,6 +282,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_coalesces = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_mshr_entries = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
@@ -470,6 +478,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_i_TotalMisses[i] = JOINLL(l1_i_TotalMisses[i]);
 		cgm_stat->l1_i_WbMerges[i] = JOINLL(l1_i_WbMerges[i]);
 		cgm_stat->l1_i_EvictInv[i] = JOINLL(l1_i_EvictInv[i]);
+		cgm_stat->l1_i_TotalWriteBackRecieved[i] = JOINLL(l1_i_TotalWriteBackRecieved[i]);
+		cgm_stat->l1_i_TotalWriteBackSent[i] = JOINLL(l1_i_TotalWriteBackSent[i]);
 
 		cgm_stat->l1_i_TotalAdvances[i] = JOINLL(l1_i_TotalAdvances[i]);
 		cgm_stat->l1_i_TotalAcesses[i] = JOINLL(l1_i_TotalAcesses[i]);
@@ -512,6 +522,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_d_mshr_entries[i] = JOINLL(l1_d_mshr_entries[i]);
 		cgm_stat->l1_d_stalls[i] = JOINLL(l1_d_stalls[i]);
 		cgm_stat->l1_d_EvictInv[i] = JOINLL(l1_d_EvictInv[i]);
+		cgm_stat->l1_d_TotalWriteBackRecieved[i] = JOINLL(l1_d_TotalWriteBackRecieved[i]);
+		cgm_stat->l1_d_TotalWriteBackSent[i] = JOINLL(l1_d_TotalWriteBackSent[i]);
 
 		cgm_stat->l2_occupancy[i] = JOINLL(l2_occupancy[i]);
 		cgm_stat->l2_TotalAdvances[i] = JOINLL(l2_TotalAdvances[i]);
@@ -536,6 +548,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l2_mshr_entries[i] = JOINLL(l2_mshr_entries[i]);
 		cgm_stat->l2_stalls[i] = JOINLL(l2_stalls[i]);
 		cgm_stat->l2_EvictInv[i] = JOINLL(l2_EvictInv[i]);
+		cgm_stat->l2_TotalWriteBackRecieved[i] = JOINLL(l2_TotalWriteBackRecieved[i]);
+		cgm_stat->l2_TotalWriteBackSent[i] = JOINLL(l2_TotalWriteBackSent[i]);
 
 		cgm_stat->l3_occupancy[i] = JOINLL(l3_occupancy[i]);
 		cgm_stat->l3_TotalAdvances[i] = JOINLL(l3_TotalAdvances[i]);
@@ -560,6 +574,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l3_mshr_entries[i] = JOINLL(l3_mshr_entries[i]);
 		cgm_stat->l3_stalls[i] = JOINLL(l3_stalls[i]);
 		cgm_stat->l3_EvictInv[i] = JOINLL(l3_EvictInv[i]);
+		cgm_stat->l3_TotalWriteBackRecieved[i] = JOINLL(l3_TotalWriteBackRecieved[i]);
+		cgm_stat->l3_TotalWriteBackSent[i] = JOINLL(l3_TotalWriteBackSent[i]);
 	}
 
 	//switch stats

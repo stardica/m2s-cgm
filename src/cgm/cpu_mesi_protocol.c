@@ -1060,7 +1060,7 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	assert(message_packet->flush_pending == 0 && message_packet->L3_flush_join == 0);
 
 	/*stats*/
-	cache->TotalWriteBacks++;
+	cache->TotalWriteBackSent++;
 
 	cache_put_io_down_queue(cache, message_packet);
 
@@ -1077,6 +1077,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *wb_packet;
+	int ort_status = -1;
 
 	//enum cgm_cache_block_state_t victim_trainsient_state;
 
@@ -1094,6 +1095,15 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 		}
 	}
+
+	//check the ORT table is there an outstanding access for this block?
+	 ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	 if(ort_status != cache->mshr_size)
+	 {
+		 fatal("caught the bug\n");
+	 }
+
+
 
 	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 
@@ -2885,7 +2895,8 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 			break;
 	}
 
-
+	/*stats*/
+	cache->EvictInv++;
 
 	return;
 }
@@ -2913,6 +2924,20 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	//assert(*cache_block_hit_ptr == 0);
 
 	error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+	if(error != 0)
+	{
+		struct cgm_packet_t *L1_wb_packet = cache_search_wb(&l1_d_caches[cache->id], message_packet->tag, message_packet->set);
+
+		if(L1_wb_packet)
+			fatal("wbp found %llu\n", L1_wb_packet->evict_id);
+
+
+		fatal("cgm_mesi_l2_flush_block_ack(): %s error %d as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+			cache->name, error, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+			message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+	}
+
 	assert(error == 0);
 
 	/*block should not be in L3 cache either*/
@@ -3147,6 +3172,9 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		message_packet = list_remove(cache->last_queue, message_packet);
 		packet_destroy(message_packet);
 	}
+
+	/*stats*/
+	cache->EvictInv++;
 
 	return;
 }
@@ -4380,7 +4408,6 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		/*stats*/
 		cache->TotalWriteBackRecieved++;
 
-
 	}
 	//if here the L2 generated it's own write back.
 	else if(cache->last_queue == cache->write_back_buffer)
@@ -5512,7 +5539,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				list_enqueue(cache->Tx_queue_bottom, write_back_packet);
 				advance(cache->cache_io_down_ec);
 
-				cache->TotalWriteBacks++;
+				/*stats*/
+				cache->TotalWriteBackSent++;
 			}
 
 			//the modified block is written to main memory we can set the block as shared now.
@@ -6305,6 +6333,10 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				packet_destroy(message_packet);
 				break;
 		}
+
+		/*stats*/
+		cache->TotalWriteBackRecieved++;
+
 	}
 	else if(cache->last_queue == cache->write_back_buffer)
 	{
@@ -6354,7 +6386,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			//transmit to SA/MC
 			cache_put_io_down_queue(cache, message_packet);
 
-			cache->TotalWriteBacks++;
+			cache->TotalWriteBackSent++;
 		}
 		else
 		{

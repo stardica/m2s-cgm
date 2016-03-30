@@ -34,6 +34,8 @@ def print_cache_stats(options):
 	l1_i_Coalesces = cache_stats['l1_i_0_Coalesces'] + cache_stats['l1_i_1_Coalesces'] + cache_stats['l1_i_2_Coalesces'] + cache_stats['l1_i_3_Coalesces']
 	l1_i_WbMerges = cache_stats['l1_i_0_WbMerges'] + cache_stats['l1_i_1_WbMerges'] + cache_stats['l1_i_2_WbMerges'] + cache_stats['l1_i_3_WbMerges']
 	l1_i_EvictInv = cache_stats['l1_i_0_EvictInv'] + cache_stats['l1_i_1_EvictInv'] + cache_stats['l1_i_2_EvictInv'] + cache_stats['l1_i_3_EvictInv']
+	l1_i_WbRecieved = cache_stats['l1_i_0_WbRecieved'] + cache_stats['l1_i_1_WbRecieved'] + cache_stats['l1_i_2_WbRecieved'] + cache_stats['l1_i_3_WbRecieved']
+	l1_i_WbSent = cache_stats['l1_i_0_WbSent'] + cache_stats['l1_i_1_WbSent'] + cache_stats['l1_i_2_WbSent'] + cache_stats['l1_i_3_WbSent']
 	l1_i_UpgradeMisses = cache_stats['l1_i_0_UpgradeMisses'] + cache_stats['l1_i_1_UpgradeMisses'] + cache_stats['l1_i_2_UpgradeMisses'] + cache_stats['l1_i_3_UpgradeMisses']
 	l1_i_OccupancyPct = cache_stats['l1_i_0_OccupancyPct'] + cache_stats['l1_i_1_OccupancyPct'] + cache_stats['l1_i_2_OccupancyPct'] + cache_stats['l1_i_3_OccupancyPct']
 	l1_i_AveCyclesPerAdvance = cache_stats['l1_i_0_AveCyclesPerAdvance'] + cache_stats['l1_i_1_AveCyclesPerAdvance'] + cache_stats['l1_i_2_AveCyclesPerAdvance'] + cache_stats['l1_i_3_AveCyclesPerAdvance']
@@ -64,6 +66,8 @@ def print_cache_stats(options):
 	l1_d_Coalesces = cache_stats['l1_d_0_Coalesces'] + cache_stats['l1_d_1_Coalesces'] + cache_stats['l1_d_2_Coalesces'] + cache_stats['l1_d_3_Coalesces']
 	l1_d_WbMerges = cache_stats['l1_d_0_WbMerges'] + cache_stats['l1_d_1_WbMerges'] + cache_stats['l1_d_2_WbMerges'] + cache_stats['l1_d_3_WbMerges']
 	l1_d_EvictInv = cache_stats['l1_d_0_EvictInv'] + cache_stats['l1_d_1_EvictInv'] + cache_stats['l1_d_2_EvictInv'] + cache_stats['l1_d_3_EvictInv']
+	l1_d_WbRecieved = cache_stats['l1_d_0_WbRecieved'] + cache_stats['l1_d_1_WbRecieved'] + cache_stats['l1_d_2_WbRecieved'] + cache_stats['l1_d_3_WbRecieved']
+	l1_d_WbSent = cache_stats['l1_d_0_WbSent'] + cache_stats['l1_d_1_WbSent'] + cache_stats['l1_d_2_WbSent'] + cache_stats['l1_d_3_WbSent']
 	l1_d_UpgradeMisses = cache_stats['l1_d_0_UpgradeMisses'] + cache_stats['l1_d_1_UpgradeMisses'] + cache_stats['l1_d_2_UpgradeMisses'] + cache_stats['l1_d_3_UpgradeMisses']
 	l1_d_OccupancyPct = cache_stats['l1_d_0_OccupancyPct'] + cache_stats['l1_d_1_OccupancyPct'] + cache_stats['l1_d_2_OccupancyPct'] + cache_stats['l1_d_3_OccupancyPct']
 	l1_d_AveCyclesPerAdvance = cache_stats['l1_d_0_AveCyclesPerAdvance'] + cache_stats['l1_d_1_AveCyclesPerAdvance'] + cache_stats['l1_d_2_AveCyclesPerAdvance'] + cache_stats['l1_d_3_AveCyclesPerAdvance']
@@ -94,6 +98,8 @@ def print_cache_stats(options):
 	l2_Coalesces = cache_stats['l2_0_Coalesces'] + cache_stats['l2_1_Coalesces'] + cache_stats['l2_2_Coalesces'] + cache_stats['l2_3_Coalesces']
 	l2_WbMerges = cache_stats['l2_0_WbMerges'] + cache_stats['l2_1_WbMerges'] + cache_stats['l2_2_WbMerges'] + cache_stats['l2_3_WbMerges']
 	l2_EvictInv = cache_stats['l2_0_EvictInv'] + cache_stats['l2_1_EvictInv'] + cache_stats['l2_2_EvictInv'] + cache_stats['l2_3_EvictInv']
+	l2_WbRecieved = cache_stats['l2_0_WbRecieved'] + cache_stats['l2_1_WbRecieved'] + cache_stats['l2_2_WbRecieved'] + cache_stats['l2_3_WbRecieved']
+	l2_WbSent = cache_stats['l2_0_WbSent'] + cache_stats['l2_1_WbSent'] + cache_stats['l2_2_WbSent'] + cache_stats['l2_3_WbSent']
 	l2_UpgradeMisses = cache_stats['l2_0_UpgradeMisses'] + cache_stats['l2_1_UpgradeMisses'] + cache_stats['l2_2_UpgradeMisses'] + cache_stats['l2_3_UpgradeMisses']
 	l2_OccupancyPct = cache_stats['l2_0_OccupancyPct'] + cache_stats['l2_1_OccupancyPct'] + cache_stats['l2_2_OccupancyPct'] + cache_stats['l2_3_OccupancyPct']
 	l2_AveCyclesPerAdvance = cache_stats['l2_0_AveCyclesPerAdvance'] + cache_stats['l2_1_AveCyclesPerAdvance'] + cache_stats['l2_2_AveCyclesPerAdvance'] + cache_stats['l2_3_AveCyclesPerAdvance']
@@ -124,6 +130,8 @@ def print_cache_stats(options):
 	l3_Coalesces = cache_stats['l3_0_Coalesces'] + cache_stats['l3_1_Coalesces'] + cache_stats['l3_2_Coalesces'] + cache_stats['l3_3_Coalesces']
 	l3_WbMerges = cache_stats['l3_0_WbMerges'] + cache_stats['l3_1_WbMerges'] + cache_stats['l3_2_WbMerges'] + cache_stats['l3_3_WbMerges']
 	l3_EvictInv = cache_stats['l3_0_EvictInv'] + cache_stats['l3_1_EvictInv'] + cache_stats['l3_2_EvictInv'] + cache_stats['l3_3_EvictInv']
+	l3_WbRecieved = cache_stats['l3_0_WbRecieved'] + cache_stats['l3_1_WbRecieved'] + cache_stats['l3_2_WbRecieved'] + cache_stats['l3_3_WbRecieved']
+	l3_WbSent = cache_stats['l3_0_WbSent'] + cache_stats['l3_1_WbSent'] + cache_stats['l3_2_WbSent'] + cache_stats['l3_3_WbSent']
 	l3_UpgradeMisses = cache_stats['l3_0_UpgradeMisses'] + cache_stats['l3_1_UpgradeMisses'] + cache_stats['l3_2_UpgradeMisses'] + cache_stats['l3_3_UpgradeMisses']
 	l3_OccupancyPct = cache_stats['l3_0_OccupancyPct'] + cache_stats['l3_1_OccupancyPct'] + cache_stats['l3_2_OccupancyPct'] + cache_stats['l3_3_OccupancyPct']
 	l3_AveCyclesPerAdvance = cache_stats['l3_0_AveCyclesPerAdvance'] + cache_stats['l3_1_AveCyclesPerAdvance'] + cache_stats['l3_2_AveCyclesPerAdvance'] + cache_stats['l3_3_AveCyclesPerAdvance']
@@ -155,6 +163,8 @@ def print_cache_stats(options):
 			["Coalesces", l1_i_Coalesces, l1_d_Coalesces, l2_Coalesces, l3_Coalesces],
 			["WbMerges", l1_i_WbMerges, l1_d_WbMerges, l2_WbMerges, l3_WbMerges],
 			["EvictInv", l1_i_EvictInv, l1_d_EvictInv, l2_EvictInv, l3_EvictInv],
+			["WbRecieved", l1_i_WbRecieved, l1_d_WbRecieved, l2_WbRecieved, l3_WbRecieved],
+			["WbSent", l1_i_WbSent, l1_d_WbSent, l2_WbSent, l3_WbSent],
 			["UpgradeMisses", l1_i_UpgradeMisses, l1_d_UpgradeMisses, l2_UpgradeMisses, l3_UpgradeMisses], 
 			["OccupancyPct(X.XX%)", l1_i_OccupancyPct, l1_d_OccupancyPct, l2_OccupancyPct, l3_OccupancyPct],
 			["AveCyclesPerAdvance", l1_i_AveCyclesPerAdvance, l1_d_AveCyclesPerAdvance, l2_AveCyclesPerAdvance, l3_AveCyclesPerAdvance],

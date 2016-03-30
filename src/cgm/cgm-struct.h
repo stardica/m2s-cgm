@@ -430,6 +430,7 @@ struct cache_t{
 	long long UpgradeMisses;
 	long long EvictInv;
 	long long TotalWriteBackRecieved;
+	long long TotalWriteBackSent;
 
 
 	long long Totalfetches;
@@ -443,7 +444,7 @@ struct cache_t{
 	long long TotalUpgrades;
 	long long TotalReadMisses;
 	long long TotalWriteMisses;
-	long long TotalWriteBacks;
+	//long long TotalWriteBacks;
 	long long invalid_hits;
 	long long assoc_conflict;
 
@@ -559,6 +560,9 @@ struct cgm_stats_t{
 	long long *l1_i_UpgradeMisses;
 	long long *l1_i_EvictInv;
 
+	long long *l1_i_TotalWriteBackSent;
+	long long *l1_i_TotalWriteBackRecieved;
+
 	long long *l1_i_TotalAdvances;
 	long long *l1_i_TotalAcesses;
 	long long *l1_i_TotalReads;
@@ -585,6 +589,8 @@ struct cgm_stats_t{
 	long long *l1_d_WbMerges;
 	long long *l1_d_UpgradeMisses;
 	long long *l1_d_EvictInv;
+	long long *l1_d_TotalWriteBackSent;
+	long long *l1_d_TotalWriteBackRecieved;
 
 	long long *l1_d_TotalAdvances;
 	long long *l1_d_TotalAcesses;
@@ -611,6 +617,8 @@ struct cgm_stats_t{
 	long long *l2_WbMerges;
 	long long *l2_UpgradeMisses;
 	long long *l2_EvictInv;
+	long long *l2_TotalWriteBackSent;
+	long long *l2_TotalWriteBackRecieved;
 
 	long long *l2_TotalHits;
 	long long *l2_TotalReads;
@@ -636,6 +644,8 @@ struct cgm_stats_t{
 	long long *l3_WbMerges;
 	long long *l3_UpgradeMisses;
 	long long *l3_EvictInv;
+	long long *l3_TotalWriteBackSent;
+	long long *l3_TotalWriteBackRecieved;
 
 	long long *l3_TotalHits;
 	long long *l3_TotalReads;
