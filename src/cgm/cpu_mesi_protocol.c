@@ -1097,11 +1097,11 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	}
 
 	//check the ORT table is there an outstanding access for this block?
-	 ort_status = ort_search(cache, message_packet->tag, message_packet->set);
-	 if(ort_status != cache->mshr_size)
-	 {
-		 fatal("caught the bug\n");
-	 }
+	// ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	// if(ort_status != cache->mshr_size)
+	 //{
+	//	 fatal("caught the bug\n");
+	// }
 
 
 
