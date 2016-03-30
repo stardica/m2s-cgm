@@ -431,6 +431,8 @@ struct cache_t{
 	long long EvictInv;
 	long long TotalWriteBackRecieved;
 	long long TotalWriteBackSent;
+	long long TotalWriteBackDropped;
+	long long stalls;
 
 
 	long long Totalfetches;
@@ -451,7 +453,7 @@ struct cache_t{
 	long long retries;
 
 	long long mshr_entries;
-	long long stalls;
+
 
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;
@@ -559,9 +561,10 @@ struct cgm_stats_t{
 	long long *l1_i_WbMerges;
 	long long *l1_i_UpgradeMisses;
 	long long *l1_i_EvictInv;
-
 	long long *l1_i_TotalWriteBackSent;
 	long long *l1_i_TotalWriteBackRecieved;
+	long long *l1_i_TotalWriteBackDropped;
+	long long *l1_i_stalls;
 
 	long long *l1_i_TotalAdvances;
 	long long *l1_i_TotalAcesses;
@@ -577,9 +580,7 @@ struct cgm_stats_t{
 	long long *l1_i_invalid_hits;
 	long long *l1_i_assoc_conflict;
 	long long *l1_i_retries;
-
 	long long *l1_i_mshr_entries;
-	long long *l1_i_stalls;
 
 
 	long long *l1_d_occupancy;
@@ -591,6 +592,8 @@ struct cgm_stats_t{
 	long long *l1_d_EvictInv;
 	long long *l1_d_TotalWriteBackSent;
 	long long *l1_d_TotalWriteBackRecieved;
+	long long *l1_d_TotalWriteBackDropped;
+	long long *l1_d_stalls;
 
 	long long *l1_d_TotalAdvances;
 	long long *l1_d_TotalAcesses;
@@ -605,10 +608,8 @@ struct cgm_stats_t{
 	long long *l1_d_TotalWriteBacks;
 	long long *l1_d_invalid_hits;
 	long long *l1_d_assoc_conflict;
-
 	long long *l1_d_retries;
 	long long *l1_d_mshr_entries;
-	long long *l1_d_stalls;
 
 	long long *l2_occupancy;
 	long long *l2_TotalAdvances;
@@ -619,6 +620,8 @@ struct cgm_stats_t{
 	long long *l2_EvictInv;
 	long long *l2_TotalWriteBackSent;
 	long long *l2_TotalWriteBackRecieved;
+	long long *l2_TotalWriteBackDropped;
+	long long *l2_stalls;
 
 	long long *l2_TotalHits;
 	long long *l2_TotalReads;
@@ -635,7 +638,7 @@ struct cgm_stats_t{
 	long long *l2_retries;
 	long long *l2_coalesces;
 	long long *l2_mshr_entries;
-	long long *l2_stalls;
+
 
 	long long *l3_occupancy;
 	long long *l3_TotalAdvances;
@@ -646,6 +649,8 @@ struct cgm_stats_t{
 	long long *l3_EvictInv;
 	long long *l3_TotalWriteBackSent;
 	long long *l3_TotalWriteBackRecieved;
+	long long *l3_TotalWriteBackDropped;
+	long long *l3_stalls;
 
 	long long *l3_TotalHits;
 	long long *l3_TotalReads;
@@ -662,7 +667,7 @@ struct cgm_stats_t{
 	long long *l3_retries;
 	long long *l3_coalesces;
 	long long *l3_mshr_entries;
-	long long *l3_stalls;
+
 
 
 	long long *switch_total_links;

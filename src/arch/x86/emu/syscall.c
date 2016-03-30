@@ -5688,9 +5688,11 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 
 	cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
 	cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
+
 	cgm_store_stats(cgm_parallel_stats);
 
 	cgm_wrapup_stats->start_wrapup_section_cycle = P_TIME;
+
 	cgm_reset_stats();
 
 	return 0;

@@ -1836,6 +1836,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_i_EvictInv[i] = l1_i_caches[i].EvictInv;
 		cgm_stat_container->l1_i_TotalWriteBackRecieved[i] = l1_i_caches[i].TotalWriteBackRecieved;
 		cgm_stat_container->l1_i_TotalWriteBackSent[i] = l1_i_caches[i].TotalWriteBackSent;
+		cgm_stat_container->l1_i_TotalWriteBackDropped[i] = l1_i_caches[i].TotalWriteBackDropped;
 
 
 		cgm_stat_container->l1_d_occupancy[i] = l1_d_caches[i].occupancy;
@@ -1863,6 +1864,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_d_EvictInv[i] = l1_d_caches[i].EvictInv;
 		cgm_stat_container->l1_d_TotalWriteBackRecieved[i] = l1_d_caches[i].TotalWriteBackRecieved;
 		cgm_stat_container->l1_d_TotalWriteBackSent[i] = l1_d_caches[i].TotalWriteBackSent;
+		cgm_stat_container->l1_d_TotalWriteBackDropped[i] = l1_d_caches[i].TotalWriteBackDropped;
 
 		cgm_stat_container->l2_occupancy[i] = l2_caches[i].occupancy;
 		cgm_stat_container->l2_TotalAdvances[i] = l2_caches[i].TotalAdvances;
@@ -1889,6 +1891,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l2_EvictInv[i] = l2_caches[i].EvictInv;
 		cgm_stat_container->l2_TotalWriteBackRecieved[i] = l2_caches[i].TotalWriteBackRecieved;
 		cgm_stat_container->l2_TotalWriteBackSent[i] = l2_caches[i].TotalWriteBackSent;
+		cgm_stat_container->l2_TotalWriteBackDropped[i] = l2_caches[i].TotalWriteBackDropped;
 
 		cgm_stat_container->l3_occupancy[i] = l3_caches[i].occupancy;
 		cgm_stat_container->l3_TotalAdvances[i] = l3_caches[i].TotalAdvances;
@@ -1915,6 +1918,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_EvictInv[i] = l3_caches[i].EvictInv;
 		cgm_stat_container->l3_TotalWriteBackRecieved[i] = l3_caches[i].TotalWriteBackRecieved;
 		cgm_stat_container->l3_TotalWriteBackSent[i] = l3_caches[i].TotalWriteBackSent;
+		cgm_stat_container->l3_TotalWriteBackDropped[i] = l3_caches[i].TotalWriteBackDropped;
 	}
 
 	return;
@@ -1936,6 +1940,8 @@ void cache_reset_stats(void){
 		l1_i_caches[i].EvictInv = 0;
 		l1_i_caches[i].TotalWriteBackRecieved = 0;
 		l1_i_caches[i].TotalWriteBackSent = 0;
+		l1_i_caches[i].TotalWriteBackDropped = 0;
+		l1_i_caches[i].stalls = 0;
 
 
 		l1_i_caches[i].TotalAdvances = 0;
@@ -1955,7 +1961,7 @@ void cache_reset_stats(void){
 		l1_i_caches[i].retries = 0;
 
 		l1_i_caches[i].mshr_entries = 0;
-		l1_i_caches[i].stalls = 0;
+
 
 		l1_d_caches[i].occupancy = 0;
 		l1_d_caches[i].TotalAdvances = 0;
@@ -1963,8 +1969,12 @@ void cache_reset_stats(void){
 		l1_d_caches[i].EvictInv = 0;
 		l1_d_caches[i].TotalWriteBackRecieved = 0;
 		l1_d_caches[i].TotalWriteBackSent = 0;
-
+		l1_d_caches[i].TotalWriteBackDropped = 0;
 		l1_d_caches[i].coalesces = 0;
+		l1_d_caches[i].stalls = 0;
+
+
+
 		l1_d_caches[i].TotalAcesses = 0;
 		l1_d_caches[i].TotalMisses = 0;
 		l1_d_caches[i].TotalHits = 0;
@@ -1983,7 +1993,7 @@ void cache_reset_stats(void){
 		l1_d_caches[i].retries = 0;
 
 		l1_d_caches[i].mshr_entries = 0;
-		l1_d_caches[i].stalls = 0;
+
 
 		l2_caches[i].occupancy = 0;
 		l2_caches[i].TotalAdvances = 0;
@@ -1992,6 +2002,8 @@ void cache_reset_stats(void){
 		l2_caches[i].EvictInv = 0;
 		l2_caches[i].TotalWriteBackRecieved = 0;
 		l2_caches[i].TotalWriteBackSent = 0;
+		l2_caches[i].TotalWriteBackDropped = 0;
+		l2_caches[i].stalls = 0;
 
 		l2_caches[i].TotalMisses = 0;
 		l2_caches[i].TotalHits = 0;
@@ -2010,7 +2022,7 @@ void cache_reset_stats(void){
 		l2_caches[i].retries = 0;
 		l2_caches[i].coalesces = 0;
 		l2_caches[i].mshr_entries = 0;
-		l2_caches[i].stalls = 0;
+
 
 		l3_caches[i].occupancy = 0;
 		l3_caches[i].TotalAdvances = 0;
@@ -2019,6 +2031,8 @@ void cache_reset_stats(void){
 		l3_caches[i].EvictInv = 0;
 		l3_caches[i].TotalWriteBackRecieved = 0;
 		l3_caches[i].TotalWriteBackSent = 0;
+		l3_caches[i].TotalWriteBackDropped = 0;
+		l3_caches[i].stalls = 0;
 
 		l3_caches[i].TotalMisses = 0;
 		l3_caches[i].TotalHits = 0;
@@ -2037,7 +2051,7 @@ void cache_reset_stats(void){
 		l3_caches[i].retries = 0;
 		l3_caches[i].coalesces = 0;
 		l3_caches[i].mshr_entries = 0;
-		l3_caches[i].stalls = 0;
+
 	}
 
 	return;
@@ -2054,6 +2068,10 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	/*CPU caches*/
 	for(i = 0; i < num_cores; i++)
 	{
+
+
+
+
 		/*CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
 		printf("l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
@@ -2076,6 +2094,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_i_%d_EvictInv = %llu\n", i, cgm_stat_container->l1_i_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbRecieved = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbSent = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_WbDropped = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMisses = %llu\n", i, cgm_stat_container->l1_i_UpgradeMisses[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalHits[i]));
@@ -2119,6 +2138,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_EvictInv = %llu\n", i, cgm_stat_container->l1_d_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbRecieved = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbSent = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_WbDropped = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_d_occupancy[i]/ (double) cgm_stat_container->l1_d_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
@@ -2170,6 +2190,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_EvictInv = %llu\n", i, cgm_stat_container->l2_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_WbRecieved = %llu\n", i, cgm_stat_container->l2_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_WbSent = %llu\n", i, cgm_stat_container->l2_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_WbDropped = %llu\n", i, cgm_stat_container->l2_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/ (double) cgm_stat_container->l2_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
@@ -2218,6 +2239,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_EvictInv = %llu\n", i, cgm_stat_container->l3_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbRecieved = %llu\n", i, cgm_stat_container->l3_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbSent = %llu\n", i, cgm_stat_container->l3_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_WbDropped = %llu\n", i, cgm_stat_container->l3_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l3_occupancy[i]/ (double) cgm_stat_container->l3_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
@@ -2726,6 +2748,9 @@ void l2_cache_ctrl(void){
 	return;
 }
 
+
+
+
 void l3_cache_ctrl(void){
 
 	int my_pid = l3_pid++;
@@ -2830,6 +2855,29 @@ void l3_cache_ctrl(void){
 				if(!l3_caches[my_pid].l3_write_back(&(l3_caches[my_pid]), message_packet))
 					step--;
 			}
+			else if(access_type == cgm_access_flush_block_ack)
+			{
+				//via call back function (cgm_mesi_l3_get_fwd_nack)
+				l3_caches[my_pid].l3_flush_block_ack(&(l3_caches[my_pid]), message_packet);
+				//run again and pull the message_packet as a new access
+			}
+			else if (access_type == cgm_access_mc_put)
+			{
+				//via call back function (cgm_mesi_l3_write_block)
+				l3_caches[my_pid].l3_write_block(&(l3_caches[my_pid]), message_packet);
+
+				//retry state set so run again
+				step--;
+			}
+
+
+
+
+
+
+
+
+
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_ack)
@@ -2862,12 +2910,6 @@ void l3_cache_ctrl(void){
 				l3_caches[my_pid].l3_get_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
 				//run again and pull the message_packet as a new access
 			}
-			else if(access_type == cgm_access_flush_block_ack)
-			{
-				//via call back function (cgm_mesi_l3_get_fwd_nack)
-				l3_caches[my_pid].l3_flush_block_ack(&(l3_caches[my_pid]), message_packet);
-				//run again and pull the message_packet as a new access
-			}
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
@@ -2879,14 +2921,6 @@ void l3_cache_ctrl(void){
 				//via call back function (cgm_mesi_l3_upgrade)
 				l3_caches[my_pid].l3_upgrade_ack(&(l3_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_mc_put)
-			{
-				//via call back function (cgm_mesi_l3_write_block)
-				l3_caches[my_pid].l3_write_block(&(l3_caches[my_pid]), message_packet);
-
-				//retry state set so run again
-				step--;
-			}
 			else
 			{
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -2894,8 +2928,10 @@ void l3_cache_ctrl(void){
 			}
 		}
 
+		assert((P_TIME - occ_start) == 48);
 		/*stats occupancy*/
 		l3_caches[my_pid].occupancy += (P_TIME - occ_start);
+
 	}
 	/* should never get here*/
 	fatal("l3_cache_ctrl task is broken\n");

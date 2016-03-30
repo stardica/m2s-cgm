@@ -4437,6 +4437,9 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				}
 			}
 
+			/*stats*/
+			cache->TotalWriteBackDropped++;
+
 			message_packet = list_remove(cache->last_queue, message_packet);
 			packet_destroy(message_packet);
 		}
@@ -4464,7 +4467,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			//send the write back to the L3 cache.
 			cache_put_io_down_queue(cache, message_packet);
 
-
+			/*stats*/
 			cache->TotalWriteBackSent++;
 		}
 		else
@@ -4473,6 +4476,10 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		}
 
 		return 0;
+	}
+	else
+	{
+		fatal("cgm_mesi_l2_write_back(): Invalid queue cycle %llu\n", P_TIME);
 	}
 
 	return 1;
@@ -4672,6 +4679,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				/*stats*/
+				cache->WbMerges++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
@@ -5066,16 +5074,12 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					assert(message_packet->coalesced == 1);
+					cache->coalesces++;
 
 					if(message_packet->coalesced == 1)
-					{
 						return;
-					}
 					else
-					{
 						fatal("cgm_mesi_l3_getx(): write failed to coalesce when all ways are transient...\n");
-					}
 				}
 
 				/*stats*/
@@ -5146,6 +5150,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->src_id = str_map_string(&node_strn_map, cache->name);
 
 				/*stats*/
+				cache->WbMerges++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
@@ -5168,6 +5173,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				if(message_packet->coalesced == 1)
 				{
+
+					cache->coalesces++;
+
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
@@ -5461,6 +5469,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	int pending_bit, sharers;
 
+	fatal("cgm_mesi_l3_downgrade_ack()\n");
+
 	//downgrade the line to shared and add sharers
 	//fatal("here\n");
 
@@ -5580,6 +5590,8 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	enum cgm_cache_block_state_t block_trainsient_state;
 
 	struct cgm_packet_t *write_back_packet = NULL;
+
+	fatal("cgm_mesi_l3_downgrade_nack()\n");
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -5704,6 +5716,8 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
+	fatal("cgm_mesi_l3_getx_fwd_ack()\n");
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -5806,6 +5820,8 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
+	fatal("cgm_mesi_l3_get_fwd_upgrade_nack()\n");
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -5879,6 +5895,8 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	int num_sharers, owning_core, pending_bit, xowning_core;
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	fatal("cgm_mesi_l3_getx_fwd_upgrade_nack()\n");
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -5956,6 +5974,8 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	/*enum cgm_cache_block_state_t block_trainsient_state;*/
 
 	struct cgm_packet_t *write_back_packet = NULL;
+
+	fatal("cgm_mesi_l3_getx_fwd_nack()\n");
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -6101,6 +6121,9 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	int l3_map = 0;
 	int error = 0;
 
+
+	warning("cgm_mesi_l3_flush_block_ack()\n");
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -6165,6 +6188,9 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		}
 	}
 
+	/*stats*/
+	cache->EvictInv++;
+
 	//free the message packet
 	message_packet = list_remove(cache->last_queue, message_packet);
 	packet_destroy(message_packet);
@@ -6172,6 +6198,7 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	return;
 }
 
+int num_wb = 0;
 
 int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -6183,6 +6210,10 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	//enum cgm_cache_block_state_t block_trainsient_state;
 	int error = 0;
 	int pending_bit = 0;
+
+
+
+
 
 	//charge the delay
 	P_PAUSE(cache->latency);
@@ -6359,6 +6390,9 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				}
 			}
 
+			/*stats*/
+			cache->TotalWriteBackDropped++;
+
 			/*drop the write back*/
 			message_packet = list_remove(cache->last_queue, message_packet);
 			packet_destroy(message_packet);
@@ -6394,6 +6428,10 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		}
 
 		return 0;
+	}
+	else
+	{
+		fatal("cgm_mesi_l3_write_back(): Invalid queue cycle %llu\n", P_TIME);
 	}
 
 	return 1;
@@ -7554,6 +7592,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	int l2_src_id;
 	char *l2_name;
+
+	fatal("cgm_mesi_l3_upgrade()\n");
 
 	//charge the delay
 	P_PAUSE(cache->latency);
