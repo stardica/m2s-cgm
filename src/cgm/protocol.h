@@ -117,7 +117,6 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);

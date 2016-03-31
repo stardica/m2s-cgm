@@ -207,6 +207,13 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_i_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalWriteBackDropped = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalDowngrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalGetxFwdInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalUpgradeAcks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalUpgradeInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
+
+
 
 	cgm_stat_container->l1_d_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -234,6 +241,11 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_d_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalWriteBackDropped = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalDowngrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalGetxFwdInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalUpgradeAcks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalUpgradeInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l2_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -261,6 +273,11 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l2_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalWriteBackDropped = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalDowngrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalGetxFwdInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalUpgradeAcks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalUpgradeInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l3_occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -288,6 +305,11 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBackDropped = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalDowngrades = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalGetxFwdInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalUpgradeAcks = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalUpgradeInvals = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
@@ -486,6 +508,12 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_i_TotalWriteBackSent[i] = JOINLL(l1_i_TotalWriteBackSent[i]);
 		cgm_stat->l1_i_TotalWriteBackDropped[i] = JOINLL(l1_i_TotalWriteBackDropped[i]);
 
+		cgm_stat->l1_i_TotalDowngrades[i] = JOINLL(l1_i_TotalDowngrades[i]);
+		cgm_stat->l1_i_TotalGetxFwdInvals[i] = JOINLL(l1_i_TotalGetxFwdInvals[i]);
+		cgm_stat->l1_i_TotalUpgradeAcks[i] = JOINLL(l1_i_TotalUpgradeAcks[i]);
+		cgm_stat->l1_i_TotalUpgradeInvals[i] = JOINLL(l1_i_TotalUpgradeInvals[i]);
+		cgm_stat->l1_i_TotalWriteBlocks[i] = JOINLL(l1_i_TotalWriteBlocks[i]);
+
 		cgm_stat->l1_i_TotalAdvances[i] = JOINLL(l1_i_TotalAdvances[i]);
 		cgm_stat->l1_i_TotalAcesses[i] = JOINLL(l1_i_TotalAcesses[i]);
 		cgm_stat->l1_i_TotalReads[i] = JOINLL(l1_i_TotalReads[i]);
@@ -531,6 +559,12 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l1_d_TotalWriteBackSent[i] = JOINLL(l1_d_TotalWriteBackSent[i]);
 		cgm_stat->l1_d_TotalWriteBackDropped[i] = JOINLL(l1_d_TotalWriteBackDropped[i]);
 
+		cgm_stat->l1_d_TotalDowngrades[i] = JOINLL(l1_d_TotalDowngrades[i]);
+		cgm_stat->l1_d_TotalGetxFwdInvals[i] = JOINLL(l1_d_TotalGetxFwdInvals[i]);
+		cgm_stat->l1_d_TotalUpgradeAcks[i] = JOINLL(l1_d_TotalUpgradeAcks[i]);
+		cgm_stat->l1_d_TotalUpgradeInvals[i] = JOINLL(l1_d_TotalUpgradeInvals[i]);
+		cgm_stat->l1_d_TotalWriteBlocks[i] = JOINLL(l1_d_TotalWriteBlocks[i]);
+
 		cgm_stat->l2_occupancy[i] = JOINLL(l2_occupancy[i]);
 		cgm_stat->l2_TotalAdvances[i] = JOINLL(l2_TotalAdvances[i]);
 		cgm_stat->l2_TotalAcesses[i] = JOINLL(l2_TotalAcesses[i]);
@@ -557,6 +591,7 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l2_TotalWriteBackRecieved[i] = JOINLL(l2_TotalWriteBackRecieved[i]);
 		cgm_stat->l2_TotalWriteBackSent[i] = JOINLL(l2_TotalWriteBackSent[i]);
 		cgm_stat->l2_TotalWriteBackDropped[i] = JOINLL(l2_TotalWriteBackDropped[i]);
+		cgm_stat->l2_TotalWriteBlocks[i] = JOINLL(l2_TotalWriteBlocks[i]);
 
 		cgm_stat->l3_occupancy[i] = JOINLL(l3_occupancy[i]);
 		cgm_stat->l3_TotalAdvances[i] = JOINLL(l3_TotalAdvances[i]);
@@ -584,6 +619,7 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l3_TotalWriteBackRecieved[i] = JOINLL(l3_TotalWriteBackRecieved[i]);
 		cgm_stat->l3_TotalWriteBackSent[i] = JOINLL(l3_TotalWriteBackSent[i]);
 		cgm_stat->l3_TotalWriteBackDropped[i] = JOINLL(l3_TotalWriteBackDropped[i]);
+		cgm_stat->l3_TotalWriteBlocks[i] = JOINLL(l3_TotalWriteBlocks[i]);
 	}
 
 	//switch stats

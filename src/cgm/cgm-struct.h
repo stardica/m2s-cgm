@@ -433,6 +433,12 @@ struct cache_t{
 	long long TotalWriteBackSent;
 	long long TotalWriteBackDropped;
 	long long stalls;
+	long long TotalDowngrades;
+	long long TotalGetxFwdInvals;
+	long long TotalUpgradeAcks;
+	long long TotalUpgradeInvals;
+	long long TotalWriteBlocks;
+
 
 
 	long long Totalfetches;
@@ -565,6 +571,13 @@ struct cgm_stats_t{
 	long long *l1_i_TotalWriteBackRecieved;
 	long long *l1_i_TotalWriteBackDropped;
 	long long *l1_i_stalls;
+	long long *l1_i_TotalDowngrades;
+	long long *l1_i_TotalGetxFwdInvals;
+	long long *l1_i_TotalUpgradeAcks;
+	long long *l1_i_TotalUpgradeInvals;
+	long long *l1_i_TotalWriteBlocks;
+
+
 
 	long long *l1_i_TotalAdvances;
 	long long *l1_i_TotalAcesses;
@@ -594,6 +607,11 @@ struct cgm_stats_t{
 	long long *l1_d_TotalWriteBackRecieved;
 	long long *l1_d_TotalWriteBackDropped;
 	long long *l1_d_stalls;
+	long long *l1_d_TotalDowngrades;
+	long long *l1_d_TotalGetxFwdInvals;
+	long long *l1_d_TotalUpgradeAcks;
+	long long *l1_d_TotalUpgradeInvals;
+	long long *l1_d_TotalWriteBlocks;
 
 	long long *l1_d_TotalAdvances;
 	long long *l1_d_TotalAcesses;
@@ -622,6 +640,11 @@ struct cgm_stats_t{
 	long long *l2_TotalWriteBackRecieved;
 	long long *l2_TotalWriteBackDropped;
 	long long *l2_stalls;
+	long long *l2_TotalDowngrades;
+	long long *l2_TotalGetxFwdInvals;
+	long long *l2_TotalUpgradeAcks;
+	long long *l2_TotalUpgradeInvals;
+	long long *l2_TotalWriteBlocks;
 
 	long long *l2_TotalHits;
 	long long *l2_TotalReads;
@@ -651,6 +674,11 @@ struct cgm_stats_t{
 	long long *l3_TotalWriteBackRecieved;
 	long long *l3_TotalWriteBackDropped;
 	long long *l3_stalls;
+	long long *l3_TotalDowngrades;
+	long long *l3_TotalGetxFwdInvals;
+	long long *l3_TotalUpgradeAcks;
+	long long *l3_TotalUpgradeInvals;
+	long long *l3_TotalWriteBlocks;
 
 	long long *l3_TotalHits;
 	long long *l3_TotalReads;
