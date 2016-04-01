@@ -158,7 +158,8 @@ void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->load_l3_hits = mem_system_stats->load_l3_hits;
 	cgm_stat_container->load_memory = mem_system_stats->load_memory;
 	cgm_stat_container->load_get_fwd = mem_system_stats->load_get_fwd;
-	cgm_stat_container->load_nack = mem_system_stats->load_nack;
+	cgm_stat_container->l2_load_nack = mem_system_stats->l2_load_nack;
+	cgm_stat_container->l3_load_nack = mem_system_stats->l3_load_nack;
 
 	cgm_stat_container->cpu_total_store_requests = mem_system_stats->cpu_total_store_requests;
 	cgm_stat_container->cpu_total_store_replys = mem_system_stats->cpu_total_store_replys;
@@ -170,7 +171,8 @@ void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->store_memory = mem_system_stats->store_memory;
 	cgm_stat_container->store_getx_fwd = mem_system_stats->store_getx_fwd;
 	cgm_stat_container->store_upgrade = mem_system_stats->store_upgrade;
-	cgm_stat_container->store_nack = mem_system_stats->store_nack;
+	cgm_stat_container->l2_store_nack = mem_system_stats->l2_store_nack;
+	cgm_stat_container->l3_store_nack = mem_system_stats->l3_store_nack;
 
 	return;
 }
@@ -208,7 +210,8 @@ void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	CGM_STATS(cgm_stats_file, "MemSystem_L3LoadHits = %llu\n", cgm_stat_container->load_l3_hits);
 	CGM_STATS(cgm_stats_file, "MemSystem_LoadsMemory = %llu\n", cgm_stat_container->load_memory);
 	CGM_STATS(cgm_stats_file, "MemSystem_LoadsGetFwd = %llu\n", cgm_stat_container->load_get_fwd);
-	CGM_STATS(cgm_stats_file, "MemSystem_LoadsNacked = %llu\n", cgm_stat_container->load_nack);
+	CGM_STATS(cgm_stats_file, "MemSystem_l2_LoadNacks = %llu\n", cgm_stat_container->l2_load_nack);
+	CGM_STATS(cgm_stats_file, "MemSystem_l3_LoadNacks = %llu\n", cgm_stat_container->l3_load_nack);
 
 
 	CGM_STATS(cgm_stats_file, "MemSystem_TotalCPUStoreRequests = %llu\n", cgm_stat_container->cpu_total_store_requests);
@@ -221,7 +224,8 @@ void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	CGM_STATS(cgm_stats_file, "MemSystem_StoresMemory = %llu\n", cgm_stat_container->store_memory);
 	CGM_STATS(cgm_stats_file, "MemSystem_StoresGetxFwd = %llu\n", cgm_stat_container->store_getx_fwd);
 	CGM_STATS(cgm_stats_file, "MemSystem_StoresUpgrade = %llu\n", cgm_stat_container->store_upgrade);
-	CGM_STATS(cgm_stats_file, "MemSystem_StoresNacked = %llu\n", cgm_stat_container->store_nack);
+	CGM_STATS(cgm_stats_file, "MemSystem_l2_StoreNacks = %llu\n", cgm_stat_container->l2_store_nack);
+	CGM_STATS(cgm_stats_file, "MemSystem_l3_StoreNacks = %llu\n", cgm_stat_container->l3_store_nack);
 	/*CGM_STATS(cgm_stats_file, "\n");*/
 
 	return;
@@ -259,7 +263,8 @@ void mem_system_reset_stats(void){
 	mem_system_stats->load_l3_hits = 0;
 	mem_system_stats->load_memory = 0;
 	mem_system_stats->load_get_fwd = 0;
-	mem_system_stats->load_nack = 0;
+	mem_system_stats->l2_load_nack = 0;
+	mem_system_stats->l3_load_nack = 0;
 
 	mem_system_stats->cpu_total_store_requests = 0;
 	mem_system_stats->cpu_total_store_replys = 0;
@@ -271,7 +276,8 @@ void mem_system_reset_stats(void){
 	mem_system_stats->store_memory = 0;
 	mem_system_stats->store_getx_fwd = 0;
 	mem_system_stats->store_upgrade = 0;
-	mem_system_stats->store_nack = 0;
+	mem_system_stats->l2_store_nack = 0;
+	mem_system_stats->l3_store_nack = 0;
 
 
 	return;
@@ -455,3 +461,4 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 
 	return;
 }
+

@@ -49,7 +49,8 @@ struct mem_system_stats_t{
 	long long load_l3_hits;
 	long long load_memory;
 	long long load_get_fwd;
-	long long load_nack;
+	long long l2_load_nack;
+	long long l3_load_nack;
 
 	long long cpu_total_store_requests;
 	long long cpu_total_store_replys;
@@ -61,7 +62,8 @@ struct mem_system_stats_t{
 	long long store_memory;
 	long long store_getx_fwd;
 	long long store_upgrade;
-	long long store_nack;
+	long long l2_store_nack;
+	long long l3_store_nack;
 
 	long long gpu_total_loads;
 	long long gpu_total_stores;
@@ -132,15 +134,18 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+/*note this need to be changed to get_fwd_ack and nack*/
 void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -158,9 +163,12 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 //void cgm_mesi_l3_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);

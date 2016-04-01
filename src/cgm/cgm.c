@@ -481,7 +481,8 @@ void cgm_consolidate_stats(void){
 	cgm_stat->load_l3_hits = JOINLL(load_l3_hits);
 	cgm_stat->load_memory = JOINLL(load_memory);
 	cgm_stat->load_get_fwd = JOINLL(load_get_fwd);
-	cgm_stat->load_nack = JOINLL(load_nack);
+	cgm_stat->l2_load_nack = JOINLL(l2_load_nack);
+	cgm_stat->l3_load_nack = JOINLL(l3_load_nack);
 
 	cgm_stat->cpu_total_store_requests = JOINLL(cpu_total_store_requests);
 	cgm_stat->cpu_total_store_replys = JOINLL(cpu_total_store_replys);
@@ -493,7 +494,8 @@ void cgm_consolidate_stats(void){
 	cgm_stat->store_memory = JOINLL(store_memory);
 	cgm_stat->store_getx_fwd = JOINLL(store_getx_fwd);
 	cgm_stat->store_upgrade = JOINLL(store_upgrade);
-	cgm_stat->store_nack = JOINLL(store_nack);
+	cgm_stat->l2_store_nack = JOINLL(l2_store_nack);
+	cgm_stat->l3_store_nack = JOINLL(l3_store_nack);
 
 	//caches
 	for(i = 0; i < num_cores; i++)

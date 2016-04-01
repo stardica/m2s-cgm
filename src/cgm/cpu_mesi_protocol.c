@@ -1595,7 +1595,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		case cgm_cache_block_shared:
 
 			/*stats*/
-			cache->TotalReads++;
+			//cache->TotalReads++;
 
 			/*if(cache->sets[message_packet->set].blocks[message_packet->way].flush_pending == 1)
 				printf("************ %s get while flush is going up blk_address 0x%08x cycle %llu\n", cache->name, (message_packet->address & ~cache->block_mask), P_TIME);*/
@@ -1679,6 +1679,7 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	unsigned int *offset_ptr = &offset;
 	/*int *way_ptr = &way;*/
 
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -1720,8 +1721,11 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	//find victim
 
 	//transmit to L3
-	/*printf("l2_get nack\n");*/
+
 	cache_put_io_down_queue(cache, message_packet);
+
+	/*stats*/
+	mem_system_stats->l2_load_nack++;
 
 	return;
 }
@@ -1813,8 +1817,8 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						fatal("cgm_mesi_l2_getx(): write failed to coalesce when all ways are transient...\n");
 				}
 
-				cache->TotalMisses--;
-				cache->TotalWriteMisses--;
+				/*cache->TotalMisses--;
+				cache->TotalWriteMisses--;*/
 
 				//we are bringing a new block so evict the victim and flush the L1 copies
 				assert(write_back_packet->l2_victim_way >= 0 && write_back_packet->l2_victim_way < cache->assoc);
@@ -2096,6 +2100,9 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	//transmit to L3
 	/*printf("l2_getx_nack\n");*/
 	cache_put_io_down_queue(cache, message_packet);
+
+	/*stats*/
+	mem_system_stats->l2_store_nack++;
 
 	return;
 }
@@ -3257,6 +3264,9 @@ void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 	cache_put_io_down_queue(cache, message_packet);
 
+	/*stats*/
+	mem_system_stats->l2_load_nack++;
+
 	return;
 }
 
@@ -3650,6 +3660,9 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
 	cache_put_io_down_queue(cache, message_packet);
+
+	/*stats*/
+	mem_system_stats->l2_store_nack++;
 
 	return;
 }
@@ -4527,12 +4540,12 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 
 	/*stats*/
-	if(*cache_block_hit_ptr == 0)
+	/*if(*cache_block_hit_ptr == 0)
 	{
 		cache->TotalMisses++;
 		cache->TotalReadMisses++;
 		cache->TotalGet++;
-	}
+	}*/
 
 	//if access to the block is pending send nack back to requesting core.
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
@@ -4543,8 +4556,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		//assert(sharers >= 1 &&  owning_core == 0);
 
 		/*stats*/
-		cache->TotalMisses++;
-		cache->TotalReadMisses++;
+		/*cache->TotalMisses++;
+		cache->TotalReadMisses++;*/
 
 		/*printf("access id %llu hit_ptr %d address 0x%08x\n", message_packet->access_id, *cache_block_hit_ptr, message_packet->address);
 		getchar();*/
@@ -4563,6 +4576,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
+
+		/*stats*/
+		mem_system_stats->l3_load_nack++;
 
 		return;
 	}
@@ -4612,9 +4628,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						fatal("cgm_mesi_l3_get(): write failed to coalesce when all ways are transient...\n");
 				}
 
-				cache->TotalMisses--;
+				/*cache->TotalMisses--;
 				cache->TotalReadMisses--;
-				cache->TotalGet--;
+				cache->TotalGet--;*/
 
 				/*we are writing the block in so evict the victim and flush the copies in the core.*/
 				assert(write_back_packet->l3_victim_way >= 0 && write_back_packet->l3_victim_way < cache->assoc);
@@ -4661,7 +4677,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				packet_destroy(write_back_packet);
 
 				/*stats*/
-				cache->TotalReads++;
+				/*cache->TotalReads++;*/
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -4884,8 +4900,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
 				/*stats*/
-				if(!message_packet->protocol_case)
-					message_packet->protocol_case = get_fwd;
+				mem_system_stats->load_get_fwd++;
 
 				cache_put_io_up_queue(cache, message_packet);
 
@@ -4999,7 +5014,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	}
 
 	/*stats*/
-	if(*cache_block_hit_ptr == 0)
+	/*if(*cache_block_hit_ptr == 0)
 	{
 		cache->TotalMisses++;
 		cache->TotalWriteMisses++;
@@ -5011,7 +5026,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		cache->TotalMisses++;
 		cache->TotalWriteMisses++;
 		cache->TotalUpgrades++;
-	}
+	}*/
 
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
@@ -5020,9 +5035,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		because the access should be coalesced.*/
 		//assert(num_sharers >= 1 &&  owning_core == 0);
 
-		/*stats*/
+		/*stats
 		cache->TotalMisses++;
-		cache->TotalWriteMisses++;
+		cache->TotalWriteMisses++;*/
 
 		//send the reply up as a NACK!
 		message_packet->access_type = cgm_access_getx_nack;
@@ -5038,6 +5053,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
+
+		/*stats*//*stats*/
+		mem_system_stats->l3_store_nack++;
+
 		return;
 	}
 
@@ -5082,10 +5101,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 						fatal("cgm_mesi_l3_getx(): write failed to coalesce when all ways are transient...\n");
 				}
 
-				/*stats*/
+				/*stats
 				cache->TotalMisses--;
 				cache->TotalWriteMisses--;
-				cache->TotalGetx--;
+				cache->TotalGetx--;*/
 
 				//success now move block from wb to cache
 				/*we are writing the block in so evict the victim and flush the copies in the core.*/
@@ -5131,8 +5150,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
 				free(write_back_packet);
 
-				/*stats*/
-				cache->TotalReads++;
+				/*stats
+				cache->TotalReads++;*/
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -5342,8 +5361,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
 				/*stats*/
-				if(!message_packet->protocol_case)
-					message_packet->protocol_case = getx_fwd;
+				warning("store fwd\n");
+				mem_system_stats->store_getx_fwd++;
 
 				cache_put_io_up_queue(cache, message_packet);
 			}
@@ -6216,9 +6235,6 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	int pending_bit = 0;
 
 
-
-
-
 	//charge the delay
 	P_PAUSE(cache->latency);
 
@@ -6616,7 +6632,7 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	/*stats*/
 	cache->TotalUpgradeAcks++;
 
-	warning("upg ack %d\n", here);
+	//warning("upg ack %d\n", here);
 
 	return;
 }
@@ -7686,6 +7702,9 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
 
+		/*stats*/
+		warning("here\n");
+
 		return 1;
 	}
 
@@ -7726,6 +7745,9 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			}
 
 			message_packet->access_type = cgm_access_getx;
+
+			/*stats*/
+			warning("here upgrade -> getx\n");
 
 			return 0;
 

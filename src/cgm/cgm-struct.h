@@ -544,7 +544,8 @@ struct cgm_stats_t{
 	long long load_l3_hits;
 	long long load_memory;
 	long long load_get_fwd;
-	long long load_nack;
+	long long l2_load_nack;
+	long long l3_load_nack;
 
 	long long cpu_total_store_requests;
 	long long cpu_total_store_replys;
@@ -556,7 +557,8 @@ struct cgm_stats_t{
 	long long store_memory;
 	long long store_getx_fwd;
 	long long store_upgrade;
-	long long store_nack;
+	long long l2_store_nack;
+	long long l3_store_nack;
 
 
 	//caches

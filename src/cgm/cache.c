@@ -4006,8 +4006,6 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 			mem_system_stats->load_l3_hits++;
 		else if (message_packet->protocol_case == memory)
 			mem_system_stats->load_memory++;
-		else if (message_packet->protocol_case == get_fwd)
-			mem_system_stats->load_get_fwd++;
 		else
 			fatal("cache_l1_d_return(): message_packet->protocol_case is invalid\n");
 	}
@@ -4024,10 +4022,6 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 			mem_system_stats->store_l3_hits++;
 		else if (message_packet->protocol_case == memory)
 			mem_system_stats->store_memory++;
-		else if (message_packet->protocol_case == getx_fwd)
-			mem_system_stats->store_getx_fwd++;
-		else
-			mem_system_stats->store_upgrade++;
 	}
 
 	last_committed_lsq_access_id = message_packet->access_id;

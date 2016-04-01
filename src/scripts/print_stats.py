@@ -516,7 +516,8 @@ def print_mem_system_stats(options):
 			["L3LoadHits", ms_stats['MemSystem_L3LoadHits']],
 			["MMLoads", ms_stats['MemSystem_LoadsMemory']],
 			["LoadGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
-			["LoadNacks", ms_stats['MemSystem_LoadsNacked']],
+			["L2LoadNacks", ms_stats['MemSystem_l2_LoadNacks']],
+			["L3LoadNacks", ms_stats['MemSystem_l3_LoadNacks']],
 
 			["TotalCPUStoreRequests", ms_stats['MemSystem_TotalCPUStoreRequests']],
 			["TotalCPUStoreReplys", ms_stats['MemSystem_TotalCPUStoreReplys']],
@@ -528,7 +529,8 @@ def print_mem_system_stats(options):
 			["MMStores", ms_stats['MemSystem_StoresMemory']],
 			["StoreGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
 			["StoreUpgrade", ms_stats['MemSystem_StoresUpgrade']],
-			["StoreNacks", ms_stats['MemSystem_StoresNacked']],
+			["L2StoreNacks", ms_stats['MemSystem_l2_StoreNacks']],
+			["L3StoreNacks", ms_stats['MemSystem_l3_StoreNacks']],
 			]
 
 
