@@ -77,7 +77,7 @@ int l1_mshr_set(struct cache_t *cache, int mshr_row, int *tag_ptr, int *set_ptr,
 int l1_mshr_coalesce(struct cache_t *cache, struct cgm_packet_t *message_packet, int mshr_row){
 
 	//stats
-	cache->coalesces++;
+	cache->CoalescePut++;
 
 	int tag = message_packet->tag;
 	int set = message_packet->set;
@@ -151,7 +151,7 @@ int mshr_set(struct cache_t *cache, struct cgm_packet_t *miss_status_packet){
 			list_enqueue(cache->mshrs[row].entires, miss_status_packet);
 
 			//stats
-			cache->coalesces++;
+			cache->CoalescePut++;
 			return 2;
 		}
 

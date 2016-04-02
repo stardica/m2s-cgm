@@ -423,7 +423,8 @@ struct cache_t{
 
 	//statistics
 	long long occupancy;
-	long long coalesces;
+	long long CoalescePut;
+	long long CoalesceGet;
 	long long WbMerges;
 	long long TotalHits;
 	long long TotalMisses;
@@ -452,6 +453,7 @@ struct cache_t{
 	long long TotalUpgrades;
 	long long TotalReadMisses;
 	long long TotalWriteMisses;
+	long long TotalUpgradeRequests;
 	//long long TotalWriteBacks;
 	long long invalid_hits;
 	long long assoc_conflict;
@@ -563,7 +565,8 @@ struct cgm_stats_t{
 
 	//caches
 	long long *l1_i_occupancy;
-	long long *l1_i_coalesces;
+	long long *l1_i_CoalescePut;
+	long long *l1_i_CoalesceGet;
 	long long *l1_i_TotalMisses;
 	long long *l1_i_TotalHits;
 	long long *l1_i_WbMerges;
@@ -599,7 +602,8 @@ struct cgm_stats_t{
 
 
 	long long *l1_d_occupancy;
-	long long *l1_d_coalesces;
+	long long *l1_d_CoalescePut;
+	long long *l1_d_CoalesceGet;
 	long long *l1_d_TotalHits;
 	long long *l1_d_TotalMisses;
 	long long *l1_d_WbMerges;
@@ -632,6 +636,8 @@ struct cgm_stats_t{
 	long long *l1_d_mshr_entries;
 
 	long long *l2_occupancy;
+	long long *l2_CoalescePut;
+	long long *l2_CoalesceGet;
 	long long *l2_TotalAdvances;
 	long long *l2_TotalAcesses;
 	long long *l2_TotalMisses;
@@ -661,11 +667,13 @@ struct cgm_stats_t{
 	long long *l2_invalid_hits;
 	long long *l2_assoc_conflict;
 	long long *l2_retries;
-	long long *l2_coalesces;
+	//long long *l2_coalesces;
 	long long *l2_mshr_entries;
 
 
 	long long *l3_occupancy;
+	long long *l3_CoalescePut;
+	long long *l3_CoalesceGet;
 	long long *l3_TotalAdvances;
 	long long *l3_TotalAcesses;
 	long long *l3_TotalMisses;
@@ -695,7 +703,7 @@ struct cgm_stats_t{
 	long long *l3_invalid_hits;
 	long long *l3_assoc_conflict;
 	long long *l3_retries;
-	long long *l3_coalesces;
+	//long long *l3_coalesces;
 	long long *l3_mshr_entries;
 
 
@@ -786,4 +794,5 @@ struct cgm_stats_t{
 };
 
 #endif /* CGMSTRUCT_H_ */
+
 

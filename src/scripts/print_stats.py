@@ -31,7 +31,8 @@ def print_cache_stats(options):
 	
 	l1_i_Occupancy = cache_stats['l1_i_0_Occupancy'] + cache_stats['l1_i_1_Occupancy'] + cache_stats['l1_i_2_Occupancy'] + cache_stats['l1_i_3_Occupancy']
 	l1_i_Stalls = cache_stats['l1_i_0_Stalls'] + cache_stats['l1_i_1_Stalls'] + cache_stats['l1_i_2_Stalls'] + cache_stats['l1_i_3_Stalls']
-	l1_i_Coalesces = cache_stats['l1_i_0_Coalesces'] + cache_stats['l1_i_1_Coalesces'] + cache_stats['l1_i_2_Coalesces'] + cache_stats['l1_i_3_Coalesces']
+	l1_i_CoalescePut = cache_stats['l1_i_0_CoalescePut'] + cache_stats['l1_i_1_CoalescePut'] + cache_stats['l1_i_2_CoalescePut'] + cache_stats['l1_i_3_CoalescePut']
+	l1_i_CoalesceGet = cache_stats['l1_i_0_CoalesceGet'] + cache_stats['l1_i_1_CoalesceGet'] + cache_stats['l1_i_2_CoalesceGet'] + cache_stats['l1_i_3_CoalesceGet']
 	l1_i_WbMerges = cache_stats['l1_i_0_WbMerges'] + cache_stats['l1_i_1_WbMerges'] + cache_stats['l1_i_2_WbMerges'] + cache_stats['l1_i_3_WbMerges']
 	l1_i_EvictInv = cache_stats['l1_i_0_EvictInv'] + cache_stats['l1_i_1_EvictInv'] + cache_stats['l1_i_2_EvictInv'] + cache_stats['l1_i_3_EvictInv']
 	l1_i_WbRecieved = cache_stats['l1_i_0_WbRecieved'] + cache_stats['l1_i_1_WbRecieved'] + cache_stats['l1_i_2_WbRecieved'] + cache_stats['l1_i_3_WbRecieved']
@@ -72,7 +73,9 @@ def print_cache_stats(options):
 
 	l1_d_Occupancy = cache_stats['l1_d_0_Occupancy'] + cache_stats['l1_d_1_Occupancy'] + cache_stats['l1_d_2_Occupancy'] + cache_stats['l1_d_3_Occupancy']
 	l1_d_Stalls = cache_stats['l1_d_0_Stalls'] + cache_stats['l1_d_1_Stalls'] + cache_stats['l1_d_2_Stalls'] + cache_stats['l1_d_3_Stalls']
-	l1_d_Coalesces = cache_stats['l1_d_0_Coalesces'] + cache_stats['l1_d_1_Coalesces'] + cache_stats['l1_d_2_Coalesces'] + cache_stats['l1_d_3_Coalesces']
+	l1_d_CoalescePut = cache_stats['l1_d_0_CoalescePut'] + cache_stats['l1_d_1_CoalescePut'] + cache_stats['l1_d_2_CoalescePut'] + cache_stats['l1_d_3_CoalescePut']
+	l1_d_CoalesceGet = cache_stats['l1_d_0_CoalesceGet'] + cache_stats['l1_d_1_CoalesceGet'] + cache_stats['l1_d_2_CoalesceGet'] + cache_stats['l1_d_3_CoalesceGet']
+	
 	l1_d_WbMerges = cache_stats['l1_d_0_WbMerges'] + cache_stats['l1_d_1_WbMerges'] + cache_stats['l1_d_2_WbMerges'] + cache_stats['l1_d_3_WbMerges']
 	l1_d_EvictInv = cache_stats['l1_d_0_EvictInv'] + cache_stats['l1_d_1_EvictInv'] + cache_stats['l1_d_2_EvictInv'] + cache_stats['l1_d_3_EvictInv']
 	l1_d_WbRecieved = cache_stats['l1_d_0_WbRecieved'] + cache_stats['l1_d_1_WbRecieved'] + cache_stats['l1_d_2_WbRecieved'] + cache_stats['l1_d_3_WbRecieved']
@@ -113,7 +116,9 @@ def print_cache_stats(options):
 
 	l2_Occupancy = cache_stats['l2_0_Occupancy'] + cache_stats['l2_1_Occupancy'] + cache_stats['l2_2_Occupancy'] + cache_stats['l2_3_Occupancy']
 	l2_Stalls = cache_stats['l2_0_Stalls'] + cache_stats['l2_1_Stalls'] + cache_stats['l2_2_Stalls'] + cache_stats['l2_3_Stalls']
-	l2_Coalesces = cache_stats['l2_0_Coalesces'] + cache_stats['l2_1_Coalesces'] + cache_stats['l2_2_Coalesces'] + cache_stats['l2_3_Coalesces']
+	l2_CoalescePut = cache_stats['l2_0_CoalescePut'] + cache_stats['l2_1_CoalescePut'] + cache_stats['l2_2_CoalescePut'] + cache_stats['l2_3_CoalescePut']
+	l2_CoalesceGet = cache_stats['l2_0_CoalesceGet'] + cache_stats['l2_1_CoalesceGet'] + cache_stats['l2_2_CoalesceGet'] + cache_stats['l2_3_CoalesceGet']
+
 	l2_WbMerges = cache_stats['l2_0_WbMerges'] + cache_stats['l2_1_WbMerges'] + cache_stats['l2_2_WbMerges'] + cache_stats['l2_3_WbMerges']
 	l2_EvictInv = cache_stats['l2_0_EvictInv'] + cache_stats['l2_1_EvictInv'] + cache_stats['l2_2_EvictInv'] + cache_stats['l2_3_EvictInv']
 	l2_WbRecieved = cache_stats['l2_0_WbRecieved'] + cache_stats['l2_1_WbRecieved'] + cache_stats['l2_2_WbRecieved'] + cache_stats['l2_3_WbRecieved']
@@ -153,7 +158,9 @@ def print_cache_stats(options):
 
 	l3_Occupancy = cache_stats['l3_0_Occupancy'] + cache_stats['l3_1_Occupancy'] + cache_stats['l3_2_Occupancy'] + cache_stats['l3_3_Occupancy']
 	l3_Stalls = cache_stats['l3_0_Stalls'] + cache_stats['l3_1_Stalls'] + cache_stats['l3_2_Stalls'] + cache_stats['l3_3_Stalls']
-	l3_Coalesces = cache_stats['l3_0_Coalesces'] + cache_stats['l3_1_Coalesces'] + cache_stats['l3_2_Coalesces'] + cache_stats['l3_3_Coalesces']
+	l3_CoalescePut = cache_stats['l3_0_CoalescePut'] + cache_stats['l3_1_CoalescePut'] + cache_stats['l3_2_CoalescePut'] + cache_stats['l3_3_CoalescePut']
+	l3_CoalesceGet = cache_stats['l3_0_CoalesceGet'] + cache_stats['l3_1_CoalesceGet'] + cache_stats['l3_2_CoalesceGet'] + cache_stats['l3_3_CoalesceGet']
+
 	l3_WbMerges = cache_stats['l3_0_WbMerges'] + cache_stats['l3_1_WbMerges'] + cache_stats['l3_2_WbMerges'] + cache_stats['l3_3_WbMerges']
 	l3_EvictInv = cache_stats['l3_0_EvictInv'] + cache_stats['l3_1_EvictInv'] + cache_stats['l3_2_EvictInv'] + cache_stats['l3_3_EvictInv']
 	l3_WbRecieved = cache_stats['l3_0_WbRecieved'] + cache_stats['l3_1_WbRecieved'] + cache_stats['l3_2_WbRecieved'] + cache_stats['l3_3_WbRecieved']
@@ -194,7 +201,8 @@ def print_cache_stats(options):
 	table_cache_combined = [
 			["Occupancy", l1_i_Occupancy, l1_d_Occupancy, l2_Occupancy, l3_Occupancy],
 			["Stalls", l1_i_Stalls, l1_d_Stalls, l2_Stalls, l3_Stalls],
-			["Coalesces", l1_i_Coalesces, l1_d_Coalesces, l2_Coalesces, l3_Coalesces],
+			["CoalescePut", l1_i_CoalescePut, l1_d_CoalescePut, l2_CoalescePut, l3_CoalescePut],
+			["CoalesceGet", l1_i_CoalesceGet, l1_d_CoalesceGet, l2_CoalesceGet, l3_CoalesceGet],
 			["WbMerges", l1_i_WbMerges, l1_d_WbMerges, l2_WbMerges, l3_WbMerges],
 			["EvictInv", l1_i_EvictInv, l1_d_EvictInv, l2_EvictInv, l3_EvictInv],
 			["WbRecieved", l1_i_WbRecieved, l1_d_WbRecieved, l2_WbRecieved, l3_WbRecieved],

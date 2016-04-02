@@ -76,7 +76,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->coalesced == 1)
 			{
 				/*stats*/
-				cache->coalesces++;
+				cache->CoalescePut++;
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -207,6 +207,8 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
+int merge_retry = 0;
+
 
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -277,7 +279,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					cache_check_ORT(cache, message_packet);
 
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return;
@@ -316,6 +318,9 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				//check for retries on successful cache read...
 				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
+					merge_retry++;
+					warning("load merge %d\n", merge_retry);
+
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
 				}
@@ -339,7 +344,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				if(message_packet->coalesced == 1)
 				{
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -418,7 +423,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				cache_check_ORT(cache, message_packet);
 
 				/*stats*/
-				cache->coalesces++;
+				cache->CoalescePut++;
 
 				if(message_packet->coalesced == 1)
 					return;
@@ -543,7 +548,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					cache_check_ORT(cache, message_packet);
 
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return;
@@ -581,8 +586,9 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				//check for retires on successful cache write...
 				if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 				{
-					//charge a delay only on retry state.
-					P_PAUSE(cache->latency);
+
+					merge_retry++;
+					warning("store merge %d\n", merge_retry);
 
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -599,15 +605,13 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			}
 			else
 			{
-
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
 
 				if(message_packet->coalesced == 1)
 				{
-
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -617,7 +621,6 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 									(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 						}
 					}
-
 					return;
 				}
 
@@ -674,7 +677,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->coalesced == 1)
 			{
 				/*stats*/
-				cache->coalesces++;
+				cache->CoalescePut++;
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
@@ -1071,7 +1074,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *wb_packet;
-	int ort_status = -1;
+	//int ort_status = -1;
 
 	//enum cgm_cache_block_state_t victim_trainsient_state;
 
@@ -1231,7 +1234,6 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 		fatal("cgm_mesi_l1_d_write_block(): %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
 			cache->name, message_packet->access_id, message_packet->address, temp, message_packet->set, message_packet->tag, message_packet->l1_victim_way, P_TIME);
-		getchar();
 	}
 
 	assert(victim_trainsient_state == cgm_cache_block_transient);
@@ -1314,7 +1316,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->coalesced == 1)
 			{
 				/*stats*/
-				cache->coalesces++;
+				cache->CoalescePut++;
 				return;
 			}
 
@@ -1441,7 +1443,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					cache_check_ORT(cache, message_packet);
 
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return;
@@ -1538,7 +1540,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(message_packet->coalesced == 1)
 				{
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -1730,6 +1732,7 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	return;
 }
 
+int ups = 0;
 
 int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -1760,7 +1763,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 
 	/*stats*/
-	if(*cache_block_hit_ptr == 0)
+	/*if(*cache_block_hit_ptr == 0)
 	{
 		cache->TotalMisses++;
 		cache->TotalWriteMisses++;
@@ -1772,7 +1775,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		cache->TotalMisses++;
 		cache->TotalWriteMisses++;
 		cache->TotalUpgrades++;
-	}
+	}*/
 
 
 	switch(*cache_block_state_ptr)
@@ -1809,7 +1812,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					cache_check_ORT(cache, message_packet);
 
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return 1;
@@ -1867,8 +1870,6 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
 				packet_destroy(write_back_packet);
 
-
-
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
 					if(LEVEL == 2 || LEVEL == 3)
@@ -1880,7 +1881,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				/*stats*/
 				cache->WbMerges++;
-				cache->TotalReads++;
+				/*cache->TotalReads++;*/
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L2_hit;
 
@@ -1895,7 +1896,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(message_packet->coalesced == 1)
 				{
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -2018,6 +2019,9 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//access was a miss in L1 D but a hit in the shared state at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
+
+			ups++;
+			warning("l2 changed getx to upgrade %d\n", ups);
 
 			/*stats*/
 			cache->UpgradeMisses++;
@@ -4205,7 +4209,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->coalesced == 1)
 			{
 				/*stats*/
-				cache->coalesces++;
+				cache->CoalescePut++;
 
 				return;
 			}
@@ -4620,7 +4624,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					cache_check_ORT(cache, message_packet);
 
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return;
@@ -4721,7 +4725,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(message_packet->coalesced == 1)
 				{
 					/*stats*/
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -5093,7 +5097,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					//Set and ways are all transient must coalesce
 					cache_check_ORT(cache, message_packet);
 
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if(message_packet->coalesced == 1)
 						return;
@@ -5192,8 +5196,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				if(message_packet->coalesced == 1)
 				{
-
-					cache->coalesces++;
+					cache->CoalescePut++;
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -5203,6 +5206,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 									(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 						}
 					}
+
 					return;
 				}
 
@@ -5361,7 +5365,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->src_name = str_map_value(&node_strn_map, message_packet->src_id);
 
 				/*stats*/
-				warning("store fwd\n");
+				//warning("store fwd\n");
 				mem_system_stats->store_getx_fwd++;
 
 				cache_put_io_up_queue(cache, message_packet);
@@ -6484,6 +6488,8 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_modified:
 
 			fatal("cgm_mesi_l1_d_upgrade_inval(): L1 d id %d invalid block state on upgrade inval as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
@@ -6500,12 +6506,10 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_exclusive:
-		case cgm_cache_block_modified:
 
 			//if the block is in the cache invalidate it
 
-			//set local cache block and directory to modified.
+			//set local cache block and directory to invalid.
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
 			//free the upgrade_inval
@@ -6521,8 +6525,6 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 	return;
 }
 
-
-int here = 0;
 
 void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -6597,8 +6599,6 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			message_packet = list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			here++;
-
 			break;
 
 		case cgm_cache_block_shared:
@@ -6624,10 +6624,9 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			message_packet = list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->retry_queue, message_packet);
 
-			here++;
-
 			break;
 	}
+
 
 	/*stats*/
 	cache->TotalUpgradeAcks++;
@@ -6636,8 +6635,6 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	return;
 }
-
-int changes = 0;
 
 int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -6734,9 +6731,6 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 				}
 			}
 
-			changes++;
-			warning("l2 changed upgrade to getx %d\n", changes);
-
 			message_packet->access_type = cgm_access_getx;
 
 			return 0;
@@ -6804,7 +6798,6 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	/*stats*/
 	cache->TotalUpgrades++;
-
 
 	return 1;
 }
@@ -7068,14 +7061,14 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int l3_map;
+	//int l3_map;
 	int i = 0;
 	int ort_row = 0;
 
 	struct cgm_packet_t *pending_packet = NULL;
 	struct cgm_packet_t *pending_packet_join = NULL;
-	struct cgm_packet_t *reply_packet = NULL;
-	struct cgm_packet_t *coalesced_packet = NULL;
+	//struct cgm_packet_t *reply_packet = NULL;
+	//struct cgm_packet_t *coalesced_packet = NULL;
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
@@ -7277,8 +7270,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 			//free the other L3/L2 upgrade_ack message packets
 			message_packet = list_remove(cache->last_queue, message_packet);
 			packet_destroy(message_packet);
-
-
 
 			break;
 	}
