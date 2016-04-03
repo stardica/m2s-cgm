@@ -72,6 +72,13 @@ struct mem_system_stats_t{
 
 };
 
+
+#define SETROUTE(source, dest)																			\
+								message_packet->src_name = source->name;								\
+								message_packet->src_id = str_map_string(&node_strn_map, source->name);	\
+								message_packet->dest_name = dest.name;									\
+								message_packet->dest_id = str_map_string(&node_strn_map, dest.name);
+
 extern struct mem_system_stats_t *mem_system_stats;
 
 long long write_back_id;

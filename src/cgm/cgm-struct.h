@@ -426,6 +426,7 @@ struct cache_t{
 	long long CoalescePut;
 	long long CoalesceGet;
 	long long WbMerges;
+	long long MergeRetries;
 	long long TotalHits;
 	long long TotalMisses;
 	long long UpgradeMisses;
@@ -570,6 +571,7 @@ struct cgm_stats_t{
 	long long *l1_i_TotalMisses;
 	long long *l1_i_TotalHits;
 	long long *l1_i_WbMerges;
+	long long *l1_i_MergeRetries;
 	long long *l1_i_UpgradeMisses;
 	long long *l1_i_EvictInv;
 	long long *l1_i_TotalWriteBackSent;
@@ -607,6 +609,7 @@ struct cgm_stats_t{
 	long long *l1_d_TotalHits;
 	long long *l1_d_TotalMisses;
 	long long *l1_d_WbMerges;
+	long long *l1_d_MergeRetries;
 	long long *l1_d_UpgradeMisses;
 	long long *l1_d_EvictInv;
 	long long *l1_d_TotalWriteBackSent;
@@ -642,6 +645,7 @@ struct cgm_stats_t{
 	long long *l2_TotalAcesses;
 	long long *l2_TotalMisses;
 	long long *l2_WbMerges;
+	long long *l2_MergeRetries;
 	long long *l2_UpgradeMisses;
 	long long *l2_EvictInv;
 	long long *l2_TotalWriteBackSent;
@@ -678,6 +682,7 @@ struct cgm_stats_t{
 	long long *l3_TotalAcesses;
 	long long *l3_TotalMisses;
 	long long *l3_WbMerges;
+	long long *l3_MergeRetries;
 	long long *l3_UpgradeMisses;
 	long long *l3_EvictInv;
 	long long *l3_TotalWriteBackSent;
