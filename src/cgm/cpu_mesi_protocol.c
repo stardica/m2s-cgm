@@ -321,7 +321,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					P_PAUSE(cache->latency);
 
 					cache->MergeRetries++;
-					warning("d$ loard merge retry\n");
+					//warning("d$ loard merge retry\n");
 
 					//enter retry state.
 					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
@@ -592,7 +592,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 					cache->MergeRetries++;
 
-					warning("d$ store merge retry\n");
+					//warning("d$ store merge retry\n");
 
 
 					//enter retry state.
@@ -1632,6 +1632,8 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
 						list_enqueue(cache->retry_queue, pending_join);
 						advance(cache->ec_ptr);
+
+						warning("l2 load pending join\n");
 					}
 				}
 			}
@@ -7061,6 +7063,8 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	//destroy the upgrade request
 	//message_packet = list_remove(cache->last_queue, message_packet);
 	//packet_destroy(message_packet);
+
+	warning("L2 upgrade nack\n");
 
 }
 
