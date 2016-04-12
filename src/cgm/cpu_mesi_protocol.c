@@ -1533,7 +1533,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				/*stats*/
 				cache->WbMerges++;
-				cache->TotalReads++;
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L2_hit;
 
@@ -1590,13 +1589,12 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					}
 				}
 
-				//transmit to L3
-				/*printf("l2_get\n");*/
-				cache_put_io_down_queue(cache, message_packet);
+				/*stats*/
+				cache->LoadMisses++;
+				//warning("L2 load misses %llu\n", cache->LoadMisses);
 
-				//debug
-				/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu miss changed (%s) cycle %llu\n",
-						cache->name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
+				//transmit to L3
+				cache_put_io_down_queue(cache, message_packet);
 			}
 
 			break;
@@ -1730,11 +1728,7 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	message_packet->dest_name = l3_caches[l3_map].name;
 	message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
 
-	//we are bringing a new block so evict the victim and flush the L1 copies
-	//find victim
-
 	//transmit to L3
-
 	cache_put_io_down_queue(cache, message_packet);
 
 	/*stats*/
@@ -2031,8 +2025,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//access was a miss in L1 D but a hit in the shared state at the L2 level, set upgrade and run again.
 			message_packet->access_type = cgm_access_upgrade;
 
-			//ups++;
-			//warning("l2 changed getx to upgrade %d\n", ups);
+			//warning("L2 upgrade miss\n");
 
 			/*stats*/
 			cache->UpgradeMisses++;
@@ -2256,6 +2249,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid
 						|| write_back_packet->cache_block_state == cgm_cache_block_modified);
+
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
@@ -2364,7 +2358,6 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				fatal("cgm_mesi_l2_downgrade_ack(): %s access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu\n",
 						cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 						message_packet->start_cycle, message_packet->end_cycle);
-
 			}
 
 			assert(pending_request->set == message_packet->set && pending_request->way == message_packet->way);
@@ -2446,6 +2439,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 			break;
 	}
+
 	return;
 }
 
@@ -2747,6 +2741,8 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 
 			break;
 	}
+
+	//warning("l2 inval ack\n");
 
 	return;
 }
@@ -4003,6 +3999,8 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 			break;
 	}
 
+	//warning("getxfwd\n");
+
 	return;
 }
 
@@ -4692,9 +4690,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
 				packet_destroy(write_back_packet);
 
-				/*stats*/
-				/*cache->TotalReads++;*/
-
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 				{
 					if(LEVEL == 2 || LEVEL == 3)
@@ -4917,14 +4912,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				/*stats*/
 				mem_system_stats->load_get_fwd++;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
 
 				cache_put_io_up_queue(cache, message_packet);
-
-				/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
-				{
-					printf("\tL3 received access id %llu cycle %llu\n", message_packet->access_id, P_TIME);
-					cache_dump_request_queue(cache->Tx_queue_top);
-				}*/
 
 			}
 			else
@@ -5379,6 +5370,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				/*stats*/
 				//warning("store fwd\n");
 				mem_system_stats->store_getx_fwd++;
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L3_hit;
 
 				cache_put_io_up_queue(cache, message_packet);
 			}
@@ -5401,6 +5394,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//stats
 			cache->UpgradeMisses++;
+			//warning("l3 upgrade miss\n");
 
 			/*there should always be at least one sharer
 			but no more than the number of cores.*/
@@ -5609,6 +5603,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	so we better have two cores with the block.*/
 	assert(cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way) == 2);
 
+	//warning("l3 downgrade ACK\n");
+
 	return;
 }
 
@@ -5734,6 +5730,8 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 			break;
 	}
+
+
 
 	return;
 }
@@ -6750,14 +6748,6 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 		case cgm_cache_block_shared:
 
-			/*if(message_packet->access_id == 87630)
-			{
-				cgm_cache_dump_set(cache, message_packet->set);
-				printf("%s id %llu upgrade miss set %d way %d tag %d cycle %llu\n",
-						cache->name, message_packet->access_id, message_packet->set, message_packet->way, message_packet->tag, P_TIME);
-				getchar();
-			}*/
-
 			//set block transient state, but don't evict because the block is valid and just needs to be upgraded
 			cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_transient);
 
@@ -6765,13 +6755,6 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->upgrade_pending = 1;
 			message_packet->upgrade_inval_ack_count = 0;
 			cgm_cache_insert_pending_request_buffer(cache, message_packet);
-
-			/*if((message_packet->address & cache->block_address_mask) == 0x0004e380)
-			{
-				cache_dump_queue(cache->pending_request_buffer);
-				getchar();
-			}*/
-
 
 			//set the upgrade_pending bit to 1 in the block
 			//maybe delete this? use transient
@@ -6951,7 +6934,6 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 
 			/*invalidate the L1 D cache lines no need for an ack
 			from L1 D cache because the block is in the shared state*/
-
 			inval_packet = packet_create();
 			init_upgrade_inval_request_packet(inval_packet, message_packet->address);
 
@@ -6964,6 +6946,10 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 			advance(cache->cache_io_up_ec);
 			break;
 	}
+
+	/*stats*/
+	//warning("l2 upgrade inval\n");
+	cache->TotalUpgradeInvals++;
 
 	return;
 }
@@ -7248,12 +7234,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 					}
 				}
 
-				/*if(pending_packet_join)
-				{
-					if((pending_packet_join->address & cache->block_address_mask) == 0x0004e380)
-						printf("here\n");
-				}*/
-
 				//validate that a join is waiting if there should be one.
 				if(ort_get_pending_join_bit(cache, ort_row, pending_packet->tag, pending_packet->set) == 0)
 				{
@@ -7286,6 +7266,9 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 				}*/
 
 
+				/*stats*/
+				cache->TotalUpgradeAcks++;
+
 				//find the access in the ORT table and clear it.
 				ort_clear(cache, pending_packet);
 
@@ -7297,9 +7280,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 			break;
 	}
-
-	/*stats*/
-	cache->TotalUpgradeAcks++;
 
 	return;
 }
@@ -7560,6 +7540,8 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 			break;
 	}
 
+	warning("l2 putx_n\n");
+
 	return;
 }
 
@@ -7721,7 +7703,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		cache_put_io_up_queue(cache, message_packet);
 
 		/*stats*/
-		warning("here\n");
+
 
 		return 1;
 	}
@@ -7857,13 +7839,13 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			{
 				if(*cache_block_state_ptr == cgm_cache_block_shared && owning_core == 1)
 				{
-					/*trying to unconfuse myself...*/
+					/*trying to un-confuse myself...*/
 					/*the block is shared over n cores, but one of the cores is the requesting core so minus 1*/
 					message_packet->upgrade_ack = (num_sharers - 1);
 				}
 				else if (*cache_block_state_ptr == cgm_cache_block_shared && owning_core == 0)
 				{
-					/*the block is shared over n cores but is NOT in the requesting core*/
+					/*the block is shared over n cores but the block is NOT in the requesting core*/
 					message_packet->upgrade_ack = num_sharers;
 				}
 				else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
@@ -7942,6 +7924,9 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 			break;
 	}
+
+	/*stats*/
+	cache->TotalUpgrades++;
 
 	return 1;
 }

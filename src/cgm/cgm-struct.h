@@ -422,7 +422,7 @@ struct cache_t{
 	/*unsigned int *outstanding_addresses;*/
 
 	//statistics
-	long long occupancy;
+	long long Occupancy;
 	long long CoalescePut;
 	long long CoalesceGet;
 	long long WbMerges;
@@ -434,14 +434,13 @@ struct cache_t{
 	long long TotalWriteBackRecieved;
 	long long TotalWriteBackSent;
 	long long TotalWriteBackDropped;
-	long long stalls;
+	long long Stalls;
 	long long TotalDowngrades;
 	long long TotalGetxFwdInvals;
 	long long TotalUpgradeAcks;
 	long long TotalUpgradeInvals;
 	long long TotalWriteBlocks;
-
-
+	long long LoadMisses;
 
 	long long Totalfetches;
 	long long TotalAdvances; //this is an error check...
@@ -462,6 +461,23 @@ struct cache_t{
 	long long retries;
 
 	long long mshr_entries;
+
+
+	long long l3_gets_;
+	long long l3_get_;
+	long long l3_getx_;
+	long long l3_write_back_;
+	long long l3_flush_block_ack_;
+	long long l3_write_block_;
+	long long l3_downgrade_ack_;
+	long long l3_downgrade_nack_;
+	long long l3_getx_fwd_ack_;
+	long long l3_getx_fwd_nack_;
+	long long l3_getx_fwd_upgrade_nack_;
+	long long l3_get_fwd_upgrade_nack_;
+	long long l3_upgrade_;
+	long long l3_upgrade_ack_;
+
 
 
 	unsigned int *fetch_address_history;
@@ -565,7 +581,7 @@ struct cgm_stats_t{
 
 
 	//caches
-	long long *l1_i_occupancy;
+	long long *l1_i_Occupancy;
 	long long *l1_i_CoalescePut;
 	long long *l1_i_CoalesceGet;
 	long long *l1_i_TotalMisses;
@@ -577,7 +593,7 @@ struct cgm_stats_t{
 	long long *l1_i_TotalWriteBackSent;
 	long long *l1_i_TotalWriteBackRecieved;
 	long long *l1_i_TotalWriteBackDropped;
-	long long *l1_i_stalls;
+	long long *l1_i_Stalls;
 	long long *l1_i_TotalDowngrades;
 	long long *l1_i_TotalGetxFwdInvals;
 	long long *l1_i_TotalUpgradeAcks;
@@ -603,7 +619,7 @@ struct cgm_stats_t{
 	long long *l1_i_mshr_entries;
 
 
-	long long *l1_d_occupancy;
+	long long *l1_d_Occupancy;
 	long long *l1_d_CoalescePut;
 	long long *l1_d_CoalesceGet;
 	long long *l1_d_TotalHits;
@@ -615,7 +631,7 @@ struct cgm_stats_t{
 	long long *l1_d_TotalWriteBackSent;
 	long long *l1_d_TotalWriteBackRecieved;
 	long long *l1_d_TotalWriteBackDropped;
-	long long *l1_d_stalls;
+	long long *l1_d_Stalls;
 	long long *l1_d_TotalDowngrades;
 	long long *l1_d_TotalGetxFwdInvals;
 	long long *l1_d_TotalUpgradeAcks;
@@ -638,7 +654,7 @@ struct cgm_stats_t{
 	long long *l1_d_retries;
 	long long *l1_d_mshr_entries;
 
-	long long *l2_occupancy;
+	long long *l2_Occupancy;
 	long long *l2_CoalescePut;
 	long long *l2_CoalesceGet;
 	long long *l2_TotalAdvances;
@@ -651,12 +667,13 @@ struct cgm_stats_t{
 	long long *l2_TotalWriteBackSent;
 	long long *l2_TotalWriteBackRecieved;
 	long long *l2_TotalWriteBackDropped;
-	long long *l2_stalls;
+	long long *l2_Stalls;
 	long long *l2_TotalDowngrades;
 	long long *l2_TotalGetxFwdInvals;
 	long long *l2_TotalUpgradeAcks;
 	long long *l2_TotalUpgradeInvals;
 	long long *l2_TotalWriteBlocks;
+	long long *l2_LoadMisses;
 
 	long long *l2_TotalHits;
 	long long *l2_TotalReads;
@@ -675,7 +692,7 @@ struct cgm_stats_t{
 	long long *l2_mshr_entries;
 
 
-	long long *l3_occupancy;
+	long long *l3_Occupancy;
 	long long *l3_CoalescePut;
 	long long *l3_CoalesceGet;
 	long long *l3_TotalAdvances;
@@ -688,7 +705,7 @@ struct cgm_stats_t{
 	long long *l3_TotalWriteBackSent;
 	long long *l3_TotalWriteBackRecieved;
 	long long *l3_TotalWriteBackDropped;
-	long long *l3_stalls;
+	long long *l3_Stalls;
 	long long *l3_TotalDowngrades;
 	long long *l3_TotalGetxFwdInvals;
 	long long *l3_TotalUpgradeAcks;

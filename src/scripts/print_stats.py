@@ -128,7 +128,7 @@ def print_cache_stats(options):
 	l2_Downgrades = 0
 	l2_GetxFwdInval = 0
 	l2_EvictInv = cache_stats['l2_0_EvictInv'] + cache_stats['l2_1_EvictInv'] + cache_stats['l2_2_EvictInv'] + cache_stats['l2_3_EvictInv']
-	l2_UpgradeInvals = 0
+	l2_UpgradeInvals = cache_stats['l2_0_TotalUpgradeInvals'] + cache_stats['l2_1_TotalUpgradeInvals'] + cache_stats['l2_2_TotalUpgradeInvals'] + cache_stats['l2_3_TotalUpgradeInvals']
 
 	
 	l2_AveCyclesPerAdvance = cache_stats['l2_0_AveCyclesPerAdvance'] + cache_stats['l2_1_AveCyclesPerAdvance'] + cache_stats['l2_2_AveCyclesPerAdvance'] + cache_stats['l2_3_AveCyclesPerAdvance']
@@ -170,7 +170,7 @@ def print_cache_stats(options):
 	l3_Downgrades = 0
 	l3_GetxFwdInval = 0
 	l3_EvictInv = cache_stats['l3_0_EvictInv'] + cache_stats['l3_1_EvictInv'] + cache_stats['l3_2_EvictInv'] + cache_stats['l3_3_EvictInv']
-	l3_UpgradeInvals = 0
+	l3_UpgradeInvals = cache_stats['l3_0_TotalUpgradeInvals'] + cache_stats['l3_1_TotalUpgradeInvals'] + cache_stats['l3_2_TotalUpgradeInvals'] + cache_stats['l3_3_TotalUpgradeInvals']
 
 	
 	l3_AveCyclesPerAdvance = cache_stats['l3_0_AveCyclesPerAdvance'] + cache_stats['l3_1_AveCyclesPerAdvance'] + cache_stats['l3_2_AveCyclesPerAdvance'] + cache_stats['l3_3_AveCyclesPerAdvance']
@@ -209,11 +209,13 @@ def print_cache_stats(options):
 			["WbSent", l1_i_WbSent, l1_d_WbSent, l2_WbSent, l3_WbSent],
 			["WbDropped", l1_i_WbDropped, l1_d_WbDropped, l2_WbDropped, l3_WbDropped],
 			["UpgradeMisses", l1_i_UpgradeMisses, l1_d_UpgradeMisses, l2_UpgradeMisses, l3_UpgradeMisses],
+			["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
 			["UpgradeAcks", l1_i_UpgradeAcks, l1_d_UpgradeAcks, l2_UpgradeAcks, l3_UpgradeAcks],
+			["UpgradeInvals", l1_i_UpgradeInvals, l1_d_UpgradeInvals, l2_UpgradeInvals, l3_UpgradeInvals],
 			["Downgrades", l1_i_Downgrades, l1_d_Downgrades, l2_Downgrades, l3_Downgrades],
 			["GetxFwdInval", l1_i_GetxFwdInval, l1_d_GetxFwdInval, l2_GetxFwdInval, l3_GetxFwdInval],
 			["EvictInv", l1_i_EvictInv, l1_d_EvictInv, l2_EvictInv, l3_EvictInv],			
-			["UpgradeInvals", l1_i_UpgradeInvals, l1_d_UpgradeInvals, l2_UpgradeInvals, l3_UpgradeInvals],
+			
 			
 			["AveCyclesPerAdvance", l1_i_AveCyclesPerAdvance, l1_d_AveCyclesPerAdvance, l2_AveCyclesPerAdvance, l3_AveCyclesPerAdvance],
 			["TotalAdvances", l1_i_TotalAdvances, l1_d_TotalAdvances, l2_TotalAdvances, l3_TotalAdvances],
@@ -233,7 +235,7 @@ def print_cache_stats(options):
 			["GetMissRate", l1_i_GetsMissRate, l1_d_GetsMissRate, l2_GetsMissRate, l3_GetsMissRate],
 			["GetMissRate", l1_i_GetMissRate, l1_d_GetMissRate, l2_GetMissRate, l3_GetMissRate],
 			["GetxMissRate", l1_i_GetxMissRate, l1_d_GetxMissRate, l2_GetxMissRate, l3_GetxMissRate],
-			["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
+			
 			["UpgradeMissRate", l1_i_UpgradeMissRate, l1_d_UpgradeMissRate, l2_UpgradeMissRate, l3_UpgradeMissRate],
 			["TotalWriteBacks", l1_i_TotalWriteBacks, l1_d_TotalWriteBacks, l2_TotalWriteBacks, l3_TotalWriteBacks],
 			["CacheUtilization", l1_i_CacheUtilization, l1_d_CacheUtilization, l2_CacheUtilization, l3_CacheUtilization]

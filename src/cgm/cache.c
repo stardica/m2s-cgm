@@ -1811,7 +1811,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 	//caches
 	for(i = 0; i < num_cores; i++)
 	{
-		cgm_stat_container->l1_i_occupancy[i] = l1_i_caches[i].occupancy;
+		cgm_stat_container->l1_i_Occupancy[i] = l1_i_caches[i].Occupancy;
 		cgm_stat_container->l1_i_CoalescePut[i] = l1_i_caches[i].CoalescePut;
 		cgm_stat_container->l1_i_CoalesceGet[i] = l1_i_caches[i].CoalesceGet;
 		cgm_stat_container->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
@@ -1832,7 +1832,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_i_UpgradeMisses[i] = l1_i_caches[i].UpgradeMisses;
 		cgm_stat_container->l1_i_retries[i] = l1_i_caches[i].retries;
 		cgm_stat_container->l1_i_mshr_entries[i] = l1_i_caches[i].mshr_entries;
-		cgm_stat_container->l1_i_stalls[i] = l1_i_caches[i].stalls;
+		cgm_stat_container->l1_i_Stalls[i] = l1_i_caches[i].Stalls;
 		cgm_stat_container->l1_i_WbMerges[i] = l1_i_caches[i].WbMerges;
 		cgm_stat_container->l1_i_MergeRetries[i] = l1_i_caches[i].MergeRetries;
 		cgm_stat_container->l1_i_EvictInv[i] = l1_i_caches[i].EvictInv;
@@ -1847,7 +1847,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_i_TotalWriteBlocks[i] = l1_i_caches[i].TotalWriteBlocks;
 
 
-		cgm_stat_container->l1_d_occupancy[i] = l1_d_caches[i].occupancy;
+		cgm_stat_container->l1_d_Occupancy[i] = l1_d_caches[i].Occupancy;
 		cgm_stat_container->l1_d_TotalAdvances[i] = l1_d_caches[i].TotalAdvances;
 		cgm_stat_container->l1_d_TotalAcesses[i] = l1_d_caches[i].TotalAcesses;
 		cgm_stat_container->l1_d_TotalMisses[i] = l1_d_caches[i].TotalMisses;
@@ -1868,7 +1868,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_d_CoalescePut[i] = l1_d_caches[i].CoalescePut;
 		cgm_stat_container->l1_d_CoalesceGet[i] = l1_d_caches[i].CoalesceGet;
 		cgm_stat_container->l1_d_mshr_entries[i] = l1_d_caches[i].mshr_entries;
-		cgm_stat_container->l1_d_stalls[i] = l1_d_caches[i].stalls;
+		cgm_stat_container->l1_d_Stalls[i] = l1_d_caches[i].Stalls;
 		cgm_stat_container->l1_d_WbMerges[i] = l1_d_caches[i].WbMerges;
 		cgm_stat_container->l1_d_MergeRetries[i] = l1_d_caches[i].MergeRetries;
 		cgm_stat_container->l1_d_EvictInv[i] = l1_d_caches[i].EvictInv;
@@ -1883,7 +1883,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l1_d_TotalWriteBlocks[i] = l1_d_caches[i].TotalWriteBlocks;
 
 
-		cgm_stat_container->l2_occupancy[i] = l2_caches[i].occupancy;
+		cgm_stat_container->l2_Occupancy[i] = l2_caches[i].Occupancy;
 		cgm_stat_container->l2_TotalAdvances[i] = l2_caches[i].TotalAdvances;
 		cgm_stat_container->l2_TotalAcesses[i] = l2_caches[i].TotalAcesses;
 		cgm_stat_container->l2_TotalMisses[i] = l2_caches[i].TotalMisses;
@@ -1905,7 +1905,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l2_CoalescePut[i] = l2_caches[i].CoalescePut;
 		cgm_stat_container->l2_CoalesceGet[i] = l2_caches[i].CoalesceGet;
 		cgm_stat_container->l2_mshr_entries[i] = l2_caches[i].mshr_entries;
-		cgm_stat_container->l2_stalls[i] = l2_caches[i].stalls;
+		cgm_stat_container->l2_Stalls[i] = l2_caches[i].Stalls;
 		cgm_stat_container->l2_WbMerges[i] = l2_caches[i].WbMerges;
 		cgm_stat_container->l2_MergeRetries[i] = l2_caches[i].MergeRetries;
 		cgm_stat_container->l2_EvictInv[i] = l2_caches[i].EvictInv;
@@ -1913,8 +1913,11 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l2_TotalWriteBackSent[i] = l2_caches[i].TotalWriteBackSent;
 		cgm_stat_container->l2_TotalWriteBackDropped[i] = l2_caches[i].TotalWriteBackDropped;
 		cgm_stat_container->l2_TotalWriteBlocks[i] = l2_caches[i].TotalWriteBlocks;
+		cgm_stat_container->l2_LoadMisses[i] = l2_caches[i].LoadMisses;
+		cgm_stat_container->l2_TotalUpgradeInvals[i] = l2_caches[i].TotalUpgradeInvals;
 
-		cgm_stat_container->l3_occupancy[i] = l3_caches[i].occupancy;
+
+		cgm_stat_container->l3_Occupancy[i] = l3_caches[i].Occupancy;
 		cgm_stat_container->l3_TotalAdvances[i] = l3_caches[i].TotalAdvances;
 		cgm_stat_container->l3_TotalAcesses[i] = l3_caches[i].TotalAcesses;
 		cgm_stat_container->l3_TotalMisses[i] = l3_caches[i].TotalMisses;
@@ -1935,7 +1938,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_CoalescePut[i] = l3_caches[i].CoalescePut;
 		cgm_stat_container->l3_CoalesceGet[i] = l3_caches[i].CoalesceGet;
 		cgm_stat_container->l3_mshr_entries[i] = l3_caches[i].mshr_entries;
-		cgm_stat_container->l3_stalls[i] = l3_caches[i].stalls;
+		cgm_stat_container->l3_Stalls[i] = l3_caches[i].Stalls;
 		cgm_stat_container->l3_WbMerges[i] = l3_caches[i].WbMerges;
 		cgm_stat_container->l3_MergeRetries[i] = l3_caches[i].MergeRetries;
 		cgm_stat_container->l3_EvictInv[i] = l3_caches[i].EvictInv;
@@ -1943,6 +1946,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_TotalWriteBackSent[i] = l3_caches[i].TotalWriteBackSent;
 		cgm_stat_container->l3_TotalWriteBackDropped[i] = l3_caches[i].TotalWriteBackDropped;
 		cgm_stat_container->l3_TotalWriteBlocks[i] = l3_caches[i].TotalWriteBlocks;
+		cgm_stat_container->l3_TotalUpgradeInvals[i] = l3_caches[i].TotalUpgradeInvals;
 	}
 
 	return;
@@ -1956,7 +1960,7 @@ void cache_reset_stats(void){
 	//caches
 	for(i = 0; i < num_cores; i++)
 	{
-		l1_i_caches[i].occupancy = 0;
+		l1_i_caches[i].Occupancy = 0;
 		l1_i_caches[i].CoalescePut = 0;
 		l1_i_caches[i].CoalesceGet = 0;
 		l1_i_caches[i].TotalHits = 0;
@@ -1967,7 +1971,7 @@ void cache_reset_stats(void){
 		l1_i_caches[i].TotalWriteBackRecieved = 0;
 		l1_i_caches[i].TotalWriteBackSent = 0;
 		l1_i_caches[i].TotalWriteBackDropped = 0;
-		l1_i_caches[i].stalls = 0;
+		l1_i_caches[i].Stalls = 0;
 		l1_i_caches[i].TotalDowngrades = 0;
 		l1_i_caches[i].TotalGetxFwdInvals = 0;
 		l1_i_caches[i].TotalUpgradeAcks = 0;
@@ -1993,7 +1997,7 @@ void cache_reset_stats(void){
 		l1_i_caches[i].mshr_entries = 0;
 
 
-		l1_d_caches[i].occupancy = 0;
+		l1_d_caches[i].Occupancy = 0;
 		l1_d_caches[i].TotalAdvances = 0;
 		l1_d_caches[i].WbMerges = 0;
 		l1_d_caches[i].MergeRetries = 0;
@@ -2003,7 +2007,7 @@ void cache_reset_stats(void){
 		l1_d_caches[i].TotalWriteBackDropped = 0;
 		l1_d_caches[i].CoalescePut = 0;
 		l1_d_caches[i].CoalesceGet = 0;
-		l1_d_caches[i].stalls = 0;
+		l1_d_caches[i].Stalls = 0;
 		l1_d_caches[i].TotalDowngrades = 0;
 		l1_d_caches[i].TotalGetxFwdInvals = 0;
 		l1_d_caches[i].TotalUpgradeAcks = 0;
@@ -2032,7 +2036,7 @@ void cache_reset_stats(void){
 		l1_d_caches[i].mshr_entries = 0;
 
 
-		l2_caches[i].occupancy = 0;
+		l2_caches[i].Occupancy = 0;
 		l2_caches[i].TotalAdvances = 0;
 		l2_caches[i].TotalAcesses = 0;
 		l2_caches[i].WbMerges = 0;
@@ -2041,13 +2045,14 @@ void cache_reset_stats(void){
 		l2_caches[i].TotalWriteBackRecieved = 0;
 		l2_caches[i].TotalWriteBackSent = 0;
 		l2_caches[i].TotalWriteBackDropped = 0;
-		l2_caches[i].stalls = 0;
+		l2_caches[i].Stalls = 0;
 		l2_caches[i].TotalDowngrades = 0;
 		l2_caches[i].TotalGetxFwdInvals = 0;
 		l2_caches[i].UpgradeMisses = 0;
 		l2_caches[i].TotalUpgradeAcks = 0;
 		l2_caches[i].TotalUpgradeInvals = 0;
 		l2_caches[i].TotalWriteBlocks = 0;
+		l2_caches[i].LoadMisses = 0;
 
 		l2_caches[i].TotalMisses = 0;
 		l2_caches[i].TotalHits = 0;
@@ -2069,7 +2074,7 @@ void cache_reset_stats(void){
 		l2_caches[i].mshr_entries = 0;
 
 
-		l3_caches[i].occupancy = 0;
+		l3_caches[i].Occupancy = 0;
 		l3_caches[i].TotalAdvances = 0;
 		l3_caches[i].TotalAcesses = 0;
 		l3_caches[i].WbMerges = 0;
@@ -2078,7 +2083,7 @@ void cache_reset_stats(void){
 		l3_caches[i].TotalWriteBackRecieved = 0;
 		l3_caches[i].TotalWriteBackSent = 0;
 		l3_caches[i].TotalWriteBackDropped = 0;
-		l3_caches[i].stalls = 0;
+		l3_caches[i].Stalls = 0;
 		l3_caches[i].TotalDowngrades = 0;
 		l3_caches[i].TotalGetxFwdInvals = 0;
 		l3_caches[i].TotalUpgradeAcks = 0;
@@ -2123,20 +2128,20 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		/*CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_Occupancy[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) P_TIME)*100);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
-		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CoalescePut = %llu\n", i, cgm_stat_container->l1_i_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l1_i_CoalesceGet[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbMerges = %llu\n", i, cgm_stat_container->l1_i_WbMerges[i]);
@@ -2149,7 +2154,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalHits = %llu\n", i, (cgm_stat_container->l1_i_TotalHits[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l1_i_TotalAdvances[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_i_occupancy[i]/ (double) cgm_stat_container->l1_i_TotalAdvances[i]));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/ (double) cgm_stat_container->l1_i_TotalAdvances[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_i_TotalAcesses[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalDowngrades = %llu\n", i, cgm_stat_container->l1_i_TotalDowngrades[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalGetxFwdInvals = %llu\n", i, cgm_stat_container->l1_i_TotalGetxFwdInvals[i]);
@@ -2185,8 +2190,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_occupancy[i]);
-		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_CoalescePut = %llu\n", i, cgm_stat_container->l1_d_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l1_d_CoalesceGet[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbMerges = %llu\n", i, cgm_stat_container->l1_d_WbMerges[i]);
@@ -2200,15 +2205,15 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalUpgradeAcks = %llu\n", i, cgm_stat_container->l1_d_TotalUpgradeAcks[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l1_d_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBlocks[i]);
-		CGM_STATS(cgm_stats_file, "l1_d_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_d_occupancy[i]/ (double) cgm_stat_container->l1_d_TotalAdvances[i]));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_d_Occupancy[i]/ (double) cgm_stat_container->l1_d_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_occupancy[i]/(double)P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)P_TIME)*100);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 			//fatal("occ %llu cycles %llu then %0.2f\n", cgm_stat_container->l1_d_occupancy[i], cgm_stat_container->total_parallel_section_cycles, cgm_stat_container->l1_d_occupancy[i]/cgm_stat_container->total_parallel_section_cycles);
-			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
 		}
 		else
 		{
@@ -2242,8 +2247,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_occupancy[i]);
-		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_CoalescePut = %llu\n", i, cgm_stat_container->l2_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l2_CoalesceGet[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_UpgradeMisses = %llu\n", i, cgm_stat_container->l2_UpgradeMisses[i]);
@@ -2258,14 +2263,14 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalUpgradeAcks = %llu\n", i, cgm_stat_container->l2_TotalUpgradeAcks[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l2_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l2_TotalWriteBlocks[i]);
-		CGM_STATS(cgm_stats_file, "l2_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/ (double) cgm_stat_container->l2_TotalAdvances[i]));
+		CGM_STATS(cgm_stats_file, "l2_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/ (double) cgm_stat_container->l2_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l2_occupancy[i]/(double)P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/(double)P_TIME)*100);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l2_occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l2_Occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
 		}
 		else
 		{
@@ -2276,6 +2281,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l2_TotalAcesses[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalHits = %llu\n", i, (cgm_stat_container->l2_TotalAcesses[i] - cgm_stat_container->l2_TotalMisses[i]));
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalMisses = %llu\n", i, cgm_stat_container->l2_TotalMisses[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_TotalLoadMisses = %llu\n", i, cgm_stat_container->l2_LoadMisses[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_MissRate = %0.2f\n", i,
 				(double) (cgm_stat_container->l2_TotalMisses[i])/(double) (cgm_stat_container->l2_TotalAcesses[i] - cgm_stat_container->l2_TotalMisses[i]));
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalReads = %llu\n", i, cgm_stat_container->l2_TotalReads[i]);
@@ -2298,8 +2304,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_occupancy[i]);
-		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_stalls[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_CoalescePut = %llu\n", i, cgm_stat_container->l3_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l3_CoalesceGet[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbMerges = %llu\n", i, cgm_stat_container->l3_WbMerges[i]);
@@ -2313,14 +2319,14 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalUpgradeAcks = %llu\n", i, cgm_stat_container->l3_TotalUpgradeAcks[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l3_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l3_TotalWriteBlocks[i]);
-		CGM_STATS(cgm_stats_file, "l3_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l3_occupancy[i]/ (double) cgm_stat_container->l3_TotalAdvances[i]));
+		CGM_STATS(cgm_stats_file, "l3_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l3_Occupancy[i]/ (double) cgm_stat_container->l3_TotalAdvances[i]));
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l3_occupancy[i]/(double)P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME)*100);
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l3_occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l3_Occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
 		}
 		else
 		{
@@ -2395,7 +2401,7 @@ void l1_i_cache_ctrl(void){
 		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]) || !cache_can_access_Tx_bottom(&(l1_i_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall
-			l1_i_caches[my_pid].stalls++;
+			l1_i_caches[my_pid].Stalls++;
 
 			//warning("l1_i_cache_ctrl(): %s stalling \n", l1_i_caches[my_pid].name);
 
@@ -2439,7 +2445,7 @@ void l1_i_cache_ctrl(void){
 		}
 
 		/*stats occupancy*/
-		l1_i_caches[my_pid].occupancy += (P_TIME - occ_start);
+		l1_i_caches[my_pid].Occupancy += (P_TIME - occ_start);
 	}
 	/* should never get here*/
 	fatal("l1_i_cache_ctrl task is broken\n");
@@ -2477,7 +2483,7 @@ void l1_d_cache_ctrl(void){
 		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]) || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
-			l1_d_caches[my_pid].stalls++;
+			l1_d_caches[my_pid].Stalls++;
 
 			//warning("l1_d_cache_ctrl(): %s stalling \n", l1_d_caches[my_pid].name);
 
@@ -2610,7 +2616,7 @@ void l1_d_cache_ctrl(void){
 		}
 
 		/*stats occupancy*/
-		l1_d_caches[my_pid].occupancy += (P_TIME - occ_start);
+		l1_d_caches[my_pid].Occupancy += (P_TIME - occ_start);
 
 	}
 	//should never get here
@@ -2651,7 +2657,7 @@ void l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
-			l2_caches[my_pid].stalls++;
+			l2_caches[my_pid].Stalls++;
 			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
 					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
 
@@ -2809,7 +2815,7 @@ void l2_cache_ctrl(void){
 		}
 
 		/*stats occupancy*/
-		l2_caches[my_pid].occupancy += (P_TIME - occ_start);
+		l2_caches[my_pid].Occupancy += (P_TIME - occ_start);
 
 	}
 
@@ -2868,7 +2874,7 @@ void l3_cache_ctrl(void){
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
 			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
-			l3_caches[my_pid].stalls++;
+			l3_caches[my_pid].Stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
 
 			P_PAUSE(1);
@@ -2877,17 +2883,6 @@ void l3_cache_ctrl(void){
 		{
 			step++;
 
-			/*if(P_TIME > 1457968)
-			{
-				printf("l3 running\n");
-			}*/
-
-			/*if(message_packet->access_type == cgm_access_flush_block_ack)
-			{
-				printf("%s flush_block_ack evict id %llu wb id %llu cycle %llu\n", l3_caches[my_pid].name, message_packet->evict_id, message_packet->write_back_id, P_TIME);
-			}*/
-
-			/*printf("%s running\n", l3_caches[my_pid].name);*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -2895,29 +2890,30 @@ void l3_cache_ctrl(void){
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l3_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
-			/*stats*/
-			if(message_packet->access_type == cgm_access_gets)
-				mem_system_stats->l3_total_fetch_requests++;
-			else if(message_packet->access_type == cgm_access_get)
-				mem_system_stats->l3_total_load_requests++;
-			else if(message_packet->access_type == cgm_access_getx)
-				mem_system_stats->l3_total_store_requests++;
-
-
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
 				//via call back function (cgm_mesi_l3_gets)
 				l3_caches[my_pid].l3_gets(&(l3_caches[my_pid]), message_packet);
+
+				/*stats*/
+				mem_system_stats->l3_total_fetch_requests++;
+
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
 				//via call back function (cgm_mesi_l3_get)
 				l3_caches[my_pid].l3_get(&(l3_caches[my_pid]), message_packet);
+
+				/*stats*/
+				mem_system_stats->l3_total_load_requests++;
 			}
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
 				//via call back function (cgm_mesi_l3_getx)
 				l3_caches[my_pid].l3_getx(&(l3_caches[my_pid]), message_packet);
+
+				/*stats*/
+				mem_system_stats->l3_total_store_requests++;
 			}
 			else if(access_type == cgm_access_write_back)
 			{
@@ -2939,15 +2935,6 @@ void l3_cache_ctrl(void){
 				//retry state set so run again
 				step--;
 			}
-
-
-
-
-
-
-
-
-
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_ack)
@@ -2998,9 +2985,10 @@ void l3_cache_ctrl(void){
 			}
 		}
 
-		assert((P_TIME - occ_start) == 48);
+		//assert((P_TIME - occ_start) == 48);
+
 		/*stats occupancy*/
-		l3_caches[my_pid].occupancy += (P_TIME - occ_start);
+		l3_caches[my_pid].Occupancy += (P_TIME - occ_start);
 
 	}
 	/* should never get here*/
