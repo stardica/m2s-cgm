@@ -2964,7 +2964,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	//find the block in the local WB buffer
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-	/*if and L1 flush we better have a wb packet in write back*/
+	/*if a L1 flush we better have a wb packet in write back*/
 	if(wb_packet)
 	{
 
@@ -3000,6 +3000,8 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 					pending_request_packet->access_type = cgm_access_puts;
 					//set the block state
 					pending_request_packet->cache_block_state = cgm_cache_block_shared;
+
+					/*stats*/
 				}
 				else
 				{
@@ -3371,8 +3373,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 				}
 			}
 
-			//getchar();
-
 			message_packet->downgrade_pending = 1;
 
 			/*drop into the pending request buffer*/
@@ -3492,7 +3492,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			else
 			{
 				/*its possible that a get_fwd can come in for a block while the cache is waiting for the blk after sending a request
-				if the cache is waiting for the block there will be in entry in the ORT table. L3 has already serviced the request
+				if the cache is waiting for the block there will be an entry in the ORT table. L3 has already serviced the request
 				and the core has the block M/E but the packet will arrive after the get_fwd. Perform a join to prevent deadlock*/
 				if(ort_status < cache->mshr_size)
 				{
@@ -4553,14 +4553,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
 
-	/*stats*/
-	/*if(*cache_block_hit_ptr == 0)
-	{
-		cache->TotalMisses++;
-		cache->TotalReadMisses++;
-		cache->TotalGet++;
-	}*/
-
 	//if access to the block is pending send nack back to requesting core.
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
@@ -5392,10 +5384,6 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			/*access was a miss at the L1 and L2 but hit as shared in L3
 			we need to process an upgrade as a putx with n number of invals*/
 
-			//stats
-			cache->UpgradeMisses++;
-			//warning("l3 upgrade miss\n");
-
 			/*there should always be at least one sharer
 			but no more than the number of cores.*/
 			assert(sharers >= 1 && sharers <= num_cores);
@@ -5479,6 +5467,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//set the sharer bit for the upgraded node
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+			/*stats*/
+			cache->UpgradeMisses++;
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L3_hit;
 
 			break;
 	}
@@ -5579,7 +5572,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				advance(cache->cache_io_down_ec);
 
 				/*stats*/
-				cache->TotalWriteBackSent++;
+				cache->TotalSharingWriteBackSent++;
+
 			}
 
 			//the modified block is written to main memory we can set the block as shared now.
@@ -7747,7 +7741,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->access_type = cgm_access_getx;
 
 			/*stats*/
-			warning("here upgrade -> getx\n");
+			warning("here upgrade -> getx_fwd\n");
 
 			return 0;
 

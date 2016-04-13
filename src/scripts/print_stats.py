@@ -39,6 +39,7 @@ def print_cache_stats(options):
 	l1_i_MergeRetries = cache_stats['l1_i_0_MergeRetries'] + cache_stats['l1_i_1_MergeRetries'] + cache_stats['l1_i_2_MergeRetries'] + cache_stats['l1_i_3_MergeRetries']
 	l1_i_WbRecieved = cache_stats['l1_i_0_WbRecieved'] + cache_stats['l1_i_1_WbRecieved'] + cache_stats['l1_i_2_WbRecieved'] + cache_stats['l1_i_3_WbRecieved']
 	l1_i_WbSent = cache_stats['l1_i_0_WbSent'] + cache_stats['l1_i_1_WbSent'] + cache_stats['l1_i_2_WbSent'] + cache_stats['l1_i_3_WbSent']
+	l1_i_SharingWbSent = cache_stats['l1_i_0_SharingWbSent'] + cache_stats['l1_i_1_SharingWbSent'] + cache_stats['l1_i_2_SharingWbSent'] + cache_stats['l1_i_3_SharingWbSent']
 	l1_i_WbDropped = cache_stats['l1_i_0_WbDropped'] + cache_stats['l1_i_1_WbDropped'] + cache_stats['l1_i_2_WbDropped'] + cache_stats['l1_i_3_WbDropped']
 	l1_i_UpgradeMisses = cache_stats['l1_i_0_UpgradeMisses'] + cache_stats['l1_i_1_UpgradeMisses'] + cache_stats['l1_i_2_UpgradeMisses'] + cache_stats['l1_i_3_UpgradeMisses']
 	l1_i_UpgradeAcks = cache_stats['l1_i_0_TotalUpgradeAcks'] + cache_stats['l1_i_1_TotalUpgradeAcks'] + cache_stats['l1_i_2_TotalUpgradeAcks'] + cache_stats['l1_i_3_TotalUpgradeAcks']
@@ -80,6 +81,7 @@ def print_cache_stats(options):
 	l1_d_MergeRetries = cache_stats['l1_d_0_MergeRetries'] + cache_stats['l1_d_1_MergeRetries'] + cache_stats['l1_d_2_MergeRetries'] + cache_stats['l1_d_3_MergeRetries']
 	l1_d_WbRecieved = cache_stats['l1_d_0_WbRecieved'] + cache_stats['l1_d_1_WbRecieved'] + cache_stats['l1_d_2_WbRecieved'] + cache_stats['l1_d_3_WbRecieved']
 	l1_d_WbSent = cache_stats['l1_d_0_WbSent'] + cache_stats['l1_d_1_WbSent'] + cache_stats['l1_d_2_WbSent'] + cache_stats['l1_d_3_WbSent']
+	l1_d_SharingWbSent = cache_stats['l1_d_0_SharingWbSent'] + cache_stats['l1_d_1_SharingWbSent'] + cache_stats['l1_d_2_SharingWbSent'] + cache_stats['l1_d_3_SharingWbSent']
 	l1_d_WbDropped = cache_stats['l1_d_0_WbDropped'] + cache_stats['l1_d_1_WbDropped'] + cache_stats['l1_d_2_WbDropped'] + cache_stats['l1_d_3_WbDropped']
 	l1_d_UpgradeMisses = cache_stats['l1_d_0_UpgradeMisses'] + cache_stats['l1_d_1_UpgradeMisses'] + cache_stats['l1_d_2_UpgradeMisses'] + cache_stats['l1_d_3_UpgradeMisses']
 	l1_d_UpgradeAcks = cache_stats['l1_d_0_TotalUpgradeAcks'] + cache_stats['l1_d_1_TotalUpgradeAcks'] + cache_stats['l1_d_2_TotalUpgradeAcks'] + cache_stats['l1_d_3_TotalUpgradeAcks']
@@ -122,6 +124,7 @@ def print_cache_stats(options):
 	l2_MergeRetries = cache_stats['l2_0_MergeRetries'] + cache_stats['l2_1_MergeRetries'] + cache_stats['l2_2_MergeRetries'] + cache_stats['l2_3_MergeRetries']
 	l2_WbRecieved = cache_stats['l2_0_WbRecieved'] + cache_stats['l2_1_WbRecieved'] + cache_stats['l2_2_WbRecieved'] + cache_stats['l2_3_WbRecieved']
 	l2_WbSent = cache_stats['l2_0_WbSent'] + cache_stats['l2_1_WbSent'] + cache_stats['l2_2_WbSent'] + cache_stats['l2_3_WbSent']
+	l2_SharingWbSent = cache_stats['l2_0_SharingWbSent'] + cache_stats['l2_1_SharingWbSent'] + cache_stats['l2_2_SharingWbSent'] + cache_stats['l2_3_SharingWbSent']
 	l2_WbDropped = cache_stats['l2_0_WbDropped'] + cache_stats['l2_1_WbDropped'] + cache_stats['l2_2_WbDropped'] + cache_stats['l2_3_WbDropped']
 	l2_UpgradeMisses = cache_stats['l2_0_UpgradeMisses'] + cache_stats['l2_1_UpgradeMisses'] + cache_stats['l2_2_UpgradeMisses'] + cache_stats['l2_3_UpgradeMisses']
 	l2_UpgradeAcks = cache_stats['l2_0_TotalUpgradeAcks'] + cache_stats['l2_1_TotalUpgradeAcks'] + cache_stats['l2_2_TotalUpgradeAcks'] + cache_stats['l2_3_TotalUpgradeAcks']
@@ -164,6 +167,7 @@ def print_cache_stats(options):
 	l3_MergeRetries = cache_stats['l3_0_MergeRetries'] + cache_stats['l3_1_MergeRetries'] + cache_stats['l3_2_MergeRetries'] + cache_stats['l3_3_MergeRetries']
 	l3_WbRecieved = cache_stats['l3_0_WbRecieved'] + cache_stats['l3_1_WbRecieved'] + cache_stats['l3_2_WbRecieved'] + cache_stats['l3_3_WbRecieved']
 	l3_WbSent = cache_stats['l3_0_WbSent'] + cache_stats['l3_1_WbSent'] + cache_stats['l3_2_WbSent'] + cache_stats['l3_3_WbSent']
+	l3_SharingWbSent = cache_stats['l3_0_SharingWbSent'] + cache_stats['l3_1_SharingWbSent'] + cache_stats['l3_2_SharingWbSent'] + cache_stats['l3_3_SharingWbSent']
 	l3_WbDropped = cache_stats['l3_0_WbDropped'] + cache_stats['l3_1_WbDropped'] + cache_stats['l3_2_WbDropped'] + cache_stats['l3_3_WbDropped']
 	l3_UpgradeMisses = cache_stats['l3_0_UpgradeMisses'] + cache_stats['l3_1_UpgradeMisses'] + cache_stats['l3_2_UpgradeMisses'] + cache_stats['l3_3_UpgradeMisses']
 	l3_UpgradeAcks = cache_stats['l3_0_TotalUpgradeAcks'] + cache_stats['l3_1_TotalUpgradeAcks'] + cache_stats['l3_2_TotalUpgradeAcks'] + cache_stats['l3_3_TotalUpgradeAcks']
@@ -207,6 +211,7 @@ def print_cache_stats(options):
 			["MergeRetries", l1_i_MergeRetries, l1_d_MergeRetries, l2_MergeRetries, l3_MergeRetries],
 			["WbRecieved", l1_i_WbRecieved, l1_d_WbRecieved, l2_WbRecieved, l3_WbRecieved],
 			["WbSent", l1_i_WbSent, l1_d_WbSent, l2_WbSent, l3_WbSent],
+			["SharingWbSent", l1_i_SharingWbSent, l1_d_SharingWbSent, l2_SharingWbSent, l3_SharingWbSent],
 			["WbDropped", l1_i_WbDropped, l1_d_WbDropped, l2_WbDropped, l3_WbDropped],
 			["UpgradeMisses", l1_i_UpgradeMisses, l1_d_UpgradeMisses, l2_UpgradeMisses, l3_UpgradeMisses],
 			["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
@@ -709,7 +714,9 @@ def print_general_stats(options):
 	["SimulatedCyclesPerSec", general_stats['SimulatedCyclesPerSec']],
 	["CPUNumCores", general_stats['CPU_NumCores']],
 	["CPUThreadsPerCore", general_stats['CPU_ThreadsPerCore']],
-	["CPUFreqGhz", general_stats['CPU_FreqGHz']]
+	["CPUFreqGhz", general_stats['CPU_FreqGHz']],
+	["GPUNumCUs", general_stats['GPU_NumCUs']],
+	["GPUFreqGhz", general_stats['GPU_FreqGHz']]
 	]
 		
 	f = open(options.OutFileName, 'w')

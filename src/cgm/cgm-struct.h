@@ -433,6 +433,7 @@ struct cache_t{
 	long long EvictInv;
 	long long TotalWriteBackRecieved;
 	long long TotalWriteBackSent;
+	long long TotalSharingWriteBackSent;
 	long long TotalWriteBackDropped;
 	long long Stalls;
 	long long TotalDowngrades;
@@ -441,6 +442,7 @@ struct cache_t{
 	long long TotalUpgradeInvals;
 	long long TotalWriteBlocks;
 	long long LoadMisses;
+	long long GetFwdJoins;
 
 	long long Totalfetches;
 	long long TotalAdvances; //this is an error check...
@@ -462,6 +464,26 @@ struct cache_t{
 
 	long long mshr_entries;
 
+	long long l2_gets_;
+	long long l2_get_;
+	long long l2_getx_;
+	long long l2_write_back_;
+	long long l2_write_block_;
+	long long l2_downgrade_ack_;
+	long long l2_get_nack_;
+	long long l2_getx_nack_;
+	long long l2_get_fwd_;
+	long long l2_downgrade_nack_;
+	long long l2_getx_fwd_;
+	long long l2_getx_fwd_inval_ack_;
+	long long l2_getx_fwd_nack_;
+	long long l2_upgrade_;
+	long long l2_upgrade_ack_;
+	long long l2_upgrade_nack_;
+	long long l2_upgrade_putx_n_;
+	long long l2_upgrade_inval_;
+	long long l2_flush_block_;
+	long long l2_flush_block_ack_;
 
 	long long l3_gets_;
 	long long l3_get_;
@@ -477,7 +499,6 @@ struct cache_t{
 	long long l3_get_fwd_upgrade_nack_;
 	long long l3_upgrade_;
 	long long l3_upgrade_ack_;
-
 
 
 	unsigned int *fetch_address_history;
@@ -601,7 +622,6 @@ struct cgm_stats_t{
 	long long *l1_i_TotalWriteBlocks;
 
 
-
 	long long *l1_i_TotalAdvances;
 	long long *l1_i_TotalAcesses;
 	long long *l1_i_TotalReads;
@@ -674,6 +694,7 @@ struct cgm_stats_t{
 	long long *l2_TotalUpgradeInvals;
 	long long *l2_TotalWriteBlocks;
 	long long *l2_LoadMisses;
+	long long *GetFwdJoins;
 
 	long long *l2_TotalHits;
 	long long *l2_TotalReads;
@@ -691,6 +712,28 @@ struct cgm_stats_t{
 	//long long *l2_coalesces;
 	long long *l2_mshr_entries;
 
+	long long *l2_gets_;
+	long long *l2_get_;
+	long long *l2_getx_;
+	long long *l2_write_back_;
+	long long *l2_write_block_;
+	long long *l2_downgrade_ack_;
+	long long *l2_get_nack_;
+	long long *l2_getx_nack_;
+	long long *l2_get_fwd_;
+	long long *l2_downgrade_nack_;
+	long long *l2_getx_fwd_;
+	long long *l2_getx_fwd_inval_ack_;
+	long long *l2_getx_fwd_nack_;
+	long long *l2_upgrade_;
+	long long *l2_upgrade_ack_;
+	long long *l2_upgrade_nack_;
+	long long *l2_upgrade_putx_n_;
+	long long *l2_upgrade_inval_;
+	long long *l2_flush_block_;
+	long long *l2_flush_block_ack_;
+
+
 
 	long long *l3_Occupancy;
 	long long *l3_CoalescePut;
@@ -703,6 +746,7 @@ struct cgm_stats_t{
 	long long *l3_UpgradeMisses;
 	long long *l3_EvictInv;
 	long long *l3_TotalWriteBackSent;
+	long long *l3_TotalSharingWriteBackSent;
 	long long *l3_TotalWriteBackRecieved;
 	long long *l3_TotalWriteBackDropped;
 	long long *l3_Stalls;
@@ -722,12 +766,27 @@ struct cgm_stats_t{
 	long long *l3_TotalReadMisses;
 	long long *l3_TotalWriteMisses;
 	long long *l3_TotalWriteBacks;
+
 	long long *l3_invalid_hits;
 	long long *l3_assoc_conflict;
 	long long *l3_retries;
 	//long long *l3_coalesces;
 	long long *l3_mshr_entries;
 
+	long long *l3_gets_;
+	long long *l3_get_;
+	long long *l3_getx_;
+	long long *l3_write_back_;
+	long long *l3_flush_block_ack_;
+	long long *l3_write_block_;
+	long long *l3_downgrade_ack_;
+	long long *l3_downgrade_nack_;
+	long long *l3_getx_fwd_ack_;
+	long long *l3_getx_fwd_nack_;
+	long long *l3_getx_fwd_upgrade_nack_;
+	long long *l3_get_fwd_upgrade_nack_;
+	long long *l3_upgrade_;
+	long long *l3_upgrade_ack_;
 
 
 	long long *switch_total_links;

@@ -1917,6 +1917,28 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l2_TotalUpgradeInvals[i] = l2_caches[i].TotalUpgradeInvals;
 
 
+		cgm_stat_container->l2_gets_[i] = l2_caches[i].l2_gets_;
+		cgm_stat_container->l2_get_[i] = l2_caches[i].l2_get_;
+		cgm_stat_container->l2_getx_[i] = l2_caches[i].l2_getx_;
+		cgm_stat_container->l2_write_back_[i] = l2_caches[i].l2_write_back_;
+		cgm_stat_container->l2_write_block_[i] = l2_caches[i].l2_write_block_;
+		cgm_stat_container->l2_downgrade_ack_[i] = l2_caches[i].l2_downgrade_ack_;
+		cgm_stat_container->l2_get_nack_[i] = l2_caches[i].l2_get_nack_;
+		cgm_stat_container->l2_getx_nack_[i] = l2_caches[i].l2_getx_nack_;
+		cgm_stat_container->l2_get_fwd_[i] = l2_caches[i].l2_get_fwd_;
+		cgm_stat_container->l2_downgrade_nack_[i] = l2_caches[i].l2_downgrade_nack_;
+		cgm_stat_container->l2_getx_fwd_[i] = l2_caches[i].l2_getx_fwd_;
+		cgm_stat_container->l2_getx_fwd_inval_ack_[i] = l2_caches[i].l2_getx_fwd_inval_ack_;
+		cgm_stat_container->l2_getx_fwd_nack_[i] = l2_caches[i].l2_getx_fwd_nack_;
+		cgm_stat_container->l2_upgrade_[i] = l2_caches[i].l2_upgrade_;
+		cgm_stat_container->l2_upgrade_ack_[i] = l2_caches[i].l2_upgrade_ack_;
+		cgm_stat_container->l2_upgrade_nack_[i] = l2_caches[i].l2_upgrade_nack_;
+		cgm_stat_container->l2_upgrade_putx_n_[i] = l2_caches[i].l2_upgrade_putx_n_;
+		cgm_stat_container->l2_upgrade_inval_[i] = l2_caches[i].l2_upgrade_inval_;
+		cgm_stat_container->l2_flush_block_[i] = l2_caches[i].l2_flush_block_;
+		cgm_stat_container->l2_flush_block_ack_[i] = l2_caches[i].l2_flush_block_ack_;
+
+
 		cgm_stat_container->l3_Occupancy[i] = l3_caches[i].Occupancy;
 		cgm_stat_container->l3_TotalAdvances[i] = l3_caches[i].TotalAdvances;
 		cgm_stat_container->l3_TotalAcesses[i] = l3_caches[i].TotalAcesses;
@@ -1944,9 +1966,27 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_EvictInv[i] = l3_caches[i].EvictInv;
 		cgm_stat_container->l3_TotalWriteBackRecieved[i] = l3_caches[i].TotalWriteBackRecieved;
 		cgm_stat_container->l3_TotalWriteBackSent[i] = l3_caches[i].TotalWriteBackSent;
+		cgm_stat_container->l3_TotalSharingWriteBackSent[i] = l3_caches[i].TotalSharingWriteBackSent;
 		cgm_stat_container->l3_TotalWriteBackDropped[i] = l3_caches[i].TotalWriteBackDropped;
 		cgm_stat_container->l3_TotalWriteBlocks[i] = l3_caches[i].TotalWriteBlocks;
 		cgm_stat_container->l3_TotalUpgradeInvals[i] = l3_caches[i].TotalUpgradeInvals;
+
+
+		cgm_stat_container->l3_gets_[i] = l3_caches[i].l3_gets_;
+		cgm_stat_container->l3_get_[i] = l3_caches[i].l3_get_;
+		cgm_stat_container->l3_getx_[i] = l3_caches[i].l3_getx_;
+		cgm_stat_container->l3_write_back_[i] = l3_caches[i].l3_write_back_;
+		cgm_stat_container->l3_flush_block_ack_[i] = l3_caches[i].l3_flush_block_ack_;
+		cgm_stat_container->l3_write_block_[i] = l3_caches[i].l3_write_block_;
+		cgm_stat_container->l3_downgrade_ack_[i] = l3_caches[i].l3_downgrade_ack_;
+		cgm_stat_container->l3_downgrade_nack_[i] = l3_caches[i].l3_downgrade_nack_;
+		cgm_stat_container->l3_getx_fwd_ack_[i] = l3_caches[i].l3_getx_fwd_ack_;
+		cgm_stat_container->l3_getx_fwd_nack_[i] = l3_caches[i].l3_getx_fwd_nack_;
+		cgm_stat_container->l3_getx_fwd_upgrade_nack_[i] = l3_caches[i].l3_getx_fwd_upgrade_nack_;
+		cgm_stat_container->l3_get_fwd_upgrade_nack_[i] = l3_caches[i].l3_get_fwd_upgrade_nack_;
+		cgm_stat_container->l3_upgrade_[i] = l3_caches[i].l3_upgrade_;
+		cgm_stat_container->l3_upgrade_ack_[i] = l3_caches[i].l3_upgrade_ack_;
+
 	}
 
 	return;
@@ -2074,6 +2114,28 @@ void cache_reset_stats(void){
 		l2_caches[i].mshr_entries = 0;
 
 
+		l2_caches[i].l2_gets_ = 0;
+		l2_caches[i].l2_get_ = 0;
+		l2_caches[i].l2_getx_ = 0;
+		l2_caches[i].l2_write_back_ = 0;
+		l2_caches[i].l2_write_block_ = 0;
+		l2_caches[i].l2_downgrade_ack_ = 0;
+		l2_caches[i].l2_get_nack_ = 0;
+		l2_caches[i].l2_getx_nack_ = 0;
+		l2_caches[i].l2_get_fwd_ = 0;
+		l2_caches[i].l2_downgrade_nack_ = 0;
+		l2_caches[i].l2_getx_fwd_ = 0;
+		l2_caches[i].l2_getx_fwd_inval_ack_ = 0;
+		l2_caches[i].l2_getx_fwd_nack_ = 0;
+		l2_caches[i].l2_upgrade_ = 0;
+		l2_caches[i].l2_upgrade_ack_ = 0;
+		l2_caches[i].l2_upgrade_nack_ = 0;
+		l2_caches[i].l2_upgrade_putx_n_ = 0;
+		l2_caches[i].l2_upgrade_inval_ = 0;
+		l2_caches[i].l2_flush_block_ = 0;
+		l2_caches[i].l2_flush_block_ack_ = 0;
+
+
 		l3_caches[i].Occupancy = 0;
 		l3_caches[i].TotalAdvances = 0;
 		l3_caches[i].TotalAcesses = 0;
@@ -2082,6 +2144,7 @@ void cache_reset_stats(void){
 		l3_caches[i].EvictInv = 0;
 		l3_caches[i].TotalWriteBackRecieved = 0;
 		l3_caches[i].TotalWriteBackSent = 0;
+		l3_caches[i].TotalSharingWriteBackSent = 0;
 		l3_caches[i].TotalWriteBackDropped = 0;
 		l3_caches[i].Stalls = 0;
 		l3_caches[i].TotalDowngrades = 0;
@@ -2109,6 +2172,22 @@ void cache_reset_stats(void){
 		l3_caches[i].CoalescePut = 0;
 		l3_caches[i].CoalesceGet = 0;
 		l3_caches[i].mshr_entries = 0;
+
+
+		l3_caches[i].l3_gets_ = 0;
+		l3_caches[i].l3_get_ = 0;
+		l3_caches[i].l3_getx_ = 0;
+		l3_caches[i].l3_write_back_ = 0;
+		l3_caches[i].l3_flush_block_ack_ = 0;
+		l3_caches[i].l3_write_block_ = 0;
+		l3_caches[i].l3_downgrade_ack_ = 0;
+		l3_caches[i].l3_downgrade_nack_ = 0;
+		l3_caches[i].l3_getx_fwd_ack_ = 0;
+		l3_caches[i].l3_getx_fwd_nack_ = 0;
+		l3_caches[i].l3_getx_fwd_upgrade_nack_ = 0;
+		l3_caches[i].l3_get_fwd_upgrade_nack_ = 0;
+		l3_caches[i].l3_upgrade_ = 0;
+		l3_caches[i].l3_upgrade_ack_ = 0;
 
 	}
 
@@ -2149,6 +2228,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_i_%d_EvictInv = %llu\n", i, cgm_stat_container->l1_i_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbRecieved = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbSent = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_SharingWbSent = %llu\n", i, (long long)0);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_WbDropped = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMisses = %llu\n", i, cgm_stat_container->l1_i_UpgradeMisses[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalMisses = %llu\n", i, cgm_stat_container->l1_i_TotalMisses[i]);
@@ -2199,6 +2279,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_EvictInv = %llu\n", i, cgm_stat_container->l1_d_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbRecieved = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbSent = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_SharingWbSent = %llu\n", i, (long long)0);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_WbDropped = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalDowngrades = %llu\n", i, cgm_stat_container->l1_d_TotalDowngrades[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalGetxFwdInvals = %llu\n", i, cgm_stat_container->l1_d_TotalGetxFwdInvals[i]);
@@ -2257,6 +2338,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_EvictInv = %llu\n", i, cgm_stat_container->l2_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_WbRecieved = %llu\n", i, cgm_stat_container->l2_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_WbSent = %llu\n", i, cgm_stat_container->l2_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_SharingWbSent = %llu\n", i, (long long)0);
 		CGM_STATS(cgm_stats_file, "l2_%d_WbDropped = %llu\n", i, cgm_stat_container->l2_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalDowngrades = %llu\n", i, cgm_stat_container->l2_TotalDowngrades[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalGetxFwdInvals = %llu\n", i, cgm_stat_container->l2_TotalGetxFwdInvals[i]);
@@ -2313,6 +2395,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_EvictInv = %llu\n", i, cgm_stat_container->l3_EvictInv[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbRecieved = %llu\n", i, cgm_stat_container->l3_TotalWriteBackRecieved[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbSent = %llu\n", i, cgm_stat_container->l3_TotalWriteBackSent[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_SharingWbSent = %llu\n", i, cgm_stat_container->l3_TotalSharingWriteBackSent[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_WbDropped = %llu\n", i, cgm_stat_container->l3_TotalWriteBackDropped[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalDowngrades = %llu\n", i, cgm_stat_container->l3_TotalDowngrades[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalGetxFwdInvals = %llu\n", i, cgm_stat_container->l3_TotalGetxFwdInvals[i]);
@@ -2695,117 +2778,177 @@ void l2_cache_ctrl(void){
 
 
 
-			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
+			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)//
 			{
 				//Call back function (cgm_mesi_l2_gets)
 				l2_caches[my_pid].l2_gets(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_gets_++;
 			}
-			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
+			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)//
 			{
 				//Call back function (cgm_mesi_l2_get)
 				l2_caches[my_pid].l2_get(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_get_++;
 			}
-			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
+			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)//
 			{
 				//Call back function (cgm_mesi_l2_getx)
 
 				//will run again if getx results in upgrade request at L2 level.
 				if(!l2_caches[my_pid].l2_getx(&(l2_caches[my_pid]), message_packet))
 					step--;
+
+				/*stats*/
+				l2_caches[my_pid].l2_getx_++;
 			}
-			else if(access_type == cgm_access_write_back)
+			else if(access_type == cgm_access_write_back)//
 			{
 				//Call back function (cgm_mesi_l2_write_back)
 
 				//if the write back was internally scheduled decrement the counter.
 				if(!l2_caches[my_pid].l2_write_back(&(l2_caches[my_pid]), message_packet))
 					step--;
+
+				/*stats*/
+				l2_caches[my_pid].l2_write_back_++;
 			}
-			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
+			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)//
 			{
 				//Call back function (cgm_mesi_l2_put)
 				l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet);
 
 				//run again
 				step--;
+
+				/*stats*/
+				l2_caches[my_pid].l2_write_block_++;
 			}
-			else if(access_type == cgm_access_downgrade_ack)
+			else if(access_type == cgm_access_downgrade_ack)//
 			{
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_downgrade_ack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_downgrade_ack_++;
 			}
-			else if(access_type == cgm_access_get_nack)
+			else if(access_type == cgm_access_get_nack)//
 			{
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_get_nack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_get_nack_++;
 			}
-			else if(access_type == cgm_access_getx_nack)
+			else if(access_type == cgm_access_getx_nack)//
 			{
 				//Call back function (cgm_mesi_l2_downgrade_ack)
 				l2_caches[my_pid].l2_getx_nack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_getx_nack_++;
 			}
-			else if(access_type == cgm_access_get_fwd)
+			else if(access_type == cgm_access_get_fwd)//
 			{
 				//Call back function (cgm_mesi_l2_get_fwd)
 				l2_caches[my_pid].l2_get_fwd(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_get_fwd_++;
 			}
-			else if(access_type == cgm_access_downgrade_nack)
+			else if(access_type == cgm_access_downgrade_nack)//
 			{
 				//Call back function (cgm_mesi_l2_get_fwd)
 				l2_caches[my_pid].l2_downgrade_nack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_downgrade_nack_++;
 			}
-			else if(access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_upgrade_getx_fwd)
+			else if(access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_upgrade_getx_fwd)//
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd)
 				l2_caches[my_pid].l2_getx_fwd(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_getx_fwd_++;
 			}
-			else if(access_type == cgm_access_getx_fwd_inval_ack)
+			else if(access_type == cgm_access_getx_fwd_inval_ack)//
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_getx_fwd_inval_ack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_getx_fwd_inval_ack_++;
 			}
-			else if(access_type == cgm_access_getx_fwd_nack)
+			else if(access_type == cgm_access_getx_fwd_nack)//
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_getx_fwd_nack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_getx_fwd_nack_++;
 			}
-			else if(access_type == cgm_access_upgrade)
+			else if(access_type == cgm_access_upgrade)//
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				if(!l2_caches[my_pid].l2_upgrade(&(l2_caches[my_pid]), message_packet))
 					step--;
+
+				/*stats*/
+				l2_caches[my_pid].l2_upgrade_++;
 			}
-			else if (access_type == cgm_access_upgrade_ack)
+			else if (access_type == cgm_access_upgrade_ack)//
 			{
 				//Call back function (cgm_mesi_l2_upgrade_nack)
 				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_upgrade_ack_++;
 			}
-			else if (access_type == cgm_access_upgrade_nack)
+			else if (access_type == cgm_access_upgrade_nack)//
 			{
 				//Call back function (cgm_mesi_l2_getx_fwd_inval_ack)
 				l2_caches[my_pid].l2_upgrade_nack(&(l2_caches[my_pid]), message_packet);
 
 				step--;
+
+				/*stats*/
+				l2_caches[my_pid].l2_upgrade_nack_++;
 			}
-			else if(access_type == cgm_access_upgrade_putx_n)
+			else if(access_type == cgm_access_upgrade_putx_n)//
 			{
 				//Call back function (cgm_mesi_l2_upgrade_putx_n)
 				l2_caches[my_pid].l2_upgrade_putx_n(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_upgrade_putx_n_++;
 			}
-			else if (access_type == cgm_access_upgrade_inval)
+			else if (access_type == cgm_access_upgrade_inval)//
 			{
 				//Call back function (cgm_mesi_l2_upgrade_inval)
 				l2_caches[my_pid].l2_upgrade_inval(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_upgrade_inval_++;
 			}
 			else if (access_type == cgm_access_flush_block)
 			{
 					//Call back function (cgm_mesi_l2_inval)
 				l2_caches[my_pid].l2_flush_block(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_flush_block_++;
 			}
 			else if (access_type == cgm_access_flush_block_ack)
 			{
 				//Call back function (cgm_mesi_l2_inval_ack)
 				l2_caches[my_pid].l2_flush_block_ack(&(l2_caches[my_pid]), message_packet);
+
+				/*stats*/
+				l2_caches[my_pid].l2_flush_block_ack_++;
 			}
 			else
 			{
@@ -2887,6 +3030,14 @@ void l3_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
+
+			if(message_packet->access_type == cgm_access_gets)
+				mem_system_stats->l3_total_fetch_requests++;
+			else if(message_packet->access_type == cgm_access_get)
+				mem_system_stats->l3_total_load_requests++;
+			else if(message_packet->access_type == cgm_access_getx)
+				mem_system_stats->l3_total_store_requests++;
+
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l3_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
@@ -2896,7 +3047,7 @@ void l3_cache_ctrl(void){
 				l3_caches[my_pid].l3_gets(&(l3_caches[my_pid]), message_packet);
 
 				/*stats*/
-				mem_system_stats->l3_total_fetch_requests++;
+				l3_caches[my_pid].l3_gets_++;
 
 			}
 			else if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
@@ -2905,7 +3056,7 @@ void l3_cache_ctrl(void){
 				l3_caches[my_pid].l3_get(&(l3_caches[my_pid]), message_packet);
 
 				/*stats*/
-				mem_system_stats->l3_total_load_requests++;
+				l3_caches[my_pid].l3_get_++;
 			}
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
@@ -2913,19 +3064,23 @@ void l3_cache_ctrl(void){
 				l3_caches[my_pid].l3_getx(&(l3_caches[my_pid]), message_packet);
 
 				/*stats*/
-				mem_system_stats->l3_total_store_requests++;
+				l3_caches[my_pid].l3_getx_++;
 			}
 			else if(access_type == cgm_access_write_back)
 			{
 				//via call back function (cgm_mesi_l3_write_back)
 				if(!l3_caches[my_pid].l3_write_back(&(l3_caches[my_pid]), message_packet))
 					step--;
+
+				l3_caches[my_pid].l3_write_back_++;
 			}
 			else if(access_type == cgm_access_flush_block_ack)
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_flush_block_ack(&(l3_caches[my_pid]), message_packet);
 				//run again and pull the message_packet as a new access
+
+				l3_caches[my_pid].l3_flush_block_ack_++;
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
@@ -2934,50 +3089,68 @@ void l3_cache_ctrl(void){
 
 				//retry state set so run again
 				step--;
+
+				l3_caches[my_pid].l3_write_block_++;
 			}
 			else if(access_type == cgm_access_downgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_ack)
 				l3_caches[my_pid].l3_downgrade_ack(&(l3_caches[my_pid]), message_packet);
+
+				l3_caches[my_pid].l3_downgrade_ack_++;
 			}
 			else if(access_type == cgm_access_downgrade_nack)
 			{
 				//via call back function (cgm_mesi_l3_downgrade_nack)
 				l3_caches[my_pid].l3_downgrade_nack(&(l3_caches[my_pid]), message_packet);
+
+				l3_caches[my_pid].l3_downgrade_nack_++;
 			}
 			else if(access_type == cgm_access_getx_fwd_ack)
 			{
 				//via call back function (cgm_mesi_l3_getx_fwd_ack)
 				l3_caches[my_pid].l3_getx_fwd_ack(&(l3_caches[my_pid]), message_packet);
+
+				l3_caches[my_pid].l3_getx_fwd_ack_++;
 			}
 			else if(access_type == cgm_access_getx_fwd_nack)
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_getx_fwd_nack(&(l3_caches[my_pid]), message_packet);
+
+				l3_caches[my_pid].l3_getx_fwd_nack_++;
 			}
 			else if(access_type == cgm_access_getx_fwd_upgrade_nack)
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_getx_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
 				//run again and pull the message_packet as a new access
+
+				l3_caches[my_pid].l3_getx_fwd_upgrade_nack_++;
 			}
 			else if(access_type == cgm_access_get_fwd_upgrade_nack)
 			{
 				//via call back function (cgm_mesi_l3_get_fwd_nack)
 				l3_caches[my_pid].l3_get_fwd_upgrade_nack(&(l3_caches[my_pid]), message_packet);
-				//run again and pull the message_packet as a new access
+
+				l3_caches[my_pid].l3_get_fwd_upgrade_nack_++;
+
 			}
 			else if(access_type == cgm_access_upgrade)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
 				if(!l3_caches[my_pid].l3_upgrade(&(l3_caches[my_pid]), message_packet))
 					step--;
+
+				l3_caches[my_pid].l3_upgrade_++;
 			}
-			else if(access_type == cgm_access_upgrade_ack)
+			/*else if(access_type == cgm_access_upgrade_ack)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
 				l3_caches[my_pid].l3_upgrade_ack(&(l3_caches[my_pid]), message_packet);
-			}
+
+
+			}*/
 			else
 			{
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",

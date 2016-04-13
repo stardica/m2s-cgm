@@ -226,6 +226,8 @@ void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	CGM_STATS(cgm_stats_file, "MemSystem_StoresUpgrade = %llu\n", cgm_stat_container->store_upgrade);
 	CGM_STATS(cgm_stats_file, "MemSystem_l2_StoreNacks = %llu\n", cgm_stat_container->l2_store_nack);
 	CGM_STATS(cgm_stats_file, "MemSystem_l3_StoreNacks = %llu\n", cgm_stat_container->l3_store_nack);
+
+
 	/*CGM_STATS(cgm_stats_file, "\n");*/
 
 	return;

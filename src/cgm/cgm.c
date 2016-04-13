@@ -286,6 +286,28 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l2_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_LoadMisses = (long long *)calloc(num_cores, sizeof(long long));
 
+	cgm_stat_container->l2_gets_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_get_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_getx_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_write_back_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_write_block_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_downgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_get_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_getx_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_get_fwd_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_downgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_getx_fwd_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_getx_fwd_inval_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_getx_fwd_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_upgrade_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_upgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_upgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_upgrade_putx_n_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_upgrade_inval_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_flush_block_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_flush_block_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+
+
 	cgm_stat_container->l3_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
@@ -303,6 +325,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_TotalReadMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteMisses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBacks = (long long *)calloc(num_cores, sizeof(long long));
+
 	cgm_stat_container->l3_invalid_hits = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_assoc_conflict = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_UpgradeMisses = (long long *)calloc(num_cores, sizeof(long long));
@@ -313,12 +336,28 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_Stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBackRecieved = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_TotalSharingWriteBackSent = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBackDropped = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalDowngrades = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalGetxFwdInvals = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalUpgradeAcks = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalUpgradeInvals = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat_container->l3_gets_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_get_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_getx_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_write_back_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_flush_block_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_write_block_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_downgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_downgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_getx_fwd_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_getx_fwd_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_getx_fwd_upgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_get_fwd_upgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_upgrade_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_upgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
@@ -613,6 +652,27 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l2_LoadMisses[i] = JOINLL(l2_LoadMisses[i]);
 		cgm_stat->l2_TotalUpgradeInvals[i] = JOINLL(l2_TotalUpgradeInvals[i]);
 
+		cgm_stat->l2_gets_[i] = JOINLL(l2_gets_[i]);
+		cgm_stat->l2_get_[i] = JOINLL(l2_get_[i]);
+		cgm_stat->l2_getx_[i] = JOINLL(l2_getx_[i]);
+		cgm_stat->l2_write_back_[i] = JOINLL(l2_write_back_[i]);
+		cgm_stat->l2_write_block_[i] = JOINLL(l2_write_block_[i]);
+		cgm_stat->l2_downgrade_ack_[i] = JOINLL(l2_downgrade_ack_[i]);
+		cgm_stat->l2_get_nack_[i] = JOINLL(l2_get_nack_[i]);
+		cgm_stat->l2_getx_nack_[i] = JOINLL(l2_getx_nack_[i]);
+		cgm_stat->l2_get_fwd_[i] = JOINLL(l2_get_fwd_[i]);
+		cgm_stat->l2_downgrade_nack_[i] = JOINLL(l2_downgrade_nack_[i]);
+		cgm_stat->l2_getx_fwd_[i] = JOINLL(l2_getx_fwd_[i]);
+		cgm_stat->l2_getx_fwd_inval_ack_[i] = JOINLL(l2_getx_fwd_inval_ack_[i]);
+		cgm_stat->l2_getx_fwd_nack_[i] = JOINLL(l2_getx_fwd_nack_[i]);
+		cgm_stat->l2_upgrade_[i] = JOINLL(l2_upgrade_[i]);
+		cgm_stat->l2_upgrade_ack_[i] = JOINLL(l2_upgrade_ack_[i]);
+		cgm_stat->l2_upgrade_nack_[i] = JOINLL(l2_upgrade_nack_[i]);
+		cgm_stat->l2_upgrade_putx_n_[i] = JOINLL(l2_upgrade_putx_n_[i]);
+		cgm_stat->l2_upgrade_inval_[i] = JOINLL(l2_upgrade_inval_[i]);
+		cgm_stat->l2_flush_block_[i] = JOINLL(l2_flush_block_[i]);
+		cgm_stat->l2_flush_block_ack_[i] = JOINLL(l2_flush_block_ack_[i]);
+
 		cgm_stat->l3_Occupancy[i] = JOINLL(l3_Occupancy[i]);
 		cgm_stat->l3_TotalAdvances[i] = JOINLL(l3_TotalAdvances[i]);
 		cgm_stat->l3_TotalAcesses[i] = JOINLL(l3_TotalAcesses[i]);
@@ -640,9 +700,27 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l3_EvictInv[i] = JOINLL(l3_EvictInv[i]);
 		cgm_stat->l3_TotalWriteBackRecieved[i] = JOINLL(l3_TotalWriteBackRecieved[i]);
 		cgm_stat->l3_TotalWriteBackSent[i] = JOINLL(l3_TotalWriteBackSent[i]);
+		cgm_stat->l3_TotalSharingWriteBackSent[i] = JOINLL(l3_TotalSharingWriteBackSent[i]);
 		cgm_stat->l3_TotalWriteBackDropped[i] = JOINLL(l3_TotalWriteBackDropped[i]);
 		cgm_stat->l3_TotalWriteBlocks[i] = JOINLL(l3_TotalWriteBlocks[i]);
 		cgm_stat->l3_TotalUpgradeInvals[i] = JOINLL(l3_TotalUpgradeInvals[i]);
+
+
+		cgm_stat->l3_gets_[i] = JOINLL(l3_gets_[i]);
+		cgm_stat->l3_get_[i] = JOINLL(l3_get_[i]);
+		cgm_stat->l3_getx_[i] = JOINLL(l3_getx_[i]);
+		cgm_stat->l3_write_back_[i] = JOINLL(l3_write_back_[i]);
+		cgm_stat->l3_flush_block_ack_[i] = JOINLL(l3_flush_block_ack_[i]);
+		cgm_stat->l3_write_block_[i] = JOINLL(l3_write_block_[i]);
+		cgm_stat->l3_downgrade_ack_[i] = JOINLL(l3_downgrade_ack_[i]);
+		cgm_stat->l3_downgrade_nack_[i] = JOINLL(l3_downgrade_nack_[i]);
+		cgm_stat->l3_getx_fwd_ack_[i] = JOINLL(l3_getx_fwd_ack_[i]);
+		cgm_stat->l3_getx_fwd_nack_[i] = JOINLL(l3_getx_fwd_nack_[i]);
+		cgm_stat->l3_getx_fwd_upgrade_nack_[i] = JOINLL(l3_getx_fwd_upgrade_nack_[i]);
+		cgm_stat->l3_get_fwd_upgrade_nack_[i] = JOINLL(l3_get_fwd_upgrade_nack_[i]);
+		cgm_stat->l3_upgrade_[i] = JOINLL(l3_upgrade_[i]);
+		cgm_stat->l3_upgrade_ack_[i] = JOINLL(l3_upgrade_ack_[i]);
+
 	}
 
 	//switch stats
@@ -1153,8 +1231,12 @@ void cgm_dump_histograms(void){
 	return;
 }
 
+#define ADDSTATS(stat) (cgm_parallel_stats->stat[0] + cgm_parallel_stats->stat[1] + cgm_parallel_stats->stat[2] + cgm_parallel_stats->stat[3])
 
 void cgm_dump_summary(void){
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
 
 	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
 
@@ -1175,6 +1257,8 @@ void cgm_dump_summary(void){
 
 	cgm_dump_general_stats();
 
+	/*star todo, fix this... we consolidate stats then try to print them all out individually...*/
+
 	/*dump the full Run stats*/
 	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
 	CGM_STATS(cgm_stats_file, "[FullRunStats]\n");
@@ -1185,6 +1269,43 @@ void cgm_dump_summary(void){
 	sys_agent_dump_stats(cgm_stat);
 	memctrl_dump_stats(cgm_stat);
 	CGM_STATS(cgm_stats_file, "\n");
+
+	printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
+	printf("l2_get_ %llu\n", ADDSTATS(l2_get_));
+	printf("l2_getx_ %llu\n", ADDSTATS(l2_getx_));
+	printf("l2_write_back_ %llu\n", ADDSTATS(l2_write_back_));
+	printf("l2_write_block_ %llu\n", ADDSTATS(l2_write_block_));
+	printf("l2_downgrade_ack_ %llu\n", ADDSTATS(l2_downgrade_ack_));
+	printf("l2_get_nack_ %llu\n", ADDSTATS(l2_get_nack_));
+	printf("l2_getx_nack_ %llu\n", ADDSTATS(l2_getx_nack_));
+	printf("l2_get_fwd_ %llu\n", ADDSTATS(l2_get_fwd_));
+	printf("l2_downgrade_nack_ %llu\n", ADDSTATS(l2_downgrade_nack_));
+	printf("l2_getx_fwd_ %llu\n", ADDSTATS(l2_getx_fwd_));
+	printf("l2_getx_fwd_inval_ack_ %llu\n", ADDSTATS(l2_getx_fwd_inval_ack_));
+	printf("l2_getx_fwd_nack_ %llu\n", ADDSTATS(l2_getx_fwd_nack_));
+	printf("l2_upgrade_ %llu\n", ADDSTATS(l2_upgrade_));
+	printf("l2_upgrade_ack_ %llu\n", ADDSTATS(l2_upgrade_ack_));
+	printf("l2_upgrade_nack_ %llu\n", ADDSTATS(l2_upgrade_nack_));
+	printf("l2_upgrade_putx_n_ %llu\n", ADDSTATS(l2_upgrade_putx_n_));
+	printf("l2_upgrade_inval_ %llu\n", ADDSTATS(l2_upgrade_inval_));
+	printf("l2_flush_block_ %llu\n", ADDSTATS(l2_flush_block_));
+	printf("l2_flush_block_ack_ %llu\n", ADDSTATS(l2_flush_block_ack_));
+
+	printf("l3_gets_ %llu\n", ADDSTATS(l3_gets_));
+	printf("l3_get_ %llu\n", ADDSTATS(l3_get_));
+	printf("l3_getx_ %llu\n", ADDSTATS(l3_getx_));
+	printf("l3_write_back_ %llu\n", ADDSTATS(l3_write_back_));
+	printf("l3_flush_block_ack_ %llu\n", ADDSTATS(l3_flush_block_ack_));
+	printf("l3_write_block_ %llu\n", ADDSTATS(l3_write_block_));
+	printf("l3_downgrade_ack_ %llu\n", ADDSTATS(l3_downgrade_ack_));
+	printf("l3_downgrade_nack_ %llu\n", ADDSTATS(l3_downgrade_nack_));
+	printf("l3_getx_fwd_ack_ %llu\n", ADDSTATS(l3_getx_fwd_ack_));
+	printf("l3_getx_fwd_nack_ %llu\n", ADDSTATS(l3_getx_fwd_nack_));
+	printf("l3_getx_fwd_upgrade_nack_ %llu\n", ADDSTATS(l3_getx_fwd_upgrade_nack_));
+	printf("l3_get_fwd_upgrade_nack_ %llu\n", ADDSTATS(l3_get_fwd_upgrade_nack_));
+	printf("l3_upgrade_ %llu\n", ADDSTATS(l3_upgrade_));
+	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));
+
 
 	/*parallel section stats*/
 	CGM_STATS(cgm_stats_file, "[ParallelStats]\n");
