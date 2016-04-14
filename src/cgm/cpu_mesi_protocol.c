@@ -1631,7 +1631,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						list_enqueue(cache->retry_queue, pending_join);
 						advance(cache->ec_ptr);
 
-						warning("l2 load pending join\n");
+						//warning("l2 load pending join\n");
 					}
 				}
 			}
@@ -7044,7 +7044,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	//message_packet = list_remove(cache->last_queue, message_packet);
 	//packet_destroy(message_packet);
 
-	warning("L2 upgrade nack\n");
+	//warning("L2 upgrade nack\n");
 
 }
 
@@ -7189,6 +7189,8 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 
 				//pull the pending request from the pending request buffer
 				pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+
+				//warning("pending packet l1 access type is %d\n", pending_packet->l1_access_type);
 				assert(pending_packet->l1_access_type == cgm_access_getx || pending_packet->l1_access_type == cgm_access_upgrade);
 
 				//set the access type and what the block state should be.
@@ -7534,7 +7536,7 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 			break;
 	}
 
-	warning("l2 putx_n\n");
+	//warning("l2 putx_n\n");
 
 	return;
 }
