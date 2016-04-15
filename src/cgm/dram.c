@@ -219,7 +219,6 @@ void dramsim_update_cpu_clock(void){
 }
 
 
-//do some work.
 void dramsim_ctrl(void){
 
 	long long step = 1;

@@ -70,14 +70,19 @@ struct mem_system_stats_t{
 
 	long long l3_loops;
 
+	/*timing stats*/
+	long long l1_i_hit_time;
+	long long l1_d_load_hit_time;
+	long long l1_d_store_hit_time;
+
 };
 
 
-#define SETROUTE(source, dest)																			\
-								message_packet->src_name = source->name;								\
-								message_packet->src_id = str_map_string(&node_strn_map, source->name);	\
-								message_packet->dest_name = dest.name;									\
-								message_packet->dest_id = str_map_string(&node_strn_map, dest.name);
+#define SETROUTE(packet, source, dest)															\
+								packet->src_name = source->name;								\
+								packet->src_id = str_map_string(&node_strn_map, source->name);	\
+								packet->dest_name = dest->name;									\
+								packet->dest_id = str_map_string(&node_strn_map, dest->name);
 
 extern struct mem_system_stats_t *mem_system_stats;
 

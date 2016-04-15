@@ -1060,7 +1060,7 @@ void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, 
 }
 
 
-int cgm_l3_cache_map(int set){
+struct cache_t *cgm_l3_cache_map(int set){
 
 	int num_cores = x86_cpu_num_cores;
 	int map = -1;
@@ -1085,7 +1085,7 @@ int cgm_l3_cache_map(int set){
 	}
 
 	assert(map >= 0 && map <= (num_cores - 1));
-	return map;
+	return &l3_caches[map];
 }
 
 /*int cgm_gpu_cache_map(int cache_id){*/
@@ -3582,11 +3582,9 @@ void l2_cache_down_io_ctrl(void){
 	int my_pid = l2_down_io_pid++;
 	long long step = 1;
 
-	/*int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;*/
+	struct cgm_packet_t *message_packet = NULL;
+	struct cache_t *l3_cache_ptr = NULL;
 
-	struct cgm_packet_t *message_packet;
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
@@ -3610,7 +3608,7 @@ void l2_cache_down_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].north_queue, message_packet);
@@ -3627,15 +3625,17 @@ void l2_cache_down_io_ctrl(void){
 		switches[my_pid].north_rxqueue_ave_depth =
 			((((double) switches[my_pid].north_rx_inserts - 1) * switches[my_pid].north_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_rx_inserts;
 
+		l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+		assert(l3_cache_ptr);
 
-		l3_caches[cgm_l3_cache_map(message_packet->set)].TotalAcesses++;
+		l3_cache_ptr->TotalAcesses++;
 		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get)
 		{
-			l3_caches[cgm_l3_cache_map(message_packet->set)].TotalReads++;
+			l3_cache_ptr->TotalReads++;
 		}
 		else if(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
 		{
-			l3_caches[cgm_l3_cache_map(message_packet->set)].TotalWrites++;
+			l3_cache_ptr->TotalWrites++;
 		}
 
 	}
@@ -3672,7 +3672,7 @@ void l3_cache_up_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 
 		//drop in to the switch queue
@@ -3735,7 +3735,7 @@ void l3_cache_down_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		//drop in to the switch queue
 		list_enqueue(switches[my_pid].south_queue, message_packet);
@@ -3899,7 +3899,8 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 	int my_pid = gpu_l2_down_io_pid++;
 	long long step = 1;
-	struct cgm_packet_t *message_packet;
+	struct cgm_packet_t *message_packet = NULL;
+	struct cache_t *l3_cache_ptr = NULL;
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -3921,14 +3922,18 @@ void gpu_l2_cache_down_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		list_enqueue(hub_iommu->Rx_queue_top[my_pid], message_packet);
 		advance(hub_iommu_ec);
 
 		/*stats*/
 		if(hub_iommu_connection_type == hub_to_l3)
-			l3_caches[cgm_l3_cache_map(message_packet->set)].TotalAcesses++;
+		{
+			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+			assert(l3_cache_ptr);
+			l3_cache_ptr->TotalAcesses++;
+		}
 
 	}
 	return;
@@ -4131,18 +4136,30 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(message_packet->access_id == 1)
 		mem_system_stats->first_mem_access_lat = mem_lat;
 
+
 	assert(message_packet->protocol_case != invalid);
 	if(message_packet->protocol_case == L1_hit)
+	{
 		mem_system_stats->fetch_l1_hits++;
+	}
 	else if (message_packet->protocol_case == L2_hit)
+	{
 		mem_system_stats->fetch_l2_hits++;
+	}
 	else if (message_packet->protocol_case == L3_hit)
+	{
 		mem_system_stats->fetch_l3_hits++;
+	}
 	else if (message_packet->protocol_case == memory)
+	{
 		mem_system_stats->fetch_memory++;
+	}
 	else
+	{
 		fatal("cache_l1_i_return(): message_packet->protocol_case is invalid\n");
+	}
 
+	/*for deadlock problems*/
 	last_committed_fetch_access_id = message_packet->access_id;
 	last_committed_fetch_access_blk = message_packet->address & cache->block_address_mask;
 
@@ -4156,9 +4173,6 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//debug
-	/*CGM_DEBUG(CPU_cache_debug_file, "%s access_id %llu cycle %llu cleared from mem system\n", cache->name, message_packet->access_id, P_TIME);*/
-
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	assert(message_packet->start_cycle != 0);
@@ -4167,24 +4181,27 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
 
-	/*if(mem_lat >= 15783)// && mem_lat <=860)
-		fatal("cache_l1_d_return(): %s access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
-				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
-				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
-
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
 		mem_system_stats->cpu_total_load_replys++;
 		mem_system_stats->load_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
+		{
 			mem_system_stats->load_l1_hits++;
+		}
 		else if (message_packet->protocol_case == L2_hit)
+		{
 			mem_system_stats->load_l2_hits++;
+		}
 		else if (message_packet->protocol_case == L3_hit)
+		{
 			mem_system_stats->load_l3_hits++;
+		}
 		else if (message_packet->protocol_case == memory)
+		{
 			mem_system_stats->load_memory++;
+		}
 		else
 			fatal("cache_l1_d_return(): message_packet->protocol_case is invalid\n");
 	}
@@ -4194,23 +4211,31 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 		mem_system_stats->store_lat_hist[mem_lat]++;
 
 		if(message_packet->protocol_case == L1_hit)
+		{
 			mem_system_stats->store_l1_hits++;
+		}
 		else if (message_packet->protocol_case == L2_hit)
+		{
 			mem_system_stats->store_l2_hits++;
+
+		}
 		else if (message_packet->protocol_case == L3_hit)
+		{
 			mem_system_stats->store_l3_hits++;
+		}
 		else if (message_packet->protocol_case == memory)
+		{
 			mem_system_stats->store_memory++;
+		}
 	}
 
+	/*info for deadlock problems*/
 	last_committed_lsq_access_id = message_packet->access_id;
 	last_committed_lsq_access_blk = message_packet->address & cache->block_address_mask;
 
 	//remove packet from cache queue, global queue, and simulator memory
 	message_packet = list_remove(cache->last_queue, message_packet);
 	linked_list_add(message_packet->event_queue, message_packet->data);
-
-	/*printf("access_id %llu finished cycles %llu \n", message_packet->access_id, (message_packet->end_cycle - message_packet->start_cycle));*/
 
 	packet_destroy(message_packet);
 	return;

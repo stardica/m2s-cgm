@@ -108,7 +108,7 @@ void memctrl_ctrl_io(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		mem_ctrl->io_busy_cycles += (transfer_time + 1);
 
@@ -188,7 +188,7 @@ void memctrl_ctrl(void){
 		if(list_count(mem_ctrl->pending_accesses) >= 32)	//!sys_agent_can_access_bottom())
 		{
 			printf("MC stalling dram ctrl full cycle %llu\n", P_TIME);
-			P_PAUSE(1);
+			SYSTEM_PAUSE(1);
 
 			/*stats*/
 			mem_ctrl->busy_cycles += 1;
@@ -230,7 +230,7 @@ void memctrl_ctrl(void){
 				}
 				else
 				{
-					P_PAUSE(mem_ctrl->DRAM_latency);
+					SYSTEM_PAUSE(mem_ctrl->DRAM_latency);
 					message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 					free(message_packet);
 				}
@@ -262,7 +262,7 @@ void memctrl_ctrl(void){
 				}
 				else
 				{
-					P_PAUSE(mem_ctrl->DRAM_latency);
+					SYSTEM_PAUSE(mem_ctrl->DRAM_latency);
 
 					//set the access type
 					message_packet->access_type = cgm_access_mc_put;

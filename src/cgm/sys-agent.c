@@ -284,7 +284,7 @@ void sys_agent_ctrl_io_up(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 		system_agent->north_io_busy_cycles += (transfer_time + 1);
 
@@ -321,17 +321,10 @@ void sys_agent_ctrl_io_down(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		SYSTEM_PAUSE(transfer_time);
 
 
 		system_agent->south_io_busy_cycles += (transfer_time + 1);
-
-		/*while(transfer_time > 0)
-		{
-			P_PAUSE(1);
-			transfer_time--;
-			//printf("Access_is %llu cycle %llu transfer %d\n", access_id, P_TIME, transfer_time);
-		}*/
 
 		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
 		advance(mem_ctrl_ec);
