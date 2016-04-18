@@ -59,6 +59,8 @@
 #define DUMP 0
 #define CPUTICK 1
 
+#define MS ((x86_cpu_frequency * MHZ) / 1000)
+
 #define SKIP 1000000
 
 //config file
@@ -167,6 +169,8 @@ struct cpu_gpu_stats_t{
 	long long *core_fetch_stalls;
 	long long *core_issued_memory_insts;
 	long long *core_commited_memory_insts;
+	long long *core_bytes_rx;
+	long long *core_bytes_tx;
 
 	/*gpu stats*/
 };
@@ -175,7 +179,7 @@ struct cpu_gpu_stats_t{
 extern struct cpu_gpu_stats_t *cpu_gpu_stats;
 
 void init_cgm_stats(int argc, char **argv);
-void init_cpu_gpu_stats(void);
+
 
 //global access record
 extern struct list_t *cgm_access_record;
@@ -222,6 +226,9 @@ void cgm_store_stats(struct cgm_stats_t *cgm_stat_container);
 void cgm_consolidate_stats(void);
 
 void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container);
+void init_cpu_gpu_stats(void);
+void cpu_gpu_reset_stats(void);
+void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container);
 
 void tick(void);
 void cgm_watchdog(void);

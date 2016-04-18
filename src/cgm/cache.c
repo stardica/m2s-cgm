@@ -3615,8 +3615,11 @@ void l2_cache_down_io_ctrl(void){
 		advance(&switches_ec[my_pid]);
 
 		/*stats*/
+		cpu_gpu_stats->core_bytes_tx[my_pid] += transfer_time;
+
 		switches[my_pid].north_rx_inserts++;
 		queue_depth = list_count(switches[my_pid].north_queue);
+
 		/*max depth*/
 		if(queue_depth > switches[my_pid].north_rxqueue_max_depth)
 			switches[my_pid].north_rxqueue_max_depth = queue_depth;
@@ -3685,7 +3688,6 @@ void l3_cache_up_io_ctrl(void){
 			printf("\tnorth io ctrl moving id %llu to switch south_queue\n", message_packet->access_id);
 			cache_dump_request_queue(switches[my_pid].south_queue);
 		}*/
-
 
 		/*stats*/
 		switches[my_pid].south_rx_inserts++;
@@ -4026,9 +4028,9 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 	return;
 }
 
-void cache_access_stats(struct cache_t *cache, int hit, int state){
+/*void cache_access_stats(struct cache_t *cache, int hit, int state){
 
-	/*cgm_cache_block_invalid = 0,
+	cgm_cache_block_invalid = 0,
 	cgm_cache_block_noncoherent,1
 	cgm_cache_block_modified, 2
 	cgm_cache_block_owned, 3
@@ -4037,15 +4039,15 @@ void cache_access_stats(struct cache_t *cache, int hit, int state){
 	cgm_cache_block_transient,6
 	cgm_cache_block_flush,6
 	cgm_cache_block_null,7
-	cgm_cache_block_state_num*/
+	cgm_cache_block_state_num
 
-	/*l1_i_cache_t,
+	l1_i_cache_t,
 	l1_d_cache_t,
 	l2_cache_t,
 	l3_cache_t,
 	gpu_s_cache_t,
 	gpu_v_cache_t,
-	gpu_l2_cache_t*/
+	gpu_l2_cache_t
 
 	//for all cache types
 	assert(hit == 0 || hit == 1);
@@ -4105,7 +4107,7 @@ void cache_access_stats(struct cache_t *cache, int hit, int state){
 	}
 
 	return;
-}
+}*/
 
 void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 

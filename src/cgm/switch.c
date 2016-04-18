@@ -938,6 +938,10 @@ void switch_north_io_ctrl(void){
 			{
 				fatal("switch_north_io_ctrl(): bad access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
+
+			/*stats*/
+			cpu_gpu_stats->core_bytes_rx[my_pid] += transfer_time;
+
 		}
 		//hub-iommu
 		else if(my_pid >= num_cores)

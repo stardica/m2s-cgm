@@ -76,6 +76,8 @@ struct system_agent_t{
 	long long south_gets;
 	long long north_puts;
 	long long south_puts;
+
+
 };
 
 extern struct system_agent_t *system_agent;

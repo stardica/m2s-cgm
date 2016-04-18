@@ -180,6 +180,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_issued_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l1_i_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -418,6 +420,8 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_issued_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
 
 	return;
 }
@@ -499,6 +503,8 @@ void cgm_consolidate_stats(void){
 		cgm_stat->core_issued_memory_insts[i] = JOINLL(core_issued_memory_insts[i]);
 		cgm_stat->core_commited_memory_insts[i] = JOINLL(core_commited_memory_insts[i]);
 		cgm_stat->core_last_commit_cycle[i] = JOINMAX(core_last_commit_cycle[i]); // ok to take the max as it is the Last (greatest cycle).
+		cgm_stat->core_bytes_rx[i] = JOINLL(core_bytes_rx[i]);
+		cgm_stat->core_bytes_tx[i] = JOINLL(core_bytes_tx[i]);
 	}
 
 	//memory system at large
@@ -818,13 +824,27 @@ void cgm_consolidate_stats(void){
 
 void cgm_store_stats(struct cgm_stats_t *cgm_stat_container){
 
+	/*set the state of the stats container*/
+	cgm_stat_container->state = consolidated;
+
+	cpu_gpu_store_stats(cgm_stat_container);
+	mem_system_store_stats(cgm_stat_container);
+	cache_store_stats(cgm_stat_container);
+	switch_store_stats(cgm_stat_container);
+	sys_agent_store_stats(cgm_stat_container);
+	memctrl_store_stats(cgm_stat_container);
+
+	return;
+}
+
+void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
+
 	int num_cores = x86_cpu_num_cores;
 	/*int num_cus = si_gpu_num_compute_units;*/
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
-	/*set the state of the stats container*/
-	cgm_stat_container->state = consolidated;
+
 
 	//store cgm_stat_container
 	for(i = 0; i < num_cores; i++)
@@ -840,18 +860,28 @@ void cgm_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->core_last_commit_cycle[i] = cpu_gpu_stats->core_last_commit_cycle[i];
 		cgm_stat_container->core_issued_memory_insts[i] = cpu_gpu_stats->core_issued_memory_insts[i];
 		cgm_stat_container->core_commited_memory_insts[i] = cpu_gpu_stats->core_commited_memory_insts[i];
+		cgm_stat_container->core_bytes_rx[i] = cpu_gpu_stats->core_bytes_rx[i];
+		cgm_stat_container->core_bytes_tx[i] = cpu_gpu_stats->core_bytes_tx[i];
 	}
 
-	mem_system_store_stats(cgm_stat_container);
-	cache_store_stats(cgm_stat_container);
-	switch_store_stats(cgm_stat_container);
-	sys_agent_store_stats(cgm_stat_container);
-	memctrl_store_stats(cgm_stat_container);
+
 
 	return;
 }
 
 void cgm_reset_stats(void){
+
+	cpu_gpu_reset_stats();
+	mem_system_reset_stats();
+	cache_reset_stats();
+	switch_reset_stats();
+	sys_agent_reset_stats();
+	memctrl_reset_stats();
+
+	return;
+}
+
+void cpu_gpu_reset_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
 	/*int num_cus = si_gpu_num_compute_units;*/
@@ -872,17 +902,12 @@ void cgm_reset_stats(void){
 		cpu_gpu_stats->core_last_commit_cycle[i] = 0;
 		cpu_gpu_stats->core_issued_memory_insts[i] = 0;
 		cpu_gpu_stats->core_commited_memory_insts[i] = 0;
+		cpu_gpu_stats->core_bytes_rx[i] = 0;
+		cpu_gpu_stats->core_bytes_tx[i] = 0;
 	}
-
-	mem_system_reset_stats();
-	cache_reset_stats();
-	switch_reset_stats();
-	sys_agent_reset_stats();
-	memctrl_reset_stats();
 
 	return;
 }
-
 
 void cgm_init(int argc, char **argv){
 
@@ -995,24 +1020,29 @@ void cgm_watchdog(void){
 
 	long long t_1 = 1;
 
+
+
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-
-		/*if()
+		if((P_TIME % MS) == 0)
 		{
-			if(l2_caches[1].sets[69].blocks[0].state == cgm_cache_block_invalid)
-			{
-				//assert(l2_caches[1].sets[69].blocks[0].tag == 57);
-				fatal("\tWD: block changed blk_addr 0x%08x\n",
-						cgm_cache_build_address(&l2_caches[1], l2_caches[1].sets[69].id, l2_caches[1].sets[69].blocks[0].tag));
-			}
-		}*/
+			warning("Core0 bytes tx %llu\n", cpu_gpu_stats->core_bytes_tx[0]);
+			warning("Core0 bytes rx %llu\n", cpu_gpu_stats->core_bytes_rx[0]);
+			warning("SA bytes rx %llu\n", system_agent->mc_loads);
+			warning("SA bytes rx %llu\n", system_agent->mc_stores);
+			warning("SA bytes tx %llu\n", system_agent->mc_returns);
 
 
-		/*printf("\tWD: ort_queue_size %d cycle %llu\n", list_count(l1_d_caches[0].ort_list), P_TIME);*/
+			cpu_gpu_stats->core_bytes_tx[0] = 0;
+			cpu_gpu_stats->core_bytes_rx[0] = 0;
+			system_agent->mc_loads = 0;
+			system_agent->mc_stores = 0;
+			system_agent->mc_returns = 0;
+		}
+
 	}
 	return;
 }
@@ -1235,9 +1265,6 @@ void cgm_dump_histograms(void){
 
 void cgm_dump_summary(void){
 
-	int num_cores = x86_cpu_num_cores;
-	int i = 0;
-
 	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
 
 	/*finalize the cgm stats structure i.e. consolidate all stats
@@ -1269,6 +1296,8 @@ void cgm_dump_summary(void){
 	sys_agent_dump_stats(cgm_stat);
 	memctrl_dump_stats(cgm_stat);
 	CGM_STATS(cgm_stats_file, "\n");
+
+	/*star todo add these stats to the regular output.*/
 
 	printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
 	printf("l2_get_ %llu\n", ADDSTATS(l2_get_));
@@ -1889,7 +1918,7 @@ void PrintCycle(void){
 
 	if((P_TIME % SKIP) == 0)
 	{
-		printf("---Cycles %lluM---\n", (P_TIME)/1000000);
+		printf("---Cycles %lluM---\n", P_TIME/SKIP);
 		fflush(stdout);
 	}
 

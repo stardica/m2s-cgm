@@ -560,6 +560,8 @@ struct cgm_stats_t{
 	long long *core_last_commit_cycle;
 	long long *core_issued_memory_insts;
 	long long *core_commited_memory_insts;
+	long long *core_bytes_rx;
+	long long *core_bytes_tx;
 
 	//memory system at large
 	int first_mem_access_lat;
