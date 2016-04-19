@@ -156,12 +156,31 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+	int ort_status = -1;
+
 	//check the packet for integrity
 	assert(cache->cache_type == l1_i_cache_t);
 	assert(message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared);
 
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	/*ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...
+		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+
+		fatal("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}*/
+
+
+
+
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
+
+
+
 
 	//set the block and retry the access in the cache.
 	/*cache_put_block(cache, message_packet);*/
@@ -378,6 +397,14 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				/*there is a pending upgrade this means we have a valid block
 				in the shared state, but an earlier store is waiting on an upgrade to modified.
 				We must coalesce this access and wait for the earlier store to finish.*/
+
+
+				if(*cache_block_state_ptr != cgm_cache_block_shared)
+				{
+					fatal("block 0x%08x %s load hit coalesce ID %llu type %d state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+				}
+
 				assert(*cache_block_state_ptr == cgm_cache_block_shared);
 
 				if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -1017,7 +1044,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *wb_packet;
-	//int ort_status = -1;
+	int ort_status = -1;
 
 	//enum cgm_cache_block_state_t victim_trainsient_state;
 
@@ -1036,14 +1063,16 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 		}
 	}
 
-	//check the ORT table is there an outstanding access for this block?
-	// ort_status = ort_search(cache, message_packet->tag, message_packet->set);
-	// if(ort_status != cache->mshr_size)
-	 //{
-	//	 fatal("caught the bug\n");
-	// }
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-
+		warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
 
 	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 
@@ -1153,19 +1182,28 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 			|| (message_packet->access_type == cgm_access_put_clnx && message_packet->cache_block_state == cgm_cache_block_exclusive)
 			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));
 
+
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
-	//check the transient state of the victim
-	//if the state is set, an earlier access is bringing the block
-	//if it is not set the victim is clear to evict
+	int ort_status = -1;
+	int ort_join_bit = -1;
 
-	ort_clear(cache, message_packet);
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	//make sure victim way was correctly stored.
-	assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	assert(ort_status < cache->mshr_size);
 
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 	//The block should be in the transient state.
+
+	//make sure victim way was correctly stored.
+	assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 	if(victim_trainsient_state != cgm_cache_block_transient)
 	{
@@ -1179,6 +1217,57 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 	}
 
 	assert(victim_trainsient_state == cgm_cache_block_transient);
+
+	/*special case check for a join
+	if so kill this write block and retry the get/getx*/
+	ort_join_bit = ort_get_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+	assert(ort_join_bit == 1 || ort_join_bit == 0);
+
+	if(ort_join_bit == 0)
+	{
+		if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 1 || LEVEL == 3)
+			{
+				printf("block 0x%08x %s write block conflict found retrying access ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, message_packet->cache_block_state, P_TIME);
+			}
+		}
+
+		/*we know that the victim is still transient*/
+
+		/*clear the pending bit in the ort and retry the access*/
+		ort_clear_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+
+		/*change the access type*/
+		if(message_packet->l1_access_type == cgm_access_get)
+		{
+			message_packet->access_type = cgm_access_get;
+		}
+		else
+		{
+			message_packet->access_type = cgm_access_getx;
+		}
+
+		/*change the size*/
+		message_packet->size = 1;
+
+		//transmit to L2
+		cache_put_io_down_queue(cache, message_packet);
+
+		warning("l1 write block caught the conflict cycle %llu\n", P_TIME);
+
+		return 0;
+	}
+
+
+	/*we are clear to write the block in*/
+
+	ort_clear(cache, message_packet);
+	/*cache->ort[ort_status][0] = -1;
+	cache->ort[ort_status][1] = -1;
+	cache->ort[ort_status][2] = -1;*/
+
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{

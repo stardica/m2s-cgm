@@ -234,6 +234,7 @@ int cache_get_ORT_size(struct cache_t *cache);
 int ort_search(struct cache_t *cache, int tag, int set);
 void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
 int ort_get_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
+void ort_clear_pending_join_bit(struct cache_t *cache, int row, int tag, int set);
 void ort_set(struct cache_t *cache, int entry, int tag, int set);
 void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void ort_dump(struct cache_t *cache);

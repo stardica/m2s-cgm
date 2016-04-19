@@ -947,6 +947,15 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	return;
 }
 
+void ort_clear_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
+
+	assert(cache->ort[row][0] == tag && cache->ort[row][1] == set);
+
+	cache->ort[row][2] = 1;
+
+	return;
+}
+
 
 int ort_get_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
 
@@ -2642,14 +2651,12 @@ void l1_d_cache_ctrl(void){
 				l1_d_caches[my_pid].l1_d_store(&(l1_d_caches[my_pid]), message_packet);
 
 			}
-			else if (access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx
-					|| access_type == cgm_access_upgrade_putx)
+			else if (access_type == cgm_access_puts || access_type == cgm_access_putx
+					|| access_type == cgm_access_put_clnx || access_type == cgm_access_upgrade_putx)
 			{
-				//Call back function (cgm_mesi_l1_d_put)
-				l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet);
 
-				//entered retry state run again.
-				step--;
+				if(l1_d_caches[my_pid].l1_d_write_block(&(l1_d_caches[my_pid]), message_packet))
+					step--;
 
 			}
 			else if (access_type == cgm_access_write_back)
