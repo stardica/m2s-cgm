@@ -127,7 +127,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -242,6 +242,12 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	//charge delay
 	P_PAUSE(cache->latency);
 
+	/*if(message_packet->access_id == 5643810)
+	{
+		fatal("block 0x%08x %s load wb hit id %llu state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+	}*/
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_owned:
@@ -317,7 +323,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					//warning("d$ loard merge retry\n");
 
 					//enter retry state.
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				/*stats*/
@@ -340,6 +346,12 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				{
 					/*stats*/
 					cache->CoalescePut++;
+
+					if(message_packet->access_id == 5643812)
+					{
+						fatal("%llu coalesced coal = %d conflict = %d\n", message_packet->access_id, message_packet->coalesced, message_packet->assoc_conflict);
+
+					}
 
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
@@ -398,7 +410,6 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				in the shared state, but an earlier store is waiting on an upgrade to modified.
 				We must coalesce this access and wait for the earlier store to finish.*/
 
-
 				if(*cache_block_state_ptr != cgm_cache_block_shared)
 				{
 					fatal("block 0x%08x %s load hit coalesce ID %llu type %d state %d cycle %llu\n",
@@ -447,7 +458,8 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			/*stats*/
@@ -566,7 +578,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					cache->MergeRetries++;
 
 					//enter retry state.
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				/*stats*/
@@ -705,7 +717,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -1124,6 +1136,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 				}
 
 			break;
+
 		case cgm_cache_block_exclusive:
 
 			message_packet->size = 1;
@@ -1384,7 +1397,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			//set block state and message size
@@ -1488,7 +1501,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				{
 					cache->MergeRetries++;
 					//enter retry state process all coalesced accesses
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				//set message size
@@ -1590,7 +1603,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 
 				/*check for a pending get_fwd or getx_fwd join*/
 				pending_join = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
@@ -1797,7 +1810,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				{
 					cache->MergeRetries++;
 					//enter retry state.
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				//set message size
@@ -1903,7 +1916,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 
 				/*check for a pending get_fwd or getx_fwd join*/
 				pending_join = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
@@ -4213,7 +4226,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->access_type == cgm_access_fetch_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			//set the presence bit in the directory for the requesting core.
@@ -4596,7 +4609,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				//set message size
@@ -4729,7 +4742,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
@@ -4861,7 +4874,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -5042,7 +5055,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 				{
 					//enter retry state.
-					cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+					cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 				}
 
 				//set message size
@@ -5174,7 +5187,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.

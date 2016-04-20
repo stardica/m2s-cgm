@@ -4460,7 +4460,7 @@ void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet)
 long long ort_pull = 0;
 long long assoc = 0;
 
-void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
+void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long access_id){
 
 	struct cgm_packet_t *ort_packet;
 	int i = 0;
@@ -4522,6 +4522,12 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 
 		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
 		{
+
+			if(ort_packet->access_id == 5643812)
+			{
+				fatal("found it i was accessed by %llu on %llu\n", access_id, P_TIME);
+			}
+
 			assert(ort_packet->start_cycle >= oldest_packet);
 
 			//clear the ORT entry for the assoc miss

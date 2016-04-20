@@ -190,7 +190,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 				P_PAUSE(cache->latency);
 
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			message_packet->end_cycle = P_TIME;
@@ -621,7 +621,7 @@ void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pa
 			if(message_packet->access_type == cgm_access_storex_retry || message_packet->access_type == cgm_access_loadx_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
-				cache_coalesed_retry(cache, message_packet->tag, message_packet->set);
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
