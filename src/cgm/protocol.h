@@ -15,8 +15,6 @@
 
 #include <lib/util/linked-list.h>
 
-
-
 extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
@@ -49,6 +47,7 @@ struct mem_system_stats_t{
 	long long load_l3_hits;
 	long long load_memory;
 	long long load_get_fwd;
+	long long l1_load_nack;
 	long long l2_load_nack;
 	long long l3_load_nack;
 
@@ -62,6 +61,7 @@ struct mem_system_stats_t{
 	long long store_memory;
 	long long store_getx_fwd;
 	long long store_upgrade;
+	long long l1_store_nack;
 	long long l2_store_nack;
 	long long l3_store_nack;
 
@@ -121,12 +121,17 @@ void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container);
 /////CPU MESI protocol
 //////////////////////
 
-//implements a MESI protocol.
+//implements a multilevel cache MESI protocol.
 void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_store_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
 int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);

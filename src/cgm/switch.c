@@ -316,13 +316,6 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	dest_node = message_packet->dest_id;
 	src_node = message_packet->src_id;
 
-/*
-	if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
-	{
-		printf("\tswtich routing id %llu src %d dest %d\n", message_packet->access_id, src_node, dest_node);
-		getchar();
-	}*/
-
 	//if dest is an L2/L3/HUB-IOMMU/SA connected to this switch.
 	if(dest_node == (switch_node - 1) || dest_node == (switch_node + 1))
 	{
@@ -390,6 +383,13 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 		{
 			fatal("switch_get_route(): directional queue error as %d.\n", switches->queue);
 		}
+	}
+
+	if(tx_port == invalid_queue)
+	{
+
+		printf("\tswtich routing id %llu block 0x%08x src %d dest %d\n", message_packet->access_id, (message_packet->address & l2_caches[0].block_address_mask), src_node, dest_node);
+		getchar();
 	}
 
 	assert(tx_port != invalid_queue);

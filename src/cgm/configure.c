@@ -1848,7 +1848,9 @@ int cache_finish_create(){
 		else if(cgm_cache_protocol == cgm_protocol_mesi)
 		{
 			l1_d_caches[i].l1_d_load = cgm_mesi_load;
+			l1_d_caches[i].l1_d_load_nack = cgm_mesi_load_nack;
 			l1_d_caches[i].l1_d_store = cgm_mesi_store;
+			l1_d_caches[i].l1_d_store_nack = cgm_mesi_store_nack;
 			l1_d_caches[i].l1_d_write_block = cgm_mesi_l1_d_write_block;
 			l1_d_caches[i].l1_d_downgrade = cgm_mesi_l1_d_downgrade;
 			l1_d_caches[i].l1_d_getx_fwd_inval = cgm_mesi_l1_d_getx_fwd_inval;

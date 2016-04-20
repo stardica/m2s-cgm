@@ -880,6 +880,7 @@ int ort_get_num_coal(struct cache_t *cache, int tag, int set){
 	return num_coalesced;
 }
 
+
 void ort_set_row(struct cache_t *cache, int tag, int set){
 
 	int i = 0;
@@ -912,7 +913,7 @@ void ort_get_row_sets_size(struct cache_t *cache, int tag, int set, int *hit_row
 	//first look for a matching tag and set
 	for (i = 0; i < cache->mshr_size; i++)
 	{
-		if(cache->ort[i][0] == tag && cache->ort[i][1] == set && cache->ort[i][2] == 1)
+		if(cache->ort[i][0] == tag && cache->ort[i][1] == set)
 		{
 			//hit in the ORT table
 			break;
@@ -1016,11 +1017,12 @@ void ort_clear(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	message_packet->offset = offset;
 
 	row = ort_search(cache, message_packet->tag, message_packet->set);
-
 	if(row >= cache->mshr_size)
 	{
 		ort_dump(cache);
-		printf("ort_clear(): row >= cache->mshr_size %s access id %llu\n", cache->name, message_packet->access_id);
+		printf("ort_clear(): row >= cache->mshr_size %s access id %llu block 0x%08x cycle %llu\n",
+				cache->name, message_packet->access_id, (message_packet->address & cache->block_address_mask), P_TIME);
+
 		assert(row < cache->mshr_size);
 	}
 
@@ -2698,6 +2700,16 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_downgrade(&(l1_d_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_get_nack)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_load_nack(&(l1_d_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_getx_nack)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_store_nack(&(l1_d_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l1_d_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
@@ -3560,7 +3572,8 @@ void l2_cache_up_io_ctrl(void){
 		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 		{
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade_ack)
+					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade_ack
+					|| message_packet->access_type == cgm_access_get_nack || message_packet->access_type == cgm_access_getx_nack)
 			{
 				list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
 				advance(&l1_d_cache[my_pid]);
@@ -4280,24 +4293,12 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *num_sets_ptr = &num_sets;
 	int *ort_size_ptr = &ort_size;
 
-	/*int i, row;*/
-
 	//get the status of the ORT
 	ort_get_row_sets_size(cache, message_packet->tag, message_packet->set, hit_row_ptr, num_sets_ptr, ort_size_ptr);
 
 	//verify ort size
 	assert(*ort_size_ptr < cache->mshr_size);
 
-
-	/*if(message_packet->access_id == 7101547 && cache->cache_type == l2_cache_t)
-	{
-		cgm_cache_dump_set(cache, message_packet->set);
-		printf("\n");
-		ort_dump(cache);
-		printf("id %llu type %d set %d tag %d way %d assoc_flag %d cycle %llu\n",
-				message_packet->access_id, message_packet->access_type, message_packet->set,
-				message_packet->tag, message_packet->way, message_packet->assoc_conflict, P_TIME);
-	}*/
 
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
@@ -4313,29 +4314,12 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 		ort_set_row(cache, message_packet->tag, message_packet->set);
 
-		/*if(message_packet->access_id == 1623278 && cache->cache_type == gpu_l2_cache_t)
-		{
-			ort_dump(cache);
-			cgm_cache_dump_set(cache, message_packet->set);
-			fatal("ort pass id %llu assoc %d addr 0x%08x set %d tag %d *hit_row_ptr %d *num_sets_ptr %d cycle %llu\n",
-					message_packet->access_id, message_packet->assoc_conflict, message_packet->address, message_packet->set, message_packet->tag, *hit_row_ptr, *num_sets_ptr, P_TIME);
-		}*/
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
 		//this is an associativity conflict
 		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
 		//i.e. there IS NOT a space for the block in the cache set and ways on return
-
-		/*if(message_packet->access_id == 4860828)
-		{
-			ort_dump(cache);
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			fatal("%s access id %llu blk_addr 0x%08x set %d tag %d type %d cycle %llu\n",
-				cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->set, message_packet->tag, message_packet->access_type, P_TIME);
-		}*/
-
 
 		//set the row in the ORT
 		ort_set_row(cache, message_packet->tag, message_packet->set);
@@ -4350,7 +4334,7 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
 		//non unique access that can be coalesced with another miss
-		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set && cache->ort[*hit_row_ptr][2] == 1);
+		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set);
 
 		message_packet->coalesced = 1;
 
@@ -4525,7 +4509,7 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 
 			if(ort_packet->access_id == 5643812)
 			{
-				fatal("found it i was accessed by %llu on %llu\n", access_id, P_TIME);
+				warning("found it i was accessed by %llu on %llu\n", access_id, P_TIME);
 			}
 
 			assert(ort_packet->start_cycle >= oldest_packet);

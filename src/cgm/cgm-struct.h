@@ -348,7 +348,9 @@ struct cache_t{
 
 	//L1 D cache protocol virtual functions
 	void (*l1_d_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_load_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
