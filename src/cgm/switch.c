@@ -940,7 +940,7 @@ void switch_north_io_ctrl(void){
 			}
 
 			/*stats*/
-			cpu_gpu_stats->core_bytes_rx[my_pid] += transfer_time;
+			store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 
 		}
 		//hub-iommu

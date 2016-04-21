@@ -95,19 +95,91 @@ struct mem_system_bandwidth_t *init_bandwidth_container(void){
 	return bandwidth;
 }
 
-void store_stat_bandwidth(enum bandwidth_type_t type, int my_pid, int transfer_time){
+void dump_stat_bandwidth(void){
 
-	/*get the current epoc
-	check if a container has been created
+	int num_cores = x86_cpu_num_cores;
+	struct mem_system_bandwidth_t * bandwidth = NULL;
+	int i = 0;
+	int j = 0;
+
+	int num_epochs = 0;
+
+	for(i = 0; i < num_cores; i++)
+	{
+		num_epochs = list_count(cpu_gpu_stats->bandwidth[i]);
+
+		for(j = 0; j < num_epochs; j++)
+		{
+			bandwidth = list_get(cpu_gpu_stats->bandwidth[i], j);
+			printf("Core %d epoch %llu bytes tx %llu bytes rx %llu\n", j, bandwidth->epoch, bandwidth->bytes_tx, bandwidth->bytes_rx);
+			//list_remove(cpu_gpu_stats->bandwidth[i], bandwidth);
+			//free(bandwidth);
+		}
+
+	}
+
+
+	return;
+}
+
+void store_stat_bandwidth(enum bandwidth_type_t type, int core_id, int transfer_time, int bus_width){
+
+	int curr_epoch = -1;
+	struct mem_system_bandwidth_t * bandwidth = NULL;
+	int i = 0;
+
+	/*check if a container has been created
 	if not create and store data
 	if so store the data*/
 
+	cpu_gpu_stats->core_bytes_tx[core_id] += transfer_time * bus_width;
 
-	//store the total bytes
+	/*get the current epoc*/
+	curr_epoch = P_TIME/EPOCH;
+	assert(curr_epoch > -1);
 
-	cpu_gpu_stats->core_bytes_tx[my_pid] += transfer_time * switches[my_pid].bus_width;
+	/*check for the bandwidth stat container*/
+	LIST_FOR_EACH(cpu_gpu_stats->bandwidth[core_id], i)
+	{
+		bandwidth = list_get(cpu_gpu_stats->bandwidth[core_id], i);
 
+		if(bandwidth->epoch == curr_epoch)
+		{
+			break;
+		}
+		else
+		{
+			bandwidth = NULL;
+		}
+	}
 
+	/*if no bandwidth container its the first access
+	in this epoch so make a new one and save the data*/
+
+	if(!bandwidth)
+	{
+		bandwidth = init_bandwidth_container();
+		assert(bandwidth);
+		bandwidth->core_id = core_id;
+		bandwidth->epoch = curr_epoch;
+
+		list_insert(cpu_gpu_stats->bandwidth[core_id], 0, bandwidth);
+	}
+
+	assert(bandwidth->core_id == core_id && bandwidth->epoch == curr_epoch);
+
+	if(type == bytes_tx)
+	{
+		bandwidth->bytes_tx += transfer_time * bus_width;
+	}
+	else if (type == bytes_rx)
+	{
+		bandwidth->bytes_rx += transfer_time * bus_width;
+	}
+	else
+	{
+		fatal("store_stat_bandwidth(): invalid type");
+	}
 
 
 

@@ -219,6 +219,7 @@ void cgm_dump_general_stats(void);
 void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container);
 
 void cgm_dump_histograms(void);
+void cgm_dump_bandwidth(void);
 void cgm_stat_finish_create(int argc, char **argv);
 
 void cgm_reset_stats(void);

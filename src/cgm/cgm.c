@@ -1228,6 +1228,54 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	return;
 }
 
+void cgm_dump_bandwidth(void){
+
+	int i = 0;
+	int j = 0;
+	int num_cores = x86_cpu_num_cores;
+	int num_active_cores = 0;
+	struct mem_system_bandwidth_t * bandwidth = NULL;
+
+	int num_epochs = list_count(cpu_gpu_stats->bandwidth[0]);
+	int epoch_size = EPOCH;
+
+	FILE *bandwidth_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/bandwidth_log_file.out", "w+");
+
+	//get number of active cores
+	for(i = 0; i < num_cores; i++)
+	{
+		if(list_count(cpu_gpu_stats->bandwidth[i]) > 0)
+		{
+			num_active_cores++;
+		}
+	}
+
+	/*print epochs*/
+	fprintf(bandwidth_log_file, "%d\n", num_active_cores);
+	fprintf(bandwidth_log_file, "%llu\n", P_TIME);
+	fprintf(bandwidth_log_file, "%d\n", num_epochs);
+	fprintf(bandwidth_log_file, "%d\n", epoch_size);
+	fprintf(bandwidth_log_file, "%f\n", (double)P_TIME/(double)epoch_size);
+
+	for(i = (num_epochs - 1); i >= 0; i--)
+	{
+		//reverse the order of the print out so it runs in chronological order.
+		for(j = 0; j < num_active_cores; j++)
+		{
+			bandwidth = list_get(cpu_gpu_stats->bandwidth[j], i);
+			fprintf(bandwidth_log_file, "%llu %llu ", bandwidth->bytes_tx, bandwidth->bytes_rx);
+		}
+
+		fprintf(bandwidth_log_file, "\n");
+	}
+
+
+	fclose (bandwidth_log_file);
+
+	return;
+}
+
+
 void cgm_dump_histograms(void){
 
 	int i = 0;
@@ -1285,6 +1333,11 @@ void cgm_dump_summary(void){
 	cgm_consolidate_stats();
 
 	cgm_dump_general_stats();
+
+	dump_stat_bandwidth();
+	cgm_dump_bandwidth();
+
+
 
 	/*star todo, fix this... we consolidate stats then try to print them all out individually...*/
 
