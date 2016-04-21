@@ -15,11 +15,29 @@
 
 #include <lib/util/linked-list.h>
 
+/*((x86_cpu_frequency * MHZ) / 1000) = 1ms*/
+#define EPOCH ((x86_cpu_frequency * MHZ) / 1000)
+
 extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
 extern enum protocol_kind_t cgm_cache_protocol;
 extern enum protocol_kind_t cgm_gpu_cache_protocol;
+
+enum bandwidth_type_t{
+	bytes_invalid,
+	bytes_tx,
+	bytes_rx,
+	total_types
+};
+
+struct mem_system_bandwidth_t{
+
+	int core_id;
+	long long epoch;
+	long long *bytes_tx;
+	long long *bytes_rx;
+};
 
 /*mem system stats*/
 struct mem_system_stats_t{
@@ -88,6 +106,8 @@ extern struct mem_system_stats_t *mem_system_stats;
 
 long long write_back_id;
 
+void store_stat_bandwidth(enum bandwidth_type_t type, int my_pid, int transfer_time);
+struct  mem_system_bandwidth_t *init_bandwidth_container(void);
 
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);

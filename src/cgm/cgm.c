@@ -407,6 +407,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 void init_cpu_gpu_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
+	int i = 0;
 
 	/*configure data structures*/
 	cpu_gpu_stats->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
@@ -422,6 +423,10 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
+
+	cpu_gpu_stats->bandwidth = (void *)calloc(num_cores, sizeof(struct list_t *));
+	for(i = 0; i < num_cores; i ++)
+		cpu_gpu_stats->bandwidth[i] = list_create();
 
 	return;
 }
@@ -1020,14 +1025,12 @@ void cgm_watchdog(void){
 
 	long long t_1 = 1;
 
-
-
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-		if((P_TIME % MS) == 0)
+		/*if((P_TIME % MS) == 0)
 		{
 			warning("Core0 bytes tx %llu\n", cpu_gpu_stats->core_bytes_tx[0]);
 			warning("Core0 bytes rx %llu\n", cpu_gpu_stats->core_bytes_rx[0]);
@@ -1035,13 +1038,12 @@ void cgm_watchdog(void){
 			warning("SA bytes rx %llu\n", system_agent->mc_stores);
 			warning("SA bytes tx %llu\n", system_agent->mc_returns);
 
-
 			cpu_gpu_stats->core_bytes_tx[0] = 0;
 			cpu_gpu_stats->core_bytes_rx[0] = 0;
 			system_agent->mc_loads = 0;
 			system_agent->mc_stores = 0;
 			system_agent->mc_returns = 0;
-		}
+		}*/
 
 	}
 	return;

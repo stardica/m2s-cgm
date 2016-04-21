@@ -3635,7 +3635,7 @@ void l2_cache_down_io_ctrl(void){
 		advance(&switches_ec[my_pid]);
 
 		/*stats*/
-		cpu_gpu_stats->core_bytes_tx[my_pid] += transfer_time;
+		store_stat_bandwidth(bytes_tx, my_pid, transfer_time);
 
 		switches[my_pid].north_rx_inserts++;
 		queue_depth = list_count(switches[my_pid].north_queue);

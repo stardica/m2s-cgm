@@ -86,6 +86,34 @@ long long evict_id = 1;
 enum protocol_kind_t cgm_cache_protocol;
 enum protocol_kind_t cgm_gpu_cache_protocol;
 
+struct mem_system_bandwidth_t *init_bandwidth_container(void){
+
+	struct mem_system_bandwidth_t * bandwidth = NULL;
+
+	bandwidth = (void *) calloc(1, sizeof(struct mem_system_bandwidth_t));
+
+	return bandwidth;
+}
+
+void store_stat_bandwidth(enum bandwidth_type_t type, int my_pid, int transfer_time){
+
+	/*get the current epoc
+	check if a container has been created
+	if not create and store data
+	if so store the data*/
+
+
+	//store the total bytes
+
+	cpu_gpu_stats->core_bytes_tx[my_pid] += transfer_time * switches[my_pid].bus_width;
+
+
+
+
+
+	return;
+}
+
 
 //CPU will call create packet and load into correct queue.
 struct cgm_packet_t *packet_create(void){

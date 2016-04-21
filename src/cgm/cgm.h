@@ -59,8 +59,6 @@
 #define DUMP 0
 #define CPUTICK 1
 
-#define MS ((x86_cpu_frequency * MHZ) / 1000)
-
 #define SKIP 1000000
 
 //config file
@@ -171,6 +169,8 @@ struct cpu_gpu_stats_t{
 	long long *core_commited_memory_insts;
 	long long *core_bytes_rx;
 	long long *core_bytes_tx;
+
+	struct list_t **bandwidth;
 
 	/*gpu stats*/
 };
