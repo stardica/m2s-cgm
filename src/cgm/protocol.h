@@ -18,8 +18,8 @@
 /*((x86_cpu_frequency * MHZ) / 1000) = 1ms*/
 /*((x86_cpu_frequency * MHZ) / 500000) = 0.5ms*/
 /*((x86_cpu_frequency * MHZ) / 750000) = 0.25ms*/
-/*((x86_cpu_frequency * MHZ) / 1000000) = 0.001ms*/
-#define EPOCH ((x86_cpu_frequency * MHZ) / 1000)
+/*((x86_cpu_frequency * MHZ) / 1000000) = 1us*/
+#define EPOCH ((x86_cpu_frequency * MHZ) / 500000)
 
 extern struct str_map_t protocol_kind_strn_map;
 extern struct str_map_t cgm_mem_access_strn_map;

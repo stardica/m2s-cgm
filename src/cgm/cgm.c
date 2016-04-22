@@ -1253,6 +1253,9 @@ void cgm_dump_bandwidth(void){
 	/*print epochs*/
 	fprintf(bandwidth_log_file, "%d\n", num_active_cores);
 	fprintf(bandwidth_log_file, "%llu\n", P_TIME);
+	/*max theoretical bandwidth for the epoch
+	size of the epoch, adjust for memsystem latency factor times the bus width*/
+	fprintf(bandwidth_log_file, "%llu\n", (long long) (EPOCH/SYSTEM_LATENCY_FACTOR)*switches[0].bus_width);
 	fprintf(bandwidth_log_file, "%d\n", num_epochs);
 	fprintf(bandwidth_log_file, "%d\n", epoch_size);
 	fprintf(bandwidth_log_file, "%f\n", (double)P_TIME/(double)epoch_size);
