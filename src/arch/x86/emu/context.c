@@ -297,6 +297,7 @@ void X86ContextExecute(X86Context *self){
 
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
 	{
+		warning("invalid op code eip 0x%08x\n", self->curr_eip);
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 	}
 
