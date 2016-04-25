@@ -809,3 +809,9 @@ DEFINST(xchg_rm8_r8, 0x86, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(xchg_rm16_r16, 0x87, SKIP, SKIP, REG, SKIP, x86_inst_prefix_op)
 DEFINST(xchg_rm32_r32, 0x87, SKIP, SKIP, REG, SKIP, 0)
 
+
+
+
+
+DEFINST(tzcnt_r32_rm32, 0xf3, 0x0f, 0xbc, REG, SKIP, 0)
+
