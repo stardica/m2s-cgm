@@ -499,7 +499,6 @@ DEFINST(V_MIN_I32,
 )
 
 
-
 DEFINST(V_MAX_I32,
 	" v_max_i32     %VDST, %SRC0, %VSRC1",
 	VOP2,

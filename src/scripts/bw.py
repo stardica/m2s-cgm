@@ -23,7 +23,7 @@ for line in f:
 f.close()
 
 df = pd.DataFrame(columns, columns=['Core_0_tx', 'Core_0_rx'])
-axes = df.plot(kind='line', linewidth=0.5, colormap='seismic', title="Backprop P1 32768", rot=0)
+axes = df.plot(kind='line', linewidth=0.5, colormap='seismic', title="BFS P1 4096", rot=0)
 
 x_major_ticks = np.arange(0, (num_epochs), (num_epochs*.10))
 axes.set_xticks(x_major_ticks)
