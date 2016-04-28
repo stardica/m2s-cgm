@@ -46,7 +46,7 @@
 
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
-#define SYSTEM_LATENCY_FACTOR 4
+#define SYSTEM_LATENCY_FACTOR 2
 #define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
 
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)

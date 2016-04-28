@@ -429,10 +429,6 @@ void X86CpuInit(void)
 
 	/* Trace */
 	x86_trace_category = trace_new_category();
-
-
-
-
 }
 
 

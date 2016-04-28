@@ -1653,7 +1653,7 @@ int main(int argc, char **argv)
 	cgm_init(argc, argv);
 
 	/*struct mem_t *new_mem = */
-	x86_emu->context_list_head->mem->num_links = 5;
+	x86_emu->context_list_head->mem->num_links = (x86_cpu_num_cores + 1);
 
 	//passing point to the memory image so I can link it with the memory controller.
 	cgm_configure(x86_emu->context_list_head->mem);

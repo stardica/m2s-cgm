@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <cgm/configure.h>
 #include <mem-image/memory.h>
 #include <limits.h>
@@ -125,11 +126,6 @@ void cpu_configure(Timing *self, struct config_t *config){
 		fflush(stdout);
 	}
 
-	if(num_cores <= 0 || num_cores > 4)
-	{
-		fatal("For now, number of cores must be between 1 - 4\n");
-	}
-
 	X86Cpu *cpu = asX86Cpu(self);
 	X86Core *core;
 	X86Thread *thread;
@@ -141,7 +137,7 @@ void cpu_configure(Timing *self, struct config_t *config){
 			core = cpu->cores[i];
 			thread = core->threads[j];
 
-			//printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
+			printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
 
 			//assert(core);
 			//assert(thread);
@@ -160,6 +156,13 @@ void cpu_configure(Timing *self, struct config_t *config){
 		core->threads[0]->d_cache_ptr = &l1_d_caches[core->id];*/
 	}
 	//getchar();
+
+
+	if(num_cores <= 0 || num_cores > 4)
+	{
+		fatal("For now, number of cores must be between 1 - 4\n");
+	}
+
 	return;
 }
 
@@ -2872,6 +2875,15 @@ int directory_read_config(void* user, const char* section, const char* name, con
 	return 0;
 }
 
+/*struct super_long_t
+{
+    uint64_t bits[2];
+};
+super_long.bits[0] = 1;
+super_long.bits[1] = 1;
+fatal("data = %llu\n", super_long.bits[1] & 1);
+struct super_long_t super_long;*/
+
 int directory_finish_create(void){
 
 	/*int num_cores = x86_cpu_num_cores;
@@ -2962,10 +2974,7 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int MSHR = 0;
 	int maxcoal = 0;
 
-	//star todo fix this
 	int extras = 1;
-
-
 
 	if(MATCH("Switch", "Ports"))
 	{
@@ -3011,8 +3020,6 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 		}
 	}
 
-
-	/**************here*************/
 
 	if(MATCH("Hub-IOMMU", "MSHR"))
 	{
