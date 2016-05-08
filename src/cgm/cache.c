@@ -398,8 +398,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
 	assert(rx_top_queue_size <= 64);*/
 
-
-
 	/*check if a cache element is full that would prevent us from processing a request*/
 	if(ort_status == cache->mshr_size)
 		state = schedule_cant_process;
@@ -413,14 +411,15 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(retry_queue_size == QueueSize)
 		state = schedule_cant_process;
 
-	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	//star todo change this  if l1 and l2 top queue is full stall, also if l2 and L3 top queue is full stall.
+	/*if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	{
 		int tx_top_queue_size = list_count(cache->Tx_queue_top);
 		assert(tx_top_queue_size <= QueueSize);
 
 		if(tx_top_queue_size == QueueSize)
 			state = schedule_cant_process;
-	}
+	}*/
 
 	if(tx_bottom_queue_size == QueueSize)
 		state = schedule_cant_process;
@@ -446,15 +445,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
-		else if(rx_top_queue_size > 0)
-		{
-			/*pull from the cpu side*/
-			new_message = list_get(cache->Rx_queue_top, 0);
-
-			//keep pointer to last queue
-			cache->last_queue = cache->Rx_queue_top;
-			assert(new_message);
-		}
 		else if(rx_bottom_queue_size > 0)
 		{
 			/* if no CPU packet pull from the memory system side*/
@@ -462,6 +452,15 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			//keep pointer to last queue
 			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else if(rx_top_queue_size > 0)
+		{
+			/*pull from the cpu side*/
+			new_message = list_get(cache->Rx_queue_top, 0);
+
+			//keep pointer to last queue
+			cache->last_queue = cache->Rx_queue_top;
 			assert(new_message);
 		}
 		else if(write_back_queue_size > 0)
@@ -493,7 +492,13 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		/*if the write back queue has a write back clear a write back*/
 		new_message = cache_search_wb_not_pending_flush(cache);
 
-		if(write_back_queue_size > 0 && new_message)
+		if (rx_bottom_queue_size > 0)
+		{
+			new_message = list_get(cache->Rx_queue_bottom, 0);
+			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else if(write_back_queue_size > 0 && new_message)
 		{
 			cache->last_queue = cache->write_back_buffer;
 			assert(new_message);
@@ -509,12 +514,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		{
 			new_message = list_get(cache->Coherance_Rx_queue, 0);
 			cache->last_queue = cache->Coherance_Rx_queue;
-			assert(new_message);
-		}
-		else if (rx_bottom_queue_size > 0)
-		{
-			new_message = list_get(cache->Rx_queue_bottom, 0);
-			cache->last_queue = cache->Rx_queue_bottom;
 			assert(new_message);
 		}
 		else
@@ -3035,7 +3034,7 @@ void l3_cache_ctrl(void){
 
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
-			//printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
+			printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
 			l3_caches[my_pid].Stalls++;
 			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
 
@@ -4150,7 +4149,19 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	/*stats*/
 	long long mem_lat = message_packet->end_cycle - message_packet->start_cycle;
 	if(mem_lat >= HISTSIZE)
-		fatal("cache_l1_i_return(): increase HISTSIZE %llu\n", mem_lat);
+	{
+
+		/*cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
+		cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
+
+		cgm_store_stats(cgm_parallel_stats);
+
+		cgm_dump_summary();*/
+
+		fatal("cache_l1_i_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
+				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
+				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
+	}
 
 	mem_system_stats->cpu_total_fetch_replys++;
 	mem_system_stats->fetch_lat_hist[mem_lat]++;

@@ -105,6 +105,7 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 
 void X86ContextCreateAndClone(X86Context *self, X86Context *cloned)
 {
+
 	/* Baseline initialization */
 	X86ContextDoCreate(self, cloned->emu);
 
@@ -137,6 +138,8 @@ void X86ContextCreateAndClone(X86Context *self, X86Context *cloned)
 
 void X86ContextCreateAndFork(X86Context *self, X86Context *forked)
 {
+	fatal("here2\n");
+
 	/* Initialize baseline contect */
 	X86ContextDoCreate(self, forked->emu);
 
@@ -941,8 +944,6 @@ void *X86ContextHostThreadTimer(void *arg)
 	pthread_mutex_unlock(&emu->process_events_mutex);
 	return NULL;
 }
-
-
 
 
 /*

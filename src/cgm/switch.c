@@ -570,13 +570,14 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
 			assert(message_packet);
 
-
-			/*if(message_packet->access_id == 4446145 || message_packet->access_id == 4446155)
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				printf("\tswtich putting id %llu in switch io north tx queue\n", message_packet->access_id);
-				cache_dump_request_queue(switches[my_pid].south_queue);
-				cache_dump_request_queue(switches[my_pid].Tx_north_queue);
-			}*/
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
+			}
 
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
@@ -600,6 +601,15 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->east_in_out_linked_queue), 0);
 			assert(message_packet);
 
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			{
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
+			}
+
 			list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
 			advance(switches[my_pid].switches_east_io_ec);
 
@@ -622,6 +632,15 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->south_in_out_linked_queue), 0);
 			assert(message_packet);
 
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			{
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
+			}
+
 			list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
 			advance(switches[my_pid].switches_south_io_ec);
 
@@ -643,6 +662,15 @@ void switch_ctrl(void){
 		{
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->west_in_out_linked_queue), 0);
 			assert(message_packet);
+
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			{
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
+			}
 
 			list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
 			advance(switches[my_pid].switches_west_io_ec);
@@ -1134,6 +1162,10 @@ void switch_south_io_ctrl(void){
 			}
 			else if(message_packet->access_type == cgm_access_mc_put)
 			{
+				if(message_packet->access_id == 4510414)
+					printf("putting 4510414 cycle %llu\n", P_TIME);
+
+
 				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
 					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
 

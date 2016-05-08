@@ -137,7 +137,7 @@ void cpu_configure(Timing *self, struct config_t *config){
 			core = cpu->cores[i];
 			thread = core->threads[j];
 
-			printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
+			//printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
 
 			//assert(core);
 			//assert(thread);

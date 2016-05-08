@@ -1332,30 +1332,9 @@ void cgm_dump_summary(void){
 	(2) parallel section
 	(3) parallel & OCL overhead sections*/
 
-	//this sets up the full system dump in cgm_stat
-	cgm_consolidate_stats();
-
-	cgm_dump_general_stats();
-
-	dump_stat_bandwidth();
-	cgm_dump_bandwidth();
-
-
-
-	/*star todo, fix this... we consolidate stats then try to print them all out individually...*/
-
-	/*dump the full Run stats*/
-	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
-	CGM_STATS(cgm_stats_file, "[FullRunStats]\n");
-	cgm_dump_cpu_gpu_stats(cgm_stat);
-	mem_system_dump_stats(cgm_stat);
-	cache_dump_stats(cgm_stat);
-	switch_dump_stats(cgm_stat);
-	sys_agent_dump_stats(cgm_stat);
-	memctrl_dump_stats(cgm_stat);
-	CGM_STATS(cgm_stats_file, "\n");
-
 	/*star todo add these stats to the regular output.*/
+
+	printf("l2_gets_ %llu\n\n", l2_caches[0].l2_gets_);
 
 	printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
 	printf("l2_get_ %llu\n", ADDSTATS(l2_get_));
@@ -1392,6 +1371,28 @@ void cgm_dump_summary(void){
 	printf("l3_get_fwd_upgrade_nack_ %llu\n", ADDSTATS(l3_get_fwd_upgrade_nack_));
 	printf("l3_upgrade_ %llu\n", ADDSTATS(l3_upgrade_));
 	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));
+
+
+	//this sets up the full system dump in cgm_stat
+	cgm_consolidate_stats();
+
+	cgm_dump_general_stats();
+
+	//dump_stat_bandwidth();
+	cgm_dump_bandwidth();
+
+	/*star todo, fix this... we consolidate stats then try to print them all out individually...*/
+
+	/*dump the full Run stats*/
+	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
+	CGM_STATS(cgm_stats_file, "[FullRunStats]\n");
+	cgm_dump_cpu_gpu_stats(cgm_stat);
+	mem_system_dump_stats(cgm_stat);
+	cache_dump_stats(cgm_stat);
+	switch_dump_stats(cgm_stat);
+	sys_agent_dump_stats(cgm_stat);
+	memctrl_dump_stats(cgm_stat);
+	CGM_STATS(cgm_stats_file, "\n");
 
 
 	/*parallel section stats*/

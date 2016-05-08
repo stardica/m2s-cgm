@@ -199,6 +199,15 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
+		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 3)
+			{
+				printf("block 0x%08x %s routing to MC ID %llu type %d cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
+			}
+		}
+
 		/*stats*/
 		if(access_type == cgm_access_mc_load)
 			system_agent->mc_loads++;
@@ -228,6 +237,15 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
 		advance(system_agent_io_up_ec);
+
+		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 3)
+			{
+				printf("block 0x%08x %s routing from MC ID %llu type %d cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
+			}
+		}
 
 		/*stats*/
 		system_agent->mc_returns++;

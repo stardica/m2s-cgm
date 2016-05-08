@@ -275,6 +275,15 @@ void memctrl_ctrl(void){
 				}
 			}
 
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			{
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s DRAM access start ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
+			}
+
 			/*stats*/
 			mem_ctrl->busy_cycles += (mem_ctrl->DRAM_latency + 1);
 

@@ -173,13 +173,8 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 		fatal("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}*/
 
-
-
-
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
-
-
 
 
 	//set the block and retry the access in the cache.
@@ -189,7 +184,7 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	{
 		if(LEVEL == 1 || LEVEL == 3)
 		{
-			printf("block 0x%08x %s fetch miss ID %llu type %d state %d cycle %llu\n",
+			printf("block 0x%08x %s write block ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, message_packet->cache_block_state, P_TIME);
 		}
 	}

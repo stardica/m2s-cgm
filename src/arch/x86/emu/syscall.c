@@ -5172,8 +5172,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 	node = 0;
 	for (i = 0; i < size && node < num_nodes; i++)
 		for (j = 0; j < 8 && node < num_nodes; j++)
-			bit_map_set(target_ctx->affinity, node++,
-					1, mask[i] & (1 << j) ? 1 : 0);
+			bit_map_set(target_ctx->affinity, node++, 1, mask[i] & (1 << j) ? 1 : 0);
 
 	/* Changing the context affinity might force it to be evicted and unmapped
 	 * from the current node where it is running (timing simulation only). We
@@ -5658,7 +5657,7 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	we need to save away the current stats which contains the start up section stats.
 	Then reset all stats and commence taking stats for the parallel section*/
 
-	printf("---Starting parallel section stats collection---\n");
+	printf("---Starting parallel section stats collection cycle %llu---\n", P_TIME);
 
 	cgm_startup_stats->end_startup_section_cycle = P_TIME;
 	assert(cgm_startup_stats->start_startup_section_cycle == 0);
@@ -5684,7 +5683,7 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	Then reset all stats and commence taking stats for the wrapup section*/
 
 	//stop benchmark stat collection
-	printf("---Ending parallel section stats collection---\n");
+	printf("---Ending parallel section stats collection cycle %llu---\n", P_TIME);
 
 	cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
 	cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
