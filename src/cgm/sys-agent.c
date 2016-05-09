@@ -191,10 +191,14 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 	int queue_depth = 0;
 
-	P_PAUSE(system_agent->latency);
+	SYSTEM_PAUSE(system_agent->latency);
 
 	if(access_type == cgm_access_mc_load || access_type == cgm_access_mc_store)
 	{
+
+		if(list_count(system_agent->Tx_queue_bottom) > QueueSize)
+			warning("SA south TX queue size %d\n", list_count(system_agent->Tx_queue_bottom));
+
 		message_packet = list_remove(system_agent->last_queue, message_packet);
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
@@ -232,6 +236,10 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		message_packet->dest_name = message_packet->src_name;
 		message_packet->src_name = system_agent->name;
 		message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
+
+
+		if(list_count(system_agent->Tx_queue_top) > QueueSize)
+			warning("SA north TX queue size %d\n", list_count(system_agent->Tx_queue_top));
 
 		//success
 		message_packet = list_remove(system_agent->last_queue, message_packet);
@@ -331,7 +339,17 @@ void sys_agent_ctrl_io_down(void){
 		message_packet = list_dequeue(system_agent->Tx_queue_bottom);
 		assert(message_packet);
 
+		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 3)
+			{
+				printf("block 0x%08x %s IO to MC transfer start time %d ID %llu type %d cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+			}
+		}
+
 		/*access_id = message_packet->access_id;*/
+
 		transfer_time = (message_packet->size/system_agent->down_bus_width);
 
 		if(transfer_time == 0)
@@ -340,6 +358,16 @@ void sys_agent_ctrl_io_down(void){
 		}
 
 		SYSTEM_PAUSE(transfer_time);
+
+
+		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 3)
+			{
+				printf("block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+			}
+		}
 
 
 		system_agent->south_io_busy_cycles += (transfer_time + 1);
@@ -364,13 +392,11 @@ void sys_agent_ctrl(void){
 	{
 		await(system_agent_ec, step);
 
-		if(!memctrl_can_access() || !switch_can_access(system_agent->switch_queue))
+		if(list_count(system_agent->Tx_queue_bottom) > QueueSize || list_count(system_agent->Tx_queue_top) > QueueSize)
 		{
-			//printf("SA stalling down\n");
-			P_PAUSE(1);
+			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
 
-			/*stats*/
-			system_agent->busy_cycles += 1;
+			SYSTEM_PAUSE(1);
 		}
 		else
 		{

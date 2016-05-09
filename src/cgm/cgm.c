@@ -135,7 +135,7 @@ void init_cgm_stats(int argc, char **argv){
 
 	//get the benchmark name
 	bname = basename(argv[i++]);
-	sprintf(buff + strlen(buff), "%s ", bname);
+	sprintf(buff + strlen(buff), "%s", bname);
 
 	cgm_stat->benchmark_name = strdup(buff);
 
@@ -1333,9 +1333,6 @@ void cgm_dump_summary(void){
 	(3) parallel & OCL overhead sections*/
 
 	/*star todo add these stats to the regular output.*/
-
-	printf("l2_gets_ %llu\n\n", l2_caches[0].l2_gets_);
-
 	printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
 	printf("l2_get_ %llu\n", ADDSTATS(l2_get_));
 	printf("l2_getx_ %llu\n", ADDSTATS(l2_getx_));
@@ -1372,14 +1369,13 @@ void cgm_dump_summary(void){
 	printf("l3_upgrade_ %llu\n", ADDSTATS(l3_upgrade_));
 	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));
 
-
 	//this sets up the full system dump in cgm_stat
 	cgm_consolidate_stats();
 
 	cgm_dump_general_stats();
 
 	//dump_stat_bandwidth();
-	cgm_dump_bandwidth();
+	//cgm_dump_bandwidth();
 
 	/*star todo, fix this... we consolidate stats then try to print them all out individually...*/
 

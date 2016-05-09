@@ -1161,7 +1161,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 		 * When the put/putx comes kill it and try again...*/
 		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-		warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
 	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
@@ -1345,7 +1345,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		//transmit to L2
 		cache_put_io_down_queue(cache, message_packet);
 
-		warning("l1 write block caught the conflict cycle %llu\n", P_TIME);
+		//warning("l1 write block caught the conflict cycle %llu\n", P_TIME);
 
 		return 0;
 	}

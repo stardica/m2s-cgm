@@ -187,7 +187,7 @@ void memctrl_ctrl(void){
 
 		if(list_count(mem_ctrl->pending_accesses) >= 32)	//!sys_agent_can_access_bottom())
 		{
-			printf("MC stalling dram ctrl full cycle %llu\n", P_TIME);
+			//warning("MC stalling dram ctrl full cycle size %d %llu\n", list_count(mem_ctrl->pending_accesses), P_TIME);
 			SYSTEM_PAUSE(1);
 
 			/*stats*/
@@ -279,8 +279,11 @@ void memctrl_ctrl(void){
 			{
 				if(LEVEL == 3)
 				{
-					printf("block 0x%08x %s DRAM access start ID %llu type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
+					cache_dump_queue(mem_ctrl->pending_accesses);
+
+					printf("block 0x%08x %s DRAM access start ID %llu queue depth %d type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id,
+							list_count(mem_ctrl->pending_accesses), message_packet->access_type, P_TIME);
 				}
 			}
 

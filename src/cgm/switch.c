@@ -579,6 +579,9 @@ void switch_ctrl(void){
 				}
 			}
 
+			if(list_count(switches[my_pid].Tx_north_queue) > QueueSize)
+				warning("%s size = %d\n", switches[my_pid].Tx_north_queue->name, list_count(switches[my_pid].Tx_north_queue));
+
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
 
@@ -609,6 +612,9 @@ void switch_ctrl(void){
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
 			}
+
+			if(list_count(switches[my_pid].Tx_east_queue) > QueueSize)
+				warning("%s size = %d\n", switches[my_pid].Tx_east_queue->name, list_count(switches[my_pid].Tx_east_queue));
 
 			list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
 			advance(switches[my_pid].switches_east_io_ec);
@@ -641,6 +647,9 @@ void switch_ctrl(void){
 				}
 			}
 
+			if(list_count(switches[my_pid].Tx_south_queue) > QueueSize)
+				warning("%s size = %d\n", switches[my_pid].Tx_south_queue->name, list_count(switches[my_pid].Tx_south_queue));
+
 			list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
 			advance(switches[my_pid].switches_south_io_ec);
 
@@ -671,6 +680,9 @@ void switch_ctrl(void){
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
 			}
+
+			if(list_count(switches[my_pid].Tx_west_queue) > QueueSize)
+				warning("%s size = %d\n", switches[my_pid].Tx_west_queue->name, list_count(switches[my_pid].Tx_west_queue));
 
 			list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
 			advance(switches[my_pid].switches_west_io_ec);

@@ -1464,7 +1464,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	int i = 0;
 	unsigned char bit_vector;
 	int num_cores = x86_cpu_num_cores;
-	int check = 0;
+	//int check = 0;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *flush_packet = NULL;
@@ -4213,6 +4213,12 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 		fatal("cache_l1_d_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
+
+	if(mem_lat >= 2973)
+	fatal("cache_l1_d_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
+				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
+				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
+
 
 	if(message_packet->cpu_access_type == cgm_access_load)
 	{
