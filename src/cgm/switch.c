@@ -254,8 +254,14 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	/*we have the in queue with switches->queue and the tx_queue
 	try to link them...*/
 
+	//don't exceed QueueSizes...
+	int tx_north_queue_size = list_count(switches->Tx_north_queue);
+	int tx_east_queue_size = list_count(switches->Tx_east_queue);
+	int tx_south_queue_size = list_count(switches->Tx_south_queue);
+	int tx_west_queue_size = list_count(switches->Tx_west_queue);
+
 	//check if the out on the cross bar is busy. If not assign the link.
-	if(tx_queue == north_queue)
+	if(tx_queue == north_queue && (tx_north_queue_size <= QueueSize))
 	{
 		/*if(switches->queue == north_queue)
 			printf("error here cycle %llu\n", P_TIME);*/
@@ -267,7 +273,8 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->num_pairs++;
 		}
 	}
-	else if(tx_queue == east_queue)
+
+	if(tx_queue == east_queue && (tx_east_queue_size <= QueueSize))
 	{
 		assert(switches->queue != east_queue);
 		if(switches->crossbar->east_in_out_linked_queue == invalid_queue)
@@ -276,7 +283,8 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->num_pairs++;
 		}
 	}
-	else if(tx_queue == south_queue)
+
+	if(tx_queue == south_queue && (tx_south_queue_size <= QueueSize))
 	{
 		assert(switches->queue != south_queue);
 		if(switches->crossbar->south_in_out_linked_queue == invalid_queue)
@@ -285,7 +293,8 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->num_pairs++;
 		}
 	}
-	else if(tx_queue == west_queue)
+
+	if(tx_queue == west_queue && (tx_west_queue_size <= QueueSize))
 	{
 		assert(switches->queue != west_queue);
 		if(switches->crossbar->west_in_out_linked_queue == invalid_queue)
@@ -294,10 +303,19 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->num_pairs++;
 		}
 	}
-	else
-	{
-		fatal("switch_set_link(): invalid switch link\n");
-	}
+
+	/*if(tx_north_queue_size > QueueSize)
+		warning("switch_set_link(): tx_north_queue full size %d cycle %llu\n", tx_north_queue_size, P_TIME);
+
+	if(tx_east_queue_size > QueueSize)
+		warning("switch_set_link(): tx_east_queue full size %d cycle %llu\n", tx_east_queue_size, P_TIME);
+
+	if(tx_south_queue_size > QueueSize)
+		warning("switch_set_link(): tx_south_queue full size %d cycle %llu\n", tx_south_queue_size, P_TIME);
+
+	if(tx_west_queue_size > QueueSize)
+		warning("switch_set_link(): tx_west_queue full size %d cycle %llu\n", tx_west_queue_size, P_TIME);*/
+
 
 	return;
 }
@@ -388,7 +406,8 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	if(tx_port == invalid_queue)
 	{
 
-		printf("\tswtich routing id %llu block 0x%08x src %d dest %d\n", message_packet->access_id, (message_packet->address & l2_caches[0].block_address_mask), src_node, dest_node);
+		printf("\tswtich routing id %llu block 0x%08x src %d dest %d\n",
+				message_packet->access_id, (message_packet->address & l2_caches[0].block_address_mask), src_node, dest_node);
 		getchar();
 	}
 
@@ -425,7 +444,6 @@ void switch_crossbar_link(struct switch_t *switches){
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
-					/*printf("packet id %llu dest %d access type %d\n", packet->evict_id, packet->dest_id, packet->access_type);*/
 					switch_set_link(switches, tx_queue);
 				}
 			}
@@ -513,7 +531,7 @@ void switch_crossbar_link(struct switch_t *switches){
 	/*printf("next_2 queue %d\n", switches->queue);*/
 
 	//we should have at least one pair, but no more than the number of ports on the switch.
-	assert(switches->crossbar->num_pairs > 0 && switches->crossbar->num_pairs <= switches->crossbar->num_ports);
+	assert(switches->crossbar->num_pairs >= 0 && switches->crossbar->num_pairs <= switches->crossbar->num_ports);
 	return;
 }
 
@@ -931,21 +949,18 @@ void switch_north_io_ctrl(void){
 	while(1)
 	{
 		await(switches[my_pid].switches_north_io_ec, step);
-		step++;
 
-		message_packet = list_dequeue(switches[my_pid].Tx_north_queue);
+
+		message_packet = list_get(switches[my_pid].Tx_north_queue, 0);
 		assert(message_packet);
 
 		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
 
-		SYSTEM_PAUSE(transfer_time);
-
+		//try to send
 		//L2 switches
 		if(my_pid < num_cores)
 		{
@@ -957,49 +972,100 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade)
 			{
 
-				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+				if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
 
-				list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
-				advance(&l2_cache[my_pid]);
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+
+					message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
+					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+					advance(&l2_cache[my_pid]);
+
+					/*stats*/
+					switches[my_pid].switch_north_io_transfers++;
+					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+					store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+				}
 			}
 			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
 					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack)
 			{
 
-				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
+				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
 
-				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
-				advance(&l2_cache[my_pid]);
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
+
+					message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
+					list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+					advance(&l2_cache[my_pid]);
+
+					/*stats*/
+					switches[my_pid].switch_north_io_transfers++;
+					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+					store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+				}
 			}
 			else
 			{
 				fatal("switch_north_io_ctrl(): bad access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 			}
 
-			/*stats*/
-			store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
-
 		}
 		//hub-iommu
 		else if(my_pid >= num_cores)
 		{
-			list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
-			advance(hub_iommu_ec);
+
+			if(list_count(hub_iommu->Rx_queue_bottom) > QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				if(list_count(hub_iommu->Rx_queue_bottom) >= QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
+
+				message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
+				list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+				advance(hub_iommu_ec);
+
+				/*stats*/
+				switches[my_pid].switch_north_io_transfers++;
+				switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+				switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+				store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+			}
 		}
 		else
 		{
 			fatal("switch_north_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
-
-		/*stats*/
-		switches[my_pid].switch_north_io_transfers++;
-		switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
-		switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-
 	}
+
+	fatal("switch_north_io_ctrl(): out of while loop\n");
 
 	return;
 }
@@ -1022,45 +1088,53 @@ void switch_east_io_ctrl(void){
 	while(1)
 	{
 		await(switches[my_pid].switches_east_io_ec, step);
-		step++;
 
-		message_packet = list_dequeue(switches[my_pid].Tx_east_queue);
+		message_packet = list_get(switches[my_pid].Tx_east_queue, 0);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
+
+		if(list_count(switches[my_pid].next_east) > QueueSize)
+		{
+			SYSTEM_PAUSE(1);
 		}
+		else
+		{
+			step++;
 
-		SYSTEM_PAUSE(transfer_time);
+			SYSTEM_PAUSE(transfer_time);
 
-		if(list_count(switches[my_pid].next_east) >= QueueSize)
-			warning("switch_east_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_east->name, list_count(switches[my_pid].next_east));
+			if(list_count(switches[my_pid].next_east) > QueueSize)
+				warning("switch_east_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_east->name, list_count(switches[my_pid].next_east));
 
-		//drop into next east queue.
-		list_enqueue(switches[my_pid].next_east, message_packet);
-		advance(&switches_ec[switches[my_pid].next_east_id]);
+			//drop into next east queue.
+			message_packet = list_remove(switches[my_pid].Tx_east_queue, message_packet);
+			list_enqueue(switches[my_pid].next_east, message_packet);
+			advance(&switches_ec[switches[my_pid].next_east_id]);
 
-		/*stats*/
-		switches[my_pid].switch_east_io_transfers++;
-		switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
-		switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
+			/*stats*/
+			switches[my_pid].switch_east_io_transfers++;
+			switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
+			switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
 
-		//note these stats are for the adjacent switch to the east which puts packets in the west rx_queue
-		switches[switches[my_pid].next_east_id].west_rx_inserts++;
-		queue_depth = list_count(switches[my_pid].next_east); //tricky
-		/*max depth*/
-		if(queue_depth > switches[switches[my_pid].next_east_id].west_rxqueue_max_depth)
-			switches[switches[my_pid].next_east_id].west_rxqueue_max_depth = queue_depth;
+			//note these stats are for the adjacent switch to the east which puts packets in the west rx_queue
+			switches[switches[my_pid].next_east_id].west_rx_inserts++;
+			queue_depth = list_count(switches[my_pid].next_east); //tricky
+			/*max depth*/
+			if(queue_depth > switches[switches[my_pid].next_east_id].west_rxqueue_max_depth)
+				switches[switches[my_pid].next_east_id].west_rxqueue_max_depth = queue_depth;
 
-		/*ave depth = ((old count * old data) + next data) / next count*/
-		switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth =
-			((((double) switches[switches[my_pid].next_east_id].west_rx_inserts - 1) * switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth)
-					+ (double) queue_depth) / (double) switches[switches[my_pid].next_east_id].west_rx_inserts;
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth =
+				((((double) switches[switches[my_pid].next_east_id].west_rx_inserts - 1) * switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth)
+						+ (double) queue_depth) / (double) switches[switches[my_pid].next_east_id].west_rx_inserts;
+		}
 	}
+
+	fatal("switch_east_io_ctrl(): out of while loop\n");
 
 	return;
 }
@@ -1083,49 +1157,76 @@ void switch_west_io_ctrl(void){
 	while(1)
 	{
 		await(switches[my_pid].switches_west_io_ec, step);
-		step++;
 
-		message_packet = list_dequeue(switches[my_pid].Tx_west_queue);
+		message_packet = list_get(switches[my_pid].Tx_west_queue, 0);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
 
-		SYSTEM_PAUSE(transfer_time);
 
 		if(list_count(switches[my_pid].next_west) >= QueueSize)
-			warning("switch_west_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_west->name, list_count(switches[my_pid].next_west));
+		{
+			SYSTEM_PAUSE(1);
+		}
+		else
+		{
+			step++;
 
-		//drop into next east queue.
-		list_enqueue(switches[my_pid].next_west, message_packet);
-		advance(&switches_ec[switches[my_pid].next_west_id]);
+			SYSTEM_PAUSE(transfer_time);
 
-		/*stats*/
-		switches[my_pid].switch_west_io_transfers++;
-		switches[my_pid].switch_west_io_transfer_cycles += transfer_time;
-		switches[my_pid].switch_west_io_bytes_transfered += message_packet->size;
+			if(list_count(switches[my_pid].next_west) > QueueSize)
+				warning("switch_west_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_west->name, list_count(switches[my_pid].next_west));
 
-		//note these stats are for the adjacent switch
-		switches[switches[my_pid].next_west_id].east_rx_inserts++;
-		queue_depth = list_count(switches[my_pid].next_west); //tricky
-		/*max depth*/
-		if(queue_depth > switches[switches[my_pid].next_west_id].east_rxqueue_max_depth)
-			switches[switches[my_pid].next_west_id].east_rxqueue_max_depth = queue_depth;
+			//drop into next east queue.
+			message_packet = list_remove(switches[my_pid].Tx_west_queue, message_packet);
+			list_enqueue(switches[my_pid].next_west, message_packet);
+			advance(&switches_ec[switches[my_pid].next_west_id]);
 
-		/*ave depth = ((old count * old data) + next data) / next count*/
-		switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth =
-			((((double) switches[switches[my_pid].next_west_id].east_rx_inserts - 1) * switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth)
-					+ (double) queue_depth) / (double) switches[switches[my_pid].next_west_id].east_rx_inserts;
+			/*stats*/
+			switches[my_pid].switch_west_io_transfers++;
+			switches[my_pid].switch_west_io_transfer_cycles += transfer_time;
+			switches[my_pid].switch_west_io_bytes_transfered += message_packet->size;
+
+			//note these stats are for the adjacent switch
+			switches[switches[my_pid].next_west_id].east_rx_inserts++;
+			queue_depth = list_count(switches[my_pid].next_west); //tricky
+
+			/*max depth*/
+			if(queue_depth > switches[switches[my_pid].next_west_id].east_rxqueue_max_depth)
+				switches[switches[my_pid].next_west_id].east_rxqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth =
+				((((double) switches[switches[my_pid].next_west_id].east_rx_inserts - 1) * switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth)
+						+ (double) queue_depth) / (double) switches[switches[my_pid].next_west_id].east_rx_inserts;
+		}
 	}
+
+	fatal("switch_west_io_ctrl(): out of while loop\n");
 
 	return;
 
 }
+
+void switch_check_access_type(struct cgm_packet_t *message_packet){
+
+	if(!(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
+		|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade
+		|| message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_downgrade_ack
+		|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
+		|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
+		|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_write_back
+		|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
+		|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
+		|| message_packet->access_type == cgm_access_mc_put)
+	  )
+
+	return;
+}
+
 
 void switch_south_io_ctrl(void){
 
@@ -1145,43 +1246,78 @@ void switch_south_io_ctrl(void){
 	while(1)
 	{
 		await(switches[my_pid].switches_south_io_ec, step);
-		step++;
 
-		message_packet = list_dequeue(switches[my_pid].Tx_south_queue);
+		/*find out what queue the packet needs to go into if the queue is full stall
+		if not process and get ready for the next queue*/
+
+		message_packet = list_get(switches[my_pid].Tx_south_queue, 0);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
+		//get the transfer time
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
 
-		SYSTEM_PAUSE(transfer_time);
+		//try to send
 
 		//L3 caches
 		if(my_pid < num_cores)
 		{
-			//put the message in the right queue.
-			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade)
+
+			if((message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
+					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade))
 			{
-				if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
+
+				if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
+				{
+					//queue is full so stall
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					//will never happen
+					if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
 					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
 
-				list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					/*stats*/
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
 			}
 			else if(message_packet->access_type == cgm_access_mc_put)
 			{
-				if(message_packet->access_id == 4510414)
-					printf("putting 4510414 cycle %llu\n", P_TIME);
+				if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
 
+					SYSTEM_PAUSE(transfer_time);
 
-				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
+					if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
 
-				list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					/*stats*/
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
 			}
 			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
@@ -1190,47 +1326,78 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade_ack)
 			{
 
-				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
 
-				list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+
+					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					/*stats*/
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
 			}
 			else
 			{
-					fatal("switch_south_io_ctrl(): bad access_type as %s access_id %llu cycle %llu\n",
+				step++;
+
+				fatal("switch_south_io_ctrl(): bad access_type as %s access_id %llu cycle %llu\n",
 						str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id, P_TIME);
 			}
 
-			advance(&l3_cache[my_pid]);
 		}
 		//Sys Agent
 		else if(my_pid >= num_cores)
 		{
-			list_enqueue(system_agent->Rx_queue_top, message_packet);
-			advance(system_agent_ec);
 
-			/*stats*/
-			/*running ave = ((old count * old data) + next data) / next count*/
+			if(list_count(system_agent->Rx_queue_top) > QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
 
-			/*stats*/
-			if(system_agent->max_north_rxqueue_depth < list_count(system_agent->Rx_queue_top))
-				system_agent->max_north_rxqueue_depth = list_count(system_agent->Rx_queue_top);
+				if(list_count(system_agent->Rx_queue_top) > QueueSize)
+					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", system_agent->name, system_agent->Rx_queue_top->name, list_count(system_agent->Rx_queue_top));
 
-			system_agent->north_gets++;
-			queue_depth = list_count(system_agent->Rx_queue_top);
-			system_agent->ave_north_rxqueue_depth = ((((double) system_agent->north_gets - 1) * system_agent->ave_north_rxqueue_depth) + (double) queue_depth) / (double) system_agent->north_gets;
+				message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+				list_enqueue(system_agent->Rx_queue_top, message_packet);
+				advance(system_agent_ec);
+
+				/*stats*/
+				if(system_agent->max_north_rxqueue_depth < list_count(system_agent->Rx_queue_top))
+					system_agent->max_north_rxqueue_depth = list_count(system_agent->Rx_queue_top);
+
+				system_agent->north_gets++;
+				queue_depth = list_count(system_agent->Rx_queue_top);
+				system_agent->ave_north_rxqueue_depth = ((((double) system_agent->north_gets - 1) * system_agent->ave_north_rxqueue_depth) + (double) queue_depth) / (double) system_agent->north_gets;
+
+				switches[my_pid].switch_south_io_transfers++;
+				switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+				switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+			}
 		}
 		else
 		{
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
-
-		/*stats*/
-		switches[my_pid].switch_south_io_transfers++;
-		switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
-		switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
-
 	}
+
+	fatal("switch_south_io_ctrl(): out of while loop\n");
+
 	return;
 }
 

@@ -353,6 +353,8 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches);
 struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
 
+void switch_check_access_type(struct cgm_packet_t *message_packet);
+
 void switch_dump_stats(struct cgm_stats_t *cgm_stat_container);
 void switch_reset_stats(void);
 void switch_store_stats(struct cgm_stats_t *cgm_stat_container);

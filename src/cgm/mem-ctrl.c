@@ -91,46 +91,59 @@ void memctrl_ctrl_io(void){
 	while(1)
 	{
 		await(mem_ctrl_io_ec, step);
-		step++;
 
-		/*stats*/
-		if(mem_ctrl->tx_max < list_count(mem_ctrl->Tx_queue_top))
-			mem_ctrl->tx_max = list_count(mem_ctrl->Tx_queue_top);
-
-		message_packet = list_dequeue(mem_ctrl->Tx_queue_top);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-		transfer_time = (message_packet->size/mem_ctrl->bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(mem_ctrl->system_agent_queue) > QueueSize)
 		{
-			transfer_time = 1;
+			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
+			SYSTEM_PAUSE(1);
+		}
+		else
+		{
+			step++;
+
+			/*stats*/
+			if(mem_ctrl->tx_max < list_count(mem_ctrl->Tx_queue_top))
+				mem_ctrl->tx_max = list_count(mem_ctrl->Tx_queue_top);
+
+			message_packet = list_dequeue(mem_ctrl->Tx_queue_top);
+			assert(message_packet);
+
+			/*access_id = message_packet->access_id;*/
+			transfer_time = (message_packet->size/mem_ctrl->bus_width);
+
+			if(transfer_time == 0)
+			{
+				transfer_time = 1;
+			}
+
+			SYSTEM_PAUSE(transfer_time);
+
+			mem_ctrl->io_busy_cycles += (transfer_time + 1);
+
+			if(message_packet->access_type == cgm_access_mc_put)
+				mem_ctrl->bytes_read += message_packet->size;
+
+			if(list_count(mem_ctrl->system_agent_queue) > QueueSize)
+				warning("%s size %d\n", mem_ctrl->system_agent_queue->name, list_count(mem_ctrl->system_agent_queue));
+
+			list_enqueue(mem_ctrl->system_agent_queue, message_packet);
+			advance(system_agent_ec);
+
+			/*stats*/
+
+			if(system_agent->max_south_rxqueue_depth < list_count(system_agent->Rx_queue_bottom))
+					system_agent->max_south_rxqueue_depth = list_count(system_agent->Rx_queue_bottom);
+
+			/*running ave = ((old count * old data) + next data) / next count*/
+			system_agent->south_gets++;
+			queue_depth = list_count(system_agent->Rx_queue_bottom);
+			system_agent->ave_south_rxqueue_depth = ((((double) system_agent->south_gets - 1) * system_agent->ave_south_rxqueue_depth) + (double) queue_depth) / (double) system_agent->south_gets;
 		}
 
-		SYSTEM_PAUSE(transfer_time);
-
-		mem_ctrl->io_busy_cycles += (transfer_time + 1);
-
-		if(message_packet->access_type == cgm_access_mc_put)
-			mem_ctrl->bytes_read += message_packet->size;
-
-
-
-		list_enqueue(mem_ctrl->system_agent_queue, message_packet);
-		advance(system_agent_ec);
-
-		/*stats*/
-
-		if(system_agent->max_south_rxqueue_depth < list_count(system_agent->Rx_queue_bottom))
-				system_agent->max_south_rxqueue_depth = list_count(system_agent->Rx_queue_bottom);
-
-		/*running ave = ((old count * old data) + next data) / next count*/
-		system_agent->south_gets++;
-		queue_depth = list_count(system_agent->Rx_queue_bottom);
-		system_agent->ave_south_rxqueue_depth = ((((double) system_agent->south_gets - 1) * system_agent->ave_south_rxqueue_depth) + (double) queue_depth) / (double) system_agent->south_gets;
-
 	}
+
+	fatal("memctrl_ctrl_io(): out of while loop\n");
+
 	return;
 }
 
@@ -189,9 +202,6 @@ void memctrl_ctrl(void){
 		{
 			//warning("MC stalling dram ctrl full cycle size %d %llu\n", list_count(mem_ctrl->pending_accesses), P_TIME);
 			SYSTEM_PAUSE(1);
-
-			/*stats*/
-			mem_ctrl->busy_cycles += 1;
 
 		}
 		else

@@ -1333,7 +1333,7 @@ void cgm_dump_summary(void){
 	(3) parallel & OCL overhead sections*/
 
 	/*star todo add these stats to the regular output.*/
-	printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
+	/*printf("l2_gets_ %llu\n", ADDSTATS(l2_gets_));
 	printf("l2_get_ %llu\n", ADDSTATS(l2_get_));
 	printf("l2_getx_ %llu\n", ADDSTATS(l2_getx_));
 	printf("l2_write_back_ %llu\n", ADDSTATS(l2_write_back_));
@@ -1367,7 +1367,7 @@ void cgm_dump_summary(void){
 	printf("l3_getx_fwd_upgrade_nack_ %llu\n", ADDSTATS(l3_getx_fwd_upgrade_nack_));
 	printf("l3_get_fwd_upgrade_nack_ %llu\n", ADDSTATS(l3_get_fwd_upgrade_nack_));
 	printf("l3_upgrade_ %llu\n", ADDSTATS(l3_upgrade_));
-	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));
+	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));*/
 
 	//this sets up the full system dump in cgm_stat
 	cgm_consolidate_stats();

@@ -2491,7 +2491,7 @@ void l1_i_cache_ctrl(void){
 
 		/*star todo fix this, these should be related to the message type.
 		This can be done more efficiently than a caret blanch stall */
-		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]) || !cache_can_access_Tx_bottom(&(l1_i_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l1_i_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall
 			l1_i_caches[my_pid].Stalls++;
@@ -2573,7 +2573,7 @@ void l1_d_cache_ctrl(void){
 		message_packet = cache_get_message(&(l1_d_caches[my_pid]));
 
 		//star todo this can be refined a lot.
-		if (message_packet == NULL || !cache_can_access_top(&l2_caches[my_pid]) || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
@@ -2753,8 +2753,7 @@ void l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(l2_caches[my_pid]));
 
-		if (message_packet == NULL || !switch_can_access(switches[my_pid].north_queue)
-				|| !cache_can_access_Tx_bottom(&(l2_caches[my_pid])) || !cache_can_access_Tx_top(&(l2_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l2_caches[my_pid])) || !cache_can_access_Tx_top(&(l2_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
@@ -3027,9 +3026,10 @@ void l3_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));
 
-		if (message_packet == NULL || !switch_can_access(switches[my_pid].south_queue)
-				|| !cache_can_access_Tx_bottom(&(l3_caches[my_pid])) || !cache_can_access_Tx_top(&(l3_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l3_caches[my_pid])) || !cache_can_access_Tx_top(&(l3_caches[my_pid])))
 		{
+			//star todo add more detail here look for replies/request, process them is there respective queue is ok.
+
 			//the cache state is preventing the cache from working this cycle stall.
 
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
@@ -3417,44 +3417,44 @@ void l1_i_cache_down_io_ctrl(void){
 	long long step = 1;
 
 	struct cgm_packet_t *message_packet;
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
-	long long occ_start = 0;
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l1_i_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		/*stats*/
-		occ_start = P_TIME;
-
-		message_packet = list_dequeue(l1_i_caches[my_pid].Tx_queue_bottom);
-		assert(message_packet);
-		assert(message_packet->access_type == cgm_access_gets);
-
-		/*access_id = message_packet->access_id;*/
-		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(l2_caches[my_pid].Rx_queue_top) > QueueSize)
 		{
-			transfer_time = 1;
+			P_PAUSE(1);
 		}
+		else
+		{
+			step++;
 
-		P_PAUSE(transfer_time);
+			message_packet = list_dequeue(l1_i_caches[my_pid].Tx_queue_bottom);
+			assert(message_packet);
+			assert(message_packet->access_type == cgm_access_gets);
 
-		//drop into the next virtual lane correct queue.
-		list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-		advance(&l2_cache[my_pid]);
+			transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
 
-		/*stats*/
+			if(transfer_time == 0)
+				transfer_time = 1;
 
-		l2_caches[my_pid].TotalAcesses++;
-		assert(message_packet->access_type == cgm_access_gets);
-		if(message_packet->access_type == cgm_access_gets)
-			l2_caches[my_pid].TotalReads++;
+			P_PAUSE(transfer_time);
+
+			//drop into the next virtual lane correct queue.
+			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+			advance(&l2_cache[my_pid]);
+
+			/*stats*/
+
+			l2_caches[my_pid].TotalAcesses++;
+			assert(message_packet->access_type == cgm_access_gets);
+			if(message_packet->access_type == cgm_access_gets)
+				l2_caches[my_pid].TotalReads++;
+		}
 	}
 
 	return;
@@ -3474,53 +3474,73 @@ void l1_d_cache_down_io_ctrl(void){
 	while(1)
 	{
 		await(l1_d_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(l1_d_caches[my_pid].Tx_queue_bottom);
+		message_packet = list_get(l1_d_caches[my_pid].Tx_queue_bottom, 0);
 		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
 
 		transfer_time = (message_packet->size/l1_d_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
-
-		P_PAUSE(transfer_time);
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				||message_packet->access_type == cgm_access_upgrade)
+				|| message_packet->access_type == cgm_access_upgrade)
 		{
-			list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
-			advance(&l2_cache[my_pid]);
+
+			if(list_count(l2_caches[my_pid].Rx_queue_top) > QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(l1_d_caches[my_pid].Tx_queue_bottom, message_packet);
+				list_enqueue(l2_caches[my_pid].Rx_queue_top, message_packet);
+				advance(&l2_cache[my_pid]);
+
+				/*stats*/
+				l2_caches[my_pid].TotalAcesses++;
+
+				if(message_packet->access_type == cgm_access_get)
+					l2_caches[my_pid].TotalReads++;
+
+				if (message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
+					l2_caches[my_pid].TotalWrites++;
+			}
 		}
 		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
 				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
 		{
-			list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
-			advance(&l2_cache[my_pid]);
+
+			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(l1_d_caches[my_pid].Tx_queue_bottom, message_packet);
+				list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+				advance(&l2_cache[my_pid]);
+
+				/*stats*/
+				l2_caches[my_pid].TotalAcesses++;
+			}
 		}
 		else
 		{
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 		}
-
-		/*stats*/
-		l2_caches[my_pid].TotalAcesses++;
-
-		if(message_packet->access_type == cgm_access_get)
-		{
-			l2_caches[my_pid].TotalReads++;
-		}
-		else if (message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
-		{
-			l2_caches[my_pid].TotalWrites++;
-		}
-
 	}
+
+	fatal("l1_d_cache_down_io_ctrl(): out of while loop\n");
 
 	return;
 }
@@ -3539,34 +3559,35 @@ void l2_cache_up_io_ctrl(void){
 	while(1)
 	{
 		await(l2_caches[my_pid].cache_io_up_ec, step);
-		step++;
 
-		message_packet = list_dequeue(l2_caches[my_pid].Tx_queue_top);
-
-		//printf("cycle %llu\n");
-		//fflush(stdout);
-
+		message_packet = list_get(l2_caches[my_pid].Tx_queue_top, 0);
 		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
-
-		P_PAUSE(transfer_time);
 
 		//drop into the correct l1 cache queue and lane.
 		if (message_packet->cpu_access_type == cgm_access_fetch)
 		{
 			assert(message_packet->access_type == cgm_access_puts);
 
-			list_enqueue(l1_i_caches[my_pid].Rx_queue_bottom, message_packet);
-			advance(&l1_i_cache[my_pid]);
+			if(list_count(l1_i_caches[my_pid].Rx_queue_bottom) > QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(l2_caches[my_pid].Tx_queue_top, message_packet);
+				list_enqueue(l1_i_caches[my_pid].Rx_queue_bottom, message_packet);
+				advance(&l1_i_cache[my_pid]);
+			}
 		}
 		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 		{
@@ -3574,14 +3595,40 @@ void l2_cache_up_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade_ack
 					|| message_packet->access_type == cgm_access_get_nack || message_packet->access_type == cgm_access_getx_nack)
 			{
-				list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
-				advance(&l1_d_cache[my_pid]);
+
+				if(list_count(l1_d_caches[my_pid].Rx_queue_bottom) > QueueSize)
+				{
+					P_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					P_PAUSE(transfer_time);
+
+					message_packet = list_remove(l2_caches[my_pid].Tx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Rx_queue_bottom, message_packet);
+					advance(&l1_d_cache[my_pid]);
+				}
 			}
 			else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_downgrade
 					|| message_packet->access_type == cgm_access_getx_fwd_inval || message_packet->access_type == cgm_access_upgrade_inval)
 			{
-				list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
-				advance(&l1_d_cache[my_pid]);
+
+				if(list_count(l1_d_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+				{
+					P_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					P_PAUSE(transfer_time);
+
+					message_packet = list_remove(l2_caches[my_pid].Tx_queue_top, message_packet);
+					list_enqueue(l1_d_caches[my_pid].Coherance_Rx_queue, message_packet);
+					advance(&l1_d_cache[my_pid]);
+				}
 			}
 			else
 			{
@@ -3612,55 +3659,65 @@ void l2_cache_down_io_ctrl(void){
 	while(1)
 	{
 		await(l2_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(l2_caches[my_pid].Tx_queue_bottom);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-
-		//star todo fix this we need a top and bottom bus_width
-		transfer_time = (message_packet->size/l2_caches[my_pid].bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(switches[my_pid].north_queue) > QueueSize)
 		{
-			transfer_time = 1;
+			P_PAUSE(1);
 		}
-
-		SYSTEM_PAUSE(transfer_time);
-
-		//drop in to the switch queue
-		list_enqueue(switches[my_pid].north_queue, message_packet);
-		advance(&switches_ec[my_pid]);
-
-		/*stats*/
-		store_stat_bandwidth(bytes_tx, my_pid, transfer_time, l2_caches[my_pid].bus_width);
-
-		switches[my_pid].north_rx_inserts++;
-		queue_depth = list_count(switches[my_pid].north_queue);
-
-		/*max depth*/
-		if(queue_depth > switches[my_pid].north_rxqueue_max_depth)
-			switches[my_pid].north_rxqueue_max_depth = queue_depth;
-
-		/*ave depth = ((old count * old data) + next data) / next count*/
-		switches[my_pid].north_rxqueue_ave_depth =
-			((((double) switches[my_pid].north_rx_inserts - 1) * switches[my_pid].north_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_rx_inserts;
-
-		l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-		assert(l3_cache_ptr);
-
-		l3_cache_ptr->TotalAcesses++;
-		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get)
+		else
 		{
-			l3_cache_ptr->TotalReads++;
-		}
-		else if(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
-		{
-			l3_cache_ptr->TotalWrites++;
+			step++;
+
+			message_packet = list_dequeue(l2_caches[my_pid].Tx_queue_bottom);
+			assert(message_packet);
+
+			/*access_id = message_packet->access_id;*/
+
+			//star todo fix this we need a top and bottom bus_width
+			transfer_time = (message_packet->size/l2_caches[my_pid].bus_width);
+
+			if(transfer_time == 0)
+				transfer_time = 1;
+
+			SYSTEM_PAUSE(transfer_time);
+
+			//drop in to the switch queue
+			list_enqueue(switches[my_pid].north_queue, message_packet);
+			advance(&switches_ec[my_pid]);
+
+			/*stats*/
+			store_stat_bandwidth(bytes_tx, my_pid, transfer_time, l2_caches[my_pid].bus_width);
+
+			switches[my_pid].north_rx_inserts++;
+			queue_depth = list_count(switches[my_pid].north_queue);
+
+			/*max depth*/
+			if(queue_depth > switches[my_pid].north_rxqueue_max_depth)
+				switches[my_pid].north_rxqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].north_rxqueue_ave_depth =
+				((((double) switches[my_pid].north_rx_inserts - 1) * switches[my_pid].north_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_rx_inserts;
+
+			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+			assert(l3_cache_ptr);
+
+			l3_cache_ptr->TotalAcesses++;
+			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get)
+			{
+				l3_cache_ptr->TotalReads++;
+			}
+			else if(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
+			{
+				l3_cache_ptr->TotalWrites++;
+			}
+
 		}
 
 	}
+
+	fatal("l2_cache_down_io_ctrl(): out of while loop\n");
+
 	return;
 }
 
@@ -3682,44 +3739,44 @@ void l3_cache_up_io_ctrl(void){
 	while(1)
 	{
 		await(l3_caches[my_pid].cache_io_up_ec, step);
-		step++;
 
-		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_top);
-		assert(message_packet);
-
-		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(switches[my_pid].south_queue) > QueueSize)
 		{
-			transfer_time = 1;
+			SYSTEM_PAUSE(1);
 		}
-
-		SYSTEM_PAUSE(transfer_time);
-
-
-		//drop in to the switch queue
-		list_enqueue(switches[my_pid].south_queue, message_packet);
-		advance(&switches_ec[my_pid]);
-
-		/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
+		else
 		{
-			run_watch_dog = 1;
-			printf("\tnorth io ctrl moving id %llu to switch south_queue\n", message_packet->access_id);
-			cache_dump_request_queue(switches[my_pid].south_queue);
-		}*/
+			step++;
 
-		/*stats*/
-		switches[my_pid].south_rx_inserts++;
-		queue_depth = list_count(switches[my_pid].south_queue);
-		/*max depth*/
-		if(queue_depth > switches[my_pid].south_rxqueue_max_depth)
-			switches[my_pid].south_rxqueue_max_depth = queue_depth;
+			message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_top);
+			assert(message_packet);
 
-		/*ave depth = ((old count * old data) + next data) / next count*/
-		switches[my_pid].south_rxqueue_ave_depth =
-			((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
+			transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
 
+			if(transfer_time == 0)
+				transfer_time = 1;
+
+			SYSTEM_PAUSE(transfer_time);
+
+			//drop in to the switch queue
+			list_enqueue(switches[my_pid].south_queue, message_packet);
+			advance(&switches_ec[my_pid]);
+
+			/*stats*/
+			switches[my_pid].south_rx_inserts++;
+			queue_depth = list_count(switches[my_pid].south_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].south_rxqueue_max_depth)
+				switches[my_pid].south_rxqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].south_rxqueue_ave_depth =
+				((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
+		}
 	}
+
+	fatal("l3_cache_up_io_ctrl(): out of while loop\n");
+
 	return;
 
 }
@@ -3729,39 +3786,59 @@ void l3_cache_down_io_ctrl(void){
 	int my_pid = l3_down_io_pid++;
 	long long step = 1;
 
+	int transfer_time = 0;
+	long long queue_depth = 0;
+
 	/*int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;*/
 
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
-	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l3_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_bottom);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-
-		//star todo fix this we need a top and bottom bus_width
-		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(switches[my_pid].south_queue) > QueueSize)
 		{
-			transfer_time = 1;
+			SYSTEM_PAUSE(1);
 		}
+		else
+		{
+			step++;
 
-		SYSTEM_PAUSE(transfer_time);
+			message_packet = list_dequeue(l3_caches[my_pid].Tx_queue_bottom);
+			assert(message_packet);
 
-		//drop in to the switch queue
-		list_enqueue(switches[my_pid].south_queue, message_packet);
-		advance(&switches_ec[my_pid]);
+			//star todo fix this we need a top and bottom bus_width
+			transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
+
+			if(transfer_time == 0)
+				transfer_time = 1;
+
+			SYSTEM_PAUSE(transfer_time);
+
+			//drop in to the switch queue
+			list_enqueue(switches[my_pid].south_queue, message_packet);
+			advance(&switches_ec[my_pid]);
+
+			/*stats*/
+			switches[my_pid].south_rx_inserts++;
+			queue_depth = list_count(switches[my_pid].south_queue);
+			/*max depth*/
+			if(queue_depth > switches[my_pid].south_rxqueue_max_depth)
+				switches[my_pid].south_rxqueue_max_depth = queue_depth;
+
+			/*ave depth = ((old count * old data) + next data) / next count*/
+			switches[my_pid].south_rxqueue_ave_depth =
+				((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
+
+		}
 	}
+
+	fatal("l3_cache_down_io_ctrl(): out of while loop\n");
 	return;
 }
 
@@ -3784,6 +3861,8 @@ void gpu_s_cache_down_io_ctrl(void){
 	{
 		await(gpu_s_caches[my_pid].cache_io_down_ec, step);
 		step++;
+
+		fatal("l3 io down\n");
 
 		//printf("here\n");
 
@@ -4214,10 +4293,10 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
 
-	if(mem_lat >= 2973)
+	/*if(mem_lat >= 2973)
 	fatal("cache_l1_d_return(): %s increase HISTSIZE %llu access id %llu blk_addr 0x%08x type %d start_cycle %llu end_cycle %llu total_lat %llu\n",
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
-				message_packet->start_cycle, message_packet->end_cycle, mem_lat);
+				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
 
 
 	if(message_packet->cpu_access_type == cgm_access_load)
@@ -4375,12 +4454,6 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	assert(message_packet);
-
-	/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
-	{
-		printf("\tL3 cache moving id %llu to north io crtl\n", message_packet->access_id);
-
-	}*/
 
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);

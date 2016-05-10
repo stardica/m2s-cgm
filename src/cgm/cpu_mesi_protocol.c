@@ -847,6 +847,11 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	/*unsigned int temp = message_packet->address;
 	temp = temp & cache->block_address_mask;
 	printf("%s id %llu addr 0x%08x blk addr 0x%08x hit_ptr %d\n", cache->name, message_packet->access_id, message_packet->address, temp, *cache_block_hit_ptr);*/
+
+	if((*cache_block_hit_ptr == 1 && block_trainsient_state == cgm_cache_block_transient))
+		warning("bug is here\n");
+
+
 	assert((*cache_block_hit_ptr == 1 && block_trainsient_state != cgm_cache_block_transient) || (*cache_block_hit_ptr == 0));
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -4420,7 +4425,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			}
 
 			//transmit to SA/MC
-			cache_put_io_down_queue(cache, message_packet);
+			cache_put_io_up_queue(cache, message_packet);
 
 			break;
 
@@ -4934,7 +4939,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = memory;
 
-				cache_put_io_down_queue(cache, message_packet);
+				cache_put_io_up_queue(cache, message_packet);
 
 			}
 
@@ -5380,7 +5385,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					message_packet->protocol_case = memory;
 
 				//transmit to SA
-				cache_put_io_down_queue(cache, message_packet);
+				cache_put_io_up_queue(cache, message_packet);
 			}
 
 			break;
@@ -5712,8 +5717,8 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				}
 
 				//transmit to SA/MC
-				list_enqueue(cache->Tx_queue_bottom, write_back_packet);
-				advance(cache->cache_io_down_ec);
+				list_enqueue(cache->Tx_queue_top, write_back_packet);
+				advance(cache->cache_io_up_ec);
 
 				/*stats*/
 				cache->TotalSharingWriteBackSent++;
@@ -6576,7 +6581,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			message_packet->dest_name = str_map_value(&node_strn_map, message_packet->dest_id);*/
 
 			//transmit to SA/MC
-			cache_put_io_down_queue(cache, message_packet);
+			cache_put_io_up_queue(cache, message_packet);
 
 			cache->TotalWriteBackSent++;
 		}

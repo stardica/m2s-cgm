@@ -297,26 +297,43 @@ void sys_agent_ctrl_io_up(void){
 	while(1)
 	{
 		await(system_agent_io_up_ec, step);
-		step++;
 
-		message_packet = list_dequeue(system_agent->Tx_queue_top);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-		transfer_time = (message_packet->size/system_agent->up_bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(system_agent->switch_queue) > QueueSize)
 		{
-			transfer_time = 1;
+			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
+			SYSTEM_PAUSE(1);
 		}
+		else
+		{
 
-		SYSTEM_PAUSE(transfer_time);
+			step++;
 
-		system_agent->north_io_busy_cycles += (transfer_time + 1);
 
-		list_enqueue(system_agent->switch_queue, message_packet);
-		advance(&switches_ec[system_agent->switch_id]);
+			message_packet = list_dequeue(system_agent->Tx_queue_top);
+			assert(message_packet);
+
+			/*access_id = message_packet->access_id;*/
+			transfer_time = (message_packet->size/system_agent->up_bus_width);
+
+			if(transfer_time == 0)
+			{
+				transfer_time = 1;
+			}
+
+			SYSTEM_PAUSE(transfer_time);
+
+			if(list_count(system_agent->switch_queue) > QueueSize)
+				warning("%s size %d\n", system_agent->switch_queue->name, list_count(mem_ctrl->Rx_queue_top));
+
+			system_agent->north_io_busy_cycles += (transfer_time + 1);
+
+			list_enqueue(system_agent->switch_queue, message_packet);
+			advance(&switches_ec[system_agent->switch_id]);
+		}
 	}
+
+	fatal("sys_agent_ctrl_io_up(): out of while loop\n");
+
 	return;
 }
 
@@ -334,47 +351,49 @@ void sys_agent_ctrl_io_down(void){
 	while(1)
 	{
 		await(system_agent_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(system_agent->Tx_queue_bottom);
-		assert(message_packet);
-
-		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		if(list_count(mem_ctrl->Rx_queue_top) > QueueSize)
 		{
-			if(LEVEL == 3)
+			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
+			SYSTEM_PAUSE(1);
+		}
+		else
+		{
+			step++;
+
+			message_packet = list_dequeue(system_agent->Tx_queue_bottom);
+			assert(message_packet);
+
+			transfer_time = (message_packet->size/system_agent->down_bus_width);
+
+			if(transfer_time == 0)
 			{
-				printf("block 0x%08x %s IO to MC transfer start time %d ID %llu type %d cycle %llu\n",
-						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+				transfer_time = 1;
 			}
-		}
 
-		/*access_id = message_packet->access_id;*/
+			SYSTEM_PAUSE(transfer_time);
 
-		transfer_time = (message_packet->size/system_agent->down_bus_width);
-
-		if(transfer_time == 0)
-		{
-			transfer_time = 1;
-		}
-
-		SYSTEM_PAUSE(transfer_time);
-
-
-		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-		{
-			if(LEVEL == 3)
+			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				printf("block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
-						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+				if(LEVEL == 3)
+				{
+					printf("block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
+							(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+				}
 			}
+
+			if(list_count(mem_ctrl->Rx_queue_top) > QueueSize)
+				warning("mem ctrl rx queue size %d\n", list_count(mem_ctrl->Rx_queue_top));
+
+			system_agent->south_io_busy_cycles += (transfer_time + 1);
+
+			list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
+			advance(mem_ctrl_ec);
 		}
-
-
-		system_agent->south_io_busy_cycles += (transfer_time + 1);
-
-		list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
-		advance(mem_ctrl_ec);
 	}
+
+	fatal("sys_agent_ctrl_io_down(): out of while loop\n");
+
 	return;
 }
 
