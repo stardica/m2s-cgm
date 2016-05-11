@@ -376,12 +376,6 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 					/*stats*/
 					cache->CoalescePut++;
 
-					if(message_packet->access_id == 5643812)
-					{
-						warning("%llu coalesced coal = %d conflict = %d\n", message_packet->access_id, message_packet->coalesced, message_packet->assoc_conflict);
-
-					}
-
 					if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 					{
 						if(LEVEL == 1 || LEVEL == 3)
@@ -828,6 +822,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
+	int ort_status = -1;
 
 	enum cgm_cache_block_state_t block_trainsient_state;
 
@@ -844,15 +839,23 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 
 	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
-	/*unsigned int temp = message_packet->address;
-	temp = temp & cache->block_address_mask;
-	printf("%s id %llu addr 0x%08x blk addr 0x%08x hit_ptr %d\n", cache->name, message_packet->access_id, message_packet->address, temp, *cache_block_hit_ptr);*/
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
-	if((*cache_block_hit_ptr == 1 && block_trainsient_state == cgm_cache_block_transient))
-		warning("bug is here\n");
+		warning("l1 conflict found on downgrade ort set cycle %llu\n", P_TIME);
+	}
+
+	/*if((*cache_block_hit_ptr == 1 && block_trainsient_state == cgm_cache_block_transient))
+		warning("bug is here block 0x%08x %s downgrade ID %llu type %d state %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
 
 
-	assert((*cache_block_hit_ptr == 1 && block_trainsient_state != cgm_cache_block_transient) || (*cache_block_hit_ptr == 0));
+	//assert((*cache_block_hit_ptr == 1 && block_trainsient_state != cgm_cache_block_transient) || (*cache_block_hit_ptr == 0));
 
 	if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -1320,6 +1323,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 	if(ort_join_bit == 0)
 	{
+
 		if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			if(LEVEL == 1 || LEVEL == 3)
@@ -1341,6 +1345,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		}
 		else
 		{
+			assert(message_packet->l1_access_type == cgm_access_getx || message_packet->l1_access_type == cgm_access_upgrade);
 			message_packet->access_type = cgm_access_getx;
 		}
 
@@ -1350,7 +1355,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		//transmit to L2
 		cache_put_io_down_queue(cache, message_packet);
 
-		//warning("l1 write block caught the conflict cycle %llu\n", P_TIME);
+		warning("l1 write block caught conflict cycle %llu\n", P_TIME);
 
 		return 0;
 	}
@@ -1585,7 +1590,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//see if we can write it back into the cache.
 				write_back_packet->l2_victim_way = cgm_cache_get_victim_for_wb(cache, write_back_packet->set);
 
-				/*special case nack the request back to L1 because L2 is still waining on a a flush block ack*/
+				/*special case nack the request back to L1 because L2 is still waiting on a a flush block ack*/
 				if(write_back_packet->flush_pending == 1)
 				{
 					/*flush is pending, but we have a request for the block, nack it back to L1*/
@@ -1609,7 +1614,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					cache_put_io_up_queue(cache, message_packet);
 
-					warning("nacking load back to L1, flush still pending\n");
+					//warning("nacking load back to L1, flush still pending\n");
 
 					return;
 				}

@@ -261,7 +261,7 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 	int tx_west_queue_size = list_count(switches->Tx_west_queue);
 
 	//check if the out on the cross bar is busy. If not assign the link.
-	if(tx_queue == north_queue && (tx_north_queue_size <= QueueSize))
+	if(tx_queue == north_queue && (tx_north_queue_size < QueueSize))
 	{
 		/*if(switches->queue == north_queue)
 			printf("error here cycle %llu\n", P_TIME);*/
@@ -274,7 +274,7 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 		}
 	}
 
-	if(tx_queue == east_queue && (tx_east_queue_size <= QueueSize))
+	if(tx_queue == east_queue && (tx_east_queue_size < QueueSize))
 	{
 		assert(switches->queue != east_queue);
 		if(switches->crossbar->east_in_out_linked_queue == invalid_queue)
@@ -284,7 +284,7 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 		}
 	}
 
-	if(tx_queue == south_queue && (tx_south_queue_size <= QueueSize))
+	if(tx_queue == south_queue && (tx_south_queue_size < QueueSize))
 	{
 		assert(switches->queue != south_queue);
 		if(switches->crossbar->south_in_out_linked_queue == invalid_queue)
@@ -294,7 +294,7 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 		}
 	}
 
-	if(tx_queue == west_queue && (tx_west_queue_size <= QueueSize))
+	if(tx_queue == west_queue && (tx_west_queue_size < QueueSize))
 	{
 		assert(switches->queue != west_queue);
 		if(switches->crossbar->west_in_out_linked_queue == invalid_queue)
@@ -590,7 +590,7 @@ void switch_ctrl(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -624,7 +624,7 @@ void switch_ctrl(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -658,7 +658,7 @@ void switch_ctrl(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -692,7 +692,7 @@ void switch_ctrl(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -972,7 +972,7 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade)
 			{
 
-				if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
 				}
@@ -1001,7 +1001,7 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack)
 			{
 
-				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
 				}
@@ -1035,7 +1035,7 @@ void switch_north_io_ctrl(void){
 		else if(my_pid >= num_cores)
 		{
 
-			if(list_count(hub_iommu->Rx_queue_bottom) > QueueSize)
+			if(list_count(hub_iommu->Rx_queue_bottom) >= QueueSize)
 			{
 				SYSTEM_PAUSE(1);
 			}
@@ -1097,7 +1097,7 @@ void switch_east_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
-		if(list_count(switches[my_pid].next_east) > QueueSize)
+		if(list_count(switches[my_pid].next_east) >= QueueSize)
 		{
 			SYSTEM_PAUSE(1);
 		}
@@ -1269,7 +1269,7 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade))
 			{
 
-				if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
+				if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
 				{
 					//queue is full so stall
 					SYSTEM_PAUSE(1);
@@ -1296,7 +1296,7 @@ void switch_south_io_ctrl(void){
 			}
 			else if(message_packet->access_type == cgm_access_mc_put)
 			{
-				if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
+				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
 				}
@@ -1326,7 +1326,7 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_upgrade_ack)
 			{
 
-				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
 				}
@@ -1362,7 +1362,7 @@ void switch_south_io_ctrl(void){
 		else if(my_pid >= num_cores)
 		{
 
-			if(list_count(system_agent->Rx_queue_top) > QueueSize)
+			if(list_count(system_agent->Rx_queue_top) >= QueueSize)
 			{
 				SYSTEM_PAUSE(1);
 			}

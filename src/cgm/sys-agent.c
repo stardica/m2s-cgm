@@ -205,7 +205,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
-			if(LEVEL == 3)
+			if(SYSTEM == 1)
 			{
 				printf("block 0x%08x %s routing to MC ID %llu type %d cycle %llu\n",
 						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -248,7 +248,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 
 		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
-			if(LEVEL == 3)
+			if(SYSTEM == 1)
 			{
 				printf("block 0x%08x %s routing from MC ID %llu type %d cycle %llu\n",
 						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -352,7 +352,7 @@ void sys_agent_ctrl_io_down(void){
 	{
 		await(system_agent_io_down_ec, step);
 
-		if(list_count(mem_ctrl->Rx_queue_top) > QueueSize)
+		if(list_count(mem_ctrl->Rx_queue_top) >= QueueSize)
 		{
 			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
 			SYSTEM_PAUSE(1);
@@ -375,7 +375,7 @@ void sys_agent_ctrl_io_down(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -411,7 +411,7 @@ void sys_agent_ctrl(void){
 	{
 		await(system_agent_ec, step);
 
-		if(list_count(system_agent->Tx_queue_bottom) > QueueSize || list_count(system_agent->Tx_queue_top) > QueueSize)
+		if(list_count(system_agent->Tx_queue_bottom) >= QueueSize || list_count(system_agent->Tx_queue_top) >= QueueSize)
 		{
 			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
 

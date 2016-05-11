@@ -287,7 +287,7 @@ void memctrl_ctrl(void){
 
 			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
-				if(LEVEL == 3)
+				if(SYSTEM == 1)
 				{
 					cache_dump_queue(mem_ctrl->pending_accesses);
 

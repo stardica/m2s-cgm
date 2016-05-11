@@ -1021,29 +1021,95 @@ void tick(void){
 	return;
 }
 
+
+#define CACHEQUEUES(cache, size) 	if(list_count(cache.Rx_queue_top) > size || 		\
+									list_count(cache.Rx_queue_bottom) > size || 		\
+									list_count(cache.Tx_queue_top) > size || 			\
+									list_count(cache.Tx_queue_bottom) > size || 		\
+									list_count(cache.Coherance_Tx_queue) > size || 		\
+									list_count(cache.Coherance_Rx_queue) > size || 		\
+									list_count(cache.retry_queue) > size || 			\
+									list_count(cache.write_back_buffer) > size || 		\
+									list_count(cache.pending_request_buffer) > size)	\
+									{													\
+										warning("WD: %s exceeded a queue Rx_T %d Rx_b %d Tx_t %d Tx_b %d C_Tx %d C_Rx %d retry %d write %d pending %d\n",	\
+											cache.name, list_count(cache.Rx_queue_top), list_count(cache.Rx_queue_bottom),									\
+														list_count(cache.Tx_queue_top),	list_count(cache.Tx_queue_bottom),									\
+														list_count(cache.Coherance_Tx_queue), list_count(cache.Coherance_Rx_queue),							\
+														list_count(cache.retry_queue), list_count(cache.write_back_buffer),									\
+														list_count(cache.pending_request_buffer));															\
+									}
+
+
+#define SWITCHQUEUES(switches, size) 	if(list_count(switches.north_queue) > size || 	\
+									list_count(switches.Tx_north_queue) > size || 		\
+									list_count(switches.east_queue) > size || 			\
+									list_count(switches.Tx_east_queue) > size || 		\
+									list_count(switches.south_queue) > size || 			\
+									list_count(switches.Tx_south_queue) > size || 		\
+									list_count(switches.west_queue) > size || 			\
+									list_count(switches.Tx_west_queue) > size) 			\
+									{													\
+										warning("WD: %s exceeded a queue n %d tx_n %d e %d tx_e %d s %d tx_s %d w %d tx_w %d\n",	\
+											switches.name, list_count(switches.north_queue), list_count(switches.Tx_north_queue),	\
+													list_count(switches.east_queue), list_count(switches.Tx_east_queue),			\
+													list_count(switches.south_queue), list_count(switches.Tx_south_queue),			\
+													list_count(switches.west_queue), list_count(switches.Tx_west_queue));			\
+									}
+
+
+#define SYSTEMAGENTQUEUES(systemagent, size) 	if(list_count(systemagent->Rx_queue_top) > size || 	\
+									list_count(systemagent->Rx_queue_bottom) > size || 				\
+									list_count(systemagent->Tx_queue_top) > size || 				\
+									list_count(systemagent->Tx_queue_bottom) > size) 				\
+									{																\
+										warning("WD: %s exceeded a queue rx_t %d rx_b %d tx_t %d tx_b %d\n",									\
+											systemagent->name, list_count(systemagent->Rx_queue_top), list_count(systemagent->Rx_queue_bottom),	\
+													list_count(systemagent->Tx_queue_top), list_count(systemagent->Tx_queue_bottom));			\
+									}
+
+
+#define MEMCTRLQUEUES(memctrl, size) 	if(list_count(memctrl->Rx_queue_top) > size || 			\
+									list_count(memctrl->Tx_queue_top) > size || 				\
+									list_count(memctrl->pending_accesses) > 32) 				\
+									{															\
+										warning("WD: %s exceeded a queue rx_t %d tx_t %d pending %d\n",																	\
+											memctrl->name, list_count(memctrl->Rx_queue_top), list_count(memctrl->Tx_queue_top), list_count(memctrl->pending_accesses));\
+									}
+
+
 void cgm_watchdog(void){
 
 	long long t_1 = 1;
+
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
 
 	while(1)
 	{
 		await(watchdog, t_1);
 		t_1++;
 
-		/*if((P_TIME % MS) == 0)
-		{
-			warning("Core0 bytes tx %llu\n", cpu_gpu_stats->core_bytes_tx[0]);
-			warning("Core0 bytes rx %llu\n", cpu_gpu_stats->core_bytes_rx[0]);
-			warning("SA bytes rx %llu\n", system_agent->mc_loads);
-			warning("SA bytes rx %llu\n", system_agent->mc_stores);
-			warning("SA bytes tx %llu\n", system_agent->mc_returns);
+		//watch all queue depths....
 
-			cpu_gpu_stats->core_bytes_tx[0] = 0;
-			cpu_gpu_stats->core_bytes_rx[0] = 0;
-			system_agent->mc_loads = 0;
-			system_agent->mc_stores = 0;
-			system_agent->mc_returns = 0;
-		}*/
+		//caches
+		for(i=0; i< num_cores; i++)
+		{
+			CACHEQUEUES(l1_i_caches[i], QueueSize)
+			CACHEQUEUES(l1_d_caches[i], QueueSize)
+			CACHEQUEUES(l2_caches[i], QueueSize)
+			CACHEQUEUES(l3_caches[i], QueueSize)
+		}
+
+		//switches
+		for(i=0; i<=num_cores; i++)
+		{
+			SWITCHQUEUES(switches[i], QueueSize);
+		}
+
+		SYSTEMAGENTQUEUES(system_agent, QueueSize)
+
+		MEMCTRLQUEUES(mem_ctrl, QueueSize)
 
 	}
 	return;
@@ -1969,11 +2035,13 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	return;
 }
 
+#include <unistd.h>
+
 void PrintCycle(void){
 
 	if((P_TIME % SKIP) == 0)
 	{
-		printf("---Cycles %lluM---\n", P_TIME/SKIP);
+		printf("---Cycles %lluM---\r", P_TIME/SKIP);
 		fflush(stdout);
 	}
 

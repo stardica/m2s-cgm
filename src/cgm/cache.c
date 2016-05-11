@@ -970,7 +970,6 @@ int ort_get_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
 
 void ort_set_pending_join_bit(struct cache_t *cache, int row, int tag, int set){
 
-
 	assert(cache->ort[row][0] == tag && cache->ort[row][1] == set);
 
 	cache->ort[row][2] = 0;

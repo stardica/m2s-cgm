@@ -1663,6 +1663,12 @@ int cache_finish_create(){
 			}
 		}
 
+		//Tx queues
+		l1_i_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_i_caches[%d].Tx_queue_top", i);
+		l1_i_caches[i].Tx_queue_top->name = strdup(buff);
+
 		//Tx queue
 		l1_i_caches[i].Tx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
@@ -1795,6 +1801,12 @@ int cache_finish_create(){
 				l1_d_caches[i].ort[j][k] = -1;
 			}
 		}
+
+		//Tx queues
+		l1_d_caches[i].Tx_queue_top = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l1_d_caches[%d].Tx_queue_top", i);
+		l1_d_caches[i].Tx_queue_top->name = strdup(buff);
 
 		//Tx queue
 		l1_d_caches[i].Tx_queue_bottom = list_create();
