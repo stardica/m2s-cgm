@@ -3591,8 +3591,8 @@ void l2_cache_up_io_ctrl(void){
 		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
 		{
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_upgrade_ack
-					|| message_packet->access_type == cgm_access_get_nack || message_packet->access_type == cgm_access_getx_nack)
+					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
+					|| message_packet->access_type == cgm_access_getx_nack)
 			{
 
 				if(list_count(l1_d_caches[my_pid].Rx_queue_bottom) > QueueSize)
@@ -3610,8 +3610,9 @@ void l2_cache_up_io_ctrl(void){
 					advance(&l1_d_cache[my_pid]);
 				}
 			}
-			else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_downgrade
-					|| message_packet->access_type == cgm_access_getx_fwd_inval || message_packet->access_type == cgm_access_upgrade_inval)
+			else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
+					|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
+					|| message_packet->access_type == cgm_access_upgrade_inval)
 			{
 
 				if(list_count(l1_d_caches[my_pid].Coherance_Rx_queue) > QueueSize)
@@ -3756,6 +3757,12 @@ void l3_cache_up_io_ctrl(void){
 				transfer_time = 1;
 
 			SYSTEM_PAUSE(transfer_time);
+
+			if(message_packet->access_id == 9031342 || message_packet->access_id == 9031352)
+			{
+				warning("L3 sending %llu cycle %llu\n", message_packet->access_id, P_TIME);
+				fflush(stderr);
+			}
 
 			//drop in to the switch queue
 			list_enqueue(switches[my_pid].south_queue, message_packet);

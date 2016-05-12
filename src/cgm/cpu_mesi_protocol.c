@@ -968,6 +968,8 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
+	int ort_status = -1;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -986,6 +988,22 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 		}
 	}
 
+
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+
+		fatal("here\n");
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
+
+
+
 	/*if the block is in the cache it is not in the WB buffer
 	if the block is dirty send down to L2 cache for merge*/
 	switch(*cache_block_state_ptr)
@@ -993,7 +1011,8 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 		case cgm_cache_block_owned:
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_shared:
-		fatal("l1_d_cache_ctrl(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+		fatal("cgm_mesi_l1_d_getx_fwd_inval(): block 0x%08x Invalid block state on flush hit %s \n", (message_packet->address & cache->block_address_mask), str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+
 			break;
 
 		case cgm_cache_block_invalid:
@@ -1179,7 +1198,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 	{
 		case cgm_cache_block_owned:
 		case cgm_cache_block_noncoherent:
-		fatal("l1_d_cache_ctrl(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+		fatal("cgm_mesi_l1_d_flush_block(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
 			break;
 
 		//if invalid check the WB buffer
@@ -3466,6 +3485,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	//charge delay
 	P_PAUSE(cache->latency);
 
+
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -3549,6 +3569,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			//check the WB buffer
 			if(write_back_packet)
 			{
+
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 				assert(*cache_block_hit_ptr == 0);
@@ -3655,12 +3676,20 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 			else
 			{
+
 				/*its possible that a get_fwd can come in for a block while the cache is waiting for the blk after sending a request
-				if the cache is waiting for the block there will be an entry in the ORT table. L3 has already serviced the request
+				if the cache is waiting for the block there will be an entry in the ORT table. L3 has already or will service the request
 				and the core has the block M/E but the packet will arrive after the get_fwd. Perform a join to prevent deadlock*/
-				if(ort_status < cache->mshr_size)
+				/*if(ort_status < cache->mshr_size)
 				{
-					/*set the bit in the ort table to 0*/
+
+					if(message_packet->access_id == 8966422)
+					{
+						fatal("id %llu join ort status is %d\n", message_packet->access_id, ort_status);
+					}
+
+
+					set the bit in the ort table to 0
 					ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
 					//printf("inserting pending get_fwd blk_addr 0x%08x\n", message_packet->address & cache->block_address_mask);
@@ -3668,13 +3697,12 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					message_packet->downgrade_pending = 1;
 
-					/*drop into the pending request buffer*/
+					drop into the pending request buffer
 					message_packet =  list_remove(cache->last_queue, message_packet);
 					list_enqueue(cache->pending_request_buffer, message_packet);
-
 				}
 				else
-				{
+				{*/
 					/*if no request is pending the block was either silently dropped OR was written back and is on its way to L3
 					We can either let the WB service the get request (not implemented yet) or just nack and let the requesting core
 					retry.*/
@@ -3710,7 +3738,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//part 2
 					////////
 
-					//create downgrade_ack
+					//create downgrade_nack
 					nack_packet = packet_create();
 					assert(nack_packet);
 
@@ -3729,7 +3757,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//transmit block to L3
 					list_enqueue(cache->Tx_queue_bottom, nack_packet);
 					advance(cache->cache_io_down_ec);
-				}
+				/*}*/
 
 			}
 			break;
@@ -4751,6 +4779,15 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		because the access should be coalesced.*/
 		//assert(sharers >= 1 &&  owning_core == 0);
 
+		if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 2 || LEVEL == 3)
+			{
+				printf("block 0x%08x %s pending at L3 get nacked back to L2 id %llu state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+			}
+		}
+
 		//send the reply up as a NACK!
 		message_packet->access_type = cgm_access_get_nack;
 
@@ -5201,6 +5238,15 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 		and the requester should not be the owning core
 		because the access should be coalesced.*/
 		//assert(num_sharers >= 1 &&  owning_core == 0);
+
+		if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		{
+			if(LEVEL == 2 || LEVEL == 3)
+			{
+				printf("block 0x%08x %s pending at L3 getx nacked back to L2 id %llu state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+			}
+		}
 
 		//send the reply up as a NACK!
 		message_packet->access_type = cgm_access_getx_nack;
@@ -7352,7 +7398,6 @@ void cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message
 				advance(cache->cache_io_up_ec);
 
 				//check the pending request buffer for an outstanding get/getx_fwd sigh.....
-				//pull the upgrade from the pending request buffer NOTE don't pull a get/getx_fwd for the same block
 				LIST_FOR_EACH(cache->pending_request_buffer, i)
 				{
 					//get pointer to access in queue and check it's status.
