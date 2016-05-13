@@ -285,7 +285,12 @@ void memctrl_ctrl(void){
 				}
 			}
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access start ID %llu queue depth %d type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id,
+					list_count(mem_ctrl->pending_accesses), message_packet->access_type, P_TIME);
+
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
@@ -295,7 +300,7 @@ void memctrl_ctrl(void){
 							(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id,
 							list_count(mem_ctrl->pending_accesses), message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			/*stats*/
 			mem_ctrl->busy_cycles += (mem_ctrl->DRAM_latency + 1);

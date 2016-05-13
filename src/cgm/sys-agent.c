@@ -203,14 +203,17 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_enqueue(system_agent->Tx_queue_bottom, message_packet);
 		advance(system_agent_io_down_ec);
 
-		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing to MC ID %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+		/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			if(SYSTEM == 1)
 			{
 				printf("block 0x%08x %s routing to MC ID %llu type %d cycle %llu\n",
 						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
 			}
-		}
+		}*/
 
 		/*stats*/
 		if(access_type == cgm_access_mc_load)
@@ -246,14 +249,17 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		list_enqueue(system_agent->Tx_queue_top, message_packet);
 		advance(system_agent_io_up_ec);
 
-		if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing from MC ID %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+		/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			if(SYSTEM == 1)
 			{
 				printf("block 0x%08x %s routing from MC ID %llu type %d cycle %llu\n",
 						(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, message_packet->access_id, message_packet->access_type, P_TIME);
 			}
-		}
+		}*/
 
 		/*stats*/
 		system_agent->mc_returns++;
@@ -373,14 +379,17 @@ void sys_agent_ctrl_io_down(void){
 
 			SYSTEM_PAUSE(transfer_time);
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s IO to MC transfer finish time %d ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), system_agent->name, transfer_time * SYSTEM_LATENCY_FACTOR, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			if(list_count(mem_ctrl->Rx_queue_top) > QueueSize)
 				warning("mem ctrl rx queue size %d\n", list_count(mem_ctrl->Rx_queue_top));

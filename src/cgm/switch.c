@@ -588,14 +588,17 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
 			assert(message_packet);
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			if(list_count(switches[my_pid].Tx_north_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_north_queue->name, list_count(switches[my_pid].Tx_north_queue));
@@ -622,14 +625,17 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->east_in_out_linked_queue), 0);
 			assert(message_packet);
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			if(list_count(switches[my_pid].Tx_east_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_east_queue->name, list_count(switches[my_pid].Tx_east_queue));
@@ -656,14 +662,17 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->south_in_out_linked_queue), 0);
 			assert(message_packet);
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			if(list_count(switches[my_pid].Tx_south_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_south_queue->name, list_count(switches[my_pid].Tx_south_queue));
@@ -690,14 +699,17 @@ void switch_ctrl(void){
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->west_in_out_linked_queue), 0);
 			assert(message_packet);
 
-			if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
+					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 			{
 				if(SYSTEM == 1)
 				{
 					printf("block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
 							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 				}
-			}
+			}*/
 
 			if(list_count(switches[my_pid].Tx_west_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_west_queue->name, list_count(switches[my_pid].Tx_west_queue));
