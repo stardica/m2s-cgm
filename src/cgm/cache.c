@@ -688,8 +688,9 @@ void cache_dump_queue(struct list_t *queue){
 	{
 		//get pointer to access in queue and check it's status.
 		packet = list_get(queue, i);
-		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x start_cycle %llu\n",
-				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address, packet->address & l2_caches[0].block_address_mask, packet->start_cycle);
+		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x pending_bit %d start_cycle %llu\n",
+				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address,
+				packet->address & l2_caches[0].block_address_mask, packet->flush_pending, packet->start_cycle);
 	}
 
 	return;
@@ -1497,11 +1498,20 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
 		/*if no core has the block don't set it as pending*/
+
+		if(write_back_packet->write_back_id == 802006)
+		{
+			//get the presence bits from the directory
+			bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
+			bit_vector = bit_vector & cache->share_mask;
+
+			warning("made the wb for %llu shareres = %d vector %d \n", write_back_packet->write_back_id, sharers, bit_vector);
+		}
+
 		if(sharers > 0)
 		{
 			//printf("write_back_packet %llu number of sharers %d\n", write_back_packet->write_back_id, sharers);
 			write_back_packet->flush_pending = 1;
-			//getchar();
 		}
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
@@ -1526,16 +1536,15 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 				init_flush_packet(cache, flush_packet, set, way);
 
-				/*if(flush_packet->write_back_id == 61524)
-				{
-					printf("l3 evict id %llu vict state %d cycle %llu back %d\n", flush_packet->evict_id, victim_state, P_TIME, bit_vector);
-					getchar();
-				}*/
-
 				flush_packet->cpu_access_type = cgm_access_store;
 
 				if(victim_way)
 					flush_packet->l3_victim_way = victim_way;
+
+				/*if(flush_packet->write_back_id == 802006)
+				{
+					warning("sending flush to %s\n", l2_caches[i].name);
+				}*/
 
 				//update routing
 				flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
@@ -3758,11 +3767,11 @@ void l3_cache_up_io_ctrl(void){
 
 			SYSTEM_PAUSE(transfer_time);
 
-			if(message_packet->access_id == 9031342 || message_packet->access_id == 9031352)
+			/*if(message_packet->access_id == 9031342 || message_packet->access_id == 9031352)
 			{
 				warning("L3 sending %llu cycle %llu\n", message_packet->access_id, P_TIME);
 				fflush(stderr);
-			}
+			}*/
 
 			//drop in to the switch queue
 			list_enqueue(switches[my_pid].south_queue, message_packet);
