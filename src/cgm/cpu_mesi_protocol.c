@@ -923,15 +923,6 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-	/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-	{
-		if(LEVEL == 1 || LEVEL == 3)
-		{
-			printf("block 0x%08x %s downgrade ID %llu type %d state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-		}
-	}*/
-
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
@@ -1259,7 +1250,6 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 				//found the block in the WB buffer
 				if(wb_packet)
 				{
-
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
 					message_packet->size = cache->block_size;
@@ -3161,8 +3151,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	assert(*cache_block_state_ptr == 0);
 
 
-
-
 	//state should be either invalid of modified.
 	assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid);
 
@@ -3177,14 +3165,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				(message_packet->address & cache->block_address_mask), cache->name, wb_packet->L3_flush_join, message_packet->evict_id,
 				message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-		/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-		{
-			if(LEVEL == 2 || LEVEL == 3)
-			{
-				printf("block 0x%08x %s flush blk ack with wb in l2 flush_join %d ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, wb_packet->L3_flush_join, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-			}
-		}*/
 
 		if(wb_packet->L3_flush_join == 0)
 		{
@@ -3227,12 +3207,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				struct cache_t *requesting_ptr = &l2_caches[str_map_string(&l2_strn_map, pending_request_packet->src_name)];
 
 				SETROUTE(pending_request_packet, cache, requesting_ptr)
-				/*pending_request_packet->dest_name = str_map_value(&node_strn_map, pending_request_packet->src_id);
-				pending_request_packet->dest_id = str_map_string(&node_strn_map, pending_request_packet->src_name);
-
-				//owning node L2
-				pending_request_packet->src_name = cache->name;
-				pending_request_packet->src_id = str_map_string(&node_strn_map, cache->name);*/
 
 				//transmit block to requesting node
 				pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
@@ -3260,6 +3234,15 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				}
 
 				//determine if we need to send dirty data to L3
+
+				if(message_packet->cache_block_state != cgm_cache_block_modified || wb_packet->cache_block_state != cgm_cache_block_modified)
+				{
+					warning("bug is here block 0x%08x %s downgrade ID %llu type %d mp state %d wb state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name,
+							message_packet->access_id, message_packet->access_type, message_packet->cache_block_state, wb_packet->cache_block_state, P_TIME);
+
+				}
+
 				assert(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified);
 				if(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified)
 				{
@@ -3279,10 +3262,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				reply_packet->l2_cache_name = pending_request_packet->src_name;
 
 				SETROUTE(reply_packet, cache, l3_cache_ptr)
-				/*reply_packet->src_name = cache->name;
-				reply_packet->src_id = str_map_string(&node_strn_map, cache->name);
-				reply_packet->dest_name = l3_caches[l3_map].name;
-				reply_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);*/
 
 				//transmit downgrad_ack to L3 (home)
 				list_enqueue(cache->Tx_queue_bottom, reply_packet);
@@ -3298,7 +3277,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 			}
 			else
 			{
-
 				//incoming data from L1 is dirty
 				if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 				{
@@ -3354,10 +3332,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 			pending_request_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
 			SETROUTE(pending_request_packet, cache, l3_cache_ptr)
-			/*pending_request_packet->src_name = cache->name;
-			pending_request_packet->src_id = str_map_string(&node_strn_map, cache->name);
-			pending_request_packet->dest_name = l3_caches[l3_map].name;
-			pending_request_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);*/
 
 			//reply to the L3 cache
 			/*printf("l2_flush_block_ack_here id %llu dest %d cycle %llu\n", pending_request_packet->evict_id, pending_request_packet->dest_id, P_TIME);*/
@@ -3380,14 +3354,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack without wb in l2 ID %llu type %d state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-		/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-		{
-			if(LEVEL == 2 || LEVEL == 3)
-			{
-				printf("block 0x%08x %s flush blk ack without wb in l2 ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-			}
-		}*/
 
 		/*case L3 flushed L2 flushed L1 and now back to L2 and there is no WB waiting at L2*/
 

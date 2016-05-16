@@ -1489,6 +1489,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	if(victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 		assert(sharers == 0 || sharers == 1);
 
+
 	//if block is in the E/M state dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 	{
@@ -1499,14 +1500,14 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		/*if no core has the block don't set it as pending*/
 
-		if(write_back_packet->write_back_id == 802006)
+		/*if(write_back_packet->write_back_id == 802006)
 		{
 			//get the presence bits from the directory
 			bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 			bit_vector = bit_vector & cache->share_mask;
 
 			warning("made the wb for %llu shareres = %d vector %d \n", write_back_packet->write_back_id, sharers, bit_vector);
-		}
+		}*/
 
 		if(sharers > 0)
 		{
@@ -1523,6 +1524,8 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	//get the presence bits from the directory
 	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 	bit_vector = bit_vector & cache->share_mask;
+
+	int num_messages = 0;
 
 	//only run the loop if the bit vector has a bit set.
 	if(bit_vector > 0)
@@ -1554,12 +1557,17 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 				list_enqueue(cache->Tx_queue_top, flush_packet);
 				advance(cache->cache_io_up_ec);
+
+				num_messages++;
 			}
 
 			//shift the vector to the next position and continue
 			bit_vector = bit_vector >> 1;
 		}
 	}
+
+	/*make sure these two are aligned.*/
+	assert(num_messages == sharers);
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
