@@ -102,7 +102,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 				return;
 			}
 
-			//add some routing/status data to the packet
+			//add some routing/status data to tdhe packet
 			message_packet->gpu_access_type = cgm_access_load_v;
 
 			//this is mesi hsa stuff baby. GETX!
@@ -112,7 +112,7 @@ void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 
 			//find victim and evict
-			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			//evict the block
@@ -294,7 +294,7 @@ void cgm_mesi_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pa
 			message_packet->access_type = cgm_access_getx;
 
 			//find victim and evict
-			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			//evict the block is the data is valid
@@ -579,7 +579,7 @@ void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pa
 			}
 
 			//find victim and evict on return
-			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			//evict the victim

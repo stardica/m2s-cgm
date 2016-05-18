@@ -688,9 +688,9 @@ void cache_dump_queue(struct list_t *queue){
 	{
 		//get pointer to access in queue and check it's status.
 		packet = list_get(queue, i);
-		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x pending_bit %d start_cycle %llu\n",
+		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x pending_bit %d upgrade bit %d start_cycle %llu\n",
 				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address,
-				packet->address & l2_caches[0].block_address_mask, packet->flush_pending, packet->start_cycle);
+				packet->address & l2_caches[0].block_address_mask, packet->flush_pending, packet->upgrade_pending, packet->start_cycle);
 	}
 
 	return;
@@ -1236,7 +1236,7 @@ int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set
 
 	for (way = 0; way < cache->assoc; way++)
 	{
-		if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].transient_state == cgm_cache_block_transient)
+		if (cache->sets[set].blocks[way].transient_tag == tag && cache->sets[set].blocks[way].transient_state == cgm_cache_block_transient)
 		{
 			/* Block found */
 			*(way_ptr) = way;
@@ -1246,7 +1246,7 @@ int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set
 	}
 
 	//if here something is wrong
-	//fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
+	fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s set %d tag %d way %d cycle %llu\n", cache->name, set, tag, way, P_TIME);
 
 	/* Block not found */
 	return 0;
@@ -1314,6 +1314,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	cache->sets[set].blocks[way].tag = tag;
 	cache->sets[set].blocks[way].state = state;
 	cache->sets[set].blocks[way].transient_state = cgm_cache_block_invalid;
+	cache->sets[set].blocks[way].transient_tag = tag;
 	cache->sets[set].blocks[way].written = 1;
 
 	/*if (cache->cache_type == l2_cache_t && set == 69 && tag == 57)
@@ -1664,7 +1665,7 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 }
 
 
-int cgm_cache_get_victim(struct cache_t *cache, int set){
+int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag){
 
 	//int way = -1;
 	int i = 0;
@@ -1697,8 +1698,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 
 		//the block should not be in the transient state.
 
-		/*if(P_TIME == 13687603)
-			cgm_cache_dump_set(cache, set);*/
 
 		for(i = 0; i < cache->assoc; i++)
 		{
@@ -1707,6 +1706,7 @@ int cgm_cache_get_victim(struct cache_t *cache, int set){
 			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)
 			{
 				block->transient_state = cgm_cache_block_transient;
+				block->transient_tag = tran_tag;
 				break;
 			}
 
@@ -4079,10 +4079,6 @@ void cache_get_transient_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//look for the block in the cache
 	*(cache_block_hit_ptr) = cgm_cache_find_transient_block(cache, tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
-	/*if(*cache_block_hit_ptr == 0)
-	{
-		fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s cycle %llu\n", cache->name, P_TIME);
-	}*/
 
 	//store the decode in the packet for now.
 	message_packet->tag = tag;
@@ -4953,6 +4949,12 @@ void cgm_cache_clear_block_upgrade_pending_bit(struct cache_t *cache, int set, i
 	cache->sets[set].blocks[way].upgrade_pending = 0;
 
 	return;
+
+}
+
+int cgm_cache_get_block_upgrade_pending_bit(struct cache_t *cache, int set, int way){
+
+	return cache->sets[set].blocks[way].upgrade_pending;
 
 }
 

@@ -208,6 +208,7 @@ enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, in
 void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
+int cgm_cache_get_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 /*enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);*/
@@ -216,7 +217,7 @@ void cgm_cache_access_block(struct cache_t *cache, int set, int way);
 void cgm_cache_update_block_order(struct cache_t *cache, int set);
 
 int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set);
-int cgm_cache_get_victim(struct cache_t *cache, int set);
+int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_dump_set(struct cache_t *cache, int set);
 int cgm_cache_get_block_usage(struct cache_t *cache);

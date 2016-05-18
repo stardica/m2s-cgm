@@ -97,9 +97,9 @@ enum cgm_access_kind_t {
 			cgm_access_inv,  //invalidation request
 			cgm_access_flush_block,
 			cgm_access_flush_block_ack,
-			cgm_access_inv_ack,
-	/*30*/		cgm_access_upgrade, //upgrade request
-		cgm_access_upgrade_ack,
+	/*30*/	cgm_access_inv_ack,
+			cgm_access_upgrade, //upgrade request
+			cgm_access_upgrade_ack,
 			cgm_access_upgrade_nack,
 			cgm_access_upgrade_putx_n,
 			cgm_access_upgrade_getx_fwd,
@@ -107,19 +107,19 @@ enum cgm_access_kind_t {
 			cgm_access_upgrade_inval_ack,
 			cgm_access_upgrade_putx,
 			cgm_access_downgrade, //downgrade request
-			cgm_access_downgrade_ack,
-	/*40*/		cgm_access_downgrade_nack,
-		cgm_access_mc_load,	//request sent to system agent/memory controller
+	/*40*/	cgm_access_downgrade_ack,
+			cgm_access_downgrade_nack,
+			cgm_access_mc_load,	//request sent to system agent/memory controller
 			cgm_access_mc_store,	//request sent to system agent/memory controller
 			cgm_access_mc_put,	//reply from system agent/memory controller
 			cgm_access_put_clnx, //put block in clean exclusive state
-			cgm_access_putx, //put block in modified state
-		/*46*/	cgm_access_puts, //put block in shared state.
-		cgm_access_puto, //put block in owned state.
+	/*46*/	cgm_access_putx, //put block in modified state
+			cgm_access_puts, //put block in shared state.
+			cgm_access_puto, //put block in owned state.
 			cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
-			cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
-	/*50*/		cgm_access_retry,
-		cgm_access_fetch_retry,
+	/*50*/	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
+			cgm_access_retry,
+			cgm_access_fetch_retry,
 			cgm_access_load_retry,
 			cgm_access_store_retry,
 			cgm_access_loadx_retry, /*gpu mesi mode*/

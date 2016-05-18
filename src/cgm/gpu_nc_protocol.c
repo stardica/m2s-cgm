@@ -168,7 +168,7 @@ void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packe
 			message_packet->l1_access_type = cgm_access_gets_v;
 
 			//find victim and evict
-			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			//evict the block
@@ -259,7 +259,7 @@ void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->l1_access_type = cgm_access_gets_v;
 
 			//find victim and evict
-			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 			//evict the block
@@ -423,7 +423,7 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 				return;
 
 			//find victim and evict on return
-			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set);
+			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			//evict the block
