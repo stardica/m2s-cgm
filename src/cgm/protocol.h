@@ -140,8 +140,6 @@ void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container);
 void mem_system_reset_stats(void);
 void mem_system_store_stats(struct cgm_stats_t *cgm_stat_container);
 
-
-
 //////////////////////
 /////CPU MESI protocol
 //////////////////////

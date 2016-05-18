@@ -1625,10 +1625,12 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i < cache->assoc; i++)
 	{
-		printf("\tcache %s set %d way %d tag %d blk_state %s tran_state %s cycle %llu\n",
+		printf("\tcache %s set %d way %d tag %d blk_state %s tran_state %s tran_tag %d upgrade_pending %d cycle %llu\n",
 				cache->name, set, i, cache->sets[set].blocks[i].tag,
 				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state),
-				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state), P_TIME);
+				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state),
+				cache->sets[set].blocks[i].transient_tag,
+				cache->sets[set].blocks[i].upgrade_pending, P_TIME);
 	}
 
 	return;
