@@ -1478,9 +1478,9 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	{
 		if(LEVEL == 2 || LEVEL == 3)
 		{
-			printf("block 0x%08x %s evicted cycle %llu\n",
+			printf("block 0x%08x %s evicted num_sharers %d cycle %llu\n",
 					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
-					cache->name, P_TIME);
+					cache->name, sharers, P_TIME);
 		}
 	}
 
@@ -2938,7 +2938,8 @@ void l2_cache_ctrl(void){
 			else if (access_type == cgm_access_upgrade_ack)//
 			{
 				//Call back function (cgm_mesi_l2_upgrade_nack)
-				l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet);
+				if(!l2_caches[my_pid].l2_upgrade_ack(&(l2_caches[my_pid]), message_packet))
+					step--;
 
 				/*stats*/
 				l2_caches[my_pid].l2_upgrade_ack_++;
