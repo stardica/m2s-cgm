@@ -1400,6 +1400,8 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+	int ort_row = -1;
+
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -1567,15 +1569,34 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
 
-				/*if(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 1)
+				ort_row = ort_search(cache, message_packet->tag, message_packet->set);
+				assert(ort_row < cache->mshr_size);
+
+				if(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 1
+						|| ort_get_pending_join_bit(cache, ort_row, message_packet->tag, message_packet->set) == 0)
 				{
-					fatal("block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
+					printf("\n");
+					cgm_cache_dump_set(cache, message_packet->set);
+
+					printf("\n");
+					cache_dump_queue(cache->pending_request_buffer);
+
+					printf("\n");
+
+					ort_dump(cache);
+					printf("\n");
+
+					fatal("block 0x%08x %s load miss coalesce ID %llu type %d state %d set %d tag %d way %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-							message_packet->access_type, *cache_block_state_ptr, P_TIME);
+							message_packet->access_type, *cache_block_state_ptr, message_packet->set, message_packet->tag, message_packet->l2_victim_way, P_TIME);
 
 				}
 
-				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);*/
+
+
+
+
+				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_get;
@@ -2147,8 +2168,12 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				data should not be in the rest of the cache*/
 
 				/*downgrade is complete for this write back so it should not be up in L1 D*/
-				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
-				assert(error == 0);
+				/*error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+				if(error == 1)
+					warning("block 0x%08x %s downgrade ack error == 1 ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				assert(error == 0);*/
 
 				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 				/*assert(write_back_packet->flush_pending == 0);*/
@@ -2867,6 +2892,10 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 					&& ort_get_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set) == 0
 					&& cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 1)
 			{
+
+				warning("block 0x%08x %s flush block is shared and transient ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
 				/*There is an outstanding request to L3 and it is an upgrade
 				depending on the state, L3 may show that the block is modified
 				send ack to L3*/
@@ -2894,7 +2923,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 				/*evict block here*/
 				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
 
-				/*block should still be transient*/
+				/*block should "still" be transient*/
 				assert(victim_trainsient_state == cgm_cache_block_transient);
 
 			}
@@ -4086,20 +4115,26 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 	}
 
-	//We have a pending get/getx_fwd packet
+	//We have a evcition conflict OR a pending get/getx_fwd packet
 	else if(pending_join_bit == 0 && pending_upgrade_bit == 0)
 	{
-		//first pull the pending request from the buffer
+		/*ORT is set, this means either a pending request is in OR L3 evicted the line*/
+		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
 		if(!pending_get_getx_fwd)
 		{
+			printf("\n");
+
 			ort_dump(cache);
 
+			printf("\n");
 			cgm_cache_dump_set(cache, message_packet->set);
 
+			printf("\n");
 			cache_dump_queue(cache->pending_request_buffer);
 
+			printf("\n");
 			warning("block 0x%08x %s write block bad case ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, message_packet->cache_block_state,
@@ -4108,14 +4143,19 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 		}
 
+		if(pending_get_getx_fwd)
+		{
+			assert(pending_get_getx_fwd->access_type == cgm_access_get_fwd || pending_get_getx_fwd->access_type == cgm_access_getx_fwd);
+			assert((pending_get_getx_fwd->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask));
+			assert(pending_get_getx_fwd->downgrade_pending == 1);
 
-		assert(pending_get_getx_fwd);
-		assert(pending_get_getx_fwd->access_type == cgm_access_get_fwd || pending_get_getx_fwd->access_type == cgm_access_getx_fwd);
-		assert((pending_get_getx_fwd->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask));
-		assert(pending_get_getx_fwd->downgrade_pending == 1);
-
-		/*set the number of coalesced accesses*/
-		pending_get_getx_fwd->downgrade_pending = (ort_get_num_coal(cache, message_packet->tag, message_packet->set) + 1); // + 1 account for the packet that was not coalesced and went to L3
+			/*set the number of coalesced accesses*/
+			pending_get_getx_fwd->downgrade_pending = (ort_get_num_coal(cache, message_packet->tag, message_packet->set) + 1); // + 1 account for the packet that was not coalesced and went to L3
+		}
+		else
+		{
+			assert(message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_putx);
+		}
 
 		//write the block
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
@@ -4136,7 +4176,17 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	else if(pending_join_bit == 0 && pending_upgrade_bit == 1)
 	{
 
-		fatal("Case four\n");
+		ort_dump(cache);
+
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		cache_dump_queue(cache->pending_request_buffer);
+
+		fatal("CASE FOUR: block 0x%08x %s write block bad case ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+		(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+		message_packet->access_type, message_packet->cache_block_state,
+		message_packet->set, message_packet->tag, message_packet->way,
+		pending_join_bit, pending_upgrade_bit, P_TIME);
 
 		//first pull the pending request from the buffer
 		pending_upgrade = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
@@ -6641,6 +6691,11 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//set the upgrade_pending bit to 1 in the block
 			//maybe delete this? use transient
 
+			/*if(message_packet->set == 46 && message_packet->way == 1)
+				warning("block 0x%08x %s upgrade seting pending bit set %d tag %d way %d ID %llu type %d state %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->set, message_packet->tag, message_packet->way,
+					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
+
 			cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 			/*printf("\n");
@@ -6654,7 +6709,6 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			fflush(stderr);
 
 			getchar();*/
-
 
 
 			//add to ORT table
@@ -6879,6 +6933,10 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	/*we have lost the block to an eviction "or something" clear the transient state and retry access as a std getx*/
 	cgm_cache_set_block_transient_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+	/*also clear the pending upgrade bit*/
+	assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
+	cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
 
 	if(victim_trainsient_state != cgm_cache_block_transient)
 	{
