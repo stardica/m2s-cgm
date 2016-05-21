@@ -2155,7 +2155,11 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
 		case cgm_cache_block_shared:
-		fatal("cgm_mesi_l2_downgrade_ack(): L2 id %d invalid block state on downgrade_ack as %s address %u\n",
+
+			warning("block 0x%08x %s downgrade ack ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+			fatal("cgm_mesi_l2_downgrade_ack(): L2 id %d invalid block state on downgrade_ack as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
 
@@ -2759,7 +2763,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block ID %llu type %d state %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 	/*check the ORT table for an outstanding access*/
@@ -2894,7 +2898,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 			{
 
 				warning("block 0x%08x %s flush block is shared and transient ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				/*There is an outstanding request to L3 and it is an upgrade
 				depending on the state, L3 may show that the block is modified
@@ -2918,7 +2922,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 				cache_put_io_down_queue(cache, message_packet);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block is shared and transient ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				/*evict block here*/
 				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
@@ -2931,8 +2935,8 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 			{
 				/*block is shared drop it no need to send ack to L3 as there is no pending flush in WB*/
 				/*evict block here*/
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
 
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
 				message_packet->l2_victim_way = message_packet->way;
 
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -3210,8 +3214,26 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		if the block is not in cache or WB at L1 we don't know if there is a M line coming down
 		because the block was exclusive in L2. So Let's see what we got*/
 
-		pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
-		assert(!pending_request_packet);
+		/*pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
+		if(pending_request_packet)
+		{
+
+			printf("mystery packet is a %d\n", pending_request_packet->access_type);
+
+
+			printf("\n");
+			cache_dump_queue(cache->pending_request_buffer);
+
+			printf("\n");
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			printf("\n");
+			ort_dump(cache);
+		}
+
+
+		assert(!pending_request_packet);*/
 
 		//printf("here 0x%08x\n", message_packet->address & cache->block_address_mask);
 
@@ -7020,8 +7042,8 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 
 	//we have permission to upgrade the block state and retry access
 
-		//get the status of the cache block
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	//get the transient block
+	cache_get_transient_block(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 	//block should be valid and in the transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
@@ -7042,8 +7064,6 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_row < cache->mshr_size);
 	conflict_bit = cache->ort[ort_row][2];
-
-
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade ack ID %llu src %s type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,

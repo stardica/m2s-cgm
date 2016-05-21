@@ -3507,7 +3507,7 @@ void l1_d_cache_down_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_upgrade)
 		{
 
-			if(list_count(l2_caches[my_pid].Rx_queue_top) > QueueSize)
+			if(list_count(l2_caches[my_pid].Rx_queue_top) >= QueueSize)
 			{
 				P_PAUSE(1);
 			}
@@ -3535,7 +3535,7 @@ void l1_d_cache_down_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
 		{
 
-			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 			{
 				P_PAUSE(1);
 			}
@@ -3680,7 +3680,7 @@ void l2_cache_down_io_ctrl(void){
 	{
 		await(l2_caches[my_pid].cache_io_down_ec, step);
 
-		if(list_count(switches[my_pid].north_queue) > QueueSize)
+		if(list_count(switches[my_pid].north_queue) >= QueueSize)
 		{
 			P_PAUSE(1);
 		}
@@ -3827,7 +3827,7 @@ void l3_cache_down_io_ctrl(void){
 	{
 		await(l3_caches[my_pid].cache_io_down_ec, step);
 
-		if(list_count(switches[my_pid].south_queue) > QueueSize)
+		if(list_count(switches[my_pid].south_queue) >= QueueSize)
 		{
 			SYSTEM_PAUSE(1);
 		}
