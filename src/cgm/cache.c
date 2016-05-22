@@ -365,35 +365,38 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*printf warnings if a size is exceeded debugging*/
 
 	if(ort_status > cache->mshr_size)
-		warning("cache_get_message(): %s MSHR table exceeded size 16 \n", cache->name);
+		warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
 
 	if(ort_coalesce_size > (cache->max_coal + 1))
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->ort_list->name, list_count(cache->ort_list));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->ort_list->name, list_count(cache->ort_list), P_TIME);
 
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 	{
 		//assert(rx_top_queue_size <= QueueSize);
 		if(rx_top_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
 	}
 
 	if(rx_bottom_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
 
 	if(tx_bottom_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
 
 	if(retry_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
 
 	if(pending_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
 
 	if(write_back_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer));
+	{
+		fatal("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
+
+	}
 
 	if(coherence_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue));
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
 
 	/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
 	assert(rx_top_queue_size <= 64);*/
@@ -492,22 +495,31 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		/*if the write back queue has a write back clear a write back*/
 		new_message = cache_search_wb_not_pending_flush(cache);
 
-		if (rx_bottom_queue_size > 0)
+		if(retry_queue_size > 0)
+		{
+			//pull from the retry queue if we have retry accesses waiting.
+			new_message = list_get(cache->retry_queue, 0);
+			cache->last_queue = cache->retry_queue;
+
+			if(new_message->access_id == 84000950 || new_message->access_id == 84000974)
+				warning("pulling id %llu from %s cycle %llu\n", new_message->access_id, cache->retry_queue->name, P_TIME);
+
+			assert(new_message);
+		}
+		else if (rx_bottom_queue_size > 0)
 		{
 			new_message = list_get(cache->Rx_queue_bottom, 0);
 			cache->last_queue = cache->Rx_queue_bottom;
+
+			if(new_message->access_id == 84000950 || new_message->access_id == 84000974)
+				warning("pulling id %llu from %s cycle %llu\n", new_message->access_id, cache->Rx_queue_bottom->name, P_TIME);
+
+
 			assert(new_message);
 		}
 		else if(write_back_queue_size > 0 && new_message)
 		{
 			cache->last_queue = cache->write_back_buffer;
-			assert(new_message);
-		}
-		else if(retry_queue_size > 0)
-		{
-			//pull from the retry queue if we have retry accesses waiting.
-			new_message = list_get(cache->retry_queue, 0);
-			cache->last_queue = cache->retry_queue;
 			assert(new_message);
 		}
 		else if (coherence_queue_size > 0)
@@ -2597,63 +2609,11 @@ void l1_d_cache_ctrl(void){
 			l1_d_caches[my_pid].Stalls++;
 
 			//warning("l1_d_cache_ctrl(): %s stalling \n", l1_d_caches[my_pid].name);
-
-			/*if(my_pid == 0)
-			{
-				printf("%s stalling cycle %llu message packet %s l2 rx %d\n", l1_d_caches[my_pid].name, P_TIME, (message_packet) ? "pulled" : "NULL", cache_can_access_top(&l2_caches[my_pid]));
-			}*/
-			/*printf("%s stalling: l2 rx_t %d, rx_b %d, cx_b %d tx_b %d, ort size %d ORT coal size %d cycle %llu\n",
-					l1_d_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top),
-					list_count(l1_d_caches[my_pid].Rx_queue_bottom),
-					list_count(l1_d_caches[my_pid].Coherance_Rx_queue),
-					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
-					cache_get_ORT_size(&(l1_d_caches[my_pid])),
-					list_count(l1_d_caches[my_pid].ort_list),
-					P_TIME);*/
-
-			/*if(P_TIME > 326207)
-			{
-				STOP;
-			}*/
-
 			P_PAUSE(1);
 		}
 		else
 		{
 			step++;
-
-			/*if(P_TIME > 1457968)
-			{
-				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-
-				int i = 0;
-				for(i=0; i<num_cus; i++)
-				{
-					printf("%s ort %d $id %d cycle %llu\n", gpu_s_caches[i].name, list_count(gpu_s_caches[i].ort_list), gpu_s_caches[i].id, P_TIME);
-				}
-			}*/
-
-			/*printf("%s running\n", l1_d_caches[my_pid].name);*/
-
-			/*if(message_packet->access_id == 4834536)
-			{
-				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-
-				printf("%s queue size %d, Tx bottom queue size %d, ort size %d  ORT coal size %d cycle %llu\n",
-					l1_d_caches[my_pid].name, list_count(l1_d_caches[my_pid].Rx_queue_top),
-					list_count(l1_d_caches[my_pid].Tx_queue_bottom),
-					cache_get_ORT_size(&(l1_d_caches[my_pid])),
-					list_count(l1_d_caches[my_pid].ort_list),
-					P_TIME);
-
-				getchar();
-			}*/
-
-			/*if(message_packet->access_id == 87630)
-			{
-				printf("%s id %llu type %d cycle %llu\n", l1_d_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-				getchar();
-			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;

@@ -1637,10 +1637,11 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					if (pending_join->downgrade_pending == 0)
 					{
 
-						/*if(pending_join->access_id == 8966422)
+						if(pending_join->access_id == 84000974)
 						{
-							warning("ID %llu L2 write block joining with pending_join %d \n", message_packet->access_id, pending_join->downgrade_pending);
-						}*/
+							warning("%s pulling get_fwd ID %llu type %d rite block joining with pending_join %d cycle %llu\n",
+									cache->name, message_packet->access_id, message_packet->access_type, pending_join->downgrade_pending, P_TIME);
+						}
 
 						//printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
 						//getchar();
@@ -3096,7 +3097,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 				}*/
 
-				assert(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified);
+				//assert(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified);
 				if(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
@@ -3611,6 +3612,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_modified:
 
 			//a GET_FWD means the block is exclusive in this core, but could also be modified
+
+			if(message_packet->access_id == 84000974)
+				warning("running id (get_fwd E state) %llu type %d cycle %llu\n", message_packet->access_id, message_packet->access_type, P_TIME);
+
 
 			//store the get_fwd in the pending request buffer
 			message_packet->downgrade_pending = 1;
