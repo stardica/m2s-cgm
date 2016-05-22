@@ -391,7 +391,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	if(write_back_queue_size > QueueSize)
 	{
-		fatal("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
 
 	}
 
@@ -402,16 +402,16 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	assert(rx_top_queue_size <= 64);*/
 
 	/*check if a cache element is full that would prevent us from processing a request*/
-	if(ort_status == cache->mshr_size)
+	if(ort_status >= cache->mshr_size)
 		state = schedule_cant_process;
 
-	if(ort_coalesce_size == cache->max_coal)
+	if(ort_coalesce_size >= cache->max_coal)
 		state = schedule_cant_process;
 
-	if(write_back_queue_size == QueueSize)
+	if(write_back_queue_size >= QueueSize)
 		state = schedule_cant_process;
 
-	if(retry_queue_size == QueueSize)
+	if(retry_queue_size >= QueueSize)
 		state = schedule_cant_process;
 
 	//star todo change this  if l1 and l2 top queue is full stall, also if l2 and L3 top queue is full stall.
@@ -424,10 +424,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			state = schedule_cant_process;
 	}*/
 
-	if(tx_bottom_queue_size == QueueSize)
+	if(tx_bottom_queue_size >= QueueSize)
 		state = schedule_cant_process;
 
-	if(pending_queue_size == QueueSize)
+	if(pending_queue_size >= QueueSize)
 		state = schedule_cant_process;
 
 
@@ -506,6 +506,11 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			assert(new_message);
 		}
+		else if(write_back_queue_size > 0 && new_message)
+		{
+			cache->last_queue = cache->write_back_buffer;
+			assert(new_message);
+		}
 		else if (rx_bottom_queue_size > 0)
 		{
 			new_message = list_get(cache->Rx_queue_bottom, 0);
@@ -515,11 +520,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 				warning("pulling id %llu from %s cycle %llu\n", new_message->access_id, cache->Rx_queue_bottom->name, P_TIME);
 
 
-			assert(new_message);
-		}
-		else if(write_back_queue_size > 0 && new_message)
-		{
-			cache->last_queue = cache->write_back_buffer;
 			assert(new_message);
 		}
 		else if (coherence_queue_size > 0)

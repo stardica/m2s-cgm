@@ -7314,8 +7314,8 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
 				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 
-			fatal("cgm_mesi_l2_upgrade_putx_n(): L2 id %d invalid block state on upgrade putx n as %s address %u\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			/*fatal("cgm_mesi_l2_upgrade_putx_n(): L2 id %d invalid block state on upgrade putx n as %s address %u\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);*/
 			break;
 
 		case cgm_cache_block_invalid:
@@ -7343,7 +7343,7 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				}
 			}
 
-			if(pending_packet)
+			/*if(pending_packet)
 			{
 				if((pending_packet->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask))
 				{
@@ -7355,14 +7355,14 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 				}
 				else
 				{
-					/*if((pending_packet->address & cache->block_address_mask) == 0x0004e380)
+					if((pending_packet->address & cache->block_address_mask) == 0x0004e380)
 						fatal("cgm_mesi_l2_upgrade_putx_n(): %s invalid block state as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 								cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
 								message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
-								message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);*/
+								message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
 					fatal("no packet\n");
 				}
-			}
+			}*/
 
 
 			/*if not found this is the first reply access*/
