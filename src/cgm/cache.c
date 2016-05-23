@@ -442,12 +442,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->retry_queue;
 			assert(new_message);
 		}
-		else if (coherence_queue_size > 0)
-		{
-			new_message = list_get(cache->Coherance_Rx_queue, 0);
-			cache->last_queue = cache->Coherance_Rx_queue;
-			assert(new_message);
-		}
 		else if(rx_bottom_queue_size > 0)
 		{
 			/* if no CPU packet pull from the memory system side*/
@@ -455,6 +449,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			//keep pointer to last queue
 			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else if (coherence_queue_size > 0)
+		{
+			new_message = list_get(cache->Coherance_Rx_queue, 0);
+			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
 		else if(rx_top_queue_size > 0)
@@ -2608,7 +2608,7 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
 
-			//warning("l1_d_cache_ctrl(): %s stalling \n", l1_d_caches[my_pid].name);
+			warning("l1_d_cache_ctrl(): %s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
 			P_PAUSE(1);
 		}
 		else
@@ -2736,9 +2736,8 @@ void l2_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 			l2_caches[my_pid].Stalls++;
-			/*printf("%s stalling: l2 in queue size %d, Tx bottom queue size %d, ORT size %d\n",
-					l2_caches[my_pid].name, list_count(l2_caches[my_pid].Rx_queue_top), list_count(l2_caches[my_pid].Tx_queue_bottom), list_count(l2_caches[my_pid].ort_list));*/
 
+			warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 			P_PAUSE(1);
 		}
 		else
@@ -3008,14 +3007,13 @@ void l3_cache_ctrl(void){
 		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l3_caches[my_pid])) || !cache_can_access_Tx_top(&(l3_caches[my_pid])))
 		{
 			//star todo add more detail here look for replies/request, process them is there respective queue is ok.
-
 			//the cache state is preventing the cache from working this cycle stall.
-
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
-			printf("%s stalling cycle %llu\n", l3_caches[my_pid].name, P_TIME);
+
 			l3_caches[my_pid].Stalls++;
-			/*printf("L3 %d stalling\n", l3_caches[my_pid].id);*/
+
+			warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
 			P_PAUSE(1);
 		}
