@@ -2608,7 +2608,7 @@ void l1_d_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
 
-			warning("l1_d_cache_ctrl(): %s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
+			//warning("l1_d_cache_ctrl(): %s stalling cycle %llu\n", l1_d_caches[my_pid].name, P_TIME);
 			P_PAUSE(1);
 		}
 		else
@@ -2737,7 +2737,7 @@ void l2_cache_ctrl(void){
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 			l2_caches[my_pid].Stalls++;
 
-			warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
+			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 			P_PAUSE(1);
 		}
 		else
@@ -3013,7 +3013,7 @@ void l3_cache_ctrl(void){
 
 			l3_caches[my_pid].Stalls++;
 
-			warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
+			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
 			P_PAUSE(1);
 		}
@@ -4553,6 +4553,9 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 				}
 			}
+
+			if(access_id == 71992322)
+				warning("found a packet ID %llu\n", access_id);
 
 			list_enqueue(cache->retry_queue, ort_packet);
 			advance(cache->ec_ptr);

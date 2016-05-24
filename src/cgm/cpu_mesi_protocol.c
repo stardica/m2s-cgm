@@ -3674,7 +3674,7 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	/*our load (get_fwd) request has been nacked by the owning L2*/
+	/*our load (getx_fwd) request has been nacked by the owning L2*/
 
 	/*verify status of cache blk*/
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
@@ -3976,7 +3976,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//part 2
 					////////
 
-					//create downgrade_ack
+					//create downgrade_nack
 					nack_packet = packet_create();
 					assert(nack_packet);
 
@@ -3987,10 +3987,6 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
 					SETROUTE(nack_packet, cache, l3_cache_ptr)
-					/*nack_packet->src_id = str_map_string(&node_strn_map, cache->name);
-					nack_packet->src_name = cache->name;
-					nack_packet->dest_name = l3_caches[l3_map].name;
-					nack_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);*/
 
 					//transmit block to L3
 					list_enqueue(cache->Tx_queue_bottom, nack_packet);
@@ -4156,7 +4152,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 		if(!pending_get_getx_fwd)
 		{
-			printf("\n");
+			/*printf("\n");
 
 			ort_dump(cache);
 
@@ -4164,10 +4160,10 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			cgm_cache_dump_set(cache, message_packet->set);
 
 			printf("\n");
-			cache_dump_queue(cache->pending_request_buffer);
+			cache_dump_queue(cache->pending_request_buffer);*/
 
-			printf("\n");
-			warning("block 0x%08x %s write block bad case ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+			/*printf("\n");*/
+			warning("block 0x%08x %s write block case two ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, message_packet->cache_block_state,
 			message_packet->set, message_packet->tag, message_packet->way,
@@ -4233,7 +4229,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			}
 			else if(pending_request->access_type == cgm_access_get_fwd || pending_request->access_type == cgm_access_getx_fwd)
 			{
-				pending_get_getx_fwd = pending_request;
+				pending_get_getx_fwd = list_remove(cache->pending_request_buffer, pending_request);
 			}
 			else
 			{
@@ -4244,16 +4240,10 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 			if(loop > 4)
 			{
-
-
 				ort_dump(cache);
-
 				cgm_cache_dump_set(cache, message_packet->set);
-
 				cache_dump_queue(cache->pending_request_buffer);
-
-				fatal("here\n");
-
+				fatal("here the address is 0x%08x\n", (message_packet->address & cache->block_address_mask));
 			}
 
 			printf("inf loop\n");
@@ -4273,6 +4263,10 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 		/*set the number of coalesced accesses and leave in buffer*/
 		pending_get_getx_fwd->downgrade_pending = (ort_get_num_coal(cache, message_packet->tag, message_packet->set) + 1); // + 1 account for the packet that was not coalesced and went to L3
+
+		/*star todo fix this, we have to remove and insert here because the
+		cache_search_pending_request_buffer() looks for address and then blk*/
+		list_enqueue(cache->pending_request_buffer, pending_get_getx_fwd);
 
 		///////////////
 		//join upgrade
@@ -4695,7 +4689,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		/*its possible for a get to come in from an owing core to and for the block to be pending
 		this occurs if the owning core silently dropped the block and a get_fwd was processed
 		just before the owning core's request comes in send the block back to the owning core
-		a previsouly send get_fwd will be joined with this put/putx*/
+		a previously sent get_fwd will be joined with this put/putx*/
 		if(owning_core == 1)
 		{
 
@@ -4744,6 +4738,22 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
 			/*Thrid party is looking for access to the block, but it is busy nack and let node retry later*/
+
+			if(message_packet->access_id == 71992322)
+				warning("l3 nacking ID %llu\n", message_packet->access_id);
+
+
+			//check if the packet has coalesced accesses.
+			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			{
+				//enter retry state.
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
+
+				if(message_packet->access_id == 71992322)
+					warning("l3 checking retries ID %llu\n", message_packet->access_id);
+
+			}
+
 
 			//send the reply up as a NACK!
 			message_packet->access_type = cgm_access_get_nack;
@@ -4813,6 +4823,14 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s wb pending flush at L3 get nacked back to L2 id %llu state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+
+
+					//check if the packet has coalesced accesses.
+					if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+					{
+						//enter retry state.
+						cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
+					}
 
 
 					//send the reply up as a NACK!
@@ -5201,7 +5219,16 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L3 getx nacked back to L2 id %llu state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
-			/*Thrid party is looking for access to the block, but it is busy nack and let node retry later*/
+			/*Third party is looking for access to the block, but it is busy nack and let node retry later*/
+
+
+			//check if the packet has coalesced accesses.
+			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+			{
+				//enter retry state.
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
+			}
+
 
 			//send the reply up as a NACK!
 			message_packet->access_type = cgm_access_getx_nack;

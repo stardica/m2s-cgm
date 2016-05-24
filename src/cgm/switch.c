@@ -1010,7 +1010,8 @@ void switch_north_io_ctrl(void){
 			}
 			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
-					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack)
+					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack
+					|| message_packet->access_type == cgm_access_getx_fwd_nack)
 			{
 
 				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
