@@ -2214,6 +2214,7 @@ void cgm_dump_system(void){
 			mem_ctrl->name, list_count(mem_ctrl->Rx_queue_top));
 	printf("---%s DRAM access buffer size %d---\n",
 			mem_ctrl->name, list_count(mem_ctrl->pending_accesses));
+	cache_dump_queue(mem_ctrl->pending_accesses);
 	printf("---%s Tx top queue size %d---\n",
 			mem_ctrl->name, list_count(mem_ctrl->Tx_queue_top));
 	printf("\n");

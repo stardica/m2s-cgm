@@ -4739,9 +4739,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			/*Thrid party is looking for access to the block, but it is busy nack and let node retry later*/
 
-			if(message_packet->access_id == 71992322)
-				warning("l3 nacking ID %llu\n", message_packet->access_id);
-
 
 			//check if the packet has coalesced accesses.
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -4921,6 +4918,19 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss ID %llu type %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
+				if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
+				{
+					printf("BEFORE\n");
+					cgm_cache_dump_set(cache, message_packet->set);
+					printf("\n");
+					ort_dump(cache);
+					printf("\n");
+					cache_dump_queue(cache->ort_list);
+
+				}
+
+
+
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
 
@@ -4931,6 +4941,17 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+					if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
+					{
+						cgm_cache_dump_set(cache, message_packet->set);
+						printf("\n");
+						ort_dump(cache);
+						printf("\n");
+						cache_dump_queue(cache->ort_list);
+
+					}
+
 
 					return;
 				}
