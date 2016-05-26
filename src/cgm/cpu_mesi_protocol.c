@@ -1191,8 +1191,17 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 	int ort_status = -1;
 	int ort_join_bit = -1;
 
-	//get the block status
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	cache_get_transient_block(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	if(*cache_block_hit_ptr != 1)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		fatal("block 0x%08x %s write block didn't find transient block! ID %llu type %s state %d way %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->way, message_packet->cache_block_state, P_TIME);
+		fflush(stderr);
+	}
 
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
@@ -1245,6 +1254,10 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 			message_packet->access_type = cgm_access_getx;
 		}
 
+		if(message_packet->coalesced == 1)
+			message_packet->coalesced = 0;
+
+
 		/*change the size*/
 		message_packet->size = 1;
 
@@ -1258,11 +1271,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 
 	/*we are clear to write the block in*/
-
 	ort_clear(cache, message_packet);
-	/*cache->ort[ort_status][0] = -1;
-	cache->ort[ort_status][1] = -1;
-	cache->ort[ort_status][2] = -1;*/
 
 
 	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s write block ID %llu type %d state %d cycle %llu\n",
@@ -4163,8 +4172,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			cache_dump_queue(cache->pending_request_buffer);*/
 
 			/*printf("\n");*/
-			warning("block 0x%08x %s write block case two ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
 			message_packet->access_type, message_packet->cache_block_state,
 			message_packet->set, message_packet->tag, message_packet->way,
 			pending_join_bit, pending_upgrade_bit, P_TIME);
@@ -4182,7 +4191,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 		else
 		{
-			assert(message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_putx);
+			assert(message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_putx
+					|| message_packet->access_type == cgm_access_puts);
 		}
 
 		//write the block
@@ -7768,6 +7778,14 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	/*grab a ptr to the L2 cache*/
 	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
+
+	if(*cache_block_hit_ptr == 1)
+	{
+		//make this block the MRU
+		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+	}
+
+
 	if(pending_bit == 1)
 	{
 		/*if pending another core is trying to get the block
@@ -7803,8 +7821,6 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 		return 1;
 	}
-
-
 
 	switch(*cache_block_state_ptr)
 	{

@@ -4378,8 +4378,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
-		if(message_packet->access_id == 72735041)
-			warning("coal case 1\n");
+		/*if(message_packet->access_id == 72735041)
+			warning("coal case 1\n");*/
 
 
 		//unique access and number of outstanding accesses are less than cache associativity
@@ -4398,8 +4398,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
 
-		if(message_packet->access_id == 72735041)
-			warning("coal case 2\n");
+		/*if(message_packet->access_id == 72735041)
+			warning("coal case 2\n");*/
 
 		//this is an associativity conflict
 		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
@@ -4417,8 +4417,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
-		if(message_packet->access_id == 72735041)
-			warning("coal case 3\n");
+		/*if(message_packet->access_id == 72735041)
+			warning("coal case 3\n");*/
 
 		//non unique access that can be coalesced with another miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set);
