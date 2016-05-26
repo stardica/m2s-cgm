@@ -4032,7 +4032,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int row = 0;
-	int loop = 0;
+	//int loop = 0;
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -4236,7 +4236,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 				fatal("cgm_mesi_l2_write_block(): case four pending request something other than upgrade or get/getx_fwd\n");
 			}
 
-			loop++;
+			/*loop++;
 
 			if(loop > 4)
 			{
@@ -4246,7 +4246,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 				fatal("here the address is 0x%08x\n", (message_packet->address & cache->block_address_mask));
 			}
 
-			printf("inf loop\n");
+			printf("inf loop\n");*/
 
 		}while(pending_upgrade == NULL || pending_get_getx_fwd == NULL);
 
@@ -4693,6 +4693,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		if(owning_core == 1)
 		{
 
+			assert(message_packet->coalesced == 0);
+
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L3 owning core PUT back to L2 id %llu state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
@@ -4746,9 +4748,18 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//enter retry state.
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 
-				if(message_packet->access_id == 71992322)
-					warning("l3 checking retries ID %llu\n", message_packet->access_id);
+				/*if(message_packet->access_id == 71992322)
+					warning("l3 checking retries ID %llu\n", message_packet->access_id);*/
 
+			}
+
+			/*star todo find a better way to do this.
+			this is for a special case where a coalesced access was pulled
+			and is going to be nacked at this point we want the access to be
+			treated as a new miss so set coalesced to 0*/
+			if(message_packet->coalesced == 1)
+			{
+				message_packet->coalesced = 0;
 			}
 
 
@@ -4918,16 +4929,16 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss ID %llu type %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-				if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
+				/*if(message_packet->access_id == 76657459 || message_packet->access_id == 76657439)
 				{
-					printf("BEFORE\n");
+					printf("BEFORE packet coal flag %d\n", message_packet->coalesced);
 					cgm_cache_dump_set(cache, message_packet->set);
 					printf("\n");
 					ort_dump(cache);
 					printf("\n");
 					cache_dump_queue(cache->ort_list);
 
-				}
+				}*/
 
 
 
@@ -4942,15 +4953,16 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-					if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
+					/*if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
 					{
+						printf("AFTER packet coal flag %d\n", message_packet->coalesced);
 						cgm_cache_dump_set(cache, message_packet->set);
 						printf("\n");
 						ort_dump(cache);
 						printf("\n");
 						cache_dump_queue(cache->ort_list);
 
-					}
+					}*/
 
 
 					return;
@@ -4975,6 +4987,13 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//set dest and src
 				SETROUTE(message_packet, cache, system_agent)
+
+				/*if(message_packet->access_id == 72735041)
+				{
+					warning(" ID %llu source %s id %d dest %s id %d\n",
+							message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
+				}*/
+
 
 				//transmit to SA/MC
 				if(!message_packet->protocol_case)
@@ -5205,6 +5224,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 		if(owning_core == 1)
 		{
+			assert(message_packet->coalesced == 0);
+
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L3 getx owning core PUTX back to L2 id %llu state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
@@ -5250,6 +5271,15 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
+
+			/*star todo find a better way to do this.
+			this is for a special case where a coalesced access was pulled
+			and is going to be nacked at this point we want the access to be
+			treated as a new miss so set coalesced to 0*/
+			if(message_packet->coalesced == 1)
+			{
+				message_packet->coalesced = 0;
+			}
 
 			//send the reply up as a NACK!
 			message_packet->access_type = cgm_access_getx_nack;
@@ -7576,6 +7606,17 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					//validate that a join is waiting if there should be one.
 					if(ort_get_pending_join_bit(cache, ort_row, putx_n_coutner->tag, putx_n_coutner->set) == 0)
 					{
+						if(!pending_packet_join)
+						{
+							cache_dump_queue(cache->pending_request_buffer);
+							printf("\n");
+							ort_dump(cache);
+							printf("\n");
+							cgm_cache_dump_set(cache, putx_n_coutner->set);
+							printf("\n");
+						}
+
+
 						assert(pending_packet_join);
 						pending_packet_join = list_remove(cache->pending_request_buffer, pending_packet_join);
 						list_enqueue(cache->retry_queue, pending_packet_join);
