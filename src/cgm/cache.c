@@ -381,7 +381,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
 
 	if(tx_bottom_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
+		//warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
 
 	if(retry_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
@@ -2742,16 +2742,14 @@ void l2_cache_ctrl(void){
 		}
 		else
 		{
+
+
+
+			if(list_count(l2_caches[my_pid].Tx_queue_bottom) >= QueueSize)
+				fatal("here\n");
+
+
 			step++;
-
-			/*if(P_TIME > 9313751)
-				printf("%s running access id %llu type %d cycle %llu\n", l2_caches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);*/
-
-			/*if(message_packet->access_id == 4449325 || message_packet->access_id == 4449322)
-			{
-				printf("\tL2 received id %llu form l2 rx_queue_bottom\n", message_packet->access_id);
-
-			}*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;

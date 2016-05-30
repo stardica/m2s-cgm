@@ -1699,7 +1699,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	return;
 }
 
-int loops = 0;
+
 
 void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -2047,6 +2047,8 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	return 1;
 }
 
+int loops = 0;
+
 void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int ort_row = 0;
@@ -2062,6 +2064,8 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
 	/*int *way_ptr = &way;*/
+
+	struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -2085,6 +2089,9 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	assert(ort_row < cache->mshr_size);
 	conflict_bit = cache->ort[ort_row][2];
 
+	//pull the GETX_FWD from the pending request buffer
+	pending_get_getx_fwd_request = cache_search_pending_request_buffer(cache, message_packet->address);
+
 	//if the conflict bit is set in the ort reset it because this is the nack
 	if(conflict_bit == 0)
 	{
@@ -2093,6 +2100,27 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, P_TIME);
+	}
+
+
+
+	if(message_packet->access_id == 215842601)
+	{
+		loops++;
+
+
+
+		if(pending_get_getx_fwd_request)
+			warning("found get_getx_fwd ID %llu\n", pending_get_getx_fwd_request->access_id);
+		else
+			warning("missing get_getx_fwd\n");
+
+		if(loops > 5)
+		{
+			cache_dump_queue(cache->pending_request_buffer);
+			fatal("caught the getx_fwd on getx_nack cycle %llu\n", P_TIME);
+		}
+
 	}
 
 
@@ -3668,6 +3696,8 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	int ort_status = 0;
 	//struct cgm_packet_t *pending_packet;
 	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -6234,7 +6264,16 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
 
-			assert(sharers == 1);
+			/*if(sharers != 1)
+			{
+				warning("block 0x%08x %s getx_fwd_nack ID %llu type %d state %d sharers %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+						message_packet->access_type, *cache_block_state_ptr, sharers, P_TIME);
+
+			}*/
+
+
+			assert(sharers == 1 || sharers == 0);
 			/*nack from L2 clear the directory pending bit retry will come from requesting L2*/
 			/*cgm_cache_clear_dir_pending_bit(cache, message_packet->set, message_packet->way);*/
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
@@ -6504,6 +6543,10 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 				}
 
 				assert(error == 0);
+
+
+				//didnt happen this way, the get/getx_fwd was joined....
+
 
 				/*if the block is pending when a write back is coming in don't clear the pending bit
 				because the get_fwd or getx_fwd is en-route and will get nacked by the node*/
