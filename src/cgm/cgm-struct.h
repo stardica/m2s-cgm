@@ -229,7 +229,7 @@ struct cache_block_t{
 	enum cgm_cache_block_state_t state;
 	enum cgm_cache_block_state_t transient_state;
 
-	//each block has it's own directory (unsigned char)
+	//each block has it's own directory (unsigned long long)
 	union directory_t directory_entry;
 	int data_type;
 
@@ -340,7 +340,7 @@ struct cache_t{
 	//directory bit vectors for coherence
 	unsigned int dir_latency;
 	union directory_t **dir;
-	unsigned int share_mask;
+	unsigned long long share_mask;
 
 	//L1 I cache protocol virtual functions
 	void (*l1_i_fetch)(struct cache_t *cache, struct cgm_packet_t *message_packet);

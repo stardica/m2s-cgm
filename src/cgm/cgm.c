@@ -941,6 +941,7 @@ void cgm_init(int argc, char **argv){
 	cache_init();
 	switch_init();
 	hub_iommu_init();
+
 	sys_agent_init();
 	memctrl_init();
 	dramsim_init();

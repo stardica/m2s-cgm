@@ -40,18 +40,41 @@ enum node_map{
 	l2_cache_0 = 0,
 	switch_0,
 	l3_cache_0,
+
 	l2_cache_1,
 	switch_1,
 	l3_cache_1,
+
 	l2_cache_2,
 	switch_2,
 	l3_cache_2,
+
 	l2_cache_3,
 	switch_3,
 	l3_cache_3,
-	hub_iommu_4,
+
+	/*--------------*/
+
+	l2_cache_4,
 	switch_4,
-	sys_agent_4,
+	l3_cache_4,
+
+	l2_cache_5,
+	switch_5,
+	l3_cache_5,
+
+	l2_cache_6,
+	switch_6,
+	l3_cache_6,
+
+	l2_cache_7,
+	switch_7,
+	l3_cache_7,
+
+	hub_iommu_8,
+	switch_8,
+	sys_agent_8,
+
 	node_number
 };
 
@@ -59,12 +82,28 @@ enum l1_map{
 
 	l1_i_cache_0 = 0,
 	l1_d_cache_0,
+
 	l1_i_cache_1,
 	l1_d_cache_1,
+
 	l1_i_cache_2,
 	l1_d_cache_2,
+
 	l1_i_cache_3,
 	l1_d_cache_3,
+
+	l1_i_cache_4,
+	l1_d_cache_4,
+
+	l1_i_cache_5,
+	l1_d_cache_5,
+
+	l1_i_cache_6,
+	l1_d_cache_6,
+
+	l1_i_cache_7,
+	l1_d_cache_7,
+
 	l1_number
 
 };
@@ -74,6 +113,12 @@ enum cpu_l2_map{
 		l2_caches_1,
 		l2_caches_2,
 		l2_caches_3,
+
+		l2_caches_4,
+		l2_caches_5,
+		l2_caches_6,
+		l2_caches_7,
+
 		hub_iommu_0,
 		l2_number
 };

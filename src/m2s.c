@@ -1658,6 +1658,10 @@ int main(int argc, char **argv)
 	//passing point to the memory image so I can link it with the memory controller.
 	cgm_configure(x86_emu->context_list_head->mem);
 
+
+
+
+
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/
 	simulate(sim_end);

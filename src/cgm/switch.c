@@ -28,12 +28,28 @@ struct str_map_t l1_strn_map =
 { 	l1_number, {
 		{ "l1_i_caches[0]", l1_i_cache_0},
 		{ "l1_d_caches[0]", l1_d_cache_0},
+
 		{ "l1_i_caches[1]", l1_i_cache_1},
 		{ "l1_d_caches[1]", l1_d_cache_1},
+
 		{ "l1_i_caches[2]", l1_i_cache_2},
 		{ "l1_d_caches[2]", l1_d_cache_2},
+
 		{ "l1_i_caches[3]", l1_i_cache_3},
 		{ "l1_d_caches[3]", l1_d_cache_3},
+
+		{ "l1_i_caches[4]", l1_i_cache_4},
+		{ "l1_d_caches[4]", l1_d_cache_4},
+
+		{ "l1_i_caches[5]", l1_i_cache_5},
+		{ "l1_d_caches[5]", l1_d_cache_5},
+
+		{ "l1_i_caches[6]", l1_i_cache_6},
+		{ "l1_d_caches[6]", l1_d_cache_6},
+
+		{ "l1_i_caches[7]", l1_i_cache_7},
+		{ "l1_d_caches[7]", l1_d_cache_7},
+
 		}
 };
 
@@ -43,6 +59,13 @@ struct str_map_t l2_strn_map =
 		{ "l2_caches[1]", l2_caches_1},
 		{ "l2_caches[2]", l2_caches_2},
 		{ "l2_caches[3]", l2_caches_3},
+
+		{ "l2_caches[4]", l2_caches_4},
+		{ "l2_caches[5]", l2_caches_5},
+		{ "l2_caches[6]", l2_caches_6},
+		{ "l2_caches[7]", l2_caches_7},
+
+
 		{ "hub-iommu", hub_iommu_0},
 		}
 };
@@ -136,18 +159,41 @@ struct str_map_t node_strn_map =
 		{ "l2_caches[0]", l2_cache_0},
 		{ "switch[0]", switch_0},
 		{ "l3_caches[0]", l3_cache_0},
+
 		{ "l2_caches[1]", l2_cache_1},
 		{ "switch[1]", switch_1},
 		{ "l3_caches[1]", l3_cache_1},
+
 		{ "l2_caches[2]", l2_cache_2},
 		{ "switch[2]", switch_2},
 		{ "l3_caches[2]", l3_cache_2},
+
 		{ "l2_caches[3]", l2_cache_3},
 		{ "switch[3]", switch_3},
 		{ "l3_caches[3]", l3_cache_3},
-		{ "hub_iommu", hub_iommu_4},
+
+		/*-----------------*/
+
+		{ "l2_caches[4]", l2_cache_4},
 		{ "switch[4]", switch_4},
-		{ "sys_agent", sys_agent_4},
+		{ "l3_caches[4]", l3_cache_4},
+
+		{ "l2_caches[5]", l2_cache_5},
+		{ "switch[5]", switch_5},
+		{ "l3_caches[5]", l3_cache_5},
+
+		{ "l2_caches[6]", l2_cache_6},
+		{ "switch[6]", switch_6},
+		{ "l3_caches[6]", l3_cache_6},
+
+		{ "l2_caches[7]", l2_cache_7},
+		{ "switch[7]", switch_7},
+		{ "l3_caches[7]", l3_cache_7},
+
+
+		{ "hub_iommu", hub_iommu_8},
+		{ "switch[8]", switch_8},
+		{ "sys_agent", sys_agent_8},
 		}
 };
 
@@ -1024,7 +1070,7 @@ void switch_north_io_ctrl(void){
 
 					SYSTEM_PAUSE(transfer_time);
 
-					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
 						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
 
 					message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
@@ -1058,7 +1104,7 @@ void switch_north_io_ctrl(void){
 
 				SYSTEM_PAUSE(transfer_time);
 
-				if(list_count(hub_iommu->Rx_queue_bottom) >= QueueSize)
+				if(list_count(hub_iommu->Rx_queue_bottom) > QueueSize)
 					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
 
 				message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);

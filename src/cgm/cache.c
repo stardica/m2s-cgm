@@ -381,7 +381,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
 
 	if(tx_bottom_queue_size > QueueSize)
-		//warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
 
 	if(retry_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
@@ -1258,7 +1258,8 @@ int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set
 	}
 
 	//if here something is wrong
-	fatal("cgm_cache_find_transient_block(): transient block not found as it should be %s set %d tag %d way %d cycle %llu\n", cache->name, set, tag, way, P_TIME);
+	fatal("cgm_cache_find_transient_block(): blk 0x%08x transient block not found as it should be %s set %d tag %d way %d cycle %llu\n",
+			cgm_cache_build_address(cache, set, tag), cache->name, set, tag, way, P_TIME);
 
 	/* Block not found */
 	return 0;
@@ -4710,10 +4711,29 @@ void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id){
 
 	int num_cores = x86_cpu_num_cores;
+	/*unsigned long long position = 0;
+	unsigned long long bit_set = 1;*/
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 	assert(l2_cache_id > (-1) && l2_cache_id < (num_cores + 1)); //+1 is hub-iommu
+
+	//put this in a loop for ease of access
+
+	/*for(position = 0; position <= num_cores; position++)
+	{
+		if(l2_cache_id == position)
+		{
+			cache->sets[set].blocks[way].directory_entry.entry = cache->sets[set].blocks[way].directory_entry.entry || bit_set;
+
+
+			//if(l2_cache_id == 1)
+			//	printf("l2 id %d position %llu\n", l2_cache_id, bit_set);
+
+
+		}
+	}*/
+
 
 	if(l2_cache_id == 0)
 	{
@@ -4733,7 +4753,33 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 	}
 	else if(l2_cache_id == 4)
 	{
+		//printf("here 4\n");
+
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p4 = 1;
+	}
+	else if(l2_cache_id == 5)
+	{
+
+		//printf("here 5\n");
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p5 = 1;
+	}
+	else if(l2_cache_id == 6)
+	{
+		//printf("here 6\n");
+
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p6 = 1;
+	}
+	else if(l2_cache_id == 7)
+	{
+		//printf("here 7\n");
+
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p7 = 1;
+	}
+	else if(l2_cache_id == 8)
+	{
+		//printf("here 8\n");
+
+		cache->sets[set].blocks[way].directory_entry.entry_bits.p8 = 1;
 	}
 	else
 	{
@@ -4801,6 +4847,26 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cac
 		core_match++;
 	}
 
+	else if(l2_cache_id == 4 && cache->sets[set].blocks[way].directory_entry.entry_bits.p4 == 1)
+	{
+		core_match++;
+	}
+	else if(l2_cache_id == 5 && cache->sets[set].blocks[way].directory_entry.entry_bits.p5 == 1)
+	{
+		core_match++;
+	}
+	else if(l2_cache_id == 6 && cache->sets[set].blocks[way].directory_entry.entry_bits.p6 == 1)
+	{
+		core_match++;
+	}
+	else if(l2_cache_id == 7 && cache->sets[set].blocks[way].directory_entry.entry_bits.p7 == 1)
+	{
+		core_match++;
+	}
+
+
+
+	/*-----------------*/
 
 	if(l2_cache_id < 0 && l2_cache_id >= num_cores)
 	{
@@ -4817,7 +4883,7 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	int sharers = 0;
 	int num_cores = x86_cpu_num_cores;
 	int i = 0;
-	unsigned char bit_vector;
+	unsigned long long bit_vector;
 
 	/*get the number of shares, mask away everything but the the share bit field
 	and take the log of the vale to get the number of sharers*/

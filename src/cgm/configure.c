@@ -137,14 +137,13 @@ void cpu_configure(Timing *self, struct config_t *config){
 			core = cpu->cores[i];
 			thread = core->threads[j];
 
-			//printf("thread assign core %d  thread %d\n", core->id, thread->id_in_core);
-
 			//assert(core);
 			//assert(thread);
 
 			//assign entry into memory system
 			thread->i_cache_ptr = l1_i_caches;
 			thread->d_cache_ptr = l1_d_caches;
+
 			//core->threads->i_cache_ptr = &l1_i_caches[core->id];
 			//core->threads->d_cache_ptr = &l1_d_caches[core->id];
 
@@ -158,9 +157,9 @@ void cpu_configure(Timing *self, struct config_t *config){
 	//getchar();
 
 
-	if(num_cores <= 0 || num_cores > 4)
+	if(num_cores <= 0 || num_cores > 8)
 	{
-		fatal("For now, number of cores must be between 1 - 4\n");
+		fatal("For now, number of cores must be between 1 - 32\n");
 	}
 
 	return;
@@ -1600,6 +1599,7 @@ int cache_finish_create(){
 	int i = 0, j = 0, k = 0, l = 0, set = 0, way = 0;
 	char buff[100];
 
+
 	//finish creating the CPU caches
 	for(i = 0; i < num_cores ; i++ )
 	{
@@ -2099,6 +2099,7 @@ int cache_finish_create(){
 			if(l < (num_cores - 1))
 				l3_caches[i].share_mask = l3_caches[i].share_mask << 1;
 		}
+
 
 		if(!l3_caches[i].policy)
 		{
@@ -3146,17 +3147,28 @@ int switch_finish_create(void){
 			switches[i].queue = west_queue;
 
 			//init the switche's network node number
-			//star todo fix this (we shouldn't need to specifiy this).
+			//star todo fix this (we shouldn't need to specify this).
 			//for now manually set the last switch to node 13
 			//if you don't you can't change the number of cores from 4
+
+			//we are doing this because the switch name/node_id is last in &node_strn_map
+
 			if(i == num_cores)
 			{
-				switches[i].switch_node_number = str_map_string(&node_strn_map, "switch[4]");
+				//note this is the SA switch
+				switches[i].switch_node_number = str_map_string(&node_strn_map, "switch[8]");
 			}
 			else
 			{
+
+
 				switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
 			}
+
+			/*printf("created switch %s node_number %d\n", switches[i].name, switches[i].switch_node_number);
+
+			if(i == 8)
+				exit(0);*/
 
 			median ++;//= switches[i].switch_node_number;
 
@@ -3321,7 +3333,7 @@ int switch_finish_create(void){
 	hub_iommu->next_queue = hub_iommu->Rx_queue_top[0];
 
 	//connect to switch queue
-	hub_iommu->switch_id = (num_cores + extras - 1);
+	hub_iommu->switch_id = (num_cores);
 
 	//hub_iommu->switch_queue = switches[(num_cores + extras - 1)].north_queue;
 	hub_iommu->switch_queue = switches[hub_iommu->switch_id].north_queue;
