@@ -4846,7 +4846,6 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cac
 	{
 		core_match++;
 	}
-
 	else if(l2_cache_id == 4 && cache->sets[set].blocks[way].directory_entry.entry_bits.p4 == 1)
 	{
 		core_match++;

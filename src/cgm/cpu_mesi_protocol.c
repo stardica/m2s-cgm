@@ -7248,6 +7248,10 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 					message_packet->src_name, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
+
+	assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 1);
+
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
@@ -7323,16 +7327,27 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 				//we have received the L3 reply and the reply(s) from the other L2(s)
 
 				//clear the block's transient state
-				assert(cgm_cache_get_block_transient_state(cache, pending_packet->set, pending_packet->way));
+				assert(cgm_cache_get_block_transient_state(cache, pending_packet->set, pending_packet->way) == cgm_cache_block_transient);
 				cgm_cache_set_block_transient_state(cache, pending_packet->set, pending_packet->way, cgm_cache_block_invalid);
 
 				//clear the blocks upgrade pending bit
 				if(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) != 1)
-					warning("block 0x%08x %s upgrade_ack fatal! ID %llu type %d state %d cycle %llu\n",
+				{
+					printf("block 0x%08x %s upgrade_ack fatal! ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+					warning("block 0x%08x upgrade_ack fatal! pp set %d way src %s %d mp set %d way %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), pending_packet->set, pending_packet->way, pending_packet->src_name,
+						message_packet->set, message_packet->way, P_TIME );
+
+				}
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
 				cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgraded! ID %llu src %s type %d state %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+					message_packet->src_name, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				//check the conflict bit
 				if(conflict_bit == 0)
