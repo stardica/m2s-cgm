@@ -3160,8 +3160,6 @@ int switch_finish_create(void){
 			}
 			else
 			{
-
-
 				switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
 			}
 

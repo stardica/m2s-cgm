@@ -2746,6 +2746,7 @@ void l2_cache_ctrl(void){
 
 
 
+
 			if(list_count(l2_caches[my_pid].Tx_queue_bottom) >= QueueSize)
 				fatal("here\n");
 
@@ -4982,6 +4983,9 @@ void cgm_cache_clear_block_upgrade_pending_bit(struct cache_t *cache, int set, i
 
 	//set the bit
 	cache->sets[set].blocks[way].upgrade_pending = 0;
+
+	if(set == 42 && way == 0)
+		warning("clearing %s pending bit cycle %llu", cache->name, P_TIME);
 
 	return;
 

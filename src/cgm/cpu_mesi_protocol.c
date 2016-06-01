@@ -4161,6 +4161,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		assert(pending_upgrade->address == message_packet->address); //address should match to the byte because this is the reply to the upgrade
 
 		//clear the cache block pending bit
+		warning("here 1 \n");
 		cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 		//write the block
@@ -4314,6 +4315,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 
 		//clear the cache block pending bit
+		warning("here 2 \n");
 		cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 		//write the block
@@ -6893,23 +6895,30 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//maybe delete this? use transient
 
 			/*if(message_packet->set == 46 && message_packet->way == 1)
-				warning("block 0x%08x %s upgrade seting pending bit set %d tag %d way %d ID %llu type %d state %d cycle %llu\n",
+				warning("block 0x%08x %s upgrade setting pending bit set %d tag %d way %d ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->set, message_packet->tag, message_packet->way,
 					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
 
+
 			cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
-			/*printf("\n");
+			if(message_packet->access_id == 10283701)
+			{
 
-			cgm_cache_dump_set(cache, message_packet->set);
+				printf("\n");
 
-			warning("block 0x%08x %s upgrade block ID %llu type %d state %d set %d tag %d way %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-					message_packet->access_type, *cache_block_state_ptr, message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+				cgm_cache_dump_set(cache, message_packet->set);
 
-			fflush(stderr);
+				warning("block 0x%08x %s upgrade block ID %llu type %d state %d set %d tag %d way %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+						message_packet->access_type, *cache_block_state_ptr, message_packet->set, message_packet->tag, message_packet->way, P_TIME);
 
-			getchar();*/
+				assert(cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way) == cgm_cache_block_transient);
+
+				fflush(stderr);
+
+				getchar();
+			}
 
 
 			//add to ORT table
@@ -7137,6 +7146,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	/*also clear the pending upgrade bit*/
 	assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
+	warning("here 3 \n");
 	cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
 
 	if(victim_trainsient_state != cgm_cache_block_transient)
@@ -7249,7 +7259,18 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 					message_packet->src_name, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
-	assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 1);
+	if(message_packet->access_id == 10283701)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		printf("\n");
+
+		cache_dump_queue(cache->pending_request_buffer);
+
+		printf("\n");
+
+		getchar();
+	}
 
 
 	switch(*cache_block_state_ptr)
@@ -7333,16 +7354,24 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 				//clear the blocks upgrade pending bit
 				if(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) != 1)
 				{
-					printf("block 0x%08x %s upgrade_ack fatal! ID %llu type %d state %d cycle %llu\n",
+
+					cgm_cache_dump_set(cache, message_packet->set);
+
+					printf("\n");
+
+					cache_dump_queue(cache->pending_request_buffer);
+
+					printf("\nblock 0x%08x %s upgrade_ack fatal! ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-					warning("block 0x%08x upgrade_ack fatal! pp set %d way src %s %d mp set %d way %d cycle %llu\n",
+					warning("block 0x%08x upgrade_ack fatal! pp set %d way %d src %s mp set %d way %d src %s cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), pending_packet->set, pending_packet->way, pending_packet->src_name,
-						message_packet->set, message_packet->way, P_TIME );
+						message_packet->set, message_packet->way, message_packet->src_name, P_TIME);
 
 				}
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
+				warning("here 4 \n");
 				cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgraded! ID %llu src %s type %d state %d cycle %llu\n",
@@ -7639,6 +7668,7 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					cgm_cache_set_block(cache, putx_n_coutner->set, putx_n_coutner->l2_victim_way, putx_n_coutner->tag, cgm_cache_block_modified);
 
 					//clear the upgrade_pending bit in the block
+					warning("%s here 5 %llu\n", cache->name, P_TIME);
 					cgm_cache_clear_block_upgrade_pending_bit(cache, putx_n_coutner->set, putx_n_coutner->way);
 
 					//pull the pending request from the pending request buffer
