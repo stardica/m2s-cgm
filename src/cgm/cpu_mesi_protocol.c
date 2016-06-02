@@ -4161,7 +4161,6 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		assert(pending_upgrade->address == message_packet->address); //address should match to the byte because this is the reply to the upgrade
 
 		//clear the cache block pending bit
-		warning("here 1 \n");
 		cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 		//write the block
@@ -4315,7 +4314,6 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 
 		//clear the cache block pending bit
-		warning("here 2 \n");
 		cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 		//write the block
@@ -6902,7 +6900,7 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 			cgm_cache_set_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
-			if(message_packet->access_id == 10283701)
+			/*if(message_packet->access_id == 10283701)
 			{
 
 				printf("\n");
@@ -6918,7 +6916,7 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 				fflush(stderr);
 
 				getchar();
-			}
+			}*/
 
 
 			//add to ORT table
@@ -7146,7 +7144,6 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	/*also clear the pending upgrade bit*/
 	assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
-	warning("here 3 \n");
 	cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
 
 	if(victim_trainsient_state != cgm_cache_block_transient)
@@ -7259,7 +7256,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 					message_packet->src_name, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
-	if(message_packet->access_id == 10283701)
+	/*if(message_packet->access_id == 10283701)
 	{
 		cgm_cache_dump_set(cache, message_packet->set);
 
@@ -7270,7 +7267,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 		printf("\n");
 
 		getchar();
-	}
+	}*/
 
 
 	switch(*cache_block_state_ptr)
@@ -7318,7 +7315,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 			{
 				printf("addresses not equal pp 0x%08x mp 0x%08x\n", pending_packet->address & cache->block_address_mask, message_packet->address & cache->block_address_mask);
 				cache_dump_queue(cache->pending_request_buffer);
-				fatal("blah\n");
+				fatal("bah!!!!!!!!!!!!!!\n");
 			}
 
 			assert((pending_packet->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask));
@@ -7371,7 +7368,6 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 				}
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way) == 1);
-				warning("here 4 \n");
 				cgm_cache_clear_block_upgrade_pending_bit(cache, pending_packet->set, pending_packet->way);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgraded! ID %llu src %s type %d state %d cycle %llu\n",
@@ -7499,6 +7495,9 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 
 	int i = 0;
 	int ort_row = 0;
+	int conflict_bit = 0;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
 
 	/*enum cgm_access_kind_t access_type;
 	long long access_id = 0;
@@ -7510,15 +7509,34 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	//we have permission to upgrade the block state and retry access
+	//get the transient block
+	cache_get_transient_block(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 	//get the status of the cache block
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	//cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//block should be valid and in the transient state
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	if(victim_trainsient_state != cgm_cache_block_transient)
+	{
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		assert((*cache_block_hit_ptr == 1 && victim_trainsient_state != cgm_cache_block_transient) || *cache_block_hit_ptr == 0);
+
+		fatal("cgm_mesi_l2_upgrade_ack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d hit %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, *cache_block_hit_ptr, P_TIME);
+	}
+
+	assert(victim_trainsient_state == cgm_cache_block_transient);
+
 
 	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_row < cache->mshr_size);
+	conflict_bit = cache->ort[ort_row][2];
 
-	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade putx_n ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_putx_n ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 	switch(*cache_block_state_ptr)
@@ -7659,29 +7677,128 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 
 				if(putx_n_coutner->upgrade_inval_ack_count == 0)
 				{
+					///////////
+					//join
+					///////////
+
 					//we have received the L3 reply and the reply(s) from the other L2(s)
 
-					/*make sure this blk is transient*/
-					assert(cgm_cache_get_block_transient_state(cache, putx_n_coutner->set, putx_n_coutner->l2_victim_way));
-
-					//set local cache block to modified.
-					cgm_cache_set_block(cache, putx_n_coutner->set, putx_n_coutner->l2_victim_way, putx_n_coutner->tag, cgm_cache_block_modified);
+					//clear the block's transient state
+					assert(cgm_cache_get_block_transient_state(cache, putx_n_coutner->set, putx_n_coutner->way) == cgm_cache_block_transient);
+					cgm_cache_set_block_transient_state(cache, pending_packet->set, pending_packet->way, cgm_cache_block_invalid);
 
 					//clear the upgrade_pending bit in the block
-					warning("%s here 5 %llu\n", cache->name, P_TIME);
 					cgm_cache_clear_block_upgrade_pending_bit(cache, putx_n_coutner->set, putx_n_coutner->way);
+
+					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_putx_n blk upgraded! ID %llu src %s type %d state %d cycle %llu\n",
+						(putx_n_coutner->address & cache->block_address_mask), cache->name, putx_n_coutner->access_id,
+						putx_n_coutner->src_name, putx_n_coutner->access_type, *cache_block_state_ptr, P_TIME);
+
+					//check the conflict bit
+					if(conflict_bit == 0)
+					{
+						/*We have a conflict, either a pending get/getx_fwd or L3 has evicted the block*/
+
+						/*warning("block 0x%08x %s upgrade_putx_n conflict caught ID %llu type %d state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
+
+						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_putx_n conflict caught ID %llu type %d state %d cycle %llu\n",
+								(putx_n_coutner->address & cache->block_address_mask), cache->name, putx_n_coutner->access_id, putx_n_coutner->access_type, *cache_block_state_ptr, P_TIME);
+
+						//check the pending request buffer for an outstanding get/getx_fwd sigh.....
+						LIST_FOR_EACH(cache->pending_request_buffer, i)
+						{
+							//get pointer to access in queue and check it's status.
+							pending_packet_join = list_get(cache->pending_request_buffer, i);
+
+							if(((pending_packet_join->address & cache->block_address_mask) == (pending_packet->address & cache->block_address_mask))
+									&& (pending_packet_join->access_type == cgm_access_get_fwd || pending_packet_join->access_type == cgm_access_getx_fwd))
+							{
+								break;
+							}
+							else
+							{
+								pending_packet_join = NULL;
+							}
+
+						}
+
+						if(pending_packet_join)
+						{
+							pending_packet_join = list_remove(cache->pending_request_buffer, pending_packet_join);
+							list_enqueue(cache->retry_queue, pending_packet_join);
+							advance(cache->ec_ptr);
+
+							DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get/getx_fwd (join) joined in upgrade_putx_n ID %llu src %s type %d state %d cycle %llu\n",
+									(pending_packet_join->address & cache->block_address_mask), cache->name, pending_packet_join->access_id, pending_packet_join->src_name,
+									pending_packet_join->access_type, *cache_block_state_ptr, P_TIME);
+						}
+						else
+						{
+
+							fatal("cgm_mesi_l2_upgrade_putx_n(): invalid case?\n");
+
+							/*if no packet the block was evicted
+							assert(*cache_block_state_ptr == 0);
+
+							DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_ack killed retrying as getx! ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+							//find the access in the ORT table and clear it.
+							ort_clear(cache, pending_packet);
+
+							//change to a getx
+							message_packet->access_type = cgm_access_getx;
+							message_packet->cpu_access_type = pending_packet->cpu_access_type;
+							message_packet->l1_access_type = pending_packet->l1_access_type;
+							message_packet->l1_victim_way = pending_packet->l1_victim_way;
+							message_packet->event_queue = pending_packet->event_queue;
+							message_packet->data = pending_packet->data;
+							message_packet->access_id = pending_packet->access_id;
+							message_packet->name = strdup(pending_packet->name);
+							message_packet->start_cycle = pending_packet->start_cycle;
+							assert(pending_packet->address == message_packet->address);
+
+							//remove the request from the buffer
+							pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+							free(pending_packet);
+
+							return 0;*/
+						}
+					}
+
+					//set local cache block to modified.
+					cgm_cache_set_block(cache, putx_n_coutner->set, putx_n_coutner->way, putx_n_coutner->tag, cgm_cache_block_modified);
 
 					//pull the pending request from the pending request buffer
 					putx_n_coutner = list_remove(cache->pending_request_buffer, putx_n_coutner);
 
-					//set access type, block state,
-					putx_n_coutner->access_type = cgm_access_upgrade_ack;
+					/*if(pending_packet->l1_access_type != cgm_access_getx || pending_packet->l1_access_type != cgm_access_upgrade)
+					{
+						warning("block 0x%08x %s upgrade_putx_n crashing on join ID %llu src %s type %d state %d cycle %llu\n",
+								(pending_packet_join->address & cache->block_address_mask), cache->name, pending_packet_join->access_id, pending_packet_join->src_name,
+								pending_packet_join->access_type, *cache_block_state_ptr, P_TIME);
+					}*/
+
+					assert(putx_n_coutner->l1_access_type == cgm_access_getx || putx_n_coutner->l1_access_type == cgm_access_upgrade);
+
+					//set the access type and what the block state should be.
+					/*star todo; figure out if we need to eliminate the dependence on the l1_access_type.*/
+					if(putx_n_coutner->l1_access_type == cgm_access_getx)
+					{
+						putx_n_coutner->access_type = cgm_access_putx;
+					}
+					else
+					{
+						putx_n_coutner->access_type = cgm_access_upgrade_ack;
+					}
+
 					putx_n_coutner->cache_block_state = cgm_cache_block_modified;
 
 					list_enqueue(cache->Tx_queue_top, putx_n_coutner);
 					advance(cache->cache_io_up_ec);
 
-					LIST_FOR_EACH(cache->pending_request_buffer, i)
+					/*LIST_FOR_EACH(cache->pending_request_buffer, i)
 					{
 						//get pointer to access in queue and check it's status.
 						pending_packet_join = list_get(cache->pending_request_buffer, i);
@@ -7699,11 +7816,11 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 						}
 					}
 
-					/*if(pending_packet_join)
+					if(pending_packet_join)
 					{
 						if((pending_packet_join->address & cache->block_address_mask) == 0x0004e380)
 							printf("here_2\n");
-					}*/
+					}
 
 					//validate that a join is waiting if there should be one.
 					if(ort_get_pending_join_bit(cache, ort_row, putx_n_coutner->tag, putx_n_coutner->set) == 0)
@@ -7726,7 +7843,10 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 
 						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get/getx_fwd (join) joined in upgrade_putx_n ID %llu type %d state %d cycle %llu\n",
 								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-					}
+					}*/
+
+					/*stats*/
+					cache->TotalUpgradePutXN++;
 
 					//last thing is to clear this access in the ORT table.
 					ort_clear(cache, putx_n_coutner);
@@ -7737,7 +7857,6 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 			{
 				fatal("cgm_mesi_l2_upgrade_putx_n(): putx n packet trouble\n");
 			}
-
 
 			break;
 	}

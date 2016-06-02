@@ -441,6 +441,7 @@ struct cache_t{
 	long long TotalDowngrades;
 	long long TotalGetxFwdInvals;
 	long long TotalUpgradeAcks;
+	long long TotalUpgradePutXN;
 	long long TotalUpgradeInvals;
 	long long TotalWriteBlocks;
 	long long LoadMisses;
