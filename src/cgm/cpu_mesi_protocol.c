@@ -4202,11 +4202,11 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			cache_dump_queue(cache->pending_request_buffer);*/
 
 			/*printf("\n");*/
-			warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+			/*warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
 			message_packet->access_type, message_packet->cache_block_state,
 			message_packet->set, message_packet->tag, message_packet->way,
-			pending_join_bit, pending_upgrade_bit, P_TIME);
+			pending_join_bit, pending_upgrade_bit, P_TIME);*/
 
 		}
 
@@ -4247,11 +4247,11 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		cgm_cache_dump_set(cache, message_packet->set);
 		cache_dump_queue(cache->pending_request_buffer);*/
 
-		warning("CASE FOUR: block 0x%08x %s write block case four ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+		/*warning("CASE FOUR: block 0x%08x %s write block case four ID %llu type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, message_packet->cache_block_state,
 			message_packet->set, message_packet->tag, message_packet->way,
-			pending_join_bit, pending_upgrade_bit, P_TIME);
+			pending_join_bit, pending_upgrade_bit, P_TIME);*/
 
 
 		//there are TWO pending requests in the buffer or there is an upgrade and a conflict (L3 evicted).
@@ -7971,7 +7971,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//block should be valid and not in a transient state
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
-	assert(victim_trainsient_state != cgm_cache_block_transient);
+
 
 	//get the directory state
 
@@ -7981,6 +7981,32 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+
+	if(victim_trainsient_state == cgm_cache_block_transient)
+	{
+		printf("\n");
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		printf("\n");
+
+		ort_dump(cache);
+
+		printf("\n");
+
+		cache_dump_queue(cache->pending_request_buffer);
+
+		printf("\n");
+
+		warning("block 0x%08x %s upgrade request to transient blk ID %llu type %d state %d num_sharers %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+				message_packet->access_type, *cache_block_state_ptr, num_sharers, P_TIME);
+
+	}
+
+	assert(victim_trainsient_state != cgm_cache_block_transient);
+
+
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade request ID %llu type %d state %d num_sharers %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
