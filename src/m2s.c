@@ -91,7 +91,7 @@ static char *x86_disasm_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
 static char *x86_loader_debug_file_name = "";
-static char *x86_save_checkpoint_file_name = "";
+char *x86_save_checkpoint_file_name = "";
 static char *x86_sys_debug_file_name = "";
 static char *x86_trace_cache_debug_file_name = "";
 static enum arch_sim_kind_t x86_sim_kind = arch_sim_kind_functional;
@@ -1446,8 +1446,8 @@ void sim_end(void){
 
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */
-	//if (x86_save_checkpoint_file_name[0])
-	//X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+	if (x86_save_checkpoint_file_name[0])
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
 
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the
@@ -1492,7 +1492,7 @@ void sim_end(void){
 	debug_done();
 	mhandle_done();
 
-	printf("---Simulation End---\n\n");
+	printf("---Simulation End Total Cycles %llu---\n\n", P_TIME);
 
 	fflush(stdout);
 	fflush(stderr);
@@ -1635,8 +1635,8 @@ int main(int argc, char **argv)
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
 	//Commented these out for testing purposes.
-	//if (x86_load_checkpoint_file_name[0])
-	//	X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
+	if (x86_load_checkpoint_file_name[0])
+		X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
 	mmu_init();
 
@@ -1658,10 +1658,6 @@ int main(int argc, char **argv)
 	//passing point to the memory image so I can link it with the memory controller.
 	cgm_configure(x86_emu->context_list_head->mem);
 
-
-
-
-
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/
 	simulate(sim_end);
@@ -1678,13 +1674,13 @@ int main(int argc, char **argv)
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();
 
-	printf("---Simulation End---\n");
+	printf("---Simulation End Total Cycles %llu---\n\n", P_TIME);
 	fflush(stdout);
 
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */
-	//if (x86_save_checkpoint_file_name[0])
-	//X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+	if (x86_save_checkpoint_file_name[0])
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
 
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the

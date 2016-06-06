@@ -235,11 +235,21 @@ static void save_process_misc(X86Context *ctx)
 	save_int32("glibc_limit", ctx->glibc_segment_limit);
 
 	ld = ctx->loader;
+
+	/*printf("int %s\n", ld->interp);
+	printf("int %s\n", ld->exe);
+	printf("int %s\n", ld->cwd);
+	printf("int %s\n", ld->stdin_file);
+	printf("int %s\n", ld->stdout_file);*/
+
 	save_str("interpreter", ld->interp);
 	save_str("executable", ld->exe);
 	save_str("cwd", ld->cwd);
 	save_str("stdin_file" , ld->stdin_file);
 	save_str("stdout_file", ld->stdout_file);
+
+	/*printf("here\n");*/
+
 	save_str_list("args", ld->args);
 	save_str_list("env", ld->env);
 }

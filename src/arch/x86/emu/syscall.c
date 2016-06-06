@@ -32,8 +32,11 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
+#include <m2s.h>
+
 #include <arch/common/runtime.h>
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/emu/checkpoint.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
@@ -5651,6 +5654,8 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
  * System call 'cgm_stats_start_parallel_section' (code 325)
  */
 
+
+
 static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 {
 	/*this syscall represents the beginning of the parallel section of the benchmark
@@ -5663,6 +5668,15 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	assert(cgm_startup_stats->start_startup_section_cycle == 0);
 	cgm_startup_stats->total_startup_section_cycles = cgm_startup_stats->end_startup_section_cycle - cgm_startup_stats->start_startup_section_cycle;
 	cgm_store_stats(cgm_startup_stats);
+
+
+	printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
+
+	X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+
+	printf("---Exiting cycle %llu---\n", P_TIME);
+	exit(0);
+
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();

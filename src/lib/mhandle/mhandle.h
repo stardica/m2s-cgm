@@ -32,7 +32,7 @@
 #define malloc(sz) __ERROR_USE_XMALLOC_INSTEAD__
 #define calloc(nmemb, sz) __ERROR_USE_XCALLOC_INSTEAD__
 #define realloc(x, sz) __ERROR_USE_XREALLOC_INSTEAD__
-#define strdup(x) __ERROR_USE_XSTRDUP_INSTEAD__
+//#define strdup(x) __ERROR_USE_XSTRDUP_INSTEAD__
 
 
 #ifdef MHANDLE

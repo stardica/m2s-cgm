@@ -139,9 +139,13 @@ void init_cgm_stats(int argc, char **argv){
 
 	cgm_stat->benchmark_name = strdup(buff);
 
+	memset(buff, '\0', 400);
+
 	//now get the benchamrk's args
 	while(i < argc)
 		sprintf(buff + strlen(buff), "%s ", argv[i++]);
+
+	cgm_stat->args = strdup(buff);
 
 	cgm_stats_alloc(cgm_stat);
 	cgm_stats_alloc(cgm_startup_stats);
@@ -1126,6 +1130,8 @@ void cgm_dump_general_stats(void){
 	unsigned int cpu_freq_hz = 0;
 	unsigned int gpu_freq_hz = 0;
 
+	int i = 0;
+
 	//get the time
 	cgm_stat->end_wall_time = get_wall_time();
 
@@ -1141,6 +1147,7 @@ void cgm_dump_general_stats(void){
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "ExecutionSuccessful = %s\n", (cgm_stat->execution_success == true) ? ("Yes") : ("No"));
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
+	CGM_STATS(cgm_stats_file, "Args = %s\n", cgm_stat->args);
 	CGM_STATS(cgm_stats_file, "Day&Time = %s\n", cgm_stat->date_time_pretty);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(cpu) = %.9f\n", cpu_sim_time);
 	CGM_STATS(cgm_stats_file, "SimulationRunTimeSeconds(wall) = %.2f\n", cgm_stat->sim_time);

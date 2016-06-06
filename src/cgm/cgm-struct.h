@@ -524,6 +524,8 @@ struct cgm_stats_t{
 	char *stat_file_name;
 	char *date_time_file;
 	char *date_time_pretty;
+	char *check_point_file_name;
+
 
 	/*benchmark related*/
 	char *benchmark_name;

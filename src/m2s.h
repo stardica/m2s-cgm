@@ -27,5 +27,7 @@
 //m2s prototypes
 void m2s_loop(void);
 
+extern char *x86_save_checkpoint_file_name;
+
 
 #endif /*M2S_H_*/
