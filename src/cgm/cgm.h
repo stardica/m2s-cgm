@@ -52,7 +52,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x011ab500
+#define WATCHBLOCK (unsigned int) 0x000ddfc0
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 L1-L3,
 #define LEVEL 3
@@ -114,6 +114,8 @@ extern int mem_trace;
 
 extern FILE *load_store_log_file;
 extern int load_store_debug;
+
+extern int Histograms;
 
 extern char *cgm_debug_output_path;
 extern char *cgm_stats_output_path;
@@ -189,7 +191,6 @@ struct cpu_gpu_stats_t{
 	/*gpu stats*/
 };
 
-
 extern struct cpu_gpu_stats_t *cpu_gpu_stats;
 
 void init_cgm_stats(int argc, char **argv);
@@ -222,7 +223,7 @@ extern unsigned int last_committed_fetch_access_blk;
 void m2scgm_init(void);
 void cgm_init(int argc, char **argv);
 void cgm_check_config_files(char **argv);
-void cgm_configure(struct mem_t *mem);
+void cgm_configure(void);
 void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cpu_gpu_run(void);

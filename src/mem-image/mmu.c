@@ -43,7 +43,6 @@ unsigned int mmu_page_mask;
 
 int page_number = 0;
 
-
 unsigned int max_2 = 0;
 unsigned int max_1 = 0;
 
@@ -55,58 +54,8 @@ unsigned int max_1 = 0;
 #define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
 #define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
 
-struct page_guest_t{
 
-	int guest_pid;	/*guest process id*/
-	unsigned int guest_vtl_addr_base;
-	unsigned int guest_vtl_addr_top;
-	unsigned int host_vtl_addr_base;
-	unsigned int host_vtl_addr_top;
-	unsigned int size;
-};
-
-
-
-/* Physical memory page */
-struct mmu_page_t
-{
-	int id;
-
-	struct mmu_page_t *next;
-
-	int address_space_index;  /* Memory map ID */
-	unsigned int vtl_addr;  /* Virtual address of hostpage */
-	unsigned int phy_addr;  /* Physical address */
-
-	enum mmu_page_type_t page_type; /*type of page either .text or data segments*/
-
-	/*star added this
-	int link; bit indicating if this page is linked with a quest(s)
-	struct list_t *guest_list; list of guests with permission to access this page*/
-
-	/*Statistics*/
-	long long num_read_accesses;
-	long long num_write_accesses;
-	long long num_execute_accesses;
-};
-
-/* Memory management unit */
-struct mmu_t
-{
-	/* List of pages */
-	struct list_t *page_list;
-
-	/* star List of quests */
-	struct list_t *guest_list;
-
-	/* Hash table of pages */
-	//struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
-
-	/* Report file */
-	FILE *report_file;
-};
-
-static struct mmu_t *mmu;
+struct mmu_t *mmu;
 
 
 /*#include <cgm/cgm.h>*/
@@ -735,6 +684,9 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
+
+	/*if(vtl_addr == 0x08103320)
+		printf("translating 0x08103320 phy_addr = 0x%08x\n", phy_addr);*/
 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)

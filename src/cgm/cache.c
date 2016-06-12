@@ -5262,7 +5262,6 @@ int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 			printf("l1 no wb found\n");
 		}
 
-
 		printf("block 0x%08x searching for set %d tag %d\n", addr, l2_set, l2_tag);
 		cgm_cache_print_set_tag(&l2_caches[core_id], addr);
 		cgm_cache_dump_set(&l2_caches[core_id], l2_set);

@@ -48,6 +48,61 @@ enum mmu_address_type_t
 	mmu_addr_guest
 };
 
+
+struct page_guest_t{
+
+	int guest_pid;	/*guest process id*/
+	unsigned int guest_vtl_addr_base;
+	unsigned int guest_vtl_addr_top;
+	unsigned int host_vtl_addr_base;
+	unsigned int host_vtl_addr_top;
+	unsigned int size;
+};
+
+
+
+/* Physical memory page */
+struct mmu_page_t
+{
+	int id;
+
+	struct mmu_page_t *next;
+
+	int address_space_index;  /* Memory map ID */
+	unsigned int vtl_addr;  /* Virtual address of host page */
+	unsigned int phy_addr;  /* Physical address */
+
+	enum mmu_page_type_t page_type; /*type of page either .text or .data segments*/
+
+	/*star added this
+	int link; bit indicating if this page is linked with a quest(s)
+	struct list_t *guest_list; list of guests with permission to access this page*/
+
+	/*Statistics*/
+	long long num_read_accesses;
+	long long num_write_accesses;
+	long long num_execute_accesses;
+};
+
+/* Memory management unit */
+struct mmu_t
+{
+	/* List of pages */
+	struct list_t *page_list;
+
+	/* star List of quests */
+	struct list_t *guest_list;
+
+	/* Hash table of pages */
+	//struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
+
+	/* Report file */
+	FILE *report_file;
+};
+
+extern int page_number;
+extern struct mmu_t *mmu;
+
 extern char *mmu_report_file_name;
 
 extern unsigned int mmu_page_size;

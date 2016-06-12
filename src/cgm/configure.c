@@ -13,7 +13,7 @@
 
 int cgmmem_check_config = 0;
 
-int cgm_mem_configure(struct mem_t *mem){
+int cgm_mem_configure(){
 
 	int error = 0;
 
@@ -82,7 +82,7 @@ int cgm_mem_configure(struct mem_t *mem){
 		return 1;
 	}
 
-	mem_ctrl_finish_create(mem);
+	mem_ctrl_finish_create();
 
 	return 0;
 
@@ -408,6 +408,11 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats_output_path = strdup(value);
 	}
 
+	if(MATCH("Stats", "Histograms"))
+	{
+		Histograms = atoi(value);
+	}
+
 	/*if(MATCH("Stats", "DumpConfig"))
 	{
 		temp_strn = strdup(value);
@@ -441,13 +446,28 @@ int stats_finish_create(void){
 	char buff_path[250];
 	char buff_file[250];
 
+	char sim_id[10];
+
+	struct timeval tv;
+	unsigned int min_id;
+	unsigned int max_id;
+	unsigned int id;
+
+	/*Compute a unique simulation ID*/
+	gettimeofday(&tv, NULL);
+	min_id = str_alnum_to_int("10000");
+	max_id = str_alnum_to_int("ZZZZZ");
+	id = (tv.tv_sec * 1000000000 + tv.tv_usec) % (max_id - min_id + 1) + min_id;
+	str_int_to_alnum(sim_id, sizeof(sim_id), id);
+
+
 	if (cgm_stats == 1)
 	{
 		memset (buff_path,'\0' , 250);
 		memset (buff_file,'\0' , 250);
 		sprintf(buff_path, "%s", cgm_stats_output_path);
 
-		sprintf(buff_file, "%s_%s.txt", cgm_stat->benchmark_name, cgm_stat->date_time_file);
+		sprintf(buff_file, "%s_%s_%s.txt", cgm_stat->benchmark_name, sim_id, cgm_stat->date_time_file);
 
 		sprintf(buff_path + strlen(buff_path), "%s", buff_file);
 		cgm_stat->stat_file_name = strdup(buff_file);
@@ -3601,7 +3621,7 @@ int mem_ctrl_config(void* user, const char* section, const char* name, const cha
 	return 0;
 }
 
-int mem_ctrl_finish_create(struct mem_t *mem){
+int mem_ctrl_finish_create(void){
 
 	char buff[100];
 
@@ -3633,7 +3653,7 @@ int mem_ctrl_finish_create(struct mem_t *mem){
 	mem_ctrl->system_agent_queue = system_agent->Rx_queue_bottom;
 
 	//link the memory controller to the simulated memory image
-	mem_ctrl->mem = mem;
+	//mem_ctrl->mem = mem;
 
 	/*dramsim stuff*/
 	if(DRAMSim == 1)

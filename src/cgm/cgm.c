@@ -65,6 +65,8 @@ int mem_trace = 0;
 FILE *load_store_log_file;
 int load_store_debug = 0;
 
+int Histograms = 0;
+
 char *cgm_debug_output_path = "";
 char *cgm_stats_output_path = "";
 char *cgm_stats_file_name = "";
@@ -953,11 +955,11 @@ void cgm_init(int argc, char **argv){
 	return;
 }
 
-void cgm_configure(struct mem_t *mem){
+void cgm_configure(void){
 
 	int error = 0;
 
-	error = cgm_mem_configure(mem);
+	error = cgm_mem_configure();
 	if (error) {fatal("cgm_mem_configure() failed\n");}
 
 	cgm_cpu_configure();
@@ -1357,9 +1359,19 @@ void cgm_dump_histograms(void){
 
 	int i = 0;
 
-	FILE *fetch_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/fetch_lat_log_file.out", "w+");
-	FILE *load_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/load_lat_log_file.out", "w+");
-	FILE *store_lat_log_file = fopen ("/home/stardica/Desktop/m2s-cgm/src/scripts/store_lat_log_file.out", "w+");
+	char buff[400];
+
+	memset(buff, '\0', 400);
+	sprintf(buff, "%s%s", cgm_stats_output_path, "fetch_lat_log_file.out");
+	FILE *fetch_lat_log_file = fopen (buff, "w+");
+
+	memset(buff, '\0', 400);
+	sprintf(buff, "%s%s", cgm_stats_output_path, "load_lat_log_file.out");
+	FILE *load_lat_log_file = fopen (buff, "w+");
+
+	memset(buff, '\0', 400);
+	sprintf(buff, "%s%s", cgm_stats_output_path, "store_lat_log_file.out");
+	FILE *store_lat_log_file = fopen (buff, "w+");
 
 	/* Histograms */
 	//fprintf(fetch_lat_log_file, "[FetchLatHist]\n");
@@ -1489,7 +1501,8 @@ void cgm_dump_summary(void){
 	/*star todo dump histograms for the various sections that we are intrested in*/
 
 	/*dump the histograms*/
-	cgm_dump_histograms();
+	if(Histograms == 1)
+		cgm_dump_histograms();
 
 	CLOSE_FILES;
 

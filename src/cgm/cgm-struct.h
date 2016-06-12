@@ -570,6 +570,7 @@ struct cgm_stats_t{
 
 	//memory system at large
 	int first_mem_access_lat;
+	long long dump_histograms;
 	long long fetch_lat_hist[HISTSIZE];
 	long long load_lat_hist[HISTSIZE];
 	long long store_lat_hist[HISTSIZE];

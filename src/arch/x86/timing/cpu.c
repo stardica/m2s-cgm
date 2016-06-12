@@ -995,6 +995,8 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats, char *pref
 	fprintf(f, "\n");
 }
 
+int i = 0;
+
 int X86CpuRun(Timing *self){
 
 	X86Cpu *cpu = asX86Cpu(self);
@@ -1022,6 +1024,7 @@ int X86CpuRun(Timing *self){
 		return TRUE;
 
 	//star added for thread control.
+
 	P_PAUSE(1);
 	self->cycle = P_TIME;
 

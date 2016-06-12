@@ -5669,14 +5669,12 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	cgm_startup_stats->total_startup_section_cycles = cgm_startup_stats->end_startup_section_cycle - cgm_startup_stats->start_startup_section_cycle;
 	cgm_store_stats(cgm_startup_stats);
 
-
-	printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
-
-	X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
-
-	printf("---Exiting cycle %llu---\n", P_TIME);
-	exit(0);
-
+	if (x86_save_checkpoint_file_name[0])
+	{
+		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+		printf("---Checkpoint Saved cycle %llu---\n");
+	}
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();

@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <zlib.h>
+#include <string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bin-config.h>
 #include <lib/util/debug.h>
@@ -28,6 +29,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-image/memory.h>
+#include <mem-image/mmu.h>
 
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/context.h>
@@ -35,6 +37,11 @@
 #include <arch/x86/emu/file-desc.h>
 #include <arch/x86/emu/loader.h>
 #include <arch/x86/emu/regs.h>
+
+#include <arch/x86/timing/cpu.h>
+
+#include <cgm/cgm.h>
+#include <cgm/cache.h>
 
 
 void X86EmuLoadCheckpoint(X86Emu *self, char *file_name);
@@ -49,6 +56,24 @@ static void save_process(X86Context *ctx);
 static void save_process_misc(X86Context *ctx);
 static void load_memory(struct mem_t *mem);
 static void save_memory(struct mem_t *mem);
+
+//save away memory system structures
+static void save_mem_system(void);
+static void load_mem_system(void);
+
+static void save_current_cycle(void);
+static void load_current_cycle(void);
+
+static void save_mmu(void);
+static void save_mmu_page(struct mmu_page_t *page);
+static void load_mmu_page(void);
+
+static void save_caches(void);
+static void save_sets(struct cache_t *cache);
+
+static void load_caches(void);
+static void load_sets(struct cache_t *cache);
+
 static void load_memory_data(struct mem_t *mem);
 static void save_memory_data(struct mem_t *mem);
 static void load_memory_range(struct mem_t *mem);
@@ -124,6 +149,8 @@ void X86EmuLoadCheckpoint(X86Emu *self, char *file_name)
 
 	load_processes(self);
 
+	load_mem_system();
+
 	cfg_done();
 	bin_config_free(ckp);
 	ckp = NULL;
@@ -135,6 +162,8 @@ void X86EmuSaveCheckpoint(X86Emu *self, char *file_name)
 	cfg_init();
 
 	save_processes(self);
+
+	save_mem_system();
 
 	bin_config_save(ckp);
 	check();
@@ -274,6 +303,325 @@ static void save_memory(struct mem_t *mem)
 	cfg_pop();
 }
 
+static void save_mem_system(void){
+
+	cfg_push("mem_system");
+	save_current_cycle();
+	save_caches();
+	save_mmu();
+	cfg_pop();
+
+	return;
+
+}
+
+static void save_current_cycle(void){
+
+	unsigned long long current_cycle = etime.count;
+	unsigned int cycle_top = 0;
+	unsigned int cycle_bottom = 0;
+	unsigned long long cycle_top_mask = 0x00000000FFFFFFFF;
+
+	cfg_push("cycle");
+	/*printf("curr cycle %llu\n", current_cycle);*/
+
+	cycle_top = (unsigned int) (current_cycle >> 32);
+	cycle_bottom = (unsigned int) (current_cycle & cycle_top_mask);
+
+	/*printf("resuming cycle_top %u\n", cycle_top);
+	printf("resuming cycle_bottom %u\n", cycle_bottom);
+	printf("cycle rebuilt %llu\n", )*/
+
+	save_int32("cycle_top", cycle_top);
+	save_int32("cycle_bottom", cycle_bottom);
+
+	cfg_pop();
+
+	return;
+}
+
+static void save_mmu(void){
+
+	int i = 0;
+	struct mmu_page_t *page;
+
+	cfg_push("mmu_pages");
+
+	//printf("mmu size %d\n", list_count(mmu->page_list));
+
+	/* Iterate over memory pages */
+	/*search the page list for a page hit.*/
+	LIST_FOR_EACH(mmu->page_list, i)
+	{
+		page = list_get(mmu->page_list, i);
+		assert(page);
+		assert(page->id == i);
+		save_mmu_page(page);
+	}
+
+	cfg_pop();
+
+}
+
+static void save_mmu_page(struct mmu_page_t *page){
+
+	char buff[25];
+
+	memset(buff, '\0', 25);
+
+	sprintf(buff, "%d", page->id);
+
+	cfg_push(buff);
+
+	save_int32("id", page->id);
+	//save_int32("next", (unsigned int)page->next);
+	save_int32("address_space_index", page->address_space_index);
+	save_int32("vtl_addr", page->vtl_addr);
+	save_int32("phy_addr", page->phy_addr);
+	save_int32("page_type", page->page_type);
+
+	cfg_pop();
+
+}
+
+static void load_mmu_page(void){
+
+	struct mmu_page_t *prev = NULL;
+	struct mmu_page_t *page = NULL;
+	char buff[100];
+
+	/* Initialize */
+	page = xcalloc(1, sizeof(struct mmu_page_t));
+
+	//assign page id
+	page->id = (int)load_int32("id");
+	page_number = page->id + 1;
+
+	page->vtl_addr = (unsigned int) load_int32("vtl_addr");
+	page->address_space_index = (int) load_int32("address_space_index");
+	page->phy_addr = (unsigned int) load_int32("phy_addr");
+	page->page_type = (unsigned int) load_int32("page_type");
+
+	/* Insert in page list */
+	list_add(mmu->page_list, page);
+
+	/* Insert in page hash table */
+	/*page->next = mmu->page_hash_table[index];
+	mmu->page_hash_table[index] = page;
+	prev = NULL;*/
+
+	return;
+}
+
+static void load_mmu(void){
+
+
+	cfg_descend("mmu_pages");
+
+	while(cfg_next_child()) {
+		load_mmu_page();
+		cfg_pop();
+	}
+
+	//fatal("mmu size %d\n", list_count(mmu->page_list));
+
+
+	cfg_pop();
+
+}
+
+
+static void save_caches(void){
+
+	int i = 0;
+	int num_cores = x86_cpu_num_cores;
+	char buff[25];
+
+	cfg_push("caches");
+
+	/*store caches*/
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff, '\0', 25);
+		sprintf(buff, "l1_i_caches[%d]", i);
+		cfg_push(buff);
+		save_sets(&l1_i_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l1_d_caches[%d]", i);
+		cfg_push(buff);
+		save_sets(&l1_d_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l2_caches[%d]", i);
+		cfg_push(buff);
+		save_sets(&l2_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l3_caches[%d]", i);
+		cfg_push(buff);
+		save_sets(&l3_caches[i]);
+		cfg_pop();
+	}
+
+	cfg_pop();
+
+}
+
+static void save_sets(struct cache_t *cache){
+
+	int set = 0;
+	int way = 0;
+	char buff[25];
+
+	unsigned int directory_top = 0;
+	unsigned int directory_bottom = 0;
+
+	unsigned long long directory_top_mask = 0x00000000FFFFFFFF;
+
+
+	for(set = 0; set < cache->num_sets; set++)
+	{
+		for(way = 0; way < cache->assoc; way++)
+		{
+			memset(buff, '\0', 25);
+			sprintf(buff, "set[%d]way[%d]", set, way);
+
+			cfg_push(buff);
+
+			save_int32("tag", (unsigned int) cache->sets[set].blocks[way].tag);
+			save_int32("state", (unsigned int) cache->sets[set].blocks[way].state);
+
+			directory_top = (unsigned int) (cache->sets[set].blocks[way].directory_entry.entry >> 32);
+			directory_bottom = (unsigned int) (cache->sets[set].blocks[way].directory_entry.entry & directory_top_mask);
+
+			save_int32("directory_top", directory_top);
+			save_int32("directory_bottom", directory_bottom);
+
+			cfg_pop();
+		}
+	}
+}
+
+
+static void load_mem_system(void){
+
+	cfg_descend("mem_system");
+
+	load_current_cycle();
+	load_caches();
+	load_mmu();
+
+	cfg_pop();
+
+	return;
+
+}
+
+static void load_current_cycle(void){
+
+
+	unsigned long long cycle_top = 0;
+	unsigned long long cycle_bottom = 0;
+	unsigned long long cycle = 0;
+
+	cfg_descend("cycle");
+
+	cycle_top = (unsigned long long) load_int32("cycle_top");
+	cycle_bottom = (unsigned long long) load_int32("cycle_bottom");
+
+	cycle_top = cycle_top << 32;
+	cycle = cycle_top | cycle_bottom;
+
+	cfg_pop();
+
+	P_PAUSE((cycle/2));
+
+	return;
+}
+
+
+static void load_caches(void){
+
+	int i = 0;
+	int num_cores = x86_cpu_num_cores;
+	char buff[25];
+
+	cfg_descend("caches");
+
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff, '\0', 25);
+		sprintf(buff, "l1_i_caches[%d]", i);
+		cfg_descend(buff);
+		load_sets(&l1_i_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l1_d_caches[%d]", i);
+		cfg_descend(buff);
+		load_sets(&l1_d_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l2_caches[%d]", i);
+		cfg_descend(buff);
+		load_sets(&l2_caches[i]);
+		cfg_pop();
+
+		memset(buff, '\0', 25);
+		sprintf(buff, "l3_caches[%d]", i);
+		cfg_descend(buff);
+		load_sets(&l3_caches[i]);
+		cfg_pop();
+	}
+
+	cfg_pop();
+
+	return;
+}
+
+static void load_sets(struct cache_t *cache){
+
+	int set = 0;
+	int way = 0;
+
+	unsigned long long directory_top = 0;
+	unsigned long long directory_bottom = 0;
+	unsigned long long directory = 0;
+
+	char buff[25];
+
+	for(set = 0; set < cache->num_sets; set++)
+	{
+		for(way = 0; way < cache->assoc; way++)
+		{
+			//printf("way %d sets %d ways %d\n", way,cache->num_sets, cache->assoc);
+
+			memset(buff, '\0', 25);
+			sprintf(buff, "set[%d]way[%d]", set, way);
+			cfg_descend(buff);
+
+			cache->sets[set].blocks[way].tag = (int) load_int32("tag");
+			cache->sets[set].blocks[way].state = (int) load_int32("state");
+
+			directory_top = (unsigned long long) load_int32("directory_top");
+			directory_bottom = (unsigned long long) load_int32("directory_bottom");
+			directory_top = directory_top << 32;
+			directory = directory_top | directory_bottom;
+
+			cache->sets[set].blocks[way].directory_entry.entry = directory;
+
+			cfg_pop();
+		}
+	}
+
+	return;
+}
+
 static void load_memory_data(struct mem_t *mem)
 {
 	int old_mem_safe;
@@ -298,6 +646,7 @@ static void save_memory_data(struct mem_t *mem)
 {
 	int old_mem_safe;
 	int i;
+	struct mem_page_t *page;
 
 	cfg_push("ranges");
 
@@ -306,6 +655,15 @@ static void save_memory_data(struct mem_t *mem)
 	mem->safe = 0;
 
 	/* Iterate over memory pages */
+	/*search the page list for a page hit.*/
+	/*LIST_FOR_EACH(mmu->page_list, i)
+	{
+		page = list_get(mmu->page_list, i);
+		assert(page);
+		save_memory_page(page);
+	}*/
+
+	/*old code*/
 	for (i = 0; i < MEM_PAGE_COUNT; i++)
 	{
 		struct mem_page_t *page;
@@ -365,6 +723,7 @@ static void save_memory_page(struct mem_page_t *page)
 	save_int32("addr", page->tag);
 	save_int32("size", MEM_PAGE_SIZE);
 	save_int32("perm", page->perm);
+
 	if (page->data)
 		save_value_no_dup("data", page->data, MEM_PAGE_SIZE);
 
@@ -394,7 +753,7 @@ static void load_fd(struct x86_file_desc_table_t *fdt)
 	guest_fd = load_int32("index");
 	if (kind != file_desc_regular)
 	{
-		warning("Ignoring %s (non-regular file)", cfg_path());
+		warning("Loading checkpoint: Ignoring %s (non-regular file)", cfg_path());
 		return;
 	}
 	flags  = load_int32("flags");
@@ -407,14 +766,14 @@ static void load_fd(struct x86_file_desc_table_t *fdt)
 	host_fd = open(path, new_flags);
 	if (host_fd < 0)
 	{
-		warning("Ignoring %s: could not open %s",
+		warning("Loading checkpoint: Ignoring %s: could not open %s",
 			cfg_path(), path);
 		return;
 	}
 
 	if (new_flags != flags)
 	{
-		warning("Flags for %s changed from %x to %x",
+		warning("Loading checkpoint: Flags for %s changed from %x to %x",
 			cfg_path(), flags, new_flags);
 	}
 
@@ -878,6 +1237,7 @@ static void save_##type(char *key, type##_t value) \
 
 DEF_SAVE_TYPE(int16)
 DEF_SAVE_TYPE(int32)
+//DEF_SAVE_TYPE(int64)
 
 #undef DEF_SAVE_TYPE
 
@@ -912,7 +1272,7 @@ static void save_str(char *key, char *str)
 		/* Include null terminator for safety */
 		save_value(key, str, strlen(str) + 1);
 	} else {
-		warning("%s/%s not available", cfg_path(), key);
+		warning("saving checkpoint: %s/%s not available", cfg_path(), key);
 	}
 }
 

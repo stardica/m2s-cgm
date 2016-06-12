@@ -44,7 +44,7 @@
 //global variables
 extern int cgmmem_check_config;
 
-int cgm_mem_configure(struct mem_t *mem);
+int cgm_mem_configure(void);
 int cgm_cpu_configure(void);
 int cgm_gpu_configure(void);
 
@@ -61,7 +61,7 @@ int switch_finish_create(void);
 int sys_agent_config(void* user, const char* section, const char* name, const char* value);
 int sys_agent_finish_create(void);
 int mem_ctrl_config(void* user, const char* section, const char* name, const char* value);
-int mem_ctrl_finish_create(struct mem_t *mem);
+int mem_ctrl_finish_create(void);
 
 //functions run by virtual function
 void cpu_configure(Timing *self, struct config_t *config);

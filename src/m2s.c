@@ -1446,8 +1446,8 @@ void sim_end(void){
 
 	//star >> don't need this for simple/short runs benchmarks
 	/* Save architectural state checkpoint */
-	if (x86_save_checkpoint_file_name[0])
-		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+	/*if (x86_save_checkpoint_file_name[0])
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);*/
 
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the
@@ -1632,31 +1632,30 @@ int main(int argc, char **argv)
 		arch_set_timing(arch_x86, asTiming(x86_cpu));
 	}
 
+	mmu_init();
+
+	/* Network and memory system */
+	cgm_init(argc, argv);
+
+	/*struct mem_t *new_mem = */
+	//x86_emu->context_list_head->mem->num_links = (x86_cpu_num_cores + 1);
+
+	//passing point to the memory image so I can link it with the memory controller.
+	cgm_configure();
+
+
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
 	//Commented these out for testing purposes.
 	if (x86_load_checkpoint_file_name[0])
 		X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
-	mmu_init();
-
 	/* Load programs */
 	//star >> loads the ELF parsing work.
-
 	m2s_load_programs(argc, argv);
-
 
 	//CGM is the replacement memory system.
 #if CGM
-
-	/* Network and memory system */
-	cgm_init(argc, argv);
-
-	/*struct mem_t *new_mem = */
-	x86_emu->context_list_head->mem->num_links = (x86_cpu_num_cores + 1);
-
-	//passing point to the memory image so I can link it with the memory controller.
-	cgm_configure(x86_emu->context_list_head->mem);
 
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/

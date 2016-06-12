@@ -4396,7 +4396,15 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 		case cgm_cache_block_owned:
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
-			fatal("l3_cache_ctrl(): L3 id %d GetS invalid block state as %s cycle %llu\n", cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), P_TIME);
+
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			printf("vtrl address 0x%08x phy address 0x%08x\n", mmu_get_vtladdr(1, message_packet->address), message_packet->address);
+
+
+			fatal("l3_cache_ctrl(): %s GetS invalid block state as %s set %d tag %d way %d cycle %llu\n",
+					cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+					message_packet->set, message_packet->tag, message_packet->way, P_TIME);
 			break;
 
 		case cgm_cache_block_invalid:
