@@ -181,8 +181,6 @@ void store_stat_bandwidth(enum bandwidth_type_t type, int core_id, int transfer_
 		fatal("store_stat_bandwidth(): invalid type");
 	}
 
-
-
 	return;
 }
 

@@ -1051,7 +1051,7 @@ void switch_north_io_ctrl(void){
 					switches[my_pid].switch_north_io_transfers++;
 					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
 					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-					store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 				}
 			}
 			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
@@ -1081,7 +1081,7 @@ void switch_north_io_ctrl(void){
 					switches[my_pid].switch_north_io_transfers++;
 					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
 					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-					store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 				}
 			}
 			else
@@ -1115,7 +1115,7 @@ void switch_north_io_ctrl(void){
 				switches[my_pid].switch_north_io_transfers++;
 				switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
 				switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-				store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+				//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 			}
 		}
 		else

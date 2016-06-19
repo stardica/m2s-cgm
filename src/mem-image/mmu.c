@@ -76,8 +76,35 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	/* Look for page */
 	index = ((addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	tag = addr & ~mmu_page_mask;
+	prev = NULL;
+	page = mmu->page_hash_table[index];
 
-	/*search the page list for a page hit.*/
+	while (page)
+	{
+		//check to see if it is a hit and look for both text and data page types
+		if(page->page_type == mmu_page_text && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		{
+			text_page = page;
+			break;
+		}
+		else if(page->page_type == mmu_page_data && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		{
+			data_page = page;
+			break;
+		}
+		else if(page->page_type == mmu_page_gpu && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+		{
+			gpu_page = page;
+			break;
+		}
+
+		prev = page;
+		page = page->next;
+	}
+
+
+	/*old code*/
+	/*search the page list for a page hit.
 	LIST_FOR_EACH(mmu->page_list, i)
 	{
 		//pull a page
@@ -96,28 +123,29 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 		{
 			gpu_page = page;
 		}
-	}
+	}*/
 
 	//figure out if we are looking for a .text or a data page.
 	page_type = mmu_get_page_type(access_type);
 
 	if(page_type == mmu_page_text && text_page)
 	{
-		return text_page;
+		page = text_page;
 	}
 	else if(page_type == mmu_page_data && data_page)
 	{
-		return data_page;
+		page = data_page;
 	}
 	else if(page_type == mmu_page_gpu && gpu_page)
 	{
-		return gpu_page;
+		page = gpu_page;
 	}
 	else
 	{
 		fatal("mmu_page_access(): page miss\n");
 	}
 
+	return page;
 }
 
 int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, unsigned int addr, int address_space_index, int tag){
