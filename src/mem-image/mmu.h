@@ -21,6 +21,10 @@
 #define MEM_SYSTEM_MMU_H
 
 
+/* Local constants */
+#define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
+#define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
+
 enum mmu_access_t
 {
 	mmu_access_invalid = 0,
@@ -94,7 +98,7 @@ struct mmu_t
 	struct list_t *guest_list;
 
 	/* Hash table of pages */
-	//struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
+	struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
 
 	/* Report file */
 	FILE *report_file;

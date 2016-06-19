@@ -50,10 +50,6 @@ unsigned int max_1 = 0;
  * Private variables
  */
 
-/* Local constants */
-#define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
-#define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
-
 
 struct mmu_t *mmu;
 
@@ -155,7 +151,7 @@ int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, 
 
 struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
 {
-	//struct mmu_page_t *prev = NULL;
+	struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
 	struct mmu_page_t *text_page = NULL;
 	struct mmu_page_t *data_page = NULL;
@@ -167,18 +163,48 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 
 	enum mmu_page_type_t page_type;
 
-	/* Look for page */
-	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
-	tag = vtladdr & ~mmu_page_mask;
-	//prev = NULL;
-
 	if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 	{
 		printf("searching for page gpu vtl_addr 0x%08x\n", vtladdr);
 	}
 
+	/* Look for page */
+	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	tag = vtladdr & ~mmu_page_mask;
+	prev = NULL;
+	page = mmu->page_hash_table[index];
+
+	while (page)
+	{
+		//check to see if it is a hit and look for both text and data page types
+		if(page->page_type == mmu_page_text && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		{
+			text_page = page;
+			break;
+		}
+		else if(page->page_type == mmu_page_data && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		{
+			data_page = page;
+			break;
+		}
+		else if (page->page_type == mmu_page_gpu && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
+		{
+			gpu_page = page;
+			break;
+		}
+
+		prev = page;
+		page = page->next;
+	}
+
+	//make sure this is null if there was no page...
+	if(!page)
+		prev = NULL;
+
+	/*old code*/
+
 	/*search the page list for a page hit.*/
-	LIST_FOR_EACH(mmu->page_list, i)
+	/*LIST_FOR_EACH(mmu->page_list, i)
 	{
 		//pull a page
 		page = list_get(mmu->page_list, i);
@@ -197,8 +223,8 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 			gpu_page = page;
 		}
 
-		/*printf("page id %d, page type %d\n", page->id, page->page_type);*/
-	}
+		printf("page id %d, page type %d\n", page->id, page->page_type);
+	}*/
 
 	if(access_type == mmu_access_gpu && gpu_page && GPU_HUB_IOMMU == 1)
 	{
@@ -219,15 +245,15 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	otherwise this is an access that doesn't have a mapped page. create a page now.*/
 	if(page_type == mmu_page_text && text_page)
 	{
-		return text_page;
+		page = text_page;
 	}
 	else if(page_type == mmu_page_data && data_page)
 	{
-		return data_page;
+		page = data_page;
 	}
 	else if(page_type == mmu_page_data && data_page)
 	{
-		return gpu_page;
+		page = gpu_page;
 	}
 	else
 	{
@@ -236,11 +262,18 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 			printf("creating page\n");
 		}
 
-		return mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
+		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
 
+	/* Locate page at the head of the hash table for faster subsequent lookup */
+	if (prev)
+	{
+		prev->next = page->next;
+		page->next = mmu->page_hash_table[index];
+		mmu->page_hash_table[index] = page;
+	}
 
-
+	return page;
 }
 
 
@@ -599,7 +632,7 @@ struct page_guest_t *mmu_create_guest(void){
 
 struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, enum mmu_access_t access_type, int index, unsigned int vtl_addr){
 
-	struct mmu_page_t *prev = NULL;
+	//struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
 	char buff[100];
 
@@ -650,9 +683,9 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	list_add(mmu->page_list, page);
 
 	/* Insert in page hash table */
-	/*page->next = mmu->page_hash_table[index];
+	page->next = mmu->page_hash_table[index];
 	mmu->page_hash_table[index] = page;
-	prev = NULL;*/
+	//prev = NULL;
 
 	return page;
 }

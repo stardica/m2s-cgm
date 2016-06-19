@@ -2056,15 +2056,26 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	return;
 }
 
-#include <unistd.h>
+//#include <unistd.h>
 
+long long last_cycle = 0;
+long long curr_cycle = 0;
+double last_time = 0;
+double curr_time = 0;
 
 void PrintCycle(void){
 
 	if((P_TIME % SKIP) == 0)
 	{
-		printf("---Cycles %lluM---\r", P_TIME/SKIP);
+		curr_time = get_wall_time();
+		curr_cycle = P_TIME;
+
+		printf("---Total Cycles %lluM Simulated Cycles Per Sec %d---\r", P_TIME/SKIP, (int) ((curr_cycle - last_cycle)/(curr_time - last_time)));
+		printf("---Page Table Size %d---\r", list_count(mmu->page_list));
 		fflush(stdout);
+
+		last_time = curr_time;
+		last_cycle = curr_cycle;
 	}
 
 	return;

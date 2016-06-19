@@ -3029,23 +3029,35 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 	assert(error == 0);
 
-	if(*cache_block_state_ptr != 0)
-	{
-		if(LEVEL == 2 || LEVEL == 3)
-		{
-			fatal("cache_block_state_ptr != 0\n");
-		}
-	}
-
-	/*block should not be in L3 cache either*/
-	assert(*cache_block_state_ptr == 0);
-
-
 	//state should be either invalid of modified.
 	assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid);
 
 	//find the block in the local WB buffer
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+
+	if(*cache_block_state_ptr == 1 && wb_packet)
+	{
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			cgm_cache_dump_set(cache, message_packet->set);
+			printf("\n");
+
+			ort_dump(cache);
+			printf("\n");
+
+			cache_dump_queue(cache->pending_request_buffer);
+			printf("\n");
+
+			cache_dump_queue(cache->write_back_buffer);
+			printf("\n");
+
+			fatal("block 0x%08x %s *cache_block_state_ptr != 0 ID %llu type %d state %d set %d tag %d way %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr,
+				message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+		}
+	}
+
 
 	/*if a L1 flush we better have a wb packet in write back*/
 	if(wb_packet)
