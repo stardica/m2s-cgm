@@ -77,7 +77,15 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	index = ((addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	tag = addr & ~mmu_page_mask;
 	prev = NULL;
-	page = mmu->page_hash_table[index];
+
+
+	 // explaining the next line...
+	/*the hub_iommu translates from GPU vtl to phy addresses however the hashed pages
+	are indexed by their vtl addresses, which doesn't work when trying to reverse translate.
+	so a small table is kept in the hub_iommu that recodes the index of the hashed vtl address
+	as the physical address's hash. So, the next line gives you the stored vtl index for a
+	quick lookup of the page*/
+	page = mmu->page_hash_table[hub_iommu->page_hash_table[index]];
 
 	while (page)
 	{
@@ -103,9 +111,9 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	}
 
 
-	/*old code*/
-	/*search the page list for a page hit.
-	LIST_FOR_EACH(mmu->page_list, i)
+	/*old code
+	search the page list for a page hit.*/
+	/*LIST_FOR_EACH(mmu->page_list, i)
 	{
 		//pull a page
 		page = list_get(mmu->page_list, i);
@@ -218,6 +226,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		else if (page->page_type == mmu_page_gpu && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
 		{
 			gpu_page = page;
+
 			break;
 		}
 
@@ -726,6 +735,8 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 
 	unsigned int offset;
 	unsigned int phy_addr;
+	int vtl_index = 0;
+	int phy_index = 0;
 
 	if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 	{
@@ -739,15 +750,8 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 
-	//star added these two
-	//index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
-	//tag = (vtl_addr & ~mmu_page_mask) >> mmu_log_page_size;
-
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
-
-	/*if(vtl_addr == 0x08103320)
-		printf("translating 0x08103320 phy_addr = 0x%08x\n", phy_addr);*/
 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
@@ -764,6 +768,15 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	{
 		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
 				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);
+	}
+
+	/*for future reverse translations*/
+	if(access_type == mmu_access_gpu)
+	{
+		vtl_index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+		phy_index = ((phy_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+
+		hub_iommu->page_hash_table[phy_index] = vtl_index;
 	}
 
 	return phy_addr;

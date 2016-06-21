@@ -150,6 +150,7 @@ struct cgm_packet_t{
 	long long write_back_id;
 	long long evict_id;
 	unsigned int address;
+	unsigned int vtl_index;
 	unsigned int block_address;
 	int set;
 	int tag;

@@ -389,6 +389,9 @@ static void load_mmu_page(void){
 	struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
 	char buff[100];
+	int index = 0;
+
+	int address_space_index = 0;
 
 	/* Initialize */
 	page = xcalloc(1, sizeof(struct mmu_page_t));
@@ -405,10 +408,13 @@ static void load_mmu_page(void){
 	/* Insert in page list */
 	list_add(mmu->page_list, page);
 
+	/* Look for page */
+	index = ((page->vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+
 	/* Insert in page hash table */
-	/*page->next = mmu->page_hash_table[index];
+	page->next = mmu->page_hash_table[index];
 	mmu->page_hash_table[index] = page;
-	prev = NULL;*/
+	prev = NULL;
 
 	return;
 }

@@ -3358,7 +3358,7 @@ int switch_finish_create(void){
 
 
 	//set up translation table
-	assert(gpu_l2_caches[0].mshr_size);
+	assert(gpu_l2_caches[0].mshr_size); //this is safe, cause there better be at least one L2 cache...
 	int table_size = gpu_group_cache_num * gpu_l2_caches[0].mshr_size;
 
 	//store table size
@@ -3370,15 +3370,14 @@ int switch_finish_create(void){
 	//initialize rows and columns
 	for(i = 0; i < table_size; i++)
 	{
-		hub_iommu->translation_table[i] = (unsigned int *) malloc(3 * sizeof(unsigned int));
+		hub_iommu->translation_table[i] = (unsigned int *) malloc(2 * sizeof(unsigned int));
 	}
 
-	//initialize the ID and address columns
+	//initialize the phy and vtl address columns
 	for(i = 0; i < table_size; i++)
 	{
-		hub_iommu->translation_table[i][0] = i;
+		hub_iommu->translation_table[i][0] = -1;
 		hub_iommu->translation_table[i][1] = -1;
-		hub_iommu->translation_table[i][2] = -1;
 	}
 
 	//configure hub-iommu virtual functions

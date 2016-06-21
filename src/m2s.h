@@ -22,7 +22,7 @@
 
 #define INT 0
 
-#define GPU_HUB_IOMMU 0
+#define GPU_HUB_IOMMU 1
 
 //m2s prototypes
 void m2s_loop(void);

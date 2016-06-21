@@ -513,6 +513,64 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 	}
 }
 
+
+void iommu_put_translation_table(unsigned int vtl_index, unsigned int phy_index){
+
+	/*find an empty row in the table
+	There should always be a spot in the table
+	becasue table size is determined to be the number
+	of GPU L2s x the ORT table size*/
+
+	int i = 0;
+
+	for(i = 0; i < hub_iommu->translation_table_size; i++)
+	{
+		if(hub_iommu->translation_table[i][0] == -1 && hub_iommu->translation_table[i][1] == -1)
+		{
+			/*found an empty row*/
+			hub_iommu->translation_table[i][0] = vtl_index;
+			hub_iommu->translation_table[i][1] = phy_index;
+		}
+	}
+
+	assert(i < hub_iommu->translation_table_size);
+
+	return;
+}
+
+int iommu_get_translation_table(unsigned int phy_index){
+
+	/*get the stored vtl_index return it and clear the row*/
+
+	int i = 0;
+	int vtl_index = 0;
+
+	for(i = 0; i < hub_iommu->translation_table_size; i++)
+	{
+		if(hub_iommu->translation_table[i][1] == phy_index)
+		{
+			/*found the entry*/
+			vtl_index = hub_iommu->translation_table[i][0];
+			break;
+		}
+	}
+
+	assert(i < hub_iommu->translation_table_size);
+
+	iommu_clear_translation_table(i);
+
+	return vtl_index;
+}
+
+void iommu_clear_translation_table(int row){
+
+	hub_iommu->translation_table[row][1] = -1;
+	hub_iommu->translation_table[row][0] = -1;
+
+	return;
+}
+
+
 void hub_iommu_io_up_ctrl(void){
 
 	int my_pid = hub_iommu_io_up_pid++;

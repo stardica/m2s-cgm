@@ -85,6 +85,11 @@ struct hub_iommu_t{
 	eventcount volatile *hub_iommu_io_down_ec;
 	task *hub_iommu_io_down_tasks;
 
+	/*translation table*/
+
+	/*reverse lookup Hash table*/
+	int page_hash_table[MMU_PAGE_HASH_SIZE];
+
 	unsigned int **translation_table;
 	int translation_table_size;
 
@@ -133,6 +138,10 @@ void hub_iommu_io_down_ctrl(void);
 //iommu functions
 void iommu_nc_translate(struct cgm_packet_t *message_packet);
 void iommu_translate(struct cgm_packet_t *message_packet);
+
+void iommu_put_translation_table(unsigned int vtl_index, unsigned int phy_index);
+int iommu_get_translation_table(unsigned int phy_index);
+void iommu_clear_translation_table(int row);
 
 int iommu_translation_table_insert_address(unsigned int address);
 unsigned int iommu_translation_table_get_address(int id);
