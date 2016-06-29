@@ -366,7 +366,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			getchar();*/
 			/*printf("scalar uop id %llu %s\n", uop->id, uop->inst.info->name);*/
 
-			cgm_scalar_access(scalar_unit, cgm_access_load_s, uop->global_mem_access_addr, &uop->global_mem_witness);
+			cgm_scalar_access(scalar_unit, cgm_access_load, uop->global_mem_access_addr, &uop->global_mem_witness);
 #else
 			mod_access(scalar_unit->compute_unit->scalar_cache, mod_access_load, uop->global_mem_access_addr, &uop->global_mem_witness, NULL, NULL, NULL);
 #endif

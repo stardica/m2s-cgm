@@ -1885,12 +1885,13 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	snprintf(buff, 100, "vector_mem_access.%lld", access_id);
 
 	new_packet->access_type = access_kind;
+	new_packet->gpu_access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
-	new_packet->gpu_access_type = new_packet->access_type;
+	new_packet->start_cycle = P_TIME;
 
 	//leave for debugging purposes
 	if(mem_system_off == 1)
@@ -1901,7 +1902,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	}
 
 	//Add to the target L1 Cache Rx Queue
-	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = vector_mem_ptr->compute_unit->id;
@@ -1949,14 +1950,14 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	snprintf(buff, 100, "scalar_unit_access.%lld", access_id);
 
 	new_packet->access_type = access_kind;
+	new_packet->gpu_access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
-
 	new_packet->start_cycle = P_TIME;
-	new_packet->gpu_access_type = new_packet->access_type;
+
 
 	//leave for debugging purposes
 	if(mem_system_off == 1)
@@ -1967,7 +1968,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	}
 
 	//Add to the target cache Rx queue
-	if(access_kind == cgm_access_load_s)
+	if(access_kind == cgm_access_load)
 	{
 		//get the core ID number should be <= number of cores
 		id = scalar_unit_ptr->compute_unit->id;

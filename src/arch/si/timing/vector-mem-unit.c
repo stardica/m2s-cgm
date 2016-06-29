@@ -233,9 +233,9 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		if (uop->vector_mem_write && !uop->glc)
 			access_kind = cgm_access_nc_store;
 		else if (uop->vector_mem_write && uop->glc)
-			access_kind = cgm_access_store_v;
+			access_kind = cgm_access_store;
 		else if (uop->vector_mem_read)
-			access_kind = cgm_access_load_v;
+			access_kind = cgm_access_load;
 #else
 		if (uop->vector_mem_write && !uop->glc)
 			access_kind_m2s = mod_access_nc_store;

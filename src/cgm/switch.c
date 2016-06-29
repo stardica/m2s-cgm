@@ -1341,7 +1341,7 @@ void switch_south_io_ctrl(void){
 
 					//will never happen
 					if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
+					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
 
 					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
@@ -1366,7 +1366,7 @@ void switch_south_io_ctrl(void){
 					SYSTEM_PAUSE(transfer_time);
 
 					if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
-						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
 
 					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
@@ -1396,7 +1396,7 @@ void switch_south_io_ctrl(void){
 					SYSTEM_PAUSE(transfer_time);
 
 					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
-						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
 
 					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);

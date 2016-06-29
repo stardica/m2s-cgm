@@ -1457,6 +1457,8 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 	{
 		flush_packet->cpu_access_type = cgm_access_load_v;
 		flush_packet->l1_cache_id = id;
+
+		warning("gpu l2 evict, fix this \n");
 	}
 	else
 	{
@@ -2744,12 +2746,8 @@ void l2_cache_ctrl(void){
 		else
 		{
 
-
-
-
-			if(list_count(l2_caches[my_pid].Tx_queue_bottom) >= QueueSize)
-				fatal("here\n");
-
+			/*if(list_count(l2_caches[my_pid].Tx_queue_bottom) >= QueueSize)
+				fatal("here\n");*/
 
 			step++;
 
@@ -3205,7 +3203,7 @@ void gpu_s_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if (access_type == cgm_access_load_s || access_type == cgm_access_load_retry)
+			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
 				//Call back function (cgm_nc_gpu_s_load)
 				gpu_s_caches[my_pid].gpu_s_load(&(gpu_s_caches[my_pid]), message_packet);
@@ -3242,10 +3240,8 @@ void gpu_v_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
-
 	assert(my_pid <= num_cus);
 	set_id((unsigned int)my_pid);
-
 
 	while(1)
 	{
@@ -3274,19 +3270,17 @@ void gpu_v_cache_ctrl(void){
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(access_type == cgm_access_load_v || access_type == cgm_access_load_retry
-					|| access_type == cgm_access_loadx_retry)
+			if(access_type == cgm_access_load || access_type == cgm_access_load_retry) // || access_type == cgm_access_loadx_retry) //star remove loadx
 			{
 				//Call back function (gpu_cache_access_load)
 				gpu_v_caches[my_pid].gpu_v_load(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_store_v || access_type == cgm_access_nc_store
-					|| access_type == cgm_access_store_retry || access_type == cgm_access_storex_retry)
+			else if (access_type == cgm_access_store || access_type == cgm_access_nc_store || access_type == cgm_access_store_retry) // || access_type == cgm_access_storex_retry) //star remove storex
 			{
 				//Call back function (gpu_l1_cache_access_store)
 				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_puts || access_type == cgm_access_putx)
+			else if (access_type == cgm_access_put_clnx || access_type == cgm_access_putx)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet);
@@ -3297,6 +3291,12 @@ void gpu_v_cache_ctrl(void){
 			else if (access_type == cgm_access_inv)
 			{
 				gpu_v_caches[my_pid].gpu_v_inval(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_flush_block)
+			{
+				//Call back function (cgm_mesi_l1_d_inval)
+				//l1_d_caches[my_pid].l1_d_flush_block(&(l1_d_caches[my_pid]), message_packet);
+
 			}
 			else
 			{
@@ -3336,33 +3336,29 @@ void gpu_l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
 
-		if (message_packet == NULL || !hub_iommu_can_access(hub_iommu->Rx_queue_top[my_pid]))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_l2_caches[my_pid])) || !cache_can_access_Tx_top(&(gpu_l2_caches[my_pid])))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
 			/*printf("stalling\n");*/
+			gpu_l2_caches[my_pid].Stalls++;
 			/*future_advance(&gpu_l2_cache[my_pid], etime.count + 2);*/
 			P_PAUSE(1);
 		}
 		else
 		{
 
-			fatal("l2 cache control\n");
-
-
 			step++;
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
 
-			if(access_type == cgm_access_gets_s || access_type == cgm_access_gets_v
-					|| access_type == cgm_access_load_retry || access_type == cgm_access_store_retry)
+			if(access_type == cgm_access_get || access_type == cgm_access_load_retry)
 			{
 				//Call back function (gpu_cache_access_get)
 				gpu_l2_caches[my_pid].gpu_l2_get(&gpu_l2_caches[my_pid], message_packet);
 			}
-			else if(access_type == cgm_access_getx || access_type == cgm_access_storex_retry
-					|| access_type == cgm_access_loadx_retry)
+			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
 				//Call back function (cgm_mesi_gpu_l2_getx)
 				gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet);
@@ -3875,12 +3871,7 @@ void gpu_v_cache_down_io_ctrl(void){
 
 	int my_pid = gpu_v_io_pid++;
 	long long step = 1;
-
-	/*int num_cores = x86_cpu_num_cores;
-	int num_cus = si_gpu_num_compute_units;*/
-
 	struct cgm_packet_t *message_packet;
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
 	set_id((unsigned int)my_pid);
@@ -3888,34 +3879,78 @@ void gpu_v_cache_down_io_ctrl(void){
 	while(1)
 	{
 		await(gpu_v_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		/*printf("here\n");*/
-
-		message_packet = list_dequeue(gpu_v_caches[my_pid].Tx_queue_bottom);
+		message_packet = list_get(gpu_v_caches[my_pid].Tx_queue_bottom, 0);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/gpu_v_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
+
+
+		//drop into the next correct virtual lane/queue.
+		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
+				|| message_packet->access_type == cgm_access_upgrade)
+		{
+			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
+				list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
+				advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
+
+				/*stats*/
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
+
+				if(message_packet->access_type == cgm_access_get)
+					gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalReads++;
+
+				if (message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
+					gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalWrites++;
+			}
 		}
+		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		{
 
-		P_PAUSE(transfer_time);
+			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
 
-		//drop into next east queue.
-		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
-		advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
+				P_PAUSE(transfer_time);
 
-		/*stats*/
-		gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
+				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
+				list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue, message_packet);
+				advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
+
+				/*stats*/
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
+			}
+		}
+		else
+		{
+			fatal("gpu_v_cache_down_io_ctrl(): invalid access type\n");
+		}
 	}
 
-	return;
+	fatal("gpu_v_cache_down_io_ctrl(): out of while loop\n");
 
+	return;
 }
+
+
 void gpu_l2_cache_up_io_ctrl(void){
 
 	int my_pid = gpu_l2_up_io_pid++;
@@ -3933,50 +3968,63 @@ void gpu_l2_cache_up_io_ctrl(void){
 	while(1)
 	{
 		await(gpu_l2_caches[my_pid].cache_io_up_ec, step);
-		step++;
 
-		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_top);
+		message_packet = list_get(gpu_l2_caches[my_pid].Tx_queue_top, 0);
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
-		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/gpu_v_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
-		{
 			transfer_time = 1;
-		}
 
-		P_PAUSE(transfer_time);
-
-		//printf("L2 -> L1 access_id %llu cycle %llu\n", access_id, P_TIME);
-
-		//drop into the correct l1 cache queue.
-		if(message_packet->gpu_access_type == cgm_access_load_s)
+		//drop into the correct l1 cache queue and lane.
+		if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+				|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
+				|| message_packet->access_type == cgm_access_getx_nack)
 		{
-			list_enqueue(gpu_s_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
-			advance(&gpu_s_cache[message_packet->l1_cache_id]);
+
+			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
+				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
+				advance(&gpu_v_cache[message_packet->l1_cache_id]);
+			}
 		}
-		else if(message_packet->gpu_access_type == cgm_access_load_v || message_packet->gpu_access_type == cgm_access_store_v
-				|| message_packet->gpu_access_type == cgm_access_nc_store)
+		else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
+				|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
+				|| message_packet->access_type == cgm_access_upgrade_inval)
 		{
-			list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
-			advance(&gpu_v_cache[message_packet->l1_cache_id]);
+
+			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) > QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
+				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue, message_packet);
+				advance(&gpu_v_cache[message_packet->l1_cache_id]);
+			}
 		}
 		else
 		{
-			fatal("gpu_l2_cache_up_io_ctrl(): access_id %llu bad gpu access type as %s\n",
-					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->gpu_access_type));
+			fatal("gpu_l2_cache_up_io_ctrl(): bad access type\n");
 		}
-
 	}
 
 	return;
-
-
-/*	list_enqueue(gpu_s_caches[message_packet->gpu_cache_id].Rx_queue_bottom, message_packet);
-	advance(&gpu_s_cache[message_packet->gpu_cache_id]);*/
-
 }
 
 void gpu_l2_cache_down_io_ctrl(void){
@@ -3992,36 +4040,44 @@ void gpu_l2_cache_down_io_ctrl(void){
 	while(1)
 	{
 		await(gpu_l2_caches[my_pid].cache_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-		//star todo fix this we need a top and bottom bus_width
-		transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(hub_iommu->Rx_queue_top[my_pid]) >= QueueSize)
 		{
-			transfer_time = 1;
+			P_PAUSE(1);
 		}
-
-		SYSTEM_PAUSE(transfer_time);
-
-		list_enqueue(hub_iommu->Rx_queue_top[my_pid], message_packet);
-		advance(hub_iommu_ec);
-
-		/*stats*/
-		if(hub_iommu_connection_type == hub_to_l3)
+		else
 		{
-			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-			assert(l3_cache_ptr);
-			l3_cache_ptr->TotalAcesses++;
-		}
+			step++;
 
+			message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
+			assert(message_packet);
+
+
+			transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
+
+			if(transfer_time == 0)
+				transfer_time = 1;
+
+			SYSTEM_PAUSE(transfer_time);
+
+			list_enqueue(hub_iommu->Rx_queue_top[my_pid], message_packet);
+
+			advance(hub_iommu_ec);
+
+			/*stats*/
+			if(hub_iommu_connection_type == hub_to_l3)
+			{
+				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+				assert(l3_cache_ptr);
+				l3_cache_ptr->TotalAcesses++;
+			}
+		}
 	}
+
 	return;
 }
+
+
 void cache_get_transient_block(struct cache_t *cache, struct cgm_packet_t *message_packet, int *cache_block_hit_ptr, int *cache_block_state_ptr){
 
 	//similar to cache_get_block_status(), but returns the transient block way regardless of block state.
@@ -4093,11 +4149,8 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//remove packet from cache queue, global queue, and simulator memory
 
-	/*if(message_packet->access_id == 1627758)
-	{
-		fatal("%s BOOM HIT!\n", cache->name);
-	}*/
-
+	if(message_packet->access_id == 15428925)
+		fatal("l1 made it here\n");
 
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -4454,12 +4507,8 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	message_packet = list_remove(cache->last_queue, message_packet);
-	if(!message_packet)
-	{
-		fatal("%s cycle %llu\n", cache->name, P_TIME);
-
-	}
 	assert(message_packet);
+
 	list_enqueue(cache->Tx_queue_bottom, message_packet);
 	advance(cache->cache_io_down_ec);
 	return;

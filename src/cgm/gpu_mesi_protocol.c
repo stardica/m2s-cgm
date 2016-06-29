@@ -26,8 +26,7 @@ void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 v %d load\n", cache->id);
-	STOP;*/
+	/*fatal("access_id %llu\n",message_packet->access_id);*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -126,7 +125,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L1_hit;
 
-				cache_l1_d_return(cache, message_packet);
+				cache_gpu_v_return(cache, message_packet);
 				return;
 			}
 			else
@@ -150,6 +149,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_get;
 				message_packet->l1_access_type = cgm_access_get;
+				message_packet->l1_cache_id = cache->id;
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
@@ -198,9 +198,6 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 				DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s load hit coalesce ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-				//stats
-				//cache->transient_misses++;
-
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
 
@@ -233,7 +230,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 			if(!message_packet->protocol_case)
 				message_packet->protocol_case = L1_hit;
 
-			cache_l1_d_return(cache,message_packet);
+			cache_gpu_v_return(cache,message_packet);
 
 			break;
 	}
@@ -1025,7 +1022,7 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 
 int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	assert(cache->cache_type == l1_d_cache_t);
+	assert(cache->cache_type == gpu_v_cache_t);
 	assert((message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared)
 			|| (message_packet->access_type == cgm_access_put_clnx && message_packet->cache_block_state == cgm_cache_block_exclusive)
 			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));
@@ -1132,7 +1129,7 @@ int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *me
 	cgm_cache_set_block(cache, message_packet->set, message_packet->l1_victim_way, message_packet->tag, message_packet->cache_block_state);
 
 	//set retry state
-	message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+	message_packet->access_type = cgm_cache_get_retry_state(message_packet->gpu_access_type);
 
 	message_packet = list_remove(cache->last_queue, message_packet);
 	list_enqueue(cache->retry_queue, message_packet);
@@ -1338,20 +1335,27 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				}
 
 
-
-
-
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
 				//add some routing/status data to the packet
-				message_packet->access_type = cgm_access_get;
+				assert(message_packet->access_type == cgm_access_get);
 
-				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-				assert(l3_cache_ptr);
+				if(hub_iommu_connection_type == hub_to_mc)
+				{
+					//message is going down to mc so its and mc_load
+					message_packet->access_type = cgm_access_mc_load;
+				}
+				else
+				{
+					//message is going down to L3 so its a getx
+					message_packet->access_type = cgm_access_get;
+					message_packet->cpu_access_type = cgm_access_store;
+				}
+
+				message_packet->cache_block_state = cgm_cache_block_exclusive;
+
 				message_packet->l2_cache_id = cache->id;
-				message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
-
-				SETROUTE(message_packet, cache, l3_cache_ptr)
+				message_packet->l2_cache_name = str_map_value(&gpu_l2_strn_map, cache->id);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
@@ -1381,13 +1385,6 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					if (pending_join->downgrade_pending == 0)
 					{
-
-						if(pending_join->access_id == 84000974)
-						{
-							warning("%s pulling get_fwd ID %llu type %d rite block joining with pending_join %d cycle %llu\n",
-									cache->name, message_packet->access_id, message_packet->access_type, pending_join->downgrade_pending, P_TIME);
-						}
-
 						//printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
 						//getchar();
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
@@ -1398,7 +1395,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 
 			//set message size
-			message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+			message_packet->size = gpu_v_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
 
 			//update message status
 			if(*cache_block_state_ptr == cgm_cache_block_modified)
@@ -3792,8 +3789,6 @@ void cgm_mesi_gpu_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *messag
 int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int row = 0;
-	//int loop = 0;
-
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -3824,9 +3819,9 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	assert(victim_trainsient_state == cgm_cache_block_transient);
 
-	assert((message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared)
+	/*assert((message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared)
 			|| (message_packet->access_type == cgm_access_put_clnx && message_packet->cache_block_state == cgm_cache_block_exclusive)
-			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));
+			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));*/
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
@@ -3842,14 +3837,12 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 	/*reply has returned for a previously sent gets/get/getx*/
 	if(pending_join_bit == 1 && pending_upgrade_bit == 0)
 	{
-
-
 		ort_clear(cache, message_packet);
 
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
-		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->gpu_access_type);
 
 		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->retry_queue, message_packet);
@@ -3888,7 +3881,7 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
-		pending_upgrade->access_type = cgm_cache_get_retry_state(pending_upgrade->cpu_access_type);
+		pending_upgrade->access_type = cgm_cache_get_retry_state(pending_upgrade->gpu_access_type);
 		assert(pending_upgrade->data && pending_upgrade->event_queue);
 
 		//remove the pending request (upgrade)
@@ -3950,7 +3943,7 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
-		message_packet->access_type = cgm_cache_get_retry_state(message_packet->cpu_access_type);
+		message_packet->access_type = cgm_cache_get_retry_state(message_packet->gpu_access_type);
 
 		//clear the ort
 		ort_clear(cache, message_packet);
@@ -4041,7 +4034,7 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
 
 		//set retry state
-		pending_upgrade->access_type = cgm_cache_get_retry_state(pending_upgrade->cpu_access_type);
+		pending_upgrade->access_type = cgm_cache_get_retry_state(pending_upgrade->gpu_access_type);
 		assert(pending_upgrade->data && pending_upgrade->event_queue);
 
 		list_enqueue(cache->retry_queue, pending_upgrade);

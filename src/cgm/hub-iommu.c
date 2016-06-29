@@ -168,7 +168,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 	return new_message;
 }
 
-void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
+int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
@@ -250,14 +250,12 @@ void hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 	return;
 }
 
-void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
+int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	int last_queue_num = -1;
 	int l2_src_id = -1;
-
-	//int l3_map;
 
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
@@ -267,42 +265,41 @@ void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 	{
 		//switch queue has a slot
 
-		//save the gpu l2 cache id
-		message_packet->l2_cache_id = message_packet->src_id;
-		message_packet->l2_cache_name = message_packet->src_name;
+		if(list_count(hub_iommu->Tx_queue_bottom) <= QueueSize)
+		{
 
-		//change src name and id
-		message_packet->src_name = hub_iommu->name;
-		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+			SETROUTE(message_packet, hub_iommu, system_agent);
 
-		message_packet = list_remove(hub_iommu->last_queue, message_packet);
-		assert(message_packet);
+			//fatal(" src %s id %d dest %s id %d\n", message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
 
-		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
-		advance(hub_iommu->hub_iommu_io_down_ec);
+			message_packet = list_remove(hub_iommu->last_queue, message_packet);
+			assert(message_packet);
+
+			list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
+			advance(hub_iommu->hub_iommu_io_down_ec);
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	//if we are pointing to the bottom queue route to the correct GPU l2 cache
 	else if(last_queue_num == Rx_queue_bottom)
 	{
+
 		//return trip for memory access
 		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->l2_cache_name);
 
-		//star todo fix this
-		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
+		if(list_count(hub_iommu->Tx_queue_top[l2_src_id]) <= QueueSize)
 		{
-			fatal("hub_iommu_put_next_queue(): hub stalling on return\n");
-			P_PAUSE(1);
+			message_packet = list_remove(hub_iommu->last_queue, message_packet);
+			list_enqueue(hub_iommu->Tx_queue_top[l2_src_id], message_packet);
+			advance(hub_iommu->hub_iommu_io_up_ec[l2_src_id]);
 		}
-
-		message_packet = list_remove(hub_iommu->last_queue, message_packet);
-
-		//list_enqueue(gpu_l2_caches[l2_src_id].Rx_queue_bottom, message_packet);
-		//advance(&gpu_l2_cache[l2_src_id]);
-		//future_advance(&gpu_l2_cache[l2_src_id], WIRE_DELAY(gpu_l2_caches[l2_src_id].wire_latency));
-
-		list_enqueue(hub_iommu->Tx_queue_top[l2_src_id], message_packet);
-		advance(hub_iommu->hub_iommu_io_up_ec[l2_src_id]);
-
+		else
+		{
+			return 0;
+		}
 	}
 	else
 	{
@@ -310,7 +307,8 @@ void hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 
 	}
 
-	return;
+	//failed to route the packet because the out box was full so stall.
+	return 1;
 }
 
 void hub_iommu_noncoherent_ctrl(void){
@@ -339,14 +337,6 @@ void hub_iommu_noncoherent_ctrl(void){
 		{
 			step++;
 
-			//////////testing
-
-
-
-
-			/////////////////////////
-
-
 			//if we made it here we should have a packet.
 			message_packet = hub_iommu_get_from_queue();
 			assert(message_packet);
@@ -364,14 +354,11 @@ void hub_iommu_noncoherent_ctrl(void){
 	return;
 }
 
-int sent = 0;
-
 void hub_iommu_coherent_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	//int l3_map;
 
 	set_id((unsigned int)my_pid);
 
@@ -380,31 +367,29 @@ void hub_iommu_coherent_ctrl(void){
 		//we have received a packet
 		await(hub_iommu_ec, step);
 
-		//star todo figure out a way to check the l2 in queue
-		if(!switch_can_access(hub_iommu->switch_queue))// && !cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
-		{
-			fatal("hub_iommu_ctrl(): hub stalled\n");
-			P_PAUSE(1);
+		//if we made it here we should have a packet.
+		message_packet = hub_iommu_get_from_queue();
+		assert(message_packet);
 
+		P_PAUSE(hub_iommu->latency);
+
+		/*account for connection type*/
+		if(hub_iommu_connection_type == hub_to_mc)
+		{
+			iommu_nc_translate(message_packet);
 		}
 		else
 		{
-			step++;
-
-			//if we made it here we should have a packet.
-			message_packet = hub_iommu_get_from_queue();
-			assert(message_packet);
-
-			P_PAUSE(hub_iommu->latency);
-
 			iommu_translate(message_packet);
-
-			//star the hub multiplexes GPU memory requests.
-			hub_iommu_put_next_queue(message_packet);
 		}
+
+		//star the hub multiplexes GPU memory requests.
+		if(hub_iommu_put_next_queue(message_packet))
+			step++;
 	}
 
 	fatal("hub_iommu_ctrl(): reached end of func\n");
+
 	return;
 }
 
@@ -471,7 +456,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
-			|| message_packet->access_type == cgm_access_getx)
+			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx)
 	{
 		/*load and stores are heading to the system agent.*/
 		if(GPU_HUB_IOMMU == 1)
@@ -590,7 +575,6 @@ void hub_iommu_io_up_ctrl(void){
 	int transfer_time = 0;
 	long long step = 1;
 
-
 	set_id((unsigned int)my_pid);
 
 	while(1)
@@ -620,11 +604,8 @@ void hub_iommu_io_up_ctrl(void){
 void hub_iommu_io_down_ctrl(void){
 
 	int my_pid = hub_iommu_io_down_pid++;
-	/*int num_cus = si_gpu_num_compute_units;*/
-	/*int gpu_group_cache_num = (num_cus/4);*/
 	struct cgm_packet_t *message_packet;
 
-	/*long long access_id = 0;*/
 	int transfer_time = 0;
 	long long step = 1;
 
@@ -635,23 +616,31 @@ void hub_iommu_io_down_ctrl(void){
 	{
 
 		await(hub_iommu->hub_iommu_io_down_ec, step);
-		step++;
 
-		message_packet = list_dequeue(hub_iommu->Tx_queue_bottom);
-		assert(message_packet);
-
-		/*access_id = message_packet->access_id;*/
-		transfer_time = (message_packet->size/hub_iommu->bus_width);
-
-		if(transfer_time == 0)
+		if(list_count(hub_iommu->switch_queue) >= QueueSize)
 		{
-			transfer_time = 1;
+			P_PAUSE(1);
+		}
+		else
+		{
+			step++;
+
+			message_packet = list_dequeue(hub_iommu->Tx_queue_bottom);
+			assert(message_packet);
+
+			/*access_id = message_packet->access_id;*/
+			transfer_time = (message_packet->size/hub_iommu->bus_width);
+
+			if(transfer_time == 0)
+				transfer_time = 1;
+
+
+			SYSTEM_PAUSE(transfer_time);
+
+			list_enqueue(hub_iommu->switch_queue, message_packet);
+			advance(&switches_ec[hub_iommu->switch_id]);
 		}
 
-		P_PAUSE(transfer_time);
-
-		list_enqueue(hub_iommu->switch_queue, message_packet);
-		advance(&switches_ec[hub_iommu->switch_id]);
 	}
 
 	return;
