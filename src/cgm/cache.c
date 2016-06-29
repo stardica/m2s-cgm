@@ -3211,7 +3211,7 @@ void gpu_s_cache_ctrl(void){
 				gpu_s_caches[my_pid].gpu_s_load(&(gpu_s_caches[my_pid]), message_packet);
 			}
 			//star todo this is wrong change this to put NOT puts
-			else if (access_type == cgm_access_puts)
+			else if (access_type == cgm_access_put_clnx)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_s_caches[my_pid].gpu_s_write_block(&(gpu_s_caches[my_pid]), message_packet);
@@ -3257,12 +3257,9 @@ void gpu_v_cache_ctrl(void){
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
 		//star todo fix this
-		if (message_packet == NULL || !cache_can_access_top(&gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
 		{
-			/*printf("%s stalling\n", gpu_v_caches[my_pid].name);*/
 			P_PAUSE(1);
-			//printf("%s stalling cycle %llu\n", gpu_v_caches[my_pid].name, P_TIME);
-			//future_advance(&gpu_v_cache[my_pid], etime.count + 2);
 		}
 		else
 		{
@@ -3349,6 +3346,9 @@ void gpu_l2_cache_ctrl(void){
 		}
 		else
 		{
+
+			fatal("l2 cache control\n");
+
 
 			step++;
 

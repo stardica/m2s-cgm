@@ -641,20 +641,10 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		if(strcmp(temp_strn, "MC") == 0)
 		{
 			hub_iommu_connection_type = hub_to_mc;
-
-			if(cgm_gpu_cache_protocol != cgm_protocol_non_coherent)
-			{
-				fatal("cache_read_config(): invalid gpu nc protocol configuration\n");
-			}
 		}
 		else if(strcmp(temp_strn, "L3") == 0)
 		{
 			hub_iommu_connection_type = hub_to_l3;
-
-			if (!(cgm_gpu_cache_protocol != cgm_protocol_non_coherent || cgm_gpu_cache_protocol != cgm_protocol_mesi))
-			{
-				fatal("cache_read_config(): invalid gpu mesi protocol configuration\n");
-			}
 		}
 		else
 		{
@@ -2595,10 +2585,10 @@ int cache_finish_create(){
 		}
 		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
-			gpu_v_caches[i].gpu_v_load = cgm_mesi_gpu_v_load;
-			gpu_v_caches[i].gpu_v_store = cgm_mesi_gpu_v_store;
-			gpu_v_caches[i].gpu_v_write_block = cgm_mesi_gpu_v_write_block;
-			gpu_v_caches[i].gpu_v_inval = cgm_mesi_gpu_v_inval;
+			gpu_v_caches[i].gpu_v_load = cgm_mesi_gpu_l1_v_load;
+			gpu_v_caches[i].gpu_v_store = cgm_mesi_gpu_l1_v_store;
+			gpu_v_caches[i].gpu_v_write_block = cgm_mesi_gpu_l1_v_write_block;
+			//gpu_v_caches[i].gpu_v_inval = cgm_mesi_gpu_v_inval;
 		}
 		else
 		{
@@ -2634,7 +2624,6 @@ int cache_finish_create(){
 		//gpu_lds_units[i].invalid_hits = 0;
 		//gpu_lds_units[i].misses = 0;
 		//gpu_v_caches[i].fetches = 0;
-		gpu_lds_units[i].Rx_queue_top = list_create();
 		//gpu_lds_units[i].Rx_queue_bottom = list_create();
 		//gpu_lds_units[i].mshr = list_create();
 
@@ -2644,6 +2633,7 @@ int cache_finish_create(){
 		gpu_lds_units[i].name = strdup(buff);
 
 		//set rx queue names
+		gpu_lds_units[i].Rx_queue_top = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_lds_units[%d].Rx_queue_top", i);
 		gpu_lds_units[i].Rx_queue_top->name = strdup(buff);
@@ -2842,9 +2832,10 @@ int cache_finish_create(){
 		}
 		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
+			gpu_l2_caches[i].gpu_l2_get = cgm_mesi_gpu_l2_get;
 			gpu_l2_caches[i].gpu_l2_getx = cgm_mesi_gpu_l2_getx;
-			gpu_l2_caches[i].gpu_l2_get = NULL;
 			gpu_l2_caches[i].gpu_l2_write_block = cgm_mesi_gpu_l2_write_block;
+
 		}
 		else
 		{
@@ -3388,9 +3379,6 @@ int switch_finish_create(void){
 	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
 		hub_iommu_ctrl = hub_iommu_coherent_ctrl;
-
-		if(hub_iommu_connection_type != 1)
-			fatal("switch_finish_create(): hub-iommu connection type invalid, must be L3 if coherent.\n");
 	}
 
 	hub_iommu_create_tasks(hub_iommu_ctrl);

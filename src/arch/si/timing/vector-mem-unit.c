@@ -219,6 +219,14 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
+		//star added this
+		/*Stall if vector cache in queue is full*/
+		if(list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top) >= QueueSize)
+		{
+			list_index++;
+			continue;
+		}
+
 		/* Set the access type */
 
 #if CGM
@@ -246,16 +254,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			work_item = uop->wavefront->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 
-
-			//uop->global_mem_access_addr = uop->wavefront->scalar_work_item->global_mem_access_addr;
-
 			uop->global_mem_witness--;
-
-			//CGM_DEBUG(GPU_cache_debug_file, "vector access cycle %llu, addr 0x%08u, type %s\n", P_TIME, uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
-			//getchar();
-
-			//printf("work_item_uop->global_mem_access_addr 0x%08x %s\n", work_item_uop->global_mem_access_addr, (char *)str_map_value(&cgm_mem_access_strn_map, access_kind));
-			//getchar();
 
 #if CGM
 

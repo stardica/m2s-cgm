@@ -1900,21 +1900,12 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
-	/*printf("access address 0x%08x\n", addr);*/
-
-	/*(*witness_ptr)++;
-	packet_destroy(new_packet);
-	return;*/
-
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load_v || access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
 		id = vector_mem_ptr->compute_unit->id;
 		assert( id < num_cus);
-
-		unsigned int temp = addr;
-		temp = temp & gpu_v_caches[id].block_address_mask;
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
@@ -1923,22 +1914,23 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		advance(&gpu_v_cache[id]);
 
 		gpu_v_caches[id].TotalAcesses++;
+
+		/*stats*/
+		if(access_kind == cgm_access_load_v)
+		{
+			mem_system_stats->gpu_total_loads++;
+		}
+
+		if(access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
+		{
+			mem_system_stats->gpu_total_stores++;
+		}
 	}
 	else
 	{
 		fatal("cgm_vector_access() unsupported access type\n");
 	}
 
-	/*stats*/
-	if(access_kind == cgm_access_load_v)
-	{
-		mem_system_stats->gpu_total_loads++;
-	}
-
-	if(access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
-	{
-	 	mem_system_stats->gpu_total_stores++;
-	}
 
 	return;
 }
@@ -1974,10 +1966,6 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		return;
 	}
 
-	/*(*witness_ptr)++;
-	packet_destroy(new_packet);
-	return;*/
-
 	//Add to the target cache Rx queue
 	if(access_kind == cgm_access_load_s)
 	{
@@ -1985,10 +1973,9 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 		id = scalar_unit_ptr->compute_unit->id;
 		assert(id < num_cus);
 
-		unsigned int temp = addr;
+		/*unsigned int temp = addr;
 		temp = temp & gpu_s_caches[id].block_address_mask;
-
-		//printf("%s id %llu type %d address 0x%08x blk_addr 0x%08x start cycle %llu\n", gpu_s_caches[id].name, new_packet->access_id, new_packet->access_type, addr, temp, P_TIME);
+		printf("%s id %llu type %d address 0x%08x blk_addr 0x%08x start cycle %llu\n", gpu_s_caches[id].name, new_packet->access_id, new_packet->access_type, addr, temp, P_TIME);*/
 
 		//Drop the packet into the GPU LDS unit Rx queue
 		list_enqueue(scalar_unit_ptr->compute_unit->gpu_s_cache_ptr[id].Rx_queue_top, new_packet);
@@ -2029,10 +2016,11 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->name = strdup(buff);
 
 	//leave for debugging purposes
-	if(mem_system_off == 3)
+	if(mem_system_off == 1)
 	{
 		(*witness_ptr)++;
 		free(new_packet);
+		return;
 	}
 
 	//Add to the LDS queue
@@ -2071,7 +2059,6 @@ void PrintCycle(void){
 		curr_cycle = P_TIME;
 
 		printf("---Total Cycles %lluM Simulated Cycles Per Sec %d---\r", P_TIME/SKIP, (int) ((curr_cycle - last_cycle)/(curr_time - last_time)));
-		printf("---Page Table Size %d---\r", list_count(mmu->page_list));
 		fflush(stdout);
 
 		last_time = curr_time;

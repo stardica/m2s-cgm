@@ -337,6 +337,16 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
+		//star added this
+		/*Stall if vector cache in queue is full*/
+		if(list_count(scalar_unit->compute_unit->gpu_s_cache_ptr[scalar_unit->compute_unit->id].Rx_queue_top) >= QueueSize)
+		{
+			list_index++;
+			continue;
+		}
+
+
+
 		if (uop->scalar_mem_read) 
 		{
 			/* Access global memory */

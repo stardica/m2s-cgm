@@ -32,6 +32,8 @@
 #include "work-group.h"
 #include "work-item.h"
 
+#include <cgm/cgm.h>
+
 
 char *err_si_isa_note =
 	"\tThe AMD Southern Islands instruction set is partially supported by\n"
@@ -1056,6 +1058,20 @@ void si_isa_S_MUL_I32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+
+
+#define INST SI_INST_SOP2
+void si_isa_S_BFE_U32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+
+	warning("---SI GPU Missing Instruction SOP2:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+
+	return;
+}
+#undef INST
+
 /* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
  * S0=data, S1=field_offset, S2=field_width. */
 #define INST SI_INST_SOP2
@@ -1138,6 +1154,18 @@ void si_isa_S_MOVK_I32_impl(struct si_work_item_t *work_item,
 	}
 }
 #undef INST
+
+//star added this...
+#define INST SI_INST_SOPK
+void si_isa_SOPK_22_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//sopk22
+	warning("---SI GPU Missing Instruction SOPk:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
 
 /* */
 #define INST SI_INST_SOPK
@@ -1676,6 +1704,16 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item,
  * SOPP
  */
 
+/* Do nothing */
+#define INST SI_INST_SOPP
+void si_isa_S_NOP_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+
+
+}
+#undef INST
+
 /* End the program. */
 void si_isa_S_ENDPGM_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
@@ -1937,6 +1975,37 @@ void si_isa_V_NOP_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+#define INST SI_INST_VOP1
+void si_isa_V_FREXP_EXP_I32_F64_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+
+	warning("---SI GPU Missing Instruction VOP1:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, 0);
+
+	return;
+}
+#undef INST
+
+
+#define INST SI_INST_VOP1
+void si_isa_V_FREXP_MANT_F64_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+
+	warning("---SI GPU Missing Instruction VOP1:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, 0);
+
+	return;
+}
+#undef INST
+
+
+
 /* D.u = S0.u. */
 #define INST SI_INST_VOP1
 void si_isa_V_MOV_B32_impl(struct si_work_item_t *work_item,
@@ -1990,7 +2059,12 @@ void si_isa_V_READFIRSTLANE_B32_impl(struct si_work_item_t *work_item, struct si
 void si_isa_V_CVT_I32_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+
+
+	warning("---SI GPU Missing Instruction VOP1:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+
+
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -2334,7 +2408,40 @@ void si_isa_V_RCP_F32_impl(struct si_work_item_t *work_item,
 void si_isa_V_RCP_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+
+	union si_reg_t s0;
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+
+	} value;
+	union si_reg_t value_lo;
+	union si_reg_t value_hi;
+
+	/* Load operand from register or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+
+	/* Cast to a single precision float */
+	value.as_double = 1.0f /s0.as_float;
+
+	/* Write the results. */
+	value_lo.as_uint = value.as_reg[0];
+	value_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, value_lo.as_uint);
+	si_isa_write_vreg(work_item, INST.vdst + 1, value_hi.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V[%u:+1]<=(%lgf) ", work_item->id,
+			INST.vdst, value.as_double);
+	}
+
+	return;
 }
 #undef INST
 
@@ -2343,7 +2450,8 @@ void si_isa_V_RCP_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_RSQ_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP1:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -2563,6 +2671,16 @@ void si_isa_V_MOVRELS_B32_impl(struct si_work_item_t *work_item,
 /*
  * VOP2
  */
+
+//star added this
+void si_isa_VOP2_55_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOP2:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
 
 /* D.u = VCC[i] ? S1.u : S0.u (i = threadID in wave); VOP3: specify VCC as a
  * scalar GPR in S2. */
@@ -3592,6 +3710,30 @@ void si_isa_V_CMP_GE_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+
+//star added this
+void si_isa_VOPC_9_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
+//star added this
+void si_isa_VOPC_2_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
+
+
+
 /* vcc = !(S0.f > S1.f). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3653,7 +3795,35 @@ void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item,
 #undef INST
 
 
+//star added this
+void si_isa_VOP3_136_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOP3:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
 
+//star added this
+void si_isa_VOP3_444_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOP3:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
+//star added this
+void si_isa_VOP3_445_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	//vop3_136
+	warning("---SI GPU Missing Instruction VOP3:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
 
 
 /* vcc = (S0.d < S1.d). */
@@ -3661,7 +3831,8 @@ void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_LT_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -3670,7 +3841,8 @@ void si_isa_V_CMP_LT_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_EQ_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -3679,7 +3851,8 @@ void si_isa_V_CMP_EQ_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_LE_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -3688,7 +3861,8 @@ void si_isa_V_CMP_LE_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_GT_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -3697,7 +3871,8 @@ void si_isa_V_CMP_GT_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_NGE_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -3706,7 +3881,8 @@ void si_isa_V_CMP_NGE_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_NEQ_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOPC:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -4602,7 +4778,129 @@ void si_isa_V_FMA_F32_impl(struct si_work_item_t *work_item,
 void si_isa_V_FMA_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+
+	} s0, s1, s2, value;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+
+	//assert(!INST.clamp);
+	//assert(!INST.omod);
+	//assert(!INST.neg);
+	//assert(!INST.abs);
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0);
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1);
+	s1.as_reg[0] = si_isa_read_reg(work_item, INST.src1);
+	s1.as_reg[1] = si_isa_read_reg(work_item, INST.src1 + 1);
+	s2.as_reg[0] = si_isa_read_reg(work_item, INST.src2);
+	s2.as_reg[1] = si_isa_read_reg(work_item, INST.src2 + 1);
+
+	/* Multiply the operands, take into account special number cases. */
+
+	/* s0 == NaN64 || s1 == NaN64 */
+	if (fpclassify(s0.as_double) == FP_NAN ||
+		fpclassify(s1.as_double) == FP_NAN)
+	{
+		/* value <-- NaN64 */
+		value.as_double = NAN;
+	}
+	/* s0 == +denormal, +0 */
+	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL || fpclassify(s1.as_double) == FP_ZERO) && !signbit(s0.as_double))
+	{
+		/* s1 == +-infinity */
+		if (isinf(s1.as_double))
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- +0 */
+			value.as_double = +0;
+		/* s1 < 0 */
+		else if (! !signbit(s1.as_double))
+			/* value <-- -0 */
+			value.as_double = -0;
+	}
+	/* s0 == -denormal, -0 */
+	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			fpclassify(s1.as_double) == FP_ZERO) &&
+		! !signbit(s0.as_double))
+	{
+		/* s1 == +-infinity */
+		if (isinf(s1.as_double))
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- -0 */
+			value.as_double = -0;
+		/* s1 < 0 */
+		else if (! !signbit(s1.as_double))
+			/* value <-- +0 */
+			value.as_double = +0;
+	}
+	/* s0 == +infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE &&
+		!signbit(s0.as_double))
+	{
+		/* s1 == +-denormal, +-0 */
+		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			fpclassify(s1.as_double) == FP_ZERO)
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- +infinity */
+			value.as_double = +INFINITY;
+		/* s1 < 0 */
+		else if (! !signbit(s1.as_double))
+			/* value <-- -infinity */
+			value.as_double = -INFINITY;
+	}
+	/* s0 == -infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE &&
+		! !signbit(s0.as_double))
+	{
+		/* s1 == +-denormal, +-0 */
+		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			fpclassify(s1.as_double) == FP_ZERO)
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- -infinity */
+			value.as_double = -INFINITY;
+		/* s1 < 0 */
+		else if (! !signbit(s1.as_double))
+			/* value <-- +infinity */
+			value.as_double = +INFINITY;
+	}
+	else
+	{
+		value.as_double = s0.as_double * s1.as_double;
+	}
+
+	/*part 2*/
+	value.as_double += value.as_double + s2.as_double;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo.as_uint);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: S[%u:+1]<=(%lgf) ",
+			work_item->id_in_wavefront, INST.vdst,
+			value.as_double);
+	}
 }
 #undef INST
 
@@ -4724,7 +5022,10 @@ void si_isa_V_MAX3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 void si_isa_V_DIV_FIXUP_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+
+	/* Write the results. */
+	//si_isa_write_vreg(work_item, INST.vdst, 0);
 }
 #undef INST
 
@@ -5159,7 +5460,8 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_OP16_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5168,7 +5470,8 @@ void si_isa_V_CMP_OP16_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_LT_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5177,7 +5480,8 @@ void si_isa_V_CMP_LT_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_EQ_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5186,7 +5490,8 @@ void si_isa_V_CMP_EQ_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_LE_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5195,7 +5500,8 @@ void si_isa_V_CMP_LE_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_GT_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5204,7 +5510,8 @@ void si_isa_V_CMP_GT_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_GE_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5213,7 +5520,8 @@ void si_isa_V_CMP_GE_F64_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_NLT_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
 
@@ -5547,9 +5855,32 @@ void si_isa_V_CMPX_EQ_I32_VOP3a_impl(struct si_work_item_t *work_item,
 void si_isa_V_CMP_CLASS_F64_VOP3a_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP1:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
 }
 #undef INST
+
+
+
+
+#define INST SI_INST_VOP3a
+void si_isa_V_LSHL_B64_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_VOP3a
+void si_isa_V_ASHR_I64_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+}
+#undef INST
+
 
 /* D.u = (S0.u < S1.u). */
 #define INST SI_INST_VOP3a
@@ -5889,10 +6220,10 @@ void si_isa_V_ADD_F64_impl(struct si_work_item_t *work_item,
 	union si_reg_t result_lo;
 	union si_reg_t result_hi;
 
-	assert(!INST.clamp);
-	assert(!INST.omod);
-	assert(!INST.neg);
-	assert(!INST.abs);
+	//assert(!INST.clamp);
+	//assert(!INST.omod);
+	//assert(!INST.neg);
+	//assert(!INST.abs);
 
 	/* Load operands from registers. */
 	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0);
@@ -6005,10 +6336,10 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item,
 	union si_reg_t result_lo;
 	union si_reg_t result_hi;
 
-	assert(!INST.clamp);
-	assert(!INST.omod);
-	assert(!INST.neg);
-	assert(!INST.abs);
+	//assert(!INST.clamp);
+	//assert(!INST.omod);
+	//assert(!INST.neg);
+	//assert(!INST.abs);
 
 	/* Load operands from registers. */
 	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0);
@@ -6121,7 +6452,10 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item,
 void si_isa_V_LDEXP_F64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	warning("---SI GPU Missing Instruction VOP3a:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+
+	/* Write the results. */
+	//si_isa_write_vreg(work_item, INST.vdst, 0);
 }
 #undef INST
 
@@ -6169,6 +6503,22 @@ void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item,
 	}
 }
 #undef INST
+
+//star added this one...
+#define INST SI_INST_VOP3b
+void si_isa_V_SUBB_U32_VOP3b_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+
+	warning("---SI GPU Missing Instruction VOP3:%d Cycle %llu---\n", inst->info->opcode, P_TIME);
+	//NOT_IMPL();
+
+	return;
+}
+#undef INST
+
+
+
 
 /* 
  *D.d = Special case divide preop and flags(s0.d = Quotient, s1.d = Denominator, s2.d = Numerator)
@@ -6267,8 +6617,10 @@ void si_isa_DS_READ2ST64_B32_impl(struct si_work_item_t *work_item, struct si_in
 	else
 	{
 		/* If offset1 != 1, then the following is incorrect */
-		assert(INST.offset0 == 0);
-		assert(INST.offset1 == 1);
+		if(INST.offset0 != 0 || INST.offset1 != 1)
+			warning("si_isa_DS_READ2ST64_B32_impl(): Offset not what it ought to be cycle %llu\n", P_TIME);
+		//assert(INST.offset0 == 0);
+		//assert(INST.offset1 == 1);
 		work_item->lds_access_count = 2;
 		work_item->lds_access_type[0] = 1;
 		work_item->lds_access_addr[0] = addr.as_uint;
@@ -6421,8 +6773,11 @@ void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
 	else
 	{
 		/* If offset1 != 1, then the following is incorrect */
-		assert(INST.offset0 == 0);
-		assert(INST.offset1 == 1);
+		if(INST.offset0 != 0 || INST.offset1 != 1)
+			warning("si_isa_DS_WRITE2_B32_impl(): Offset not what it ought to be cycle %llu\n", P_TIME);
+		//assert(INST.offset0 == 0);
+		//assert(INST.offset1 == 1);
+
 		work_item->lds_access_count = 2;
 		work_item->lds_access_type[0] = 2;
 		work_item->lds_access_addr[0] = addr0.as_uint;
@@ -6721,8 +7076,10 @@ void si_isa_DS_READ2_B32_impl(struct si_work_item_t *work_item,
 	else
 	{
 		/* If offset1 != 1, then the following is incorrect */
-		assert(INST.offset0 == 0);
-		assert(INST.offset1 == 1);
+		if(INST.offset0 != 0 || INST.offset1 != 1)
+			warning("si_isa_DS_READ2_B32_impl(): offset not what it ought to be cycle %llu\n", P_TIME);
+		//assert(INST.offset0 == 0);
+		//assert(INST.offset1 == 1);
 		work_item->lds_access_count = 2;
 		work_item->lds_access_type[0] = 1;
 		work_item->lds_access_addr[0] = addr.as_uint;

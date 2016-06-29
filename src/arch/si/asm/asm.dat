@@ -112,6 +112,15 @@ DEFINST(S_MUL_I32,
 	0
 )
 
+//star added this
+DEFINST(S_BFE_U32,
+	" s_bfe_u32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	39,
+	4,
+	0
+)
+
 DEFINST(S_BFE_I32,
 	" s_bfe_i32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -153,6 +162,14 @@ DEFINST(S_MULK_I32,
 	" s_mulk_i32    %SDST, %SIMM16",
 	SOPK,
 	16,
+	4,
+	0
+)
+
+DEFINST(SOPK_22,
+	" sok22    %SDST, %SIMM16",
+	SOPK,
+	22,
 	4,
 	0
 )
@@ -272,6 +289,14 @@ DEFINST(S_CMP_LE_U32,
 /*
  * SOPP
  */
+
+DEFINST(S_NOP,
+	" s_nop",
+	SOPP,
+	0,
+	4,
+	0
+)
 
 DEFINST(S_ENDPGM,
 	" s_endpgm",
@@ -645,6 +670,15 @@ DEFINST(V_CVT_PKRTZ_F16_F32,
 	0
 )
 
+
+DEFINST(VOP2_55,
+	" vop2_55  %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	55,
+	4,
+	0
+)
+
 /*
  * VOP1
  */
@@ -833,6 +867,24 @@ DEFINST(V_FFBH_U32,
 	0
 )
 
+//star added this one
+DEFINST(V_FREXP_EXP_I32_F64,
+	" v_frexp_exp_i32_f64   %VDST, %SRC0 CHECKME",
+	VOP1,
+	60,
+	4,
+	0
+)
+
+//star added this one
+DEFINST(V_FREXP_MANT_F64,
+	" v_frexp_mant_f64   %VDST, %SRC0 CHECKME",
+	VOP1,
+	61,
+	4,
+	0
+)
+
 DEFINST(V_FRACT_F64,
 	" v_fract_f64   %VDST, %SRC0 CHECKME",
 	VOP1,
@@ -880,6 +932,22 @@ DEFINST(V_CMP_GE_F32,
 	" v_cmp_ge_f32  vcc, %SRC0, %VSRC1",
 	VOPC,
 	6,
+	4,
+	0
+)
+
+DEFINST(VOPC_2,
+	" vopc_2  vcc, %SRC0, %VSRC1",
+	VOPC,
+	2,
+	4,
+	0
+)
+
+DEFINST(VOPC_9,
+	" vopc_9  vcc, %SRC0, %VSRC1",
+	VOPC,
+	9,
 	4,
 	0
 )
@@ -992,6 +1060,33 @@ DEFINST(V_CMP_GE_I32,
 	" v_cmp_ge_i32  vcc, %SRC0, %VSRC1",
 	VOPC,
 	134,
+	4,
+	0
+)
+
+//star added this.
+DEFINST(VOP3_136,
+	" vop3_136  vcc, %SRC0, %VSRC1",
+	VOP3a,
+	136,
+	4,
+	0
+)
+
+//star added this.
+DEFINST(VOP3_444,
+	" vop3_444  vcc, %SRC0, %VSRC1",
+	VOP3a,
+	444,
+	4,
+	0
+)
+
+//star added this.
+DEFINST(VOP3_445,
+	" vop3_445  vcc, %SRC0, %VSRC1",
+	VOP3a,
+	445,
 	4,
 	0
 )
@@ -1181,6 +1276,23 @@ DEFINST(V_FMA_F64,
 	0
 )
 
+
+DEFINST(V_ADD_F64,
+	" v_add_f64     %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1",
+	VOP3a,
+	356,
+	8,
+	0
+)
+
+DEFINST(V_MUL_F64,
+	" v_mul_f64     %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1",
+	VOP3a,
+	357,
+	8,
+	0
+)
+
 DEFINST(V_ALIGNBIT_B32,
 	" v_alignbit_b32  %VOP3_VDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_SRC2",
 	VOP3a,
@@ -1212,6 +1324,22 @@ DEFINST(V_DIV_FIXUP_F64,
 	" v_div_fixup_f64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1, %VOP3_64_SRC2",
 	VOP3a,
 	352,
+	8,
+	0
+)
+
+DEFINST(V_LSHL_B64,
+	" v_lshl_b64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1, %VOP3_64_SRC2",
+	VOP3a,
+	353,
+	8,
+	0
+)
+
+DEFINST(V_ASHR_I64,
+	" v_ashr_i64  %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1, %VOP3_64_SRC2",
+	VOP3a,
+	355,
 	8,
 	0
 )
@@ -1473,21 +1601,8 @@ DEFINST(V_LSHR_B64,
 	0
 )
 
-DEFINST(V_ADD_F64,
-	" v_add_f64     %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1",
-	VOP3a,
-	356,
-	8,
-	0
-)
 
-DEFINST(V_MUL_F64,
-	" v_mul_f64     %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_64_SRC1",
-	VOP3a,
-	357,
-	8,
-	0
-)
+
 
 DEFINST(V_LDEXP_F64,
 	" v_ldexp_f64   %VOP3_64_VDST, %VOP3_64_SRC0, %VOP3_SRC1",
@@ -1505,6 +1620,14 @@ DEFINST(V_ADDC_U32_VOP3b,
 	" v_addc_u32    %VOP3_VDST, %VOP3_64_SDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_64_SRC2",
 	VOP3b,
 	296,
+	8,
+	0
+)
+
+DEFINST(V_SUBB_U32_VOP3b,
+	" v_subb_u32    %VOP3_VDST, %VOP3_64_SDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_64_SRC2",
+	VOP3b,
+	297,
 	8,
 	0
 )

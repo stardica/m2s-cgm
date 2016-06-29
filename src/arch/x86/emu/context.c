@@ -276,31 +276,21 @@ void X86ContextExecute(X86Context *self){
 
 	mem->safe = mem_safe_mode;
 
-	/*for(i = 0; i < 20; i++)
-	{
-		printf("buffer 0x%02x\n", *buffer_ptr);
-		buffer_ptr++;
-	}
-
-	for(i = 0; i < 20; i++)
-	{
-		buffer_ptr--;
-
-	}
-	printf("address 0x%08x\n", regs->eip),*/
-
-
-
 	/* Disassemble */
 	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
 
-	//star added this
-	//x86_asm_print_disassembly(&self->inst, regs->eip, buffer_ptr);
-
-
 	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
 	{
-		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+
+		if(buffer_ptr[0] != 0x9b)
+		{
+			warning("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+			fflush(stderr);
+		}
+
+		return;
+
+		//fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)", regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 	}
 
 	/* Stop if instruction matches last instruction bytes */

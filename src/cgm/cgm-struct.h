@@ -414,9 +414,9 @@ struct cache_t{
 	void (*gpu_v_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 	//GPU L2 cache protocol virtual functions
-	void (*gpu_l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*gpu_l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*gpu_l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*gpu_l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	/*void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_put)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_retry)(struct cache_t *cache, struct cgm_packet_t *message_packet);*/

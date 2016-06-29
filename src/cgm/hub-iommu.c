@@ -339,6 +339,14 @@ void hub_iommu_noncoherent_ctrl(void){
 		{
 			step++;
 
+			//////////testing
+
+
+
+
+			/////////////////////////
+
+
 			//if we made it here we should have a packet.
 			message_packet = hub_iommu_get_from_queue();
 			assert(message_packet);

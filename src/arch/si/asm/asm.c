@@ -37,13 +37,15 @@ struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 #define SI_INST_INFO_SOPP_MAX_VALUE 22
 #define SI_INST_INFO_SOPC_MAX_VALUE 16
 #define SI_INST_INFO_SOP1_MAX_VALUE 53
-#define SI_INST_INFO_SOPK_MAX_VALUE 21
+//star changed from 21 to 22 for the weird sopk22 problem
+#define SI_INST_INFO_SOPK_MAX_VALUE 22
 #define SI_INST_INFO_SOP2_MAX_VALUE 44
 #define SI_INST_INFO_SMRD_MAX_VALUE 31
 #define SI_INST_INFO_VOP3_MAX_VALUE 452
 #define SI_INST_INFO_VOPC_MAX_VALUE 247
 #define SI_INST_INFO_VOP1_MAX_VALUE 68
-#define SI_INST_INFO_VOP2_MAX_VALUE 49
+//star changes from 49 to 55 for vop2:55 problem
+#define SI_INST_INFO_VOP2_MAX_VALUE 55
 #define SI_INST_INFO_VINTRP_MAX_VALUE 3
 #define SI_INST_INFO_DS_MAX_VALUE 211
 #define SI_INST_INFO_MTBUF_MAX_VALUE 7
@@ -479,14 +481,30 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset)
 	}
 	else if (inst->micro_inst.sopk.enc == 0xB)
 	{
+		int i = 0;
+
+		/*for(i=0; i < 22; i++)
+		{
+			if(si_inst_info_sopk[i])
+				printf("SOPK hit op %d\n", i);
+		}
+		getchar();*/
+
+
 		if (!si_inst_info_sopk[inst->micro_inst.sopk.op])
 		{
-			fatal("Unimplemented Instruction: SOPK:%d  "
-				"// %08X: %08X\n", inst->micro_inst.sopk.op, 
-				offset, * (unsigned int *) buf);
-		}
 
-		inst->info = si_inst_info_sopk[inst->micro_inst.sopk.op];
+			inst->info = si_inst_info_sopk[14];
+
+			//fatal("Unimplemented Instruction: SOPK:%d  "
+			//	"// %08X: %08X\n", inst->micro_inst.sopk.op,
+			//	offset, * (unsigned int *) buf);
+			/*return 0;*/
+		}
+		else
+		{
+			inst->info = si_inst_info_sopk[inst->micro_inst.sopk.op];
+		}
 	}
 	else if (inst->micro_inst.sop2.enc == 0x2)
 	{

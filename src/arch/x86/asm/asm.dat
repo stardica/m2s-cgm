@@ -250,6 +250,7 @@ DEFINST(fsincos, 0xd9, 0xfb, SKIP, SKIP, SKIP, 0)
 
 DEFINST(fsqrt, 0xd9, 0xfa, SKIP, SKIP, SKIP, 0)
 
+
 DEFINST(fstcw_m16, 0x9b, 0xd9, SKIP, MEM|7, SKIP, 0)
 DEFINST(fnstcw_m16, 0xd9, SKIP, SKIP, MEM|7, SKIP, 0)
 
@@ -260,6 +261,8 @@ DEFINST(fstp_m32, 0xd9, SKIP, SKIP, MEM|3, SKIP, 0)
 DEFINST(fstp_m64, 0xdd, SKIP, SKIP, MEM|3, SKIP, 0)
 DEFINST(fstp_m80, 0xdb, SKIP, SKIP, MEM|7, SKIP, 0)
 DEFINST(fstp_sti, 0xdd, 0xd8|INDEX, SKIP, SKIP, SKIP, 0)
+
+
 
 DEFINST(fstsw_ax, 0x9b, 0xdf, 0xe0, SKIP, SKIP, 0)
 DEFINST(fnstsw_ax, 0xdf, 0xe0, SKIP, SKIP, SKIP, 0)

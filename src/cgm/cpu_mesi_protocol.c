@@ -5909,7 +5909,8 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 		case cgm_cache_block_shared:
 		case cgm_cache_block_invalid:
 			fatal("cgm_mesi_l3_downgrade_nack(): L3 id %d invalid block state on down_grade_nack as %s access id %llu address %u tag %d set %d way %d\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->access_id, message_packet->address, message_packet->tag, message_packet->set, message_packet->way);
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->access_id, message_packet->address, message_packet->tag, message_packet->set, message_packet->way);
 			break;
 
 		case cgm_cache_block_exclusive:

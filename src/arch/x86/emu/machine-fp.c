@@ -1654,6 +1654,11 @@ void x86_isa_fstp_m32_impl(X86Context *ctx)
 	x86_isa_fst_m32_impl(ctx);
 	X86ContextPopFpu(ctx, NULL);
 
+
+	//printf("ctx->inst.opcode = %d\n", ctx->inst.opcode);
+
+
+
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
@@ -1686,6 +1691,15 @@ void x86_isa_fstp_sti_impl(X86Context *ctx)
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
+
+
+/*void x86_isa_fstp_m64_impl(X86Context *ctx)
+{
+	x86_isa_fst_m64_impl(ctx);
+	X86ContextPopFpu(ctx, NULL);
+
+	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
+}*/
 
 
 void x86_isa_fstsw_ax_impl(X86Context *ctx)

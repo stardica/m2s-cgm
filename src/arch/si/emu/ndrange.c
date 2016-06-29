@@ -167,7 +167,10 @@ void si_ndrange_setup_fs_mem(struct si_ndrange_t *ndrange, void *buf,
 void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
 	struct si_buffer_desc_t *buf_desc, unsigned int uav)
 {
-	assert(uav < SI_EMU_MAX_NUM_UAVS);
+	if(uav >= SI_EMU_MAX_NUM_UAVS)
+		warning("si_ndrange_insert_buffer_into_uav_table() uav >= SI_EMU_MAX_NUM_UAVS (uav %d\n", uav);
+
+	//assert(uav < SI_EMU_MAX_NUM_UAVS);
 	assert(sizeof(*buf_desc) <= SI_EMU_UAV_TABLE_ENTRY_SIZE);
 
 	/* Write the buffer resource descriptor into the UAV table */
@@ -176,9 +179,10 @@ void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
 		buf_desc);
 
 	ndrange->uav_table_entries[uav].valid = 1;
-	ndrange->uav_table_entries[uav].kind = 
-		SI_TABLE_ENTRY_KIND_BUFFER_DESC;
+	ndrange->uav_table_entries[uav].kind = SI_TABLE_ENTRY_KIND_BUFFER_DESC;
 	ndrange->uav_table_entries[uav].size = sizeof(*buf_desc);
+
+	return;
 }
 
 void si_ndrange_insert_buffer_into_vertex_buffer_table(struct si_ndrange_t *ndrange,

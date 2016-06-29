@@ -741,7 +741,9 @@ static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 		fatal("%s: invalid argument %d type", __FUNCTION__, index);
 
 	/* Check valid size */
-	if (size != arg->size)
+	/*star changed this from size != arg->size doesn't matter if the
+	arg comes across and is smaller than the container   */
+	if (size > arg->size)
 		fatal("%s: argument %d: size %d expected, %d found", __FUNCTION__, index, arg->size, size);
 
 	/* Free a possible previous value */

@@ -486,7 +486,7 @@ void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 }
 
-void cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
+int cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//check the packet for integrity
 	assert(cache->cache_type == gpu_l2_cache_t);
