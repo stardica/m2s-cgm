@@ -1922,6 +1922,17 @@ int cache_finish_create(){
 		l2_caches[i].set_mask = l2_caches[i].num_sets - 1;
 		l2_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l2_caches[i].block_mask;
 
+		//build the share_mask
+
+		/*star todo fix this*/
+		for(l = 0; l < 2; l ++)
+		{
+			l2_caches[i].share_mask++;
+
+			if(l < (2 - 1))
+				l2_caches[i].share_mask = l2_caches[i].share_mask << 1;
+		}
+
 		if(!l2_caches[i].policy)
 		{
 			fatal("cache_finish_create(): Invalid cache policy\n");
@@ -2446,8 +2457,8 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
-			gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_s_load;
-			gpu_s_caches[i].gpu_s_write_block = cgm_nc_gpu_s_write_block;
+			//gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_s_load;
+			//gpu_s_caches[i].gpu_s_write_block = cgm_nc_gpu_s_write_block;
 		}
 		else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
@@ -2579,9 +2590,9 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
-			gpu_v_caches[i].gpu_v_load = cgm_nc_gpu_v_load;
-			gpu_v_caches[i].gpu_v_store = cgm_nc_gpu_v_store;
-			gpu_v_caches[i].gpu_v_write_block = cgm_nc_gpu_v_write_block;
+			//gpu_v_caches[i].gpu_v_load = cgm_nc_gpu_v_load;
+			//gpu_v_caches[i].gpu_v_store = cgm_nc_gpu_v_store;
+			//gpu_v_caches[i].gpu_v_write_block = cgm_nc_gpu_v_write_block;
 		}
 		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
@@ -2721,6 +2732,15 @@ int cache_finish_create(){
 		gpu_l2_caches[i].set_mask = gpu_l2_caches[i].num_sets - 1;
 		gpu_l2_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ gpu_l2_caches[i].block_mask;
 
+		//build the share_mask
+		for(l = 0; l < num_cus; l++)
+		{
+			gpu_l2_caches[i].share_mask++;
+
+			if(l < (num_cus - 1))
+				gpu_l2_caches[i].share_mask = gpu_l2_caches[i].share_mask << 1;
+		}
+
 		if(!gpu_l2_caches[i].policy)
 		{
 			fatal("cache_finish_create(): GPU L2 Invalid cache policy\n");
@@ -2827,8 +2847,8 @@ int cache_finish_create(){
 		/*link cache virtual functions*/
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
-			gpu_l2_caches[i].gpu_l2_get = cgm_nc_gpu_l2_get;
-			gpu_l2_caches[i].gpu_l2_write_block = cgm_nc_gpu_l2_write_block;
+			//gpu_l2_caches[i].gpu_l2_get = cgm_nc_gpu_l2_get;
+			//gpu_l2_caches[i].gpu_l2_write_block = cgm_nc_gpu_l2_write_block;
 		}
 		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{

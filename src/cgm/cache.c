@@ -1407,9 +1407,11 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 }
 
 
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, int victim_way){
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way){
 
 	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
+
+	assert(cache->share_mask > 0);
 
 	enum cgm_cache_block_state_t victim_state;
 	//get the victim's state
@@ -1424,6 +1426,10 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 					cache->name, P_TIME);
 		}
 	}
+
+	if(cache->cache_type == gpu_l2_cache_t)
+		fatal("l2 gpu evicting sharers %d \n", sharers);
+
 
 	//if dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
@@ -1442,8 +1448,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
 	cgm_cache_set_block_flush_pending_bit(cache, set, way);*/
 
-	/*send eviction notices and flush the L1 cache
-	star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two evicts*/
 	struct cgm_packet_t *flush_packet = packet_create();
 
 	init_flush_packet(cache, flush_packet, set, way);
@@ -1456,7 +1460,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int id, i
 	if(cache->cache_type == gpu_l2_cache_t)
 	{
 		flush_packet->cpu_access_type = cgm_access_load_v;
-		flush_packet->l1_cache_id = id;
+		flush_packet->l1_cache_id = 0;
 
 		warning("gpu l2 evict, fix this \n");
 	}
@@ -3292,12 +3296,12 @@ void gpu_v_cache_ctrl(void){
 			{
 				gpu_v_caches[my_pid].gpu_v_inval(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_flush_block)
+			/*else if (access_type == cgm_access_flush_block)
 			{
 				//Call back function (cgm_mesi_l1_d_inval)
-				//l1_d_caches[my_pid].l1_d_flush_block(&(l1_d_caches[my_pid]), message_packet);
+				l1_d_caches[my_pid].l1_d_flush_block(&(l1_d_caches[my_pid]), message_packet);
 
-			}
+			}*/
 			else
 			{
 				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
@@ -4149,9 +4153,6 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//remove packet from cache queue, global queue, and simulator memory
 
-	if(message_packet->access_id == 15428925)
-		fatal("l1 made it here\n");
-
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
 	packet_destroy(message_packet);
@@ -4758,7 +4759,16 @@ void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
 	return;
 }
 
-void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id){
+#define SETDIR(cache_id, id)													\
+						if(cache_id == id)										\
+						{														\
+							cache->sets[set].blocks[way].directory_entry.entry_bits.p##id = 1;	\
+						}
+
+
+
+
+void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 
 	int num_cores = x86_cpu_num_cores;
 	/*unsigned long long position = 0;
@@ -4766,66 +4776,66 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	assert(l2_cache_id > (-1) && l2_cache_id < (num_cores + 1)); //+1 is hub-iommu
+	assert(cache_id > (-1) && cache_id < (num_cores + 1)); //+1 is hub-iommu
 
-	//put this in a loop for ease of access
+	SETDIR(cache_id, 0);
+	SETDIR(cache_id, 1);
+	SETDIR(cache_id, 2);
+	SETDIR(cache_id, 3);
+	SETDIR(cache_id, 4);
+	SETDIR(cache_id, 5);
+	SETDIR(cache_id, 6);
+	SETDIR(cache_id, 7);
+	SETDIR(cache_id, 8);
+	SETDIR(cache_id, 9);
+	SETDIR(cache_id, 10);
+	SETDIR(cache_id, 11);
+	SETDIR(cache_id, 12);
+	SETDIR(cache_id, 13);
+	SETDIR(cache_id, 14);
+	SETDIR(cache_id, 15);
 
-	/*for(position = 0; position <= num_cores; position++)
-	{
-		if(l2_cache_id == position)
-		{
-			cache->sets[set].blocks[way].directory_entry.entry = cache->sets[set].blocks[way].directory_entry.entry || bit_set;
-
-
-			//if(l2_cache_id == 1)
-			//	printf("l2 id %d position %llu\n", l2_cache_id, bit_set);
-
-
-		}
-	}*/
-
-
-	if(l2_cache_id == 0)
+	/*if(cache_id == 0)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p0 = 1;
 	}
-	else if(l2_cache_id == 1)
+	else if(cache_id == 1)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p1 = 1;
 	}
-	else if(l2_cache_id == 2)
+	else if(cache_id == 2)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p2 = 1;
 	}
-	else if(l2_cache_id == 3)
+	else if(cache_id == 3)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p3 = 1;
 	}
-	else if(l2_cache_id == 4)
+	else if(cache_id == 4)
 	{
 		//printf("here 4\n");
 
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p4 = 1;
 	}
-	else if(l2_cache_id == 5)
+	else if(cache_id == 5)
 	{
 
 		//printf("here 5\n");
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p5 = 1;
 	}
-	else if(l2_cache_id == 6)
+	else if(cache_id == 6)
 	{
 		//printf("here 6\n");
 
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p6 = 1;
 	}
-	else if(l2_cache_id == 7)
+	else if(cache_id == 7)
 	{
 		//printf("here 7\n");
 
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p7 = 1;
 	}
-	else if(l2_cache_id == 8)
+	else if(cache_id == 8)
 	{
 		//printf("here 8\n");
 
@@ -4834,7 +4844,7 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id)
 	else
 	{
 		fatal("cgm_cache_set_dir(): current dir implementation supports up to 4 cores.\n");
-	}
+	}*/
 
 	return;
 }
@@ -4875,51 +4885,113 @@ void cgm_cache_clear_dir_pending_bit(struct cache_t *cache, int set, int way){
 }
 
 
-int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id){
+#define MATCHCORE(cache_id, bit)																 \
+		if(cache_id == bit && cache->sets[set].blocks[way].directory_entry.entry_bits.p##bit == 1) \
+		{																						 \
+			core_match++;																		 \
+		}
+
+int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int cache_id){
 
 	int core_match = 0;
 	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
 
-	if(l2_cache_id == 0 && cache->sets[set].blocks[way].directory_entry.entry_bits.p0 == 1)
+	/*max(num_cores, num_cus)*/
+
+	MATCHCORE(cache_id, 0);
+	MATCHCORE(cache_id, 1);
+	MATCHCORE(cache_id, 2);
+	MATCHCORE(cache_id, 3);
+	MATCHCORE(cache_id, 4);
+	MATCHCORE(cache_id, 5);
+	MATCHCORE(cache_id, 6);
+	MATCHCORE(cache_id, 7);
+	MATCHCORE(cache_id, 8);
+	MATCHCORE(cache_id, 9);
+	MATCHCORE(cache_id, 10);
+	MATCHCORE(cache_id, 11);
+	MATCHCORE(cache_id, 12);
+	MATCHCORE(cache_id, 13);
+	MATCHCORE(cache_id, 14);
+	MATCHCORE(cache_id, 15);
+
+	/*if(cache_id == 0 && cache->sets[set].blocks[way].directory_entry.entry_bits.p0 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 1 && cache->sets[set].blocks[way].directory_entry.entry_bits.p1 == 1)
+	else if(cache_id == 1 && cache->sets[set].blocks[way].directory_entry.entry_bits.p1 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 2 && cache->sets[set].blocks[way].directory_entry.entry_bits.p2 == 1)
+	else if(cache_id == 2 && cache->sets[set].blocks[way].directory_entry.entry_bits.p2 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 3 && cache->sets[set].blocks[way].directory_entry.entry_bits.p3 == 1)
+	else if(cache_id == 3 && cache->sets[set].blocks[way].directory_entry.entry_bits.p3 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 4 && cache->sets[set].blocks[way].directory_entry.entry_bits.p4 == 1)
+	else if(cache_id == 4 && cache->sets[set].blocks[way].directory_entry.entry_bits.p4 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 5 && cache->sets[set].blocks[way].directory_entry.entry_bits.p5 == 1)
+	else if(cache_id == 5 && cache->sets[set].blocks[way].directory_entry.entry_bits.p5 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 6 && cache->sets[set].blocks[way].directory_entry.entry_bits.p6 == 1)
+	else if(cache_id == 6 && cache->sets[set].blocks[way].directory_entry.entry_bits.p6 == 1)
 	{
 		core_match++;
 	}
-	else if(l2_cache_id == 7 && cache->sets[set].blocks[way].directory_entry.entry_bits.p7 == 1)
+	else if(cache_id == 7 && cache->sets[set].blocks[way].directory_entry.entry_bits.p7 == 1)
 	{
 		core_match++;
 	}
+	else if(cache_id == 8 && cache->sets[set].blocks[way].directory_entry.entry_bits.p8 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 9 && cache->sets[set].blocks[way].directory_entry.entry_bits.p9 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 10 && cache->sets[set].blocks[way].directory_entry.entry_bits.p10 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 11 && cache->sets[set].blocks[way].directory_entry.entry_bits.p11 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 12 && cache->sets[set].blocks[way].directory_entry.entry_bits.p12 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 13 && cache->sets[set].blocks[way].directory_entry.entry_bits.p13 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 14 && cache->sets[set].blocks[way].directory_entry.entry_bits.p14 == 1)
+	{
+		core_match++;
+	}
+	else if(cache_id == 15 && cache->sets[set].blocks[way].directory_entry.entry_bits.p15 == 1)
+	{
+		core_match++;
+	}*/
 
 
 
 	/*-----------------*/
 
-	if(l2_cache_id < 0 && l2_cache_id >= num_cores)
+	if(cache->cache_type == l3_cache_t && (cache_id < 0 && cache_id >= num_cores))
 	{
-		fatal("cgm_cache_is_owning_core(): current dir implementation supports up to 4 cores.\n");
+		fatal("cgm_cache_is_owning_core(): cache id broken...\n");
+	}
+	else if (cache->cache_type == gpu_l2_cache_t && (cache_id < 0 && cache_id >= num_cus))
+	{
+		fatal("cgm_cache_is_owning_core(): cache id broken...\n");
 	}
 
 	assert(core_match == 0 || core_match == 1);
@@ -4935,7 +5007,7 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	unsigned long long bit_vector;
 
 	/*get the number of shares, mask away everything but the the share bit field
-	and take the log of the vale to get the number of sharers*/
+	and take the log of the value to get the number of sharers*/
 
 	//testing
 	/*cache->sets[set].blocks[way].directory_entry.entry_bits.p0 = 0;

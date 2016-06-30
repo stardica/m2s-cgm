@@ -345,8 +345,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 	if(write_back_packet)
 	{
 		assert(*cache_block_hit_ptr == 0);
-		assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-				|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == cgm_cache_block_invalid);
+		assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
 
 	}
 
@@ -429,7 +428,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L1_hit;
 
-				cache_l1_d_return(cache,message_packet);
+				cache_gpu_v_return(cache,message_packet);
 				return;
 			}
 			else
@@ -452,6 +451,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_getx;
 				message_packet->l1_access_type = cgm_access_getx;
+				message_packet->l1_cache_id = cache->id;
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
@@ -477,6 +477,8 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 		case cgm_cache_block_shared:
 
 			//this is an upgrade_miss
+
+			fatal("cgm_mesi_gpu_l1_v_store(): shared state not possible in GPU v caches...\n");
 
 			/*star todo find a better way to do this.
 			this is for a special case where a coalesced store
@@ -553,7 +555,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 			if(!message_packet->protocol_case)
 					message_packet->protocol_case = L1_hit;
 
-			cache_l1_d_return(cache,message_packet);
+			cache_gpu_v_return(cache,message_packet);
 
 			break;
 	}
@@ -1003,6 +1005,8 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 
 		case cgm_cache_block_shared:
 
+			fatal("cgm_mesi_gpu_l1_v_flush_block(): block shared in GPU v caches\n");
+
 			//invalidate the local block
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
@@ -1153,6 +1157,10 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 	struct cgm_packet_t *pending_join = NULL;
 	struct cache_t *l3_cache_ptr = NULL;
 
+	int sharers, owning_core, pending_bit;
+
+	enum cgm_cache_block_state_t block_trainsient_state;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -1161,6 +1169,27 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	//get number of sharers
+	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	//check to see if access is from an already owning core
+	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+	//check pending state
+	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+	//get block transient state
+	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//assert(victim_trainsient_state == cgm_cache_block_transient);
+
+	/*assumption block is never shared in GPU v caches*/
+	assert(sharers == 0 || sharers == 1);
+	/*assumption block should never be pending*/
+	assert(pending_bit == 0);
+	/*assumption if there is 1 sharer it should be the owning core i.e.
+	 * this isn't another core asking for the block*/
+	if(sharers == 1)
+		assert(owning_core == 1);
+
+
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
@@ -1240,7 +1269,13 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
+							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l2_victim_way), NULL);
+
+				//clear the old directory entry
+				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
+				//set the new directory entry
+				cgm_cache_set_dir(cache, write_back_packet->set, write_back_packet->l2_victim_way, message_packet->l1_cache_id);
 
 				//now set the block
 				assert(write_back_packet->cache_block_state == cgm_cache_block_exclusive || write_back_packet->cache_block_state == cgm_cache_block_modified);
@@ -1309,7 +1344,11 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
+							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l2_victim_way), NULL);
+
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
 
 				ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 				assert(ort_row < cache->mshr_size);
@@ -1371,6 +1410,8 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_shared:
 
+			assert(*cache_block_state_ptr != cgm_cache_block_shared);
+
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 			{
 				//enter retry state.
@@ -1393,6 +1434,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 					}
 				}
 			}
+
+			//set the presence bit in the directory for the requesting core.
+			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 			//set message size
 			message_packet->size = gpu_v_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
@@ -1607,7 +1651,8 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
+							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l2_victim_way), NULL);
 
 				//now set the new block
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
@@ -1677,7 +1722,8 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
+							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l2_victim_way), NULL);
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 

@@ -231,6 +231,7 @@ struct cache_block_t{
 	enum cgm_cache_block_state_t transient_state;
 
 	//each block has it's own directory (unsigned long long)
+	//limitations are 64 entries....
 	union directory_t directory_entry;
 	int data_type;
 
