@@ -398,7 +398,10 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	//reconstruct the address from the set and tag
 	//write_back_packet->address = cache->sets[set].blocks[way].address;
 	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);
-	assert(write_back_packet->address != 0);
+
+	//if(cache->cache_type != gpu_v_cache_t && cache->cache_type != gpu_l2_cache_t)
+		//assert(write_back_packet->address != 0);
+
 	assert(cache->sets[set].id >=0 && cache->sets[set].id < cache->num_sets);
 
 	if((((write_back_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)

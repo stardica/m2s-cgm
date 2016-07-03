@@ -220,9 +220,12 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		//star added this
-		/*Stall if vector cache in queue is full*/
+		/*Stall if vector cache inbox is full*/
 		if(list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top) >= QueueSize)
 		{
+			/*printf("here queue size %d cycle %llu\n",
+					list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top), P_TIME);*/
+
 			list_index++;
 			continue;
 		}
@@ -247,6 +250,8 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		else 
 			fatal("%s: invalid access kind", __FUNCTION__);
 
+		//int loops = 0;
+
 		/* Access global memory */
 		assert(!uop->global_mem_witness);
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
@@ -255,6 +260,24 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 
 			uop->global_mem_witness--;
+
+			/*while(list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top) >= QueueSize)
+			{
+				//printf("stalling cycle %llu\n", P_TIME);
+
+				P_PAUSE(1);
+
+				loops++;
+
+				if(loops == 1000000)
+				{
+					warning("vector mem loops cycle %llu\n", P_TIME);
+					break;
+				}
+
+			}*/
+
+			//printf("out of loop address 0x%08x cycle %llu\n", work_item_uop->global_mem_access_addr, P_TIME);
 
 #if CGM
 

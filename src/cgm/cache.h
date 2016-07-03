@@ -245,6 +245,6 @@ int ort_get_num_coal(struct cache_t *cache, int tag, int set);
 
 /*error checking*/
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr);
-int cache_validate_block_flushed_from_l1(int core_id, unsigned int addr);
+int cache_validate_block_flushed_from_l1(struct cache_t *cache, int core_id, unsigned int addr);
 
 #endif /*CACHE_H_*/

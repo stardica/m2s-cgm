@@ -380,8 +380,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(rx_bottom_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
 
-	if(tx_bottom_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
+	//if(tx_bottom_queue_size > QueueSize)
+		//warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
 
 	if(retry_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
@@ -501,9 +501,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			new_message = list_get(cache->retry_queue, 0);
 			cache->last_queue = cache->retry_queue;
 
-			if(new_message->access_id == 84000950 || new_message->access_id == 84000974)
-				warning("pulling id %llu from %s cycle %llu\n", new_message->access_id, cache->retry_queue->name, P_TIME);
-
 			assert(new_message);
 		}
 		else if(write_back_queue_size > 0 && new_message)
@@ -515,10 +512,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		{
 			new_message = list_get(cache->Rx_queue_bottom, 0);
 			cache->last_queue = cache->Rx_queue_bottom;
-
-			if(new_message->access_id == 84000950 || new_message->access_id == 84000974)
-				warning("pulling id %llu from %s cycle %llu\n", new_message->access_id, cache->Rx_queue_bottom->name, P_TIME);
-
 
 			assert(new_message);
 		}
@@ -1409,9 +1402,8 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way){
 
-	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
-	assert(cache->share_mask > 0);
+	/*assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
 	enum cgm_cache_block_state_t victim_state;
 	//get the victim's state
@@ -1427,10 +1419,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		}
 	}
 
-	if(cache->cache_type == gpu_l2_cache_t)
-		fatal("l2 gpu evicting sharers %d \n", sharers);
-
-
 	//if dirty data is found
 	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
 	{
@@ -1444,10 +1432,12 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
 
-	/*set the pending bit*/
-	/*assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
-	cgm_cache_set_block_flush_pending_bit(cache, set, way);*/
+	set the pending bit
+	assert(cgm_cache_get_block_flush_pending_bit(cache, set, way) == 0);
+	cgm_cache_set_block_flush_pending_bit(cache, set, way);
 
+	send eviction notices and flush the L1 cache
+	star todo account for block sizes if the L1 cache is 64 bytes and L2 is 128 L2 should send two evicts
 	struct cgm_packet_t *flush_packet = packet_create();
 
 	init_flush_packet(cache, flush_packet, set, way);
@@ -1455,14 +1445,12 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	if(victim_way)
 		flush_packet->l2_victim_way = victim_way;
 
-	/*needed for correct routing from L2 to L1 D
-	figure out another way to do this*/
+	needed for correct routing from L2 to L1 D
+	figure out another way to do this
 	if(cache->cache_type == gpu_l2_cache_t)
 	{
 		flush_packet->cpu_access_type = cgm_access_load_v;
-		flush_packet->l1_cache_id = 0;
-
-		warning("gpu l2 evict, fix this \n");
+		flush_packet->l1_cache_id = sharers;
 	}
 	else
 	{
@@ -1474,6 +1462,120 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	list_enqueue(cache->Tx_queue_top, flush_packet);
 	advance(cache->cache_io_up_ec);
+
+	return;*/
+
+	int i = 0;
+	unsigned char bit_vector;
+	int num_cus = si_gpu_num_compute_units;
+
+	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
+	assert(cache->share_mask > 0);
+
+	struct cgm_packet_t *write_back_packet = NULL;
+	struct cgm_packet_t *flush_packet = NULL;
+
+	enum cgm_cache_block_state_t victim_state;
+
+	//get the victim's state
+	victim_state = cgm_cache_get_block_state(cache, set, way);
+
+	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+	{
+		if(LEVEL == 2 || LEVEL == 3)
+		{
+			printf("block 0x%08x %s evicted cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag), cache->name, P_TIME);
+		}
+	}
+
+	//if dirty data is found
+	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
+	{
+		//move the block to the WB buffer
+		write_back_packet = packet_create();
+
+		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
+
+		if(cache->cache_type == gpu_l2_cache_t && sharers == 0)
+			write_back_packet->flush_pending = 0;
+
+		if(cache->cache_type == gpu_l2_cache_t && sharers == 1)
+			write_back_packet->flush_pending = 1;
+
+		if(cache->cache_type == l2_cache_t)
+			write_back_packet->flush_pending = 1;
+
+		list_enqueue(cache->write_back_buffer, write_back_packet);
+	}
+
+	if(cache->cache_type == gpu_l2_cache_t)
+	{
+
+		//get the presence bits from the directory
+		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
+		bit_vector = bit_vector & cache->share_mask;
+
+		int num_messages = 0;
+
+		//assert(sharers == 1);
+
+
+		//only run the loop if the bit vector has a bit set.
+		if(bit_vector > 0)
+		{
+			for(i = 0; i < num_cus; i++)
+			{
+				//for each core that has a copy of the cache block send the eviction
+				if((bit_vector & 1) == 1)
+				{
+
+					flush_packet = packet_create();
+
+					init_flush_packet(cache, flush_packet, set, way);
+
+					if(victim_way)
+						flush_packet->l2_victim_way = victim_way;
+
+					flush_packet->cpu_access_type = cgm_access_load;
+					flush_packet->l1_cache_id = i;
+
+					list_enqueue(cache->Tx_queue_top, flush_packet);
+					advance(cache->cache_io_up_ec);
+
+					num_messages++;
+
+				}
+
+				//shift the vector to the next position and continue
+				bit_vector = bit_vector >> 1;
+			}
+		}
+
+		//make sure these two are aligned.
+		assert(num_messages == sharers);
+
+	}
+	else
+	{
+
+		flush_packet = packet_create();
+
+		init_flush_packet(cache, flush_packet, set, way);
+
+		if(victim_way)
+			flush_packet->l2_victim_way = victim_way;
+
+		flush_packet->cpu_access_type = cgm_access_store;
+		flush_packet->l1_cache_id = 0;
+
+		list_enqueue(cache->Tx_queue_top, flush_packet);
+		advance(cache->cache_io_up_ec);
+
+	}
+
+	//set the block state to invalid
+	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
 
 	return;
 }
@@ -1518,17 +1620,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
-		/*if no core has the block don't set it as pending*/
-
-		/*if(write_back_packet->write_back_id == 802006)
-		{
-			//get the presence bits from the directory
-			bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
-			bit_vector = bit_vector & cache->share_mask;
-
-			warning("made the wb for %llu shareres = %d vector %d \n", write_back_packet->write_back_id, sharers, bit_vector);
-		}*/
-
+		/*if sharers > 0 a core has the block so set it pending.*/
 		if(sharers > 0)
 		{
 			//printf("write_back_packet %llu number of sharers %d\n", write_back_packet->write_back_id, sharers);
@@ -1563,11 +1655,6 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 				if(victim_way)
 					flush_packet->l3_victim_way = victim_way;
-
-				/*if(flush_packet->write_back_id == 802006)
-				{
-					warning("sending flush to %s\n", l2_caches[i].name);
-				}*/
 
 				//update routing
 				flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
@@ -3257,8 +3344,17 @@ void gpu_v_cache_ctrl(void){
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
 		//star todo fix this
-		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
+		if (message_packet == NULL) // || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
 		{
+			/*if(message_packet)
+			{
+				printf("%s stalling packet ID %llu tx bottom size %d rx bottom size %d cycle %llu\n",
+						gpu_v_caches[my_pid].name, message_packet->access_id, list_count(gpu_v_caches[my_pid].Tx_queue_bottom),
+						list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);
+
+				//getchar();
+			}*/
+
 			P_PAUSE(1);
 		}
 		else
@@ -3286,22 +3382,35 @@ void gpu_v_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_put_clnx || access_type == cgm_access_putx)
 			{
-				//Call back function (gpu_cache_access_put)
+				/*//Call back function (gpu_cache_access_put)
 				gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet);
 
 				//entered retry state run again.
+				step--;*/
+
+
+				if(gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet))
+					step--;
+
+			}
+			else if (access_type == cgm_access_write_back)
+			{
+				gpu_v_caches[my_pid].gpu_v_write_back(&(gpu_v_caches[my_pid]), message_packet);
+
 				step--;
 			}
-			else if (access_type == cgm_access_inv)
+			else if (access_type == cgm_access_flush_block)
 			{
-				gpu_v_caches[my_pid].gpu_v_inval(&(gpu_v_caches[my_pid]), message_packet);
+				gpu_v_caches[my_pid].gpu_v_flush_block(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			/*else if (access_type == cgm_access_flush_block)
+			else if (access_type == cgm_access_get_nack)
 			{
-				//Call back function (cgm_mesi_l1_d_inval)
-				l1_d_caches[my_pid].l1_d_flush_block(&(l1_d_caches[my_pid]), message_packet);
-
-			}*/
+				gpu_v_caches[my_pid].gpu_v_load_nack(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_getx_nack)
+			{
+				gpu_v_caches[my_pid].gpu_v_store_nack(&(gpu_v_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3344,7 +3453,7 @@ void gpu_l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
-			/*printf("stalling\n");*/
+			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
 			gpu_l2_caches[my_pid].Stalls++;
 			/*future_advance(&gpu_l2_cache[my_pid], etime.count + 2);*/
 			P_PAUSE(1);
@@ -3365,7 +3474,8 @@ void gpu_l2_cache_ctrl(void){
 			else if(access_type == cgm_access_getx || access_type == cgm_access_store_retry)
 			{
 				//Call back function (cgm_mesi_gpu_l2_getx)
-				gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet);
+				if(!gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet))
+					step--;
 			}
 			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx)
 			{
@@ -3374,6 +3484,18 @@ void gpu_l2_cache_ctrl(void){
 
 				//entered retry state run again.
 				step--;
+			}
+			else if(access_type == cgm_access_write_back)
+			{
+				if(!gpu_l2_caches[my_pid].gpu_l2_write_back(&gpu_l2_caches[my_pid], message_packet))
+					step--;
+			}
+			else if(access_type == cgm_access_flush_block_ack)
+			{
+				//fatal("gpu l2 flush block ack\n");
+
+				//Call back function (cgm_mesi_gpu_l2_getx)
+				gpu_l2_caches[my_pid].gpu_l2_flush_block_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
@@ -3905,6 +4027,14 @@ void gpu_v_cache_down_io_ctrl(void){
 			{
 				step++;
 
+				//printf("v cache send rx cycle %llu\n", P_TIME);
+
+				/*if(P_TIME == 17314083)
+				{
+					cgm_dump_system();
+					exit(0);
+				}*/
+
 				P_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
@@ -3932,6 +4062,8 @@ void gpu_v_cache_down_io_ctrl(void){
 			else
 			{
 				step++;
+
+				//printf("v cache send co cycle %llu\n", P_TIME);
 
 				P_PAUSE(transfer_time);
 
@@ -4766,8 +4898,6 @@ void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
 						}
 
 
-
-
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 
 	int num_cores = x86_cpu_num_cores;
@@ -5003,6 +5133,9 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 
 	int sharers = 0;
 	int num_cores = x86_cpu_num_cores;
+	/*if(cache->cache_type == gpu_l2_cache_t)
+		warning("cgm_cache_get_num_shares(): change this if we change number of CUS");*/
+
 	int i = 0;
 	unsigned long long bit_vector;
 
@@ -5220,11 +5353,13 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 	{
-		if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
+		fatal("cgm_gpu_cache_get_retry_state(): system isn't configured right\n");
+
+		if(r_state == cgm_access_load || r_state == cgm_access_load)
 		{
 			retry_state = cgm_access_load_retry;
 		}
-		else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
+		else if(r_state == cgm_access_store || r_state == cgm_access_nc_store)
 		{
 			retry_state = cgm_access_store_retry;
 		}
@@ -5235,13 +5370,13 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 	}
 	else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
 	{
-		if(r_state == cgm_access_load_s || r_state == cgm_access_load_v)
+		if(r_state == cgm_access_load)
 		{
-			retry_state = cgm_access_loadx_retry;
+			retry_state = cgm_access_load_retry;
 		}
-		else if(r_state == cgm_access_store_v || r_state == cgm_access_nc_store)
+		else if(r_state == cgm_access_store || r_state == cgm_access_nc_store)
 		{
-			retry_state = cgm_access_storex_retry;
+			retry_state = cgm_access_store_retry;
 		}
 		else
 		{
@@ -5408,7 +5543,7 @@ int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 }
 
 
-int cache_validate_block_flushed_from_l1(int core_id, unsigned int addr){
+int cache_validate_block_flushed_from_l1(struct cache_t *caches, int core_id, unsigned int addr){
 
 	int hit = 0;
 	struct cgm_packet_t *write_back_packet = NULL;
@@ -5429,13 +5564,13 @@ int cache_validate_block_flushed_from_l1(int core_id, unsigned int addr){
 	int *cache_block_state_ptr = &cache_block_state;
 
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(&l1_d_caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
+	cgm_cache_probe_address(&caches[core_id], addr, set_ptr, tag_ptr, offset_ptr);
 
 	//look for the block in the cache
-	*(cache_block_hit_ptr) = cgm_cache_find_block(&l1_d_caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+	*(cache_block_hit_ptr) = cgm_cache_find_block(&caches[core_id], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
 		//search the WB buffer for the data if in WB the block is either in the E or M state so return
-	write_back_packet = cache_search_wb(&l1_d_caches[core_id], tag, set);
+	write_back_packet = cache_search_wb(&caches[core_id], tag, set);
 
 	if(*cache_block_hit_ptr == 1 || write_back_packet)
 		hit = 1;

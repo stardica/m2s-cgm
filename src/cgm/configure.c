@@ -2599,7 +2599,10 @@ int cache_finish_create(){
 			gpu_v_caches[i].gpu_v_load = cgm_mesi_gpu_l1_v_load;
 			gpu_v_caches[i].gpu_v_store = cgm_mesi_gpu_l1_v_store;
 			gpu_v_caches[i].gpu_v_write_block = cgm_mesi_gpu_l1_v_write_block;
-			//gpu_v_caches[i].gpu_v_inval = cgm_mesi_gpu_v_inval;
+			gpu_v_caches[i].gpu_v_write_back = cgm_mesi_gpu_l1_v_write_back;
+			gpu_v_caches[i].gpu_v_flush_block = cgm_mesi_gpu_l1_v_flush_block;
+			gpu_v_caches[i].gpu_v_load_nack = cgm_mesi_gpu_l1_v_load_nack;
+			gpu_v_caches[i].gpu_v_store_nack = cgm_mesi_gpu_l1_v_store_nack;
 		}
 		else
 		{
@@ -2855,6 +2858,9 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_get = cgm_mesi_gpu_l2_get;
 			gpu_l2_caches[i].gpu_l2_getx = cgm_mesi_gpu_l2_getx;
 			gpu_l2_caches[i].gpu_l2_write_block = cgm_mesi_gpu_l2_write_block;
+
+			gpu_l2_caches[i].gpu_l2_write_back = cgm_mesi_gpu_l2_write_back;
+			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
 
 		}
 		else

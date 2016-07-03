@@ -1901,15 +1901,28 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
+
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 	{
 		//get the core ID number should be <= number of cores
-		id = vector_mem_ptr->compute_unit->id;
+		id = vector_mem->compute_unit->id;
 		assert( id < num_cus);
 
-		//Drop the packet into the GPU LDS unit Rx queue
-		list_enqueue(vector_mem_ptr->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
+		if(access_kind == cgm_access_nc_store)
+		{
+			new_packet->access_type = cgm_access_store;
+			new_packet->gpu_access_type = cgm_access_store;
+		}
+
+		/*if(list_count(vector_mem->compute_unit->gpu_v_cache_ptr->Rx_queue_top) > 16)
+		{
+			printf("queue size %d cycle %llu\n", list_count(vector_mem->compute_unit->gpu_v_cache_ptr->Rx_queue_top), P_TIME);
+			getchar();
+		}*/
+
+		//Drop the packet into the Rx queue
+		list_enqueue(vector_mem->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);
 
 		//advance the L1 I Cache Ctrl task
 		advance(&gpu_v_cache[id]);
@@ -1917,15 +1930,16 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		gpu_v_caches[id].TotalAcesses++;
 
 		/*stats*/
-		if(access_kind == cgm_access_load_v)
+		if(access_kind == cgm_access_load)
 		{
 			mem_system_stats->gpu_total_loads++;
 		}
 
-		if(access_kind == cgm_access_store_v || access_kind == cgm_access_nc_store)
+		if(access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 		{
 			mem_system_stats->gpu_total_stores++;
 		}
+
 	}
 	else
 	{
@@ -2096,8 +2110,99 @@ void cgm_dump_system(void){
 
 	int i = 0;
 	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 
-	printf("\n---L1_d_caches---\n");
+	printf("\n---L1_v_caches---\n");
+	for(i = 0; i < num_cus; i++)
+	{
+		printf("---%s Rx top queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].Rx_queue_top));
+		cache_dump_queue(gpu_v_caches[i].Rx_queue_top);
+		printf("---%s Rx bottom queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].Rx_queue_bottom));
+		cache_dump_queue(gpu_v_caches[i].Rx_queue_bottom);
+		printf("---%s Tx bottom queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].Tx_queue_bottom));
+		cache_dump_queue(gpu_v_caches[i].Tx_queue_bottom);
+		printf("---%s Coherence queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].Coherance_Rx_queue));
+		cache_dump_queue(gpu_v_caches[i].Coherance_Rx_queue);
+		printf("---%s Pending request queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].pending_request_buffer));
+		cache_dump_queue(gpu_v_caches[i].pending_request_buffer);
+		printf("---%s Retry queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].retry_queue));
+		cache_dump_queue(gpu_v_caches[i].retry_queue);
+		printf("---%s Write back queue size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].write_back_buffer));
+		cache_dump_write_back(&gpu_v_caches[i]);
+		printf("---%s ORT size %d---\n",
+				gpu_v_caches[i].name, list_count(gpu_v_caches[i].ort_list));
+		cache_dump_queue(gpu_v_caches[i].ort_list);
+		ort_dump(&gpu_v_caches[i]);
+		printf("\n");
+	}
+
+	printf("\n---gpu_L2_caches---\n");
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		printf("---%s Rx top queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Rx_queue_top));
+		cache_dump_queue(gpu_l2_caches[i].Rx_queue_top);
+		printf("---%s Rx bottom queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Rx_queue_bottom));
+		cache_dump_queue(gpu_l2_caches[i].Rx_queue_bottom);
+		printf("---%s Tx bottom queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Tx_queue_bottom));
+		cache_dump_queue(gpu_l2_caches[i].Tx_queue_bottom);
+		printf("---%s Coherence queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Coherance_Rx_queue));
+		cache_dump_queue(gpu_l2_caches[i].Coherance_Rx_queue);
+		printf("---%s Pending request queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].pending_request_buffer));
+		cache_dump_queue(gpu_l2_caches[i].pending_request_buffer);
+		printf("---%s Retry queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].retry_queue));
+		cache_dump_queue(gpu_l2_caches[i].retry_queue);
+		printf("---%s Write back queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].write_back_buffer));
+		cache_dump_write_back(&gpu_l2_caches[i]);
+		printf("---%s ORT size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].ort_list));
+		cache_dump_queue(gpu_l2_caches[i].ort_list);
+		ort_dump(&gpu_l2_caches[i]);
+		printf("\n");
+	}
+
+	printf("\n---hub-iommu---\n");
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		printf("---%s Rx top port %d queue size %d---\n",
+				hub_iommu->name, i, list_count(hub_iommu->Rx_queue_top[i]));
+		cache_dump_queue(hub_iommu->Rx_queue_top[i]);
+	}
+
+	printf("---%s Rx bottom queue size %d---\n",
+			hub_iommu->name, list_count(hub_iommu->Rx_queue_bottom));
+	cache_dump_queue(hub_iommu->Rx_queue_bottom);
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		printf("---%s Tx top port %d queue size %d---\n",
+				hub_iommu->name, i, list_count(hub_iommu->Tx_queue_top[i]));
+		cache_dump_queue(hub_iommu->Tx_queue_top[i]);
+	}
+
+	printf("---%s Tx bottom queue size %d---\n",
+			hub_iommu->name, list_count(hub_iommu->Tx_queue_bottom));
+	cache_dump_queue(hub_iommu->Tx_queue_bottom);
+
+	printf("\n");
+
+
+	/*printf("\n---L1_d_caches---\n");
 	for(i = 0; i < num_cores; i++)
 	{
 		printf("---%s Rx top queue size %d---\n",
@@ -2120,7 +2225,7 @@ void cgm_dump_system(void){
 		cache_dump_queue(l1_d_caches[i].retry_queue);
 		printf("---%s Write back queue size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].write_back_buffer));
-		cache_dump_write_back(&l2_caches[i]);
+		cache_dump_write_back(&l1_d_caches[i]);
 		printf("---%s ORT size %d---\n",
 				l1_d_caches[i].name, list_count(l1_d_caches[i].ort_list));
 		cache_dump_queue(l1_d_caches[i].ort_list);
@@ -2194,7 +2299,7 @@ void cgm_dump_system(void){
 		cache_dump_queue(l3_caches[i].ort_list);
 		ort_dump(&l3_caches[i]);
 		printf("\n");
-	}
+	}*/
 
 	printf("---Switches---\n");
 	for(i = 0; i < (num_cores + 1); i++)

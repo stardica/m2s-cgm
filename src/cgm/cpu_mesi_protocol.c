@@ -2526,7 +2526,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			if(write_back_packet)
 			{
 				/*inval is complete for this write back so it should not be up in L1 D*/
-				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+				error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 				assert(error == 0);
 
 				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
@@ -3012,7 +3012,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 	//assert(*cache_block_hit_ptr == 0);
 
-	error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+	error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 	if(error != 0)
 	{
 		struct cgm_packet_t *L1_wb_packet = cache_search_wb(&l1_d_caches[cache->id], message_packet->tag, message_packet->set);
@@ -3475,7 +3475,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 				if(write_back_packet->flush_pending == 0)
 				{
 					/*flush is complete for this write back so it should not be up in L1 D*/
-					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 					assert(error == 0);
 
 					/*if the flush is complete finish the get_fwd*/
@@ -3606,7 +3606,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					retry.*/
 
 					/* The block is not in L2 cache it should not be in L1 cache either.*/
-					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 					assert(error == 0);
 
 					/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
@@ -3868,7 +3868,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					/*if the flush is complete finish the getx_fwd now*/
 
 					/*flush is complete for this write back so it should not be up in L1 D*/
-					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 					assert(error == 0);
 
 					//////////
@@ -3994,7 +3994,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					/* The block was evicted silently and should not be L1 D's cache.
 					 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
 					 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
-					error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 					assert(error == 0);
 
 					/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
@@ -4613,7 +4613,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
-				error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+				error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 				assert(error == 0);
 
 				//destroy the L1 D WB message. L2 will clear its WB at an opportune time.
@@ -4634,7 +4634,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 		assert(*cache_block_hit_ptr == 0); //verify block is not in cache.
 
 		//verify that the block is out of L1
-		error = cache_validate_block_flushed_from_l1(cache->id, message_packet->address);
+		error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 		assert(error == 0);
 
 		//verify that there is only one wb in L2 for this block.

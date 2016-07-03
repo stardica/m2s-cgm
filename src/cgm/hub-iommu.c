@@ -175,7 +175,7 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 	int last_queue_num = -1;
 	int l2_src_id = -1;
 
-	int l3_map;
+	struct cache_t *l3_cache_ptr = NULL;
 
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
@@ -186,9 +186,8 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		//switch queue has a slot
 
 		//update routing headers for the packet
-		l3_map = cgm_l3_cache_map(message_packet->set);
-		message_packet->dest_name = l3_caches[l3_map].name;
-		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_map].name);
+		l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+
 
 		//save the gpu l2 cache id
 		message_packet->gpu_cache_id = message_packet->l2_cache_id;
@@ -198,15 +197,20 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		message_packet->l2_cache_name = hub_iommu->name;
 
 		//change src name and id
+		SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
+
+		/*message_packet->dest_name = l3_caches[l3_cache_ptr].name;
+		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_cache_ptr].name);
+
 		message_packet->src_name = hub_iommu->name;
-		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);*/
 
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
 
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu access id %llu as %s first address 0x%08x set %d heading to L3 id %d \n",
-					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_map);
+					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_cache_ptr->id);
 		/*getchar();*/
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
@@ -247,7 +251,9 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 	}
 
-	return;
+
+	/*star look at this*/
+	return 0;
 }
 
 int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
@@ -364,6 +370,7 @@ void hub_iommu_coherent_ctrl(void){
 
 	while(1)
 	{
+
 		//we have received a packet
 		await(hub_iommu_ec, step);
 
