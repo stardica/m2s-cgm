@@ -170,7 +170,7 @@ void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
-int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way);
+int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way);
 //int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);
 

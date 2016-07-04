@@ -26,7 +26,7 @@ void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*fatal("access_id %llu\n",message_packet->access_id);*/
+	/*printf("access_id %llu\n",message_packet->access_id);*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -325,8 +325,8 @@ void cgm_mesi_gpu_l1_v_store_nack(struct cache_t *cache, struct cgm_packet_t *me
 
 void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	/*printf("l1 d %d storing\n", cache->id);
-	STOP;*/
+	/*printf("gpu v %d storing\n", cache->id);*/
+	/*STOP;*/
 
 	int cache_block_hit;
 	int cache_block_state;
@@ -1017,6 +1017,9 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 
 	}
 
+	/*if(message_packet->evict_id == 37134)
+		printf("L1 flushed\n");*/
+
 	/*stats*/
 	cache->EvictInv++;
 
@@ -1030,6 +1033,9 @@ int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *me
 	assert((message_packet->access_type == cgm_access_puts && message_packet->cache_block_state == cgm_cache_block_shared)
 			|| (message_packet->access_type == cgm_access_put_clnx && message_packet->cache_block_state == cgm_cache_block_exclusive)
 			|| (message_packet->access_type == cgm_access_putx && message_packet->cache_block_state == cgm_cache_block_modified));
+
+	/*if(message_packet->access_id == 15509891)
+		fatal("%s write block after flush cycle %llu\n", cache->name, P_TIME);*/
 
 
 	int cache_block_hit;
@@ -1158,6 +1164,10 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	int sharers, owning_core, pending_bit;
 
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *flush_packet = NULL;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -1180,17 +1190,6 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 	/*assumption block is never shared in GPU v caches*/
 	if(sharers > 1)
 		warning("cgm_mesi_gpu_l2_get(): sharers = %d\n", sharers);
-	//assert(sharers == 0 || sharers == 1);
-	/*assumption block should never be pending*/
-	assert(pending_bit == 0);
-	/*assumption if there is 1 sharer it should be the owning core i.e.
-	 * this isn't another core asking for the block*/
-	/*if(sharers == 1 && owning_core != 1)
-	{
-		fatal("block 0x%08x %s problem here ID %llu type %d state %d sharers %d owning_core %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
-							*cache_block_state_ptr, sharers, owning_core, P_TIME);
-	}*/
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
@@ -1198,6 +1197,101 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 		//make this block the MRU
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
+
+	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
+	{
+		/*its possible for a get to come in from an owing core to and for the block to be pending
+		this occurs if the owning core silently dropped the block and a get_fwd was processed
+		just before the owning core's request comes in send the block back to the owning core
+		a previously sent get_fwd will be joined with this put/putx*/
+		if(owning_core == 1)
+		{
+
+			assert(message_packet->coalesced == 0);
+
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L2 owning core PUT back to L2 id %llu state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+
+			/*there should be only be the owning core in the directory and the pending bit set*/
+			assert(sharers == 1 && owning_core == 1);
+
+			/*The block MUST be in the E or M state*/
+			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || cgm_cache_block_invalid == cgm_cache_block_modified);
+
+			//update message status
+			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+			{
+				message_packet->access_type = cgm_access_put_clnx;
+			}
+			else if(*cache_block_state_ptr == cgm_cache_block_modified)
+			{
+				message_packet->access_type = cgm_access_putx;
+			}
+
+			//get the cache block state
+			message_packet->cache_block_state = *cache_block_state_ptr;
+
+			//set message package size
+			message_packet->size = gpu_v_caches[message_packet->l1_cache_id].block_size;
+
+			//don't change the directory entries, the downgrade ack will come back and clean things up.
+
+			//send the cache block out
+			cache_put_io_up_queue(cache, message_packet);
+
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L2_hit;
+
+		}
+		else
+		{
+
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L2 get nacked back to L2 id %llu state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+
+			/*Thrid party is looking for access to the block, but it is busy nack and let node retry later*/
+
+
+			//check if the packet has coalesced accesses.
+			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
+			{
+				//enter retry state.
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
+
+				/*if(message_packet->access_id == 71992322)
+					warning("l3 checking retries ID %llu\n", message_packet->access_id);*/
+
+			}
+
+			/*star todo find a better way to do this.
+			this is for a special case where a coalesced access was pulled
+			and is going to be nacked at this point we want the access to be
+			treated as a new miss so set coalesced to 0*/
+			if(message_packet->coalesced == 1)
+			{
+				message_packet->coalesced = 0;
+			}
+
+
+			//send the reply up as a NACK!
+			message_packet->access_type = cgm_access_get_nack;
+
+			//set message package size
+			message_packet->size = 1;
+
+			//send the reply
+			cache_put_io_up_queue(cache, message_packet);
+
+			/*stats*/
+			mem_system_stats->l2_load_nack++;
+		}
+
+		return;
+
+	}
+
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -1411,6 +1505,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_shared:
 
+
+			assert(sharers >= 0 && sharers <= num_cus);
+			assert(owning_core >= 0 && owning_core <= 1);
 			assert(*cache_block_state_ptr != cgm_cache_block_shared);
 
 			if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
@@ -1436,38 +1533,95 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				}
 			}
 
-			//set the presence bit in the directory for the requesting core.
-			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
-
-			//set message size
-			message_packet->size = gpu_v_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
-
-			//update message status
-			if(*cache_block_state_ptr == cgm_cache_block_modified)
+			//if it is a new access (L3 retry) or a repeat access from an already owning core.
+			if(sharers == 0 || owning_core == 1)
 			{
-				message_packet->access_type = cgm_access_putx;
+				/*there should be only 1 core with the block*/
+				if(owning_core == 1)
+					assert(sharers == 1);
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit single shared ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				//set the presence bit in the directory for the requesting core.
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
+
+				//set message size
+				message_packet->size = gpu_v_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+
+				//update message status
+				if(*cache_block_state_ptr == cgm_cache_block_modified)
+				{
+					message_packet->access_type = cgm_access_putx;
+				}
+				else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+				{
+					message_packet->access_type = cgm_access_put_clnx;
+				}
+				else if(*cache_block_state_ptr == cgm_cache_block_shared)
+				{
+					message_packet->access_type = cgm_access_puts;
+				}
+
+				/*this will send the block and block state up to the higher level cache.*/
+				message_packet->cache_block_state = *cache_block_state_ptr;
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+						message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				/*stats*/
+				if(!message_packet->protocol_case)
+						message_packet->protocol_case = L2_hit;
+
+				cache_put_io_up_queue(cache, message_packet);
+
 			}
-			else if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+			else if (sharers >= 1)
 			{
-				message_packet->access_type = cgm_access_put_clnx;
+
+				/*The connection between GPU L1 and L2 caches is a cross bar
+				hold onto this request, flush the block out of the compute unit,
+				join on the ack, in the mean time nack all other L1 request for this block.*/
+
+				//there better be only 1 sharer
+				assert(sharers == 1 && pending_bit == 0);
+
+				//flush the block out of the pending core...
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit multi share (CU flush) ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+
+				//set the directory pending bit.
+				cgm_cache_set_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+				//get the id of the owning core L2
+				owning_core = cgm_cache_get_xown_core(gpu, cache, message_packet->set, message_packet->way);
+
+				//flush the block out of the core...
+				flush_packet = packet_create();
+				init_flush_packet(cache, flush_packet, message_packet->set, message_packet->way);
+
+				flush_packet->cpu_access_type = cgm_access_store;
+				flush_packet->l1_cache_id = owning_core;
+
+
+				/*printf("l2 flushing block id %llu cycle %llu\n", flush_packet->evict_id, P_TIME);*/
+
+				list_enqueue(cache->Tx_queue_top, flush_packet);
+				advance(cache->cache_io_up_ec);
+
+				//drop the message packet into the pending request buffer
+				message_packet = list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->pending_request_buffer, message_packet);
+
 			}
-			else if(*cache_block_state_ptr == cgm_cache_block_shared)
+			else
 			{
-				message_packet->access_type = cgm_access_puts;
+				fatal("cgm_mesi_gpu_l2_get(): invalid sharer/owning_core state\n");
 			}
-
-			/*this will send the block and block state up to the higher level cache.*/
-			message_packet->cache_block_state = *cache_block_state_ptr;
-
-			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-					message_packet->access_type, *cache_block_state_ptr, P_TIME);
-
-			/*stats*/
-			if(!message_packet->protocol_case)
-					message_packet->protocol_case = L2_hit;
-
-			cache_put_io_up_queue(cache, message_packet);
 
 			break;
 	}
@@ -1561,9 +1715,12 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *pending_join = NULL;
-	struct cache_t *l3_cache_ptr = NULL;
 
 	int sharers, owning_core, pending_bit;
+
+	int num_cus = si_gpu_num_compute_units;
+
+	struct cgm_packet_t *flush_packet = NULL;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -1584,19 +1741,86 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 	/*assumption block is never shared in GPU v caches*/
 	if(sharers > 1)
 		warning("cgm_mesi_gpu_l2_get(): sharers = %d\n", sharers);
-	//assert(sharers == 0 || sharers == 1);
-	/*assumption block should never be pending*/
-	assert(pending_bit == 0);
-	/*assumption if there is 1 sharer it should be the owning core i.e.
-	 * this isn't another core asking for the block*/
-	/*if(sharers == 1)
-		assert(owning_core == 1);*/
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
 	{
 		//make this block the MRU
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
+	}
+
+	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
+	{
+
+		if(owning_core == 1)
+		{
+			assert(message_packet->coalesced == 0);
+
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L2 getx owning core PUTX back to L2 id %llu state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+
+			/*there should be only be the owning core in the directory and the pending bit set*/
+			assert(sharers == 1 && owning_core == 1);
+
+			/*The block MUST be in the E or M state*/
+			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || cgm_cache_block_invalid == cgm_cache_block_modified);
+
+			//update message status
+			message_packet->access_type = cgm_access_putx;
+
+			//set cache block state modified
+			message_packet->cache_block_state = cgm_cache_block_modified;
+
+			// update message packet size
+			message_packet->size = gpu_v_caches[message_packet->l1_cache_id].block_size;
+
+			//don't change the directory entries, the downgrade ack will come back and clean things up.
+
+			cache_put_io_up_queue(cache, message_packet);
+
+			/*stats*/
+			if(!message_packet->protocol_case)
+				message_packet->protocol_case = L2_hit;
+
+		}
+		else
+		{
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s pending at L2 getx nacked back to L2 id %llu state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
+
+			/*Third party is looking for access to the block, but it is busy nack and let node retry later*/
+
+			//check if the packet has coalesced accesses.
+			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
+			{
+				//enter retry state.
+				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
+			}
+
+
+			/*star todo find a better way to do this.
+			this is for a special case where a coalesced access was pulled
+			and is going to be nacked at this point we want the access to be
+			treated as a new miss so set coalesced to 0*/
+			if(message_packet->coalesced == 1)
+			{
+				message_packet->coalesced = 0;
+			}
+
+			//send the reply up as a NACK!
+			message_packet->access_type = cgm_access_getx_nack;
+
+			//set message package size
+			message_packet->size = 1;
+
+			//send the reply
+			cache_put_io_up_queue(cache, message_packet);
+
+			/*stats*//*stats*/
+			mem_system_stats->l2_store_nack++;
+		}
+
+		return 1;
 	}
 
 	switch(*cache_block_state_ptr)
@@ -1770,7 +1994,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 					message_packet->cpu_access_type = cgm_access_store;
 				}
 
-				message_packet->cache_block_state = cgm_cache_block_exclusive;
+				message_packet->cache_block_state = cgm_cache_block_modified;
 
 				message_packet->l2_cache_id = cache->id;
 				message_packet->l2_cache_name = str_map_value(&gpu_l2_strn_map, cache->id);
@@ -1786,6 +2010,10 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
+
+			assert(sharers >= 0 && sharers <= num_cus);
+			assert(owning_core >= 0 && owning_core <= 1);
+			//assert(*cache_block_state_ptr != cgm_cache_block_shared);
 
 			//set retry state
 			if(message_packet->access_type == cgm_access_store_retry || message_packet->coalesced == 1)
@@ -1812,33 +2040,85 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				}
 			}
 
-			//set the presence bit in the directory for the requesting core.
-			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
 
-
-			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+			//if it is a new access (l2 retry) or a repeat access from an already owning core.
+			if(sharers == 0 || owning_core == 1)
 			{
-				/*if the block is in the E state set M because the message is a store
-				a flush will bring the modified line down later
-				the block remains in the E state at L3*/
-				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+				//if the block is in the E state set M before sending up
+				if(*cache_block_state_ptr == cgm_cache_block_exclusive)
+				{
+					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+				}
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s store hit single shared ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				//update message status
+				message_packet->access_type = cgm_access_putx;
+
+				//set cache block state modified
+				message_packet->cache_block_state = cgm_cache_block_modified;
+
+				//set message status and size
+				message_packet->size = gpu_v_caches[message_packet->l1_cache_id].block_size; //this should be L1 D cache block size.
+
+				//update directory
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
+
+
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = L2_hit;
+
+				//send up to L1 D cache
+				cache_put_io_up_queue(cache, message_packet);
+
 			}
+			else if(sharers >= 1)
+			{
 
-			//set message status and size
-			message_packet->size = l1_d_caches[cache->id].block_size; //this should be L1 D cache block size.
-			message_packet->access_type = cgm_access_putx;
-			message_packet->cache_block_state = cgm_cache_block_modified;
+				/*The connection between GPU L1 and L2 caches is a cross bar
+				hold onto this request, flush the block out of the compute unit,
+				join on the ack, in the mean time nack all other L1 request for this block.*/
 
-			/*stats*/
-			if(!message_packet->protocol_case)
-				message_packet->protocol_case = L2_hit;
+				//there better be only 1 sharer
+				assert(sharers == 1 && pending_bit == 0);
 
-			//send up to L1 D cache
-			cache_put_io_up_queue(cache, message_packet);
+				//flush the block out of the pending core...
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit multi share (CU flush) ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s store hit ID %llu type %d state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-					message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				//set the directory pending bit.
+				cgm_cache_set_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+				//get the id of the owning core L2
+				owning_core = cgm_cache_get_xown_core(gpu, cache, message_packet->set, message_packet->way);
+
+				//flush the block out of the core...
+				flush_packet = packet_create();
+				init_flush_packet(cache, flush_packet, message_packet->set, message_packet->way);
+
+				flush_packet->cpu_access_type = cgm_access_store;
+				flush_packet->l1_cache_id = owning_core;
+
+
+				/*printf("l2 flushing block id %llu cycle %llu\n", flush_packet->evict_id, P_TIME);*/
+
+				list_enqueue(cache->Tx_queue_top, flush_packet);
+				advance(cache->cache_io_up_ec);
+
+				//drop the message packet into the pending request buffer
+				message_packet = list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->pending_request_buffer, message_packet);
+
+			}
+			else
+			{
+				fatal("cgm_mesi_gpu_l2_getx(): invalid sharer/owning_core state\n");
+			}
 
 			break;
 
@@ -2799,7 +3079,8 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	struct cgm_packet_t *reply_packet = NULL;
 	struct cache_t *l3_cache_ptr = NULL;
 	//int l3_map = 0;
-	int error =0;
+	int error = 0;
+	int pending_bit = 0;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -2810,16 +3091,18 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 	//assert(*cache_block_hit_ptr == 0);
 
-	error = cache_validate_block_flushed_from_l1(gpu_v_caches, cache->id, message_packet->address);
+	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+	error = cache_validate_block_flushed_from_l1(gpu_v_caches, message_packet->l1_cache_id, message_packet->address);
 	if(error != 0)
 	{
-		struct cgm_packet_t *L1_wb_packet = cache_search_wb(&l1_d_caches[cache->id], message_packet->tag, message_packet->set);
+		struct cgm_packet_t *L1_wb_packet = cache_search_wb(&gpu_v_caches[message_packet->l1_cache_id], message_packet->tag, message_packet->set);
 
 		if(L1_wb_packet)
 			fatal("wbp found %llu\n", L1_wb_packet->evict_id);
 
 
-		fatal("cgm_mesi_l2_flush_block_ack(): %s error %d as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+		fatal("cgm_mesi_gpu_l2_flush_block_ack(): %s error %d as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
 			cache->name, error, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
 			message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
 			message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
@@ -2857,7 +3140,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	}
 
 
-	/*if a L1 flush we better have a wb packet in write back*/
+	/*if a L1 flush check write back*/
 	if(wb_packet)
 	{
 
@@ -3054,35 +3337,59 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack without wb in l2 ID %llu type %d state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-
-		/*case L3 flushed L2 flushed L1 and now back to L2 and there is no WB waiting at L2*/
-
 		/*if the eviction goes up and finds the block shared its dropped in L1.
 		if the block is not in cache or WB at L1 we don't know if there is a M line coming down
 		because the block was exclusive in L2. So Let's see what we got*/
 
-		/*pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+		/*case L3 flushed L2 flushed L1 and now back to L2 and there is no WB waiting at L2*/
 
-		if(pending_request_packet)
+		/*case GPU only, GPU caches are mapped many to 1. its possible that L2 is flushing a compute unit
+		 to service the request of another compute unit. check the pending bit and pending request buffer */
+
+		/*GPU CASE*/
+		if(pending_bit == 1)
 		{
+			assert(*cache_block_hit_ptr == 1);
+			assert(*cache_block_state_ptr == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_exclusive);
 
-			printf("mystery packet is a %d\n", pending_request_packet->access_type);
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+			assert(pending_request_packet);
+			assert(pending_request_packet->set == message_packet->set && pending_request_packet->way == message_packet->way);
+
+			if(message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				cgm_cache_set_block_state(cache, pending_request_packet->set, pending_request_packet->way, cgm_cache_block_modified);
+			}
+
+			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				pending_request_packet->access_type = cgm_access_putx;
+				pending_request_packet->cache_block_state = cgm_cache_block_modified;
+			}
+			else
+			{
+				pending_request_packet->access_type = cgm_access_put_clnx;
+				pending_request_packet->cache_block_state = cgm_cache_block_exclusive;
+			}
+
+			pending_request_packet->size = gpu_v_caches[pending_request_packet->l1_cache_id].block_size;
+
+			//clear the old directory entry NOTE this clears the pending bit
+			cgm_cache_clear_dir(cache, pending_request_packet->set, pending_request_packet->way);
+
+			//set the new directory entry
+			cgm_cache_set_dir(cache, pending_request_packet->set, pending_request_packet->way, pending_request_packet->l1_cache_id);
+
+			/*pull the pending request and send to L1 cache*/
+			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
+
+			list_enqueue(cache->Tx_queue_top, pending_request_packet);
+			advance(cache->cache_io_up_ec);
+
+			/*printf("joined after flush evict id %llu cycle %llu\n", message_packet->evict_id, P_TIME);*/
 
 
-			printf("\n");
-			cache_dump_queue(cache->pending_request_buffer);
-
-			printf("\n");
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			printf("\n");
-			ort_dump(cache);
 		}
-
-
-		assert(!pending_request_packet);*/
-
-		//printf("here 0x%08x\n", message_packet->address & cache->block_address_mask);
 
 		//free the message packet
 		message_packet = list_remove(cache->last_queue, message_packet);

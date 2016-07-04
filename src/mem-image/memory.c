@@ -21,7 +21,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
-/*#include <lib/util/debug.h>*/
+#include <lib/util/debug.h>
 #include <mem-image/memory.h>
 
 

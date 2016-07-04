@@ -19,6 +19,13 @@
 typedef int bool;
 enum {false, true};
 
+enum cgm_processor_kind_t{
+	cgm_processor_kind_t_invalid = 0,
+	cpu,
+	gpu,
+	number_processor_types
+};
+
 enum protocol_case_kind_t{
 	invalid = 0,
 	L1_hit,
@@ -32,6 +39,8 @@ enum protocol_case_kind_t{
 	L3_upgrade,
 	number_cases
 };
+
+
 
 enum cgm_cache_block_state_t{
 

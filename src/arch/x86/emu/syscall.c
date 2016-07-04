@@ -5673,7 +5673,7 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	{
 		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
 		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
-		printf("---Checkpoint Saved cycle %llu---\n");
+		printf("---Checkpoint Saved cycle %llu---\n", P_TIME);
 	}
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;

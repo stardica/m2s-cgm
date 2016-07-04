@@ -5085,11 +5085,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//if it is a new access (L3 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
+				/*there should be only 1 core with the block*/
 				if(owning_core == 1)
-				{
-					/*there should be only 1 core with the block*/
 					assert(sharers == 1);
-				}
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit single shared ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
@@ -5164,7 +5162,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				We can derive the home (directory) later from the original access address.*/
 
 				//get the id of the owning core L2
-				owning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+				owning_core = cgm_cache_get_xown_core(cpu, cache, message_packet->set, message_packet->way);
 
 				//get the owning node
 				owning_cache_ptr = &l2_caches[owning_core];
@@ -5552,7 +5550,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
-			//if it is a new access (L3 retry) or a repeat access from an already owning core.
+			//if it is a new access (L2 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
 				//if the block is in the E state set M before sending up
@@ -5570,13 +5568,15 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//set cache block state modified
 				message_packet->cache_block_state = cgm_cache_block_modified;
 
+				// update message packet size
+				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
 				//update directory
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
-				// update message packet size
-				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
 
 				//update routing headers
 				SETROUTE(message_packet, cache, l2_cache_ptr)
@@ -5620,7 +5620,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				We can derive the home (directory) later from the original access address.*/
 
 				//get the id of the owning core L2
-				xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+				xowning_core = cgm_cache_get_xown_core(cpu, cache, message_packet->set, message_packet->way);
 
 				//get the owning node
 				xowning_cache_ptr = &l2_caches[xowning_core];
@@ -6130,7 +6130,7 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 	message_packet->access_type = cgm_access_get_fwd;
 
 	//get the id of the owning core L2
-	xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+	xowning_core = cgm_cache_get_xown_core(cpu, cache, message_packet->set, message_packet->way);
 
 	//owning node
 	message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
@@ -6201,7 +6201,7 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	message_packet->access_type = cgm_access_getx_fwd;
 
 	//get the id of the owning core L2
-	xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+	xowning_core = cgm_cache_get_xown_core(cpu, cache, message_packet->set, message_packet->way);
 
 	//owning node
 	message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
@@ -8193,7 +8193,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			We can derive the home (directory) later from the original access address.*/
 
 			//get the id of the owning core L2
-			xowning_core = cgm_cache_get_xown_core(cache, message_packet->set, message_packet->way);
+			xowning_core = cgm_cache_get_xown_core(cpu, cache, message_packet->set, message_packet->way);
 
 			xowning_cache_ptr = &l2_caches[xowning_core];
 

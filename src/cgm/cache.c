@@ -5173,22 +5173,44 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	return;
 }*/
 
-int cgm_cache_get_xown_core(struct cache_t *cache, int set, int way){
+int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way){
 
 	int xowner = 0;
 	int i = 0, j = 0;
 	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
 
 	//cycles through the core and try to match the core id with the share
 
-	for(i = 0; i < num_cores; i++)
+	if(processor == cpu)
 	{
-		if(cgm_cache_is_owning_core(cache, set, way, i ))
+
+		for(i = 0; i < num_cores; i++)
 		{
-			xowner = i;
-			j++;
+			if(cgm_cache_is_owning_core(cache, set, way, i ))
+			{
+				xowner = i;
+				j++;
+			}
 		}
 	}
+	else if (processor == gpu)
+	{
+		for(i = 0; i < num_cus; i++)
+		{
+			if(cgm_cache_is_owning_core(cache, set, way, i ))
+			{
+				xowner = i;
+				j++;
+			}
+		}
+	}
+	else
+	{
+		fatal("cgm_cache_get_xown_core(): invalid processor kind\n");
+	}
+
+
 
 	//if j is greater than 1 the block is in more than one core; BAD!!!
 	assert(j == 1);

@@ -179,6 +179,12 @@ int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, 
 			}
 
 		break;
+
+		case mmu_addr_guest:
+		case mmu_addr_invalid:
+			fatal("mmu_search_page(): bad addr type\n");
+
+		break;
 	}
 
 	return hit;
@@ -426,7 +432,7 @@ int mmu_address_space_new(void)
 
 unsigned int mmu_get_vtladdr(int address_space_index, unsigned int phy_addr){
 
-	struct mmu_page_t *page;
+	struct mmu_page_t *page = NULL;
 
 	unsigned int offset;
 	unsigned int phy_addr_tag;
