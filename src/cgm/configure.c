@@ -391,7 +391,7 @@ int debug_finish_create(void){
 
 int stats_read_config(void* user, const char* section, const char* name, const char* value){
 
-	char *temp_strn;
+	//char *temp_strn;
 
 	if(MATCH("Stats", "CGM_Stats"))
 	{
@@ -3024,8 +3024,8 @@ int switch_read_config(void* user, const char* section, const char* name, const 
 	int WireLatency = 0;
 	int Latency = 0;
 	int Bus_width = 0;
-	int MSHR = 0;
-	int maxcoal = 0;
+	//int MSHR = 0;
+	//int maxcoal = 0;
 
 	int extras = 1;
 
@@ -3417,7 +3417,7 @@ int switch_finish_create(void){
 	}
 	else if(hub_iommu_connection_type == hub_to_l3)
 	{
-		hub_iommu_put_next_queue = hub_iommu_put_next_queue_L3;
+		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
 		printf("---GPU connection mode is L3---\n");
 	}
 	else if(hub_iommu_connection_type == 2)

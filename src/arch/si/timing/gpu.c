@@ -939,7 +939,7 @@ void si_gpu_dump_default_config(char *filename)
 void si_gpu_dump_report(void)
 {
 	struct si_compute_unit_t *compute_unit;
-	struct mod_t *lds_mod;
+	//struct mod_t *lds_mod;
 	int compute_unit_id;
 
 	FILE *f;
@@ -979,7 +979,7 @@ void si_gpu_dump_report(void)
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		compute_unit = si_gpu->compute_units[compute_unit_id];
-		lds_mod = compute_unit->lds_module;
+		//lds_mod = compute_unit->lds_module;
 
 		inst_per_cycle = compute_unit->cycle ? (double)(compute_unit->inst_count/compute_unit->cycle) : 0.0;
 		/*coalesced_reads = lds_mod->reads - lds_mod->effective_reads;

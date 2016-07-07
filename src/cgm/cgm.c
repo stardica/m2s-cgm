@@ -1132,7 +1132,7 @@ void cgm_dump_general_stats(void){
 	unsigned int cpu_freq_hz = 0;
 	unsigned int gpu_freq_hz = 0;
 
-	int i = 0;
+	//int i = 0;
 
 	//get the time
 	cgm_stat->end_wall_time = get_wall_time();
@@ -1208,7 +1208,7 @@ void cgm_dump_parallel_section_stats(struct cgm_stats_t *cgm_stat_container){
 void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;
-	int num_threads = x86_cpu_num_threads;
+	//int num_threads = x86_cpu_num_threads;
 	//int num_cus = si_gpu_num_compute_units;
 	int i = 0;
 	long long run_time = 0;
@@ -1873,7 +1873,7 @@ int remove_from_global(long long id){
 
 void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr){
 
-	struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
+	//struct si_vector_mem_unit_t *vector_mem_ptr = vector_mem;
 	struct cgm_packet_t *new_packet = packet_create();
 	char buff[100];
 	access_id++;
@@ -1886,6 +1886,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 
 	new_packet->access_type = access_kind;
 	new_packet->gpu_access_type = access_kind;
+	new_packet->cpu_access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
 	//new_packet->in_flight = 1;
@@ -1901,7 +1902,6 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
-
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 	{
@@ -1913,6 +1913,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		{
 			new_packet->access_type = cgm_access_store;
 			new_packet->gpu_access_type = cgm_access_store;
+			new_packet->cpu_access_type = cgm_access_store;
 		}
 
 		/*if(list_count(vector_mem->compute_unit->gpu_v_cache_ptr->Rx_queue_top) > 16)
@@ -2202,7 +2203,7 @@ void cgm_dump_system(void){
 	printf("\n");
 
 
-	/*printf("\n---L1_d_caches---\n");
+	printf("\n---L1_d_caches---\n");
 	for(i = 0; i < num_cores; i++)
 	{
 		printf("---%s Rx top queue size %d---\n",
@@ -2299,7 +2300,7 @@ void cgm_dump_system(void){
 		cache_dump_queue(l3_caches[i].ort_list);
 		ort_dump(&l3_caches[i]);
 		printf("\n");
-	}*/
+	}
 
 	printf("---Switches---\n");
 	for(i = 0; i < (num_cores + 1); i++)

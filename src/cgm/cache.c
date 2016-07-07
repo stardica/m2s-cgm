@@ -721,7 +721,7 @@ void cache_dump_write_back(struct cache_t *cache){
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache){
 
 	int i = 0;
-	int j = 0;
+	//int j = 0;
 	struct cgm_packet_t *wb_packet = NULL;
 
 
@@ -1508,6 +1508,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		list_enqueue(cache->write_back_buffer, write_back_packet);
 	}
+
 
 	if(cache->cache_type == gpu_l2_cache_t)
 	{
@@ -3074,7 +3075,7 @@ void l3_cache_ctrl(void){
 	/*int dirty;
 	int sharers;
 	int owning_core;*/
-	int i = 0;
+	//int i = 0;
 	/*int flag = 0;*/
 
 	assert(my_pid <= num_cores);
@@ -4129,6 +4130,9 @@ void gpu_l2_cache_up_io_ctrl(void){
 
 				P_PAUSE(transfer_time);
 
+				if(message_packet->access_id == 6310108)
+					printf("l2 going up id %llu access type %d\n", message_packet->access_id, message_packet->access_type);
+
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
 				advance(&gpu_v_cache[message_packet->l1_cache_id]);
@@ -4284,6 +4288,9 @@ void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_pa
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//remove packet from cache queue, global queue, and simulator memory
+
+	//fatal("gpu l1 v hit id %llu l3 src %d cycle %llu\n", message_packet->access_id, message_packet->src_id, P_TIME);
+
 
 	(*message_packet->witness_ptr)++;
 	message_packet = list_remove(cache->last_queue, message_packet);
@@ -4900,13 +4907,13 @@ void cgm_cache_clear_dir(struct cache_t *cache, int set, int way){
 
 void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 
-	int num_cores = x86_cpu_num_cores;
+	//int num_cores = x86_cpu_num_cores;
 	/*unsigned long long position = 0;
 	unsigned long long bit_set = 1;*/
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	assert(cache_id > (-1) && cache_id < (num_cores + 1)); //+1 is hub-iommu
+	//assert(cache_id > (-1) && cache_id < (num_cores + 1)); //+1 is hub-iommu
 
 	SETDIR(cache_id, 0);
 	SETDIR(cache_id, 1);
@@ -5129,12 +5136,11 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int cache_
 	return core_match;
 }
 
-int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
+int cgm_cache_get_num_shares(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way){
 
 	int sharers = 0;
 	int num_cores = x86_cpu_num_cores;
-	/*if(cache->cache_type == gpu_l2_cache_t)
-		warning("cgm_cache_get_num_shares(): change this if we change number of CUS");*/
+	int num_cus = si_gpu_num_compute_units;
 
 	int i = 0;
 	unsigned long long bit_vector;
@@ -5149,16 +5155,32 @@ int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way){
 	cache->sets[set].blocks[way].directory_entry.entry_bits.p3 = 1;*/
 	//testing
 
-	//star todo this is dynamic, but the simulator only supports up to 4 cores for now.
 	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 	bit_vector = bit_vector & cache->share_mask;
 
-	for(i = 0; i < num_cores; i ++)
+	if(processor == cpu)
 	{
-		if((bit_vector & 1) == 1)
-			sharers++;
+		for(i = 0; i < num_cores; i ++)
+		{
+			if((bit_vector & 1) == 1)
+				sharers++;
 
-		bit_vector = bit_vector >> 1;
+			bit_vector = bit_vector >> 1;
+		}
+	}
+	else if (processor == gpu)
+	{
+		for(i = 0; i < num_cus; i ++)
+		{
+			if((bit_vector & 1) == 1)
+				sharers++;
+
+			bit_vector = bit_vector >> 1;
+		}
+	}
+	else
+	{
+		fatal("cgm_cache_get_num_shares(): invalid processor specified\n");
 	}
 
 	return sharers;
@@ -5464,7 +5486,7 @@ int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 	int *l2_set_ptr = &l2_set;
 	int *l2_tag_ptr = &l2_tag;
 	unsigned int *l2_offset_ptr = &l2_offset;
-	int *l2_way_ptr = &l1_way;
+	int *l2_way_ptr = &l2_way;
 
 	int l1_cache_block_hit = 0;
 	int l1_cache_block_state = 0;

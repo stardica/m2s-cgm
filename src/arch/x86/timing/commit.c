@@ -54,8 +54,8 @@ int X86ThreadCanCommit(X86Thread *self)
 	X86Cpu *cpu = self->cpu;
 	X86Context *ctx = self->ctx;
 	struct x86_uop_t *uop = NULL;
-	struct x86_uop_t *rob_head_uop = NULL;
-	struct cgm_packet_t *new_message = NULL;
+	//struct x86_uop_t *rob_head_uop = NULL;
+	//struct cgm_packet_t *new_message = NULL;
 
 	char buff[250];
 

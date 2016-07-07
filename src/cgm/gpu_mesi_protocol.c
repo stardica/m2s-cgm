@@ -1178,7 +1178,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
 	//check pending state
@@ -1291,8 +1291,6 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	}
 
-
-
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
@@ -1365,7 +1363,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
-							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l2_victim_way), NULL);
+							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0);
 
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
@@ -1440,7 +1438,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
-							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l2_victim_way), NULL);
+							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
@@ -1483,7 +1481,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				{
 					//message is going down to L3 so its a getx
 					message_packet->access_type = cgm_access_get;
-					message_packet->cpu_access_type = cgm_access_store;
+					message_packet->cpu_access_type = cgm_access_load;
 				}
 
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
@@ -1524,8 +1522,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					if (pending_join->downgrade_pending == 0)
 					{
-						//printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
-						//getchar();
+						/*printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
+						getchar();*/
+
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
 						list_enqueue(cache->retry_queue, pending_join);
 						advance(cache->ec_ptr);
@@ -1604,7 +1603,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				flush_packet = packet_create();
 				init_flush_packet(cache, flush_packet, message_packet->set, message_packet->way);
 
-				flush_packet->cpu_access_type = cgm_access_store;
+				flush_packet->gpu_access_type = cgm_access_store;
 				flush_packet->l1_cache_id = owning_core;
 
 
@@ -1732,7 +1731,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
 	//check pending state
@@ -1895,7 +1894,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
-							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l2_victim_way), NULL);
+							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0);
 
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
@@ -1972,7 +1971,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
-							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l2_victim_way), NULL);
+							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
@@ -2030,8 +2029,8 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					if (pending_join->downgrade_pending == 0)
 					{
-						//printf("pending get/getx_fwd request joined id %llu\n", pending_join->access_id);
-						//getchar();
+						/*printf("pending get/getx_fwd request joined id %llu\n", pending_join->access_id);
+						getchar();*/
 
 						pending_join = list_remove(cache->pending_request_buffer, pending_join);
 						list_enqueue(cache->retry_queue, pending_join);
@@ -2101,8 +2100,12 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				flush_packet = packet_create();
 				init_flush_packet(cache, flush_packet, message_packet->set, message_packet->way);
 
-				flush_packet->cpu_access_type = cgm_access_store;
+				flush_packet->gpu_access_type = cgm_access_store;
 				flush_packet->l1_cache_id = owning_core;
+
+				if(message_packet->access_id == 6535548 || message_packet->access_id == 6310108)
+					printf("owning core is %d pending bit is %d evict is %llu core access type %d\n",
+							owning_core, cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way), flush_packet->evict_id, message_packet->access_type);
 
 
 				/*printf("l2 flushing block id %llu cycle %llu\n", flush_packet->evict_id, P_TIME);*/
@@ -3113,7 +3116,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	//state should be either invalid of modified.
 	assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid);
 
-	//find the block in the local WB buffer
+	//find the block in the local WB cache_get_block_statusbuffer
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 
@@ -3144,6 +3147,9 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	if(wb_packet)
 	{
 
+		//fatal("here period!!!?\n");
+
+
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack with wb in l2 flush_join %d ID %llu type %d state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, wb_packet->L3_flush_join, message_packet->evict_id,
 				message_packet->access_type, *cache_block_state_ptr, P_TIME);
@@ -3156,6 +3162,9 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 
 			if(pending_request_packet)
 			{
+
+				fatal("here 0!!!?\n");
+
 				//printf("%s processing get/getx_fwd join after evict access id %llu access type %d\n", cache->name, pending_request_packet->access_id, pending_request_packet->access_type);
 
 				assert(pending_request_packet->access_type == cgm_access_get_fwd || pending_request_packet->access_type == cgm_access_getx_fwd);
@@ -3260,6 +3269,21 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 			}
 			else
 			{
+
+				//warning("here 1!!!?\n");
+
+				//check for a pending request....
+
+				/*if(pending_bit == 1)
+				{
+					printf("what is this! blk_addr 0x%08x\n", message_packet->address & cache->block_address_mask);
+
+					cache_dump_queue(cache->pending_request_buffer);
+
+				}*/
+
+				//assert(pending_bit != 1);
+
 				//incoming data from L1 is dirty
 				if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 				{
@@ -3284,6 +3308,10 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		}
 		else
 		{
+
+			fatal("here 2!!!?\n");
+
+
 			assert(wb_packet->L3_flush_join == 1); /*pull the join if there is one waiting*/
 
 			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
@@ -3346,13 +3374,14 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		/*case GPU only, GPU caches are mapped many to 1. its possible that L2 is flushing a compute unit
 		 to service the request of another compute unit. check the pending bit and pending request buffer */
 
+		//check for a pending request....
+		pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
 		/*GPU CASE*/
 		if(pending_bit == 1)
 		{
 			assert(*cache_block_hit_ptr == 1);
 			assert(*cache_block_state_ptr == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_exclusive);
-
-			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 			assert(pending_request_packet);
 			assert(pending_request_packet->set == message_packet->set && pending_request_packet->way == message_packet->way);
 
@@ -3380,6 +3409,10 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 			//set the new directory entry
 			cgm_cache_set_dir(cache, pending_request_packet->set, pending_request_packet->way, pending_request_packet->l1_cache_id);
 
+			if(message_packet->evict_id == 68249 || message_packet->evict_id == 67129)
+				cache_dump_queue(cache->pending_request_buffer);
+
+
 			/*pull the pending request and send to L1 cache*/
 			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
 
@@ -3387,9 +3420,13 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 			advance(cache->cache_io_up_ec);
 
 			/*printf("joined after flush evict id %llu cycle %llu\n", message_packet->evict_id, P_TIME);*/
-
-
 		}
+		else
+		{
+			assert(!pending_request_packet);
+		}
+
+
 
 		//free the message packet
 		message_packet = list_remove(cache->last_queue, message_packet);
@@ -4538,7 +4575,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 				else
 				{
 
-					//fatal("cgm_mesi_l2_write_back(): miss in L2 write back should no longer happen??\n");
+					fatal("cgm_mesi_l2_write_back(): miss in L2 write back should no longer happen??\n");
 
 					/*this case shouldn't happen any longer with the new changes.*/
 					//cgm_cache_dump_set(cache, message_packet->set);
@@ -4568,8 +4605,9 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 
 				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
-				//clear the directory for another core to pull...
-				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+				//clear the directory for another core to pull, but only if not already pending...
+				if(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) != 1)
+					cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
 
 				error = cache_validate_block_flushed_from_l1(gpu_v_caches, cache->id, message_packet->address);
 				assert(error == 0);
@@ -4641,7 +4679,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 			}
 
 
-			//send the write back to the L3 cache.
+			//send the write back on.
 			cache_put_io_down_queue(cache, message_packet);
 
 			/*stats*/

@@ -386,9 +386,9 @@ static void save_mmu_page(struct mmu_page_t *page){
 
 static void load_mmu_page(void){
 
-	struct mmu_page_t *prev = NULL;
+	//struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
-	char buff[100];
+	//char buff[100];
 	int index = 0;
 
 	int address_space_index = 0;
@@ -414,7 +414,7 @@ static void load_mmu_page(void){
 	/* Insert in page hash table */
 	page->next = mmu->page_hash_table[index];
 	mmu->page_hash_table[index] = page;
-	prev = NULL;
+	//prev = NULL;
 
 	return;
 }
@@ -672,8 +672,6 @@ static void save_memory_data(struct mem_t *mem)
 	/*old code*/
 	for (i = 0; i < MEM_PAGE_COUNT; i++)
 	{
-		struct mem_page_t *page;
-
 		for (page = mem->pages[i]; page; page = page->next)
 			save_memory_page(page);
 	}

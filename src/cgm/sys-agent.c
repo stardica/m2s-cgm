@@ -412,7 +412,7 @@ void sys_agent_ctrl(void){
 	int my_pid = system_agent_pid++;
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
-	int queue_depth = 0;
+	//int queue_depth = 0;
 
 	set_id((unsigned int)my_pid);
 

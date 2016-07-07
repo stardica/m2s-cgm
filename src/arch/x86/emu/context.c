@@ -246,7 +246,7 @@ void X86ContextExecute(X86Context *self){
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
 
-	int i = 0;
+	//int i = 0;
 
 	int spec_mode;
 

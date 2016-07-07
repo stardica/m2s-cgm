@@ -163,13 +163,13 @@ void cgm_cache_print_set_tag(struct cache_t *cache, unsigned int addr);
 unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag);
 
 //Directory Manipulations
-void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_dir_pending_bit(struct cache_t *cache, int set, int way);
-int cgm_cache_get_num_shares(struct cache_t *cache, int set, int way);
+void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int l2_cache_id);
+int cgm_cache_get_num_shares(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way);
 int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way);
 //int cgm_cache_get_sown_core(struct cache_t *cache, int set, int way);
 int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cache_id);

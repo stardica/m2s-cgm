@@ -193,7 +193,7 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		message_packet->gpu_cache_id = message_packet->l2_cache_id;
 		message_packet->gpu_cache_name = message_packet->l2_cache_name;
 
-		message_packet->l2_cache_id = hub_iommu->switch_id;
+		message_packet->l2_cache_id = str_map_string(&node_strn_map, hub_iommu->name);
 		message_packet->l2_cache_name = hub_iommu->name;
 
 		//change src name and id
@@ -263,6 +263,8 @@ int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 	int last_queue_num = -1;
 	int l2_src_id = -1;
 
+	struct cache_t *l3_cache_ptr = NULL;
+
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
 
@@ -273,10 +275,29 @@ int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 
 		if(list_count(hub_iommu->Tx_queue_bottom) <= QueueSize)
 		{
+			//save the gpu l2 cache id
+			message_packet->gpu_cache_id = message_packet->l2_cache_id;
+			message_packet->gpu_cache_name = message_packet->l2_cache_name;
 
-			SETROUTE(message_packet, hub_iommu, system_agent);
+			if(hub_iommu_connection_type == hub_to_mc)
+			{
+				SETROUTE(message_packet, hub_iommu, system_agent);
+			}
+			else if (hub_iommu_connection_type == hub_to_l3)
+			{
+				//update routing headers for the packet
+				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
-			//fatal(" src %s id %d dest %s id %d\n", message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
+				message_packet->l2_cache_id = hub_iommu->switch_id;
+				message_packet->l2_cache_name = hub_iommu->name;
+
+				//change src name and id
+				SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
+			}
+			else
+			{
+				fatal("hub_iommu_put_next_queue_MC(): invalid connection type\n");
+			}
 
 			message_packet = list_remove(hub_iommu->last_queue, message_packet);
 			assert(message_packet);
@@ -294,7 +315,7 @@ int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 	{
 
 		//return trip for memory access
-		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->l2_cache_name);
+		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
 
 		if(list_count(hub_iommu->Tx_queue_top[l2_src_id]) <= QueueSize)
 		{
@@ -370,7 +391,6 @@ void hub_iommu_coherent_ctrl(void){
 
 	while(1)
 	{
-
 		//we have received a packet
 		await(hub_iommu_ec, step);
 
@@ -380,15 +400,24 @@ void hub_iommu_coherent_ctrl(void){
 
 		P_PAUSE(hub_iommu->latency);
 
+
+
 		/*account for connection type*/
 		if(hub_iommu_connection_type == hub_to_mc)
 		{
 			iommu_nc_translate(message_packet);
 		}
-		else
+		else if (hub_iommu_connection_type == hub_to_l3)
 		{
 			iommu_translate(message_packet);
 		}
+		else
+		{
+			fatal("hub_iommu_coherent_ctrl(): invalid hub-iommu connection type\n");
+		}
+
+		/*printf("GPU accessing phy_blk_addr 0x%08x id %llu cycle %llu\n",
+			message_packet->address & gpu_v_caches[0].block_address_mask, message_packet->access_id, P_TIME);*/
 
 		//star the hub multiplexes GPU memory requests.
 		if(hub_iommu_put_next_queue(message_packet))
@@ -493,14 +522,14 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
-			|| message_packet->access_type == cgm_access_getx)
+			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx)
 	{
-		/*load and stores are heading to the system agent.*/
 		printf("hub-iommu access_id %llu guest vtl address in 0x%08x source %s\n", message_packet->access_id, message_packet->address, message_packet->l2_cache_name);
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
 		printf("hub-iommu access_id %llu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->access_id, message_packet->address, get_block_address(message_packet->address, ~0x3F));
 	}
-	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
+	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
+			|| message_packet->access_type == cgm_access_put_clnx)
 	{
 		/*put coming from the system agent.*/
 		printf("hub-iommu host phy address in 0x%08x\n", message_packet->address);

@@ -131,7 +131,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	int ort_status = -1;
+	//int ort_status = -1;
 
 	//check the packet for integrity
 	assert(cache->cache_type == l1_i_cache_t);
@@ -725,7 +725,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	int *cache_block_state_ptr = &cache_block_state;
 	int ort_status = -1;
 
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
@@ -738,7 +738,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
 	//check the ORT table is there an outstanding access for this block we are trying to evict?
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
@@ -1357,7 +1357,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			/*if the block isn't already invalid evict it*/
 			if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_gets;
@@ -1509,7 +1509,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0);
 
 				//now set the block
 				assert(write_back_packet->cache_block_state == cgm_cache_block_exclusive || write_back_packet->cache_block_state == cgm_cache_block_modified);
@@ -1578,7 +1578,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
 
 				ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 				assert(ort_row < cache->mshr_size);
@@ -1710,7 +1710,7 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	int tag = 0;
 	unsigned int offset = 0;
 	/*int way = 0;*/
-	int l3_map = 0;
+	//int l3_map = 0;
 
 	int *set_ptr = &set;
 	int *tag_ptr = &tag;
@@ -1783,7 +1783,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int l3_map;
+	//int l3_map;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *pending_join = NULL;
@@ -1876,7 +1876,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0);
 
 				//now set the new block
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
@@ -1946,7 +1946,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, NULL);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
@@ -2166,8 +2166,8 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cache_t *l3_cache_ptr = NULL;
 
-	int l3_map;
-	int error = 0;
+	//int l3_map;
+	//int error = 0;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -2494,7 +2494,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cache_t *l3_cache_ptr = NULL;
 
-	int l3_map;
+	//int l3_map;
 	int error = 0;
 
 	//charge delay
@@ -2783,7 +2783,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-	int l3_map = 0;
+	//int l3_map = 0;
 	int ort_status = -1;
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
@@ -3000,7 +3000,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	struct cgm_packet_t *pending_request_packet = NULL;
 	struct cgm_packet_t *reply_packet = NULL;
 	struct cache_t *l3_cache_ptr = NULL;
-	int l3_map = 0;
+	//int l3_map = 0;
 	int error =0;
 
 	//charge delay
@@ -3309,7 +3309,7 @@ void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	int *tag_ptr = &tag;
 	unsigned int *offset_ptr = &offset;
 
-	int l3_map = 0;
+	//int l3_map = 0;
 	int ort_status = 0;
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
@@ -3388,7 +3388,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	int error = 0;
 	int ort_status = 0;
-	int l3_map;
+	//int l3_map;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -3701,12 +3701,12 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	unsigned int *offset_ptr = &offset;
 	// *way_ptr = &way;
 
-	int l3_map = 0;
+	//int l3_map = 0;
 	int ort_status = 0;
 	//struct cgm_packet_t *pending_packet;
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
-	struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
+	//struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -3780,7 +3780,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	int error = 0;
 	int ort_status = 0;
-	int l3_map;
+	//int l3_map;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -4367,7 +4367,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int *cache_block_state_ptr = &cache_block_state;
 
 	/*int num_cores = x86_cpu_num_cores;*/
-	int sharers, owning_core, pending_bit;
+	int pending_bit; //sharers, owning_core,
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cache_t *l2_cache_ptr = NULL;
 
@@ -4382,9 +4382,9 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	assert(!write_back_packet);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	//sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
-	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+	//owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 
@@ -4440,7 +4440,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//evict the block
 			if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
 				cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-						cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l3_victim_way), NULL);
+						cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
 			//clear the directory entry
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
@@ -4514,8 +4514,8 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 	struct cgm_packet_t *wb_packet;
-	enum cgm_cache_block_state_t block_trainsient_state;
-	int l3_map;
+	//enum cgm_cache_block_state_t block_trainsient_state;
+	//int l3_map;
 	int error = 0;
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -4703,7 +4703,12 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	struct cache_t *l2_cache_ptr = NULL;
 	struct cache_t * owning_cache_ptr = NULL;
 
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
+
+	if(message_packet->access_id == 5281013)
+		printf("at L3 id %llu cycle %llu\n",
+				message_packet->access_id, P_TIME);
+
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -4715,13 +4720,13 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 	//get block transient state
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	//assert(victim_trainsient_state == cgm_cache_block_transient);
 
 	//update cache way list for cache replacement policies.
@@ -4927,7 +4932,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l3_victim_way) != cgm_cache_block_invalid)
 					cgm_L3_cache_evict_block(cache, write_back_packet->set, write_back_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l3_victim_way), NULL);
+							cgm_cache_get_num_shares(cpu, cache, write_back_packet->set, write_back_packet->l3_victim_way), 0);
 
 
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l3_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
@@ -5032,7 +5037,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//evict the block
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
 					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l3_victim_way), NULL);
+							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
@@ -5109,7 +5114,15 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//set the presence bit in the directory for the requesting core.
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
+				if(message_packet->access_id == 5281013)
+				{
+					printf("in l3 l2 sw id %d name %s\n", message_packet->l2_cache_id, message_packet->src_name);
+					getchar();
+				}
+
+
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
 
 				//set message package size
 				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
@@ -5234,14 +5247,14 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	int sharers, owning_core, xowning_core, pending_bit;
 
 	struct cgm_packet_t *upgrade_putx_n_inval_request_packet;
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cache_t *l2_cache_ptr = NULL;
 	struct cache_t * xowning_cache_ptr = NULL;
 
 	int i = 0;
-	int l2_src_id;
-	char *l2_name;
+	//int l2_src_id;
+	//char *l2_name;
 
 	//charge latency
 	P_PAUSE(cache->latency);
@@ -5256,13 +5269,13 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 	//get block transient state
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
@@ -5428,7 +5441,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l3_victim_way) != cgm_cache_block_invalid)
 					cgm_L3_cache_evict_block(cache, write_back_packet->set, write_back_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cache, write_back_packet->set, write_back_packet->l3_victim_way), NULL);
+							cgm_cache_get_num_shares(cpu, cache, write_back_packet->set, write_back_packet->l3_victim_way), 0);
 
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l3_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
 				//clear the old directory entry
@@ -5506,7 +5519,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
 					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cache, message_packet->set, message_packet->l3_victim_way), NULL);
+							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
@@ -5736,7 +5749,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
 	struct cgm_packet_t *write_back_packet = NULL;
 
 	int pending_bit, sharers;
@@ -5754,7 +5767,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	assert(pending_bit == 1);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	assert(sharers == 1);
 
 	//search the WB buffer for the data
@@ -5762,7 +5775,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	assert(!write_back_packet);
 
 	//check transient state
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s downgrade ack ID %llu type %d state %d cycle %llu\n",
@@ -5829,7 +5842,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	/*its a down grade which leaves the owning core and requesting core with the block in the shared state
 	so we better have two cores with the block.*/
-	assert(cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way) == 2);
+	assert(cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way) == 2);
 
 	return;
 }
@@ -5844,7 +5857,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	int sharers, pending_bit;
 	int error = 0;
 
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
@@ -5871,7 +5884,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	assert(pending_bit == 1);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	assert(sharers == 0 || sharers == 1);
 	if(sharers == 0)
 	{
@@ -5893,7 +5906,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	assert(!write_back_packet);
 
 	//check transient state
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s downgrade nack ID %llu type %d state %d cycle %llu\n",
@@ -5967,7 +5980,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	int sharers, pending_bit;
 
-	enum cgm_cache_block_state_t block_trainsient_state;
+	//enum cgm_cache_block_state_t block_trainsient_state;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 
@@ -5986,7 +5999,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 	assert(pending_bit == 1);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	assert(sharers == 1);
 
 	//search the WB buffer for the data
@@ -5994,7 +6007,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 	assert(!write_back_packet);
 
 	//check transient state
-	block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_ack ID %llu type %d state %d cycle %llu\n",
@@ -6062,7 +6075,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 	}
 
 	//block should only be in one core
-	assert(cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way) == 1);
+	assert(cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way) == 1);
 
 	return;
 }
@@ -6091,7 +6104,7 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 	assert(victim_trainsient_state != cgm_cache_block_transient);
 
 	//get number of sharers
-	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	num_sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
@@ -6170,7 +6183,7 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	assert(victim_trainsient_state != cgm_cache_block_transient);
 
 	//get number of sharers
-	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	num_sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state
@@ -6250,7 +6263,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	assert(pending_bit == 1);
 
 	//get number of sharers
-	sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	assert(sharers == 1 || sharers == 0);
 
 	//search the WB buffer for the data
@@ -6367,8 +6380,8 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *wb_packet = NULL;
-	struct cgm_packet_t *pending_request_packet = NULL;
-	int l3_map = 0;
+	//struct cgm_packet_t *pending_request_packet = NULL;
+	//int l3_map = 0;
 	int error = 0;
 
 
@@ -6816,7 +6829,7 @@ int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
 	struct cgm_packet_t *upgrade_request_packet;
-	int l3_map;
+	//int l3_map;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -6976,7 +6989,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
-	enum cgm_cache_block_state_t victim_trainsient_state;
+	//enum cgm_cache_block_state_t victim_trainsient_state;
 
 	struct cgm_packet_t *inval_packet;
 
@@ -6988,7 +7001,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade inval ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
@@ -7128,7 +7141,7 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	int l3_map;
+	//int l3_map;
 
 	struct cgm_packet_t *pending_packet;
 
@@ -7999,8 +8012,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	int num_cores = x86_cpu_num_cores;
 	int num_sharers, owning_core, pending_bit, xowning_core, i;
 
-	int l2_src_id;
-	char *l2_name;
+	//int l2_src_id;
+	//char *l2_name;
 
 	struct cache_t *l2_cache_ptr = NULL;
 	struct cache_t *xowning_cache_ptr = NULL;
@@ -8020,7 +8033,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 	//get the directory state
 
 	//get number of sharers
-	num_sharers = cgm_cache_get_num_shares(cache, message_packet->set, message_packet->way);
+	num_sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
 	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 	//check pending state

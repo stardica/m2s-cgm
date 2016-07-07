@@ -42,7 +42,7 @@ void X86CoreWriteback(X86Core *self)
 	X86Thread *thread;
 
 	struct x86_uop_t *uop;
-	struct x86_uop_t *rob_uop;
+	//struct x86_uop_t *rob_uop;
 
 	int recover = 0;
 

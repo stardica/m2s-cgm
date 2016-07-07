@@ -481,7 +481,7 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset)
 	}
 	else if (inst->micro_inst.sopk.enc == 0xB)
 	{
-		int i = 0;
+		//int i = 0;
 
 		/*for(i=0; i < 22; i++)
 		{
