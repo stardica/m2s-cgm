@@ -31,6 +31,7 @@ enum mmu_access_t
 	mmu_access_fetch,
 	mmu_access_load_store,
 	mmu_access_gpu,	//add more devices as needed
+	mmu_access_gpu_coherent,
 	mmu_access_read,
 	mmu_access_write,
 	mmu_access_execute

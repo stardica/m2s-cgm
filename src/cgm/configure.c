@@ -2455,16 +2455,10 @@ int cache_finish_create(){
 		gpu_s_caches[i].cache_io_down_tasks = create_task(gpu_s_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		{
-			//gpu_s_caches[i].gpu_s_load = cgm_nc_gpu_s_load;
-			//gpu_s_caches[i].gpu_s_write_block = cgm_nc_gpu_s_write_block;
-		}
-		else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_s_caches[i].gpu_s_load = cgm_mesi_gpu_s_load;
 			gpu_s_caches[i].gpu_s_write_block = NULL;
-
 		}
 		else
 		{
@@ -2588,13 +2582,7 @@ int cache_finish_create(){
 		gpu_v_caches[i].cache_io_down_tasks = create_task(gpu_v_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		{
-			//gpu_v_caches[i].gpu_v_load = cgm_nc_gpu_v_load;
-			//gpu_v_caches[i].gpu_v_store = cgm_nc_gpu_v_store;
-			//gpu_v_caches[i].gpu_v_write_block = cgm_nc_gpu_v_write_block;
-		}
-		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_v_caches[i].gpu_v_load = cgm_mesi_gpu_l1_v_load;
 			gpu_v_caches[i].gpu_v_store = cgm_mesi_gpu_l1_v_store;
@@ -2604,6 +2592,10 @@ int cache_finish_create(){
 			gpu_v_caches[i].gpu_v_load_nack = cgm_mesi_gpu_l1_v_load_nack;
 			gpu_v_caches[i].gpu_v_store_nack = cgm_mesi_gpu_l1_v_store_nack;
 		}
+		/*else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+		{
+
+		}*/
 		else
 		{
 			fatal("invalid protocol at GPU V cache init\n");
@@ -2848,21 +2840,20 @@ int cache_finish_create(){
 		gpu_l2_caches[i].cache_io_down_tasks = create_task(gpu_l2_cache_down_io_ctrl, DEFAULT_STACK_SIZE, strdup(buff));
 
 		/*link cache virtual functions*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		{
-			//gpu_l2_caches[i].gpu_l2_get = cgm_nc_gpu_l2_get;
-			//gpu_l2_caches[i].gpu_l2_write_block = cgm_nc_gpu_l2_write_block;
-		}
-		else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			gpu_l2_caches[i].gpu_l2_get = cgm_mesi_gpu_l2_get;
 			gpu_l2_caches[i].gpu_l2_getx = cgm_mesi_gpu_l2_getx;
 			gpu_l2_caches[i].gpu_l2_write_block = cgm_mesi_gpu_l2_write_block;
-
 			gpu_l2_caches[i].gpu_l2_write_back = cgm_mesi_gpu_l2_write_back;
 			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
 
 		}
+		/*else if()
+		{
+
+
+		}*/
 		else
 		{
 			fatal("invalid protocol at GPU L2 cache init\n");
@@ -3397,19 +3388,21 @@ int switch_finish_create(void){
 		hub_iommu->translation_table[i][1] = -1;
 	}
 
-	//configure hub-iommu virtual functions
-	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-	{
-		hub_iommu_ctrl = hub_iommu_noncoherent_ctrl;
-	}
-	else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
-	{
-		hub_iommu_ctrl = hub_iommu_coherent_ctrl;
-	}
+	//star todo, i think we can get rid of this now.
+	//configure hub-iommu virtual function.
+	hub_iommu_ctrl = hub_iommu_ctrl_func;
+	hub_iommu_put_next_queue = hub_iommu_put_next_queue_func;
+
+	assert(cgm_gpu_cache_protocol == cgm_protocol_non_coherent
+			|| cgm_gpu_cache_protocol == cgm_protocol_mesi);
+
 
 	hub_iommu_create_tasks(hub_iommu_ctrl);
 
-	//configure correct routing function
+
+
+
+	/*//configure correct routing function
 	if(hub_iommu_connection_type == hub_to_mc)
 	{
 		hub_iommu_put_next_queue = hub_iommu_put_next_queue_MC;
@@ -3427,7 +3420,7 @@ int switch_finish_create(void){
 	else
 	{
 		fatal("switch_finish_create(): HUB_IOMMU_CONNECTION_MODE invlid setting\n");
-	}
+	}*/
 
 	return 0;
 }

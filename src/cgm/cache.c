@@ -3345,16 +3345,15 @@ void gpu_v_cache_ctrl(void){
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
 		//star todo fix this
-		if (message_packet == NULL) // || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
 		{
-			/*if(message_packet)
-			{
-				printf("%s stalling packet ID %llu tx bottom size %d rx bottom size %d cycle %llu\n",
-						gpu_v_caches[my_pid].name, message_packet->access_id, list_count(gpu_v_caches[my_pid].Tx_queue_bottom),
-						list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);
 
-				//getchar();
-			}*/
+			/*printf("%s stalling rx_t %d cycle tx_b %d rx_b %d %llu\n",
+					gpu_v_caches[my_pid].name, list_count(gpu_v_caches[my_pid].Rx_queue_top),
+					list_count(gpu_v_caches[my_pid].Tx_queue_bottom), list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);*/
+
+			/*printf("%s stalling tx_b %d rx_b %d cycle %llu\n",
+					gpu_v_caches[my_pid].name, list_count(gpu_v_caches[my_pid].Tx_queue_bottom), list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);*/
 
 			P_PAUSE(1);
 		}
@@ -3454,9 +3453,17 @@ void gpu_l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
-			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
+
+			/*printf("%s stalling tx_t %d rx_t %d cycle tx_b %d rx_b %d %llu\n",
+					gpu_l2_caches[my_pid].name, list_count(gpu_l2_caches[my_pid].Tx_queue_top), list_count(gpu_l2_caches[my_pid].Rx_queue_top),
+					list_count(gpu_l2_caches[my_pid].Tx_queue_bottom), list_count(gpu_l2_caches[my_pid].Rx_queue_bottom), P_TIME);
+
+			getchar();*/
+
+
 			gpu_l2_caches[my_pid].Stalls++;
-			/*future_advance(&gpu_l2_cache[my_pid], etime.count + 2);*/
+
+
 			P_PAUSE(1);
 		}
 		else
@@ -4191,7 +4198,6 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 			message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
 			assert(message_packet);
-
 
 			transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
 
@@ -5397,8 +5403,6 @@ enum cgm_access_kind_t cgm_gpu_cache_get_retry_state(enum cgm_access_kind_t r_st
 
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 	{
-		fatal("cgm_gpu_cache_get_retry_state(): system isn't configured right\n");
-
 		if(r_state == cgm_access_load || r_state == cgm_access_load)
 		{
 			retry_state = cgm_access_load_retry;

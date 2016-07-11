@@ -123,14 +123,15 @@ int hub_iommu_can_access(struct list_t *queue);
 
 //virtual functions that support multiple simulator configurations
 void (*hub_iommu_ctrl)(void);
-void hub_iommu_noncoherent_ctrl(void);
-void hub_iommu_coherent_ctrl(void);
+void hub_iommu_ctrl_func(void);
+//void hub_iommu_noncoherent_ctrl(void);
+
 
 struct cgm_packet_t *hub_iommu_get_from_queue(void);
 
 int (*hub_iommu_put_next_queue)(struct cgm_packet_t *message_packet);
-int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet);
-int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet);
+int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet);
+//int hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
 
 void hub_iommu_io_up_ctrl(void);
 void hub_iommu_io_down_ctrl(void);

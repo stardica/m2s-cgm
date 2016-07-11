@@ -89,11 +89,10 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	{
 		page = mmu->page_hash_table[index];
 	}
-	else if(access_type == mmu_access_gpu)
+	else if(access_type == mmu_access_gpu || access_type == mmu_access_gpu_coherent)
 	{
 		page = mmu->page_hash_table[hub_iommu->page_hash_table[index]];
 	}
-
 
 	while (page)
 	{
@@ -117,7 +116,6 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 		//prev = page;
 		page = page->next;
 	}
-
 
 	/*old code
 	search the page list for a page hit.*/
@@ -158,8 +156,25 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	}
 	else
 	{
+
+		LIST_FOR_EACH(mmu->page_list, i)
+		{
+			//pull a page
+			page = list_get(mmu->page_list, i);
+
+			//check to see if it is a hit and look for both text and data page types
+			if(page->id == 47)
+			{
+				printf("found the page tran_index is %d hub index is %d page type %d access_type %d\n",
+						index, hub_iommu->page_hash_table[index], page->page_type, access_type);
+			}
+		}
+
 		fatal("mmu_page_access(): page miss addr 0x%08x\n", addr);
 	}
+
+	if(page->id == 47)
+		printf("on the initial look up index used %d\n", index);
 
 	return page;
 }
@@ -323,6 +338,16 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		page->next = mmu->page_hash_table[index];
 		mmu->page_hash_table[index] = page;
 	}
+
+
+	/*if(page->id == 47)
+	{
+		printf("page index is %d\n", index);
+		getchar();
+	}*/
+
+
+
 
 	return page;
 }
@@ -511,6 +536,10 @@ enum mmu_page_type_t mmu_get_page_type(enum mmu_access_t access_type){
 	{
 		page_type = mmu_page_gpu;
 	}
+	else if(access_type == mmu_access_gpu_coherent)
+	{
+		page_type = mmu_page_data;
+	}
 	else
 	{
 		fatal("mmu_get_page_type(): invalid page access_type\n");
@@ -655,7 +684,7 @@ unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid,
 
 	assert(address_space_index == 0);
 
-	page = mmu_page_access(address_space_index, mmu_addr_phy, host_phy_addr, mmu_access_load_store);
+	page = mmu_page_access(address_space_index, mmu_addr_phy, host_phy_addr, mmu_access_gpu_coherent);
 	assert(page);
 
 	/*build the host_vtl_addr*/
@@ -678,8 +707,10 @@ unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid,
 	unsigned int host_phy_addr;
 	unsigned int offset;
 
-	assert(address_space_index == 0);
+	int vtl_index = 0;
+	int phy_index = 0;
 
+	assert(address_space_index == 0);
 
 	/* link the guest and host pages*/
 	host_vtl_addr = mmu_forward_link_guest_address(guest_pid, guest_vtl_addr);
@@ -691,6 +722,13 @@ unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid,
 
 	offset = host_vtl_addr & mmu_page_mask;
 	host_phy_addr = page->phy_addr | offset;
+
+	/*for future reverse translations*/
+	vtl_index = ((host_vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	phy_index = ((host_phy_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+
+	hub_iommu->page_hash_table[phy_index] = vtl_index;
+
 
 	return host_phy_addr;
 }

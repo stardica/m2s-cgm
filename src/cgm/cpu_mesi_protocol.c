@@ -4764,7 +4764,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			assert(sharers == 1 && owning_core == 1);
 
 			/*The block MUST be in the E or M state*/
-			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || cgm_cache_block_invalid == cgm_cache_block_modified);
+			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
 
 			//update message status
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
@@ -5301,7 +5301,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			assert(sharers == 1 && owning_core == 1);
 
 			/*The block MUST be in the E or M state*/
-			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || cgm_cache_block_invalid == cgm_cache_block_modified);
+			assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
 
 			//update message status
 			message_packet->access_type = cgm_access_putx;

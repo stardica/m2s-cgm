@@ -52,7 +52,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0002f480
+#define WATCHBLOCK (unsigned int) 0x00089c00
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 L1-L3,
 #define LEVEL 3
@@ -263,6 +263,8 @@ int remove_from_global(long long id);
 
 
 void cgm_dump_system(void);
+long long cgm_get_oldest_access(void);
+long long cache_get_oldest_access(struct cache_t *cache);
 
 //debugging and stats related
 void PrintCycle(void);

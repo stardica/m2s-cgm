@@ -251,18 +251,17 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	//star should this be a system call? I.e the driver runs a system call to do the link?
 	//this will turn shared memory on and off as set in the ini file.
 
+	/* For now, memory allocation in device memory is done by just
+	 * incrementing a pointer to the top of the global memory space.
+	 * Since memory deallocation is not implemented, "holes" in the
+	 * memory space are not considered. */
+	device_ptr = si_emu->video_mem_top;
+	si_emu->video_mem_top += size;
+	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
-		/* For now, memory allocation in device memory is done by just
-		 * incrementing a pointer to the top of the global memory space.
-		 * Since memory deallocation is not implemented, "holes" in the
-		 * memory space are not considered. */
-		device_ptr = si_emu->video_mem_top;
-		si_emu->video_mem_top += size;
-		opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
-
-		/*link this GPU memory segment to the corresponding host memory space*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
-			mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
+	/*link this GPU memory segment to the corresponding host memory space*/
+	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
 
 
 	if(INT == 1)

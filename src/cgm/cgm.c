@@ -2107,12 +2107,114 @@ long long cgm_get_time(void)
 	return value;
 }
 
+long long cgm_get_oldest_access(void){
+
+	long long system_start = (P_TIME + 2);
+	long long cache_start = 0;
+	int i = 0;
+	//int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+
+	for(i = 0; i < num_cus; i++)
+	{
+		cache_start = cache_get_oldest_access(&gpu_v_caches[i]);
+
+		if(cache_start < system_start)
+			system_start = cache_start;
+	}
+
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		cache_start = cache_get_oldest_access(&gpu_l2_caches[i]);
+
+		if(cache_start < system_start)
+			system_start = cache_start;
+	}
+
+	return system_start;
+}
+
+
+long long cache_get_oldest_access(struct cache_t *cache){
+
+	long long start_time = (P_TIME + 2);
+	struct cgm_packet_t *packet = NULL;
+	int i = 0;
+
+
+	LIST_FOR_EACH(cache->Rx_queue_top, i)
+	{
+		packet = list_get(cache->Rx_queue_top, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(cache->Rx_queue_bottom, i)
+	{
+		packet = list_get(cache->Rx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(cache->Tx_queue_bottom, i)
+	{
+		packet = list_get(cache->Tx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(cache->Coherance_Rx_queue, i)
+	{
+		packet = list_get(cache->Coherance_Rx_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+
+	LIST_FOR_EACH(cache->pending_request_buffer, i)
+	{
+		packet = list_get(cache->pending_request_buffer, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+
+	LIST_FOR_EACH(cache->retry_queue, i)
+	{
+		packet = list_get(cache->retry_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(cache->ort_list, i)
+	{
+		packet = list_get(cache->ort_list, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+
+	return start_time;
+}
+
+
 void cgm_dump_system(void){
 
 	int i = 0;
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
+
+	printf("Oldest start_time in the system is %llu\n", cgm_get_oldest_access());
 
 	printf("\n---L1_v_caches---\n");
 	for(i = 0; i < num_cus; i++)
@@ -2154,6 +2256,9 @@ void cgm_dump_system(void){
 		printf("---%s Rx bottom queue size %d---\n",
 				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Rx_queue_bottom));
 		cache_dump_queue(gpu_l2_caches[i].Rx_queue_bottom);
+		printf("---%s Tx top queue size %d---\n",
+				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Tx_queue_top));
+		cache_dump_queue(gpu_l2_caches[i].Tx_queue_top);
 		printf("---%s Tx bottom queue size %d---\n",
 				gpu_l2_caches[i].name, list_count(gpu_l2_caches[i].Tx_queue_bottom));
 		cache_dump_queue(gpu_l2_caches[i].Tx_queue_bottom);

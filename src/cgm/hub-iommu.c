@@ -168,7 +168,7 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 	return new_message;
 }
 
-int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
+/*int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
@@ -199,11 +199,11 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		//change src name and id
 		SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
 
-		/*message_packet->dest_name = l3_caches[l3_cache_ptr].name;
+		message_packet->dest_name = l3_caches[l3_cache_ptr].name;
 		message_packet->dest_id = str_map_string(&node_strn_map, l3_caches[l3_cache_ptr].name);
 
 		message_packet->src_name = hub_iommu->name;
-		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);*/
+		message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
 
 		message_packet = list_remove(hub_iommu->last_queue, message_packet);
 		assert(message_packet);
@@ -211,7 +211,7 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu access id %llu as %s first address 0x%08x set %d heading to L3 id %d \n",
 					message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address, message_packet->set, l3_cache_ptr->id);
-		/*getchar();*/
+		getchar();
 
 		list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 		advance(hub_iommu->hub_iommu_io_down_ec);
@@ -223,10 +223,10 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 		//return trip for memory access
 		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
 
-		/*if(message_packet->access_id == 1638361)
+		if(message_packet->access_id == 1638361)
 		{
 			fatal("message %llu hub_iomm received gpu cache name %s\n", message_packet->access_id, message_packet->gpu_cache_name);
-		}*/
+		}
 
 		//star todo fix this
 		while(!cache_can_access_bottom(&gpu_l2_caches[l2_src_id]))
@@ -252,11 +252,11 @@ int hub_iommu_put_next_queue_L3(struct cgm_packet_t *message_packet){
 	}
 
 
-	/*star look at this*/
+	star look at this
 	return 0;
-}
+}*/
 
-int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
+int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
@@ -338,11 +338,11 @@ int hub_iommu_put_next_queue_MC(struct cgm_packet_t *message_packet){
 	return 1;
 }
 
-void hub_iommu_noncoherent_ctrl(void){
+/*void hub_iommu_noncoherent_ctrl(void){
 
 	int my_pid = hub_iommu_pid++;
-	/*int num_cus = si_gpu_num_compute_units;*/
-	/*int gpu_group_cache_num = (num_cus/4);*/
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
 	//int l3_map;
@@ -379,9 +379,9 @@ void hub_iommu_noncoherent_ctrl(void){
 
 	fatal("hub_iommu_ctrl(): reached end of func\n");
 	return;
-}
+}*/
 
-void hub_iommu_coherent_ctrl(void){
+void hub_iommu_ctrl_func(void){
 
 	int my_pid = hub_iommu_pid++;
 	struct cgm_packet_t *message_packet;
@@ -400,20 +400,18 @@ void hub_iommu_coherent_ctrl(void){
 
 		P_PAUSE(hub_iommu->latency);
 
-
-
-		/*account for connection type*/
-		if(hub_iommu_connection_type == hub_to_mc)
+		/*account for coherence and connection type*/
+		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
 			iommu_nc_translate(message_packet);
 		}
-		else if (hub_iommu_connection_type == hub_to_l3)
+		else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
 			iommu_translate(message_packet);
 		}
 		else
 		{
-			fatal("hub_iommu_coherent_ctrl(): invalid hub-iommu connection type\n");
+			fatal("hub_iommu_coherent_ctrl(): invalid hub-iommu coherence type\n");
 		}
 
 		/*printf("GPU accessing phy_blk_addr 0x%08x id %llu cycle %llu\n",

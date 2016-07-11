@@ -41,7 +41,7 @@
 								<option id="gnu.c.compiler.option.optimization.flags.1705365602" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="" valueType="string"/>
 								<option id="gnu.c.compiler.option.warnings.allwarn.1772039799" name="All warnings (-Wall)" superClass="gnu.c.compiler.option.warnings.allwarn" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.nowarn.1524835928" name="Inhibit all warnings (-w)" superClass="gnu.c.compiler.option.warnings.nowarn" value="false" valueType="boolean"/>
-								<option id="gnu.c.compiler.option.warnings.toerrors.1743522230" name="Warnings as errors (-Werror)" superClass="gnu.c.compiler.option.warnings.toerrors" value="false" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.toerrors.1743522230" name="Warnings as errors (-Werror)" superClass="gnu.c.compiler.option.warnings.toerrors" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.pedantic.919608801" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.preprocessor.undef.symbol.957018884" name="Undefined symbols (-U)" superClass="gnu.c.compiler.option.preprocessor.undef.symbol" valueType="undefDefinedSymbols">
 									<listOptionValue builtIn="false" value="_FORTIFY_SOURCE"/>
