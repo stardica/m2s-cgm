@@ -65,7 +65,6 @@ struct str_map_t l2_strn_map =
 		{ "l2_caches[6]", l2_caches_6},
 		{ "l2_caches[7]", l2_caches_7},
 
-
 		{ "hub-iommu", hub_iommu_0},
 		}
 };

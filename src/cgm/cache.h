@@ -62,6 +62,7 @@ extern struct cache_t *gpu_s_caches;
 extern struct cache_t *gpu_l2_caches;
 extern struct cache_t *gpu_lds_units;
 
+
 //tasking related
 extern int l1_i_pid;
 extern int l1_d_pid;
@@ -152,6 +153,7 @@ void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_access_stats(struct cache_t *cache, int hit, int state);
+void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * cache);
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);

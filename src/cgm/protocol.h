@@ -114,6 +114,8 @@ void store_stat_bandwidth(enum bandwidth_type_t type, int core_id, int transfer_
 void dump_stat_bandwidth(void);
 
 
+
+
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);

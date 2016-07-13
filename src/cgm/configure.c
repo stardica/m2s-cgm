@@ -3296,6 +3296,8 @@ int switch_finish_create(void){
 	snprintf(buff, 100, "hub_iommu");
 	hub_iommu->name = strdup(buff);
 
+	hub_iommu->id = 0;
+
 	hub_iommu->gpu_l2_num = gpu_group_cache_num;
 
 	//create one Rx and Tx queue for each gpu l2 caches

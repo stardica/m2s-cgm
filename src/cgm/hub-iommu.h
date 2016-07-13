@@ -63,6 +63,7 @@ extern struct str_map_t Tx_queue_strn_map;
 struct hub_iommu_t{
 
 	char *name;
+	int id;
 	unsigned int wire_latency;
 	unsigned int gpu_l2_num;
 	int latency;

@@ -4689,6 +4689,36 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	return 1;
 }
 
+void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * cache){
+
+	//int num_cores = x86_cpu_num_cores;
+
+	//int dest_id;
+	struct cache_t * l2_cache_ptr = NULL;
+	//struct cache_t * owning_cache_ptr = NULL;
+	//struct hub_iommu_t * hub_iommu_ptr = NULL;
+
+	/*grab a ptr to the L2 cache*/
+	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
+
+	/*if(dest_id >= 0 && dest_id <= num_cores)
+	{
+		l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
+	}
+	else
+	{	//hub_iommu
+		assert(dest_id == 8);
+		hub_iommu_ptr = hub_iommu;
+	}*/
+
+	SETROUTE(message_packet, cache, l2_cache_ptr);
+
+
+	return;
+}
+
+
+
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
@@ -4700,15 +4730,15 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int sharers, owning_core, pending_bit;
 
 	struct cgm_packet_t *write_back_packet = NULL;
-	struct cache_t *l2_cache_ptr = NULL;
+
+	//int dest_id;
+	struct cache_t * l2_cache_ptr = NULL;
 	struct cache_t * owning_cache_ptr = NULL;
+	//struct hub_iommu_t * hub_iommu_ptr = NULL;
 
 	//enum cgm_cache_block_state_t block_trainsient_state;
 
-	if(message_packet->access_id == 5281013)
-		printf("at L3 id %llu cycle %llu\n",
-				message_packet->access_id, P_TIME);
-
+	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -4736,8 +4766,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
 
-	/*grab a ptr to the L2 cache*/
-	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
 	//if access to the block is pending send nack back to requesting core or send block to owning core (silently dropped)
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
@@ -4785,7 +4813,16 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
 			//update routing headers
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+
+			//cgm_cache_set_route(message_packet, cache);
+			SETROUTE(message_packet, cache, hub_iommu_ptr);
+
+			/*message_packet->dest_name = src_name->name;
+			message_packet->dest_id = str_map_string(&node_strn_map, src_name->name);
+
+			message_packet->src_name = cache->name;
+			message_packet->src_id = str_map_string(&node_strn_map, cache->name);*/
+
 
 			//send the cache block out
 			cache_put_io_up_queue(cache, message_packet);
@@ -4832,7 +4869,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->size = 1;
 
 			//update routing headers
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+
+			cgm_cache_set_route(message_packet, cache);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			//send the reply
 			cache_put_io_up_queue(cache, message_packet);
@@ -4910,7 +4949,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					message_packet->size = 1;
 
 					//update routing headers
-					SETROUTE(message_packet, cache, l2_cache_ptr)
+					cgm_cache_set_route(message_packet, cache);
+					//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 					//send the reply
 					cache_put_io_up_queue(cache, message_packet);
@@ -4974,7 +5014,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
 				//update routing headers
-				SETROUTE(message_packet, cache, l2_cache_ptr)
+				cgm_cache_set_route(message_packet, cache);
+				//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 				/*stats*/
 				cache->WbMerges++;
@@ -4991,19 +5032,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss ID %llu type %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-				/*if(message_packet->access_id == 76657459 || message_packet->access_id == 76657439)
-				{
-					printf("BEFORE packet coal flag %d\n", message_packet->coalesced);
-					cgm_cache_dump_set(cache, message_packet->set);
-					printf("\n");
-					ort_dump(cache);
-					printf("\n");
-					cache_dump_queue(cache->ort_list);
-
-				}*/
-
-
-
 				//check ORT for coalesce
 				cache_check_ORT(cache, message_packet);
 
@@ -5014,18 +5042,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-
-					/*if(message_packet->access_id == 72735041 || message_packet->access_id == 72735071)
-					{
-						printf("AFTER packet coal flag %d\n", message_packet->coalesced);
-						cgm_cache_dump_set(cache, message_packet->set);
-						printf("\n");
-						ort_dump(cache);
-						printf("\n");
-						cache_dump_queue(cache->ort_list);
-
-					}*/
-
 
 					return;
 				}
@@ -5048,14 +5064,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
 
 				//set dest and src
-				SETROUTE(message_packet, cache, system_agent)
-
-				/*if(message_packet->access_id == 72735041)
-				{
-					warning(" ID %llu source %s id %d dest %s id %d\n",
-							message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
-				}*/
-
+				cgm_cache_set_route(message_packet, cache);
+				//SETROUTE(message_packet, cache, system_agent)
 
 				//transmit to SA/MC
 				if(!message_packet->protocol_case)
@@ -5114,21 +5124,22 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//set the presence bit in the directory for the requesting core.
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-				if(message_packet->access_id == 5281013)
-				{
-					printf("in l3 l2 sw id %d name %s\n", message_packet->l2_cache_id, message_packet->src_name);
-					getchar();
-				}
-
 
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
+				if(!strcmp(message_packet->l2_cache_name, hub_iommu->name))
+				{
+					fatal("caught message from hub_iommu id %llu blk_addr 0x%08x cycle %llu\n",
+							message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+				}
 
 				//set message package size
 				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 
 				//update routing headers
-				SETROUTE(message_packet, cache, l2_cache_ptr)
+				cgm_cache_set_route(message_packet, cache);
+				//SETROUTE(message_packet, cache, l2_cache_ptr)
+
 
 				/*stats*/
 				if(!message_packet->protocol_case)
