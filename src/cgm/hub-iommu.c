@@ -288,8 +288,8 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 				//update routing headers for the packet
 				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
-				message_packet->l2_cache_id = hub_iommu->switch_id;
-				message_packet->l2_cache_name = hub_iommu->name;
+				//message_packet->l2_cache_id = hub_iommu->switch_id;
+				//message_packet->l2_cache_name = hub_iommu->name;
 
 				//change src name and id
 				SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
@@ -499,7 +499,8 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
-	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx)
+	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
+			|| message_packet->access_type == cgm_access_put_clnx)
 	{
 		/*replies coming from system agent*/
 		if(GPU_HUB_IOMMU == 1)

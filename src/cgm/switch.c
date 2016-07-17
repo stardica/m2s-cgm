@@ -59,13 +59,21 @@ struct str_map_t l2_strn_map =
 		{ "l2_caches[1]", l2_caches_1},
 		{ "l2_caches[2]", l2_caches_2},
 		{ "l2_caches[3]", l2_caches_3},
-
 		{ "l2_caches[4]", l2_caches_4},
 		{ "l2_caches[5]", l2_caches_5},
 		{ "l2_caches[6]", l2_caches_6},
 		{ "l2_caches[7]", l2_caches_7},
 
-		{ "hub-iommu", hub_iommu_0},
+		{ "gpu_l2_caches[0]", gpu_l2_caches_0_c},
+		{ "gpu_l2_caches[1]", gpu_l2_caches_1_c},
+		{ "gpu_l2_caches[2]", gpu_l2_caches_2_c},
+		{ "gpu_l2_caches[3]", gpu_l2_caches_3_c},
+		{ "gpu_l2_caches[4]", gpu_l2_caches_4_c},
+		{ "gpu_l2_caches[5]", gpu_l2_caches_5_c},
+		{ "gpu_l2_caches[6]", gpu_l2_caches_6_c},
+		{ "gpu_l2_caches[7]", gpu_l2_caches_7_c},
+
+		//{ "hub-iommu", hub_iommu_0},
 		}
 };
 
@@ -188,7 +196,6 @@ struct str_map_t node_strn_map =
 		{ "l2_caches[7]", l2_cache_7},
 		{ "switch[7]", switch_7},
 		{ "l3_caches[7]", l3_cache_7},
-
 
 		{ "hub_iommu", hub_iommu_8},
 		{ "switch[8]", switch_8},

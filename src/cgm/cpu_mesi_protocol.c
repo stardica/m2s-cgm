@@ -1603,10 +1603,6 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				}
 
-
-
-
-
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
 				//add some routing/status data to the packet
@@ -4490,7 +4486,8 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->cache_block_state = *cache_block_state_ptr;
 			message_packet->access_type = cgm_access_puts;
 
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			/*stats*/
 			if(!message_packet->protocol_case)
@@ -4689,30 +4686,33 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	return 1;
 }
 
-void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * cache){
+void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * src_l2_cache, struct cache_t * dest_l2_cache){
 
-	//int num_cores = x86_cpu_num_cores;
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	//int src_id = 0;
+	int dest_id = 0;
 
-	//int dest_id;
-	struct cache_t * l2_cache_ptr = NULL;
-	//struct cache_t * owning_cache_ptr = NULL;
-	//struct hub_iommu_t * hub_iommu_ptr = NULL;
+	/*is the dest cpu or gpu bound?*/
+	//src_id = str_map_string(&l2_strn_map, message_packet->l2_cache_name);
+	assert(message_packet->l2_cache_name);
+	dest_id = str_map_string(&l2_strn_map, message_packet->l2_cache_name);
 
-	/*grab a ptr to the L2 cache*/
-	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
-	/*if(dest_id >= 0 && dest_id <= num_cores)
+	if(dest_id >= 0 && dest_id < num_cores) //CPU bound
 	{
-		l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
+		SETROUTE(message_packet, src_l2_cache, dest_l2_cache);
 	}
-	else
+	else //GPU bound (route to hub_iommu)
 	{	//hub_iommu
-		assert(dest_id == 8);
-		hub_iommu_ptr = hub_iommu;
-	}*/
+		/*printf("setting route dest id %d\n", dest_id);*/
 
-	SETROUTE(message_packet, cache, l2_cache_ptr);
+		assert(dest_id >= num_cores && dest_id <= num_cores + (gpu_group_cache_num - 1));
 
+
+		SETROUTE(message_packet, src_l2_cache, hub_iommu);
+	}
 
 	return;
 }
@@ -4738,8 +4738,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	//enum cgm_cache_block_state_t block_trainsient_state;
 
-	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
-
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -4758,6 +4756,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	//get block transient state
 	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	//assert(victim_trainsient_state == cgm_cache_block_transient);
+
+	/*grab a ptr to the L2 cache*/
+	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)
@@ -4814,8 +4815,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//update routing headers
 
-			//cgm_cache_set_route(message_packet, cache);
-			SETROUTE(message_packet, cache, hub_iommu_ptr);
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr);
 
 			/*message_packet->dest_name = src_name->name;
 			message_packet->dest_id = str_map_string(&node_strn_map, src_name->name);
@@ -4870,7 +4871,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 			//update routing headers
 
-			cgm_cache_set_route(message_packet, cache);
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			//send the reply
@@ -4949,7 +4950,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					message_packet->size = 1;
 
 					//update routing headers
-					cgm_cache_set_route(message_packet, cache);
+					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 					//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 					//send the reply
@@ -5014,7 +5015,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
 				//update routing headers
-				cgm_cache_set_route(message_packet, cache);
+				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 				//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 				/*stats*/
@@ -5064,8 +5065,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
 
 				//set dest and src
-				cgm_cache_set_route(message_packet, cache);
-				//SETROUTE(message_packet, cache, system_agent)
+				SETROUTE(message_packet, cache, system_agent)
 
 				//transmit to SA/MC
 				if(!message_packet->protocol_case)
@@ -5129,7 +5129,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(!strcmp(message_packet->l2_cache_name, hub_iommu->name))
 				{
-					fatal("caught message from hub_iommu id %llu blk_addr 0x%08x cycle %llu\n",
+					warning("caught message from hub_iommu id %llu blk_addr 0x%08x cycle %llu\n",
 							message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
 				}
 
@@ -5137,9 +5137,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 
 				//update routing headers
-				cgm_cache_set_route(message_packet, cache);
-				//SETROUTE(message_packet, cache, l2_cache_ptr)
+				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 
+				//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 				/*stats*/
 				if(!message_packet->protocol_case)
@@ -5190,7 +5190,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//get the owning node
 				owning_cache_ptr = &l2_caches[owning_core];
-				SETROUTE(message_packet, l2_cache_ptr, owning_cache_ptr)
+				cgm_cache_set_route(message_packet, l2_cache_ptr, owning_cache_ptr);
+				//SETROUTE(message_packet, l2_cache_ptr, owning_cache_ptr)
 
 				/*stats*/
 				mem_system_stats->load_get_fwd++;
@@ -5326,7 +5327,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
 			//update routing headers
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -5367,7 +5369,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->size = 1;
 
 			//update routing headers
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			//send the reply
 			cache_put_io_up_queue(cache, message_packet);
@@ -5431,7 +5434,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					message_packet->size = 1;
 
 					//update routing headers
-					SETROUTE(message_packet, cache, l2_cache_ptr)
+					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+					//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 					//send the reply
 					cache_put_io_up_queue(cache, message_packet);
@@ -5493,7 +5497,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, *cache_block_state_ptr, P_TIME);
 
 				//update routing headers
-				SETROUTE(message_packet, cache, l2_cache_ptr)
+				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+				//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 				/*stats*/
 				cache->WbMerges++;
@@ -5601,9 +5606,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 
-
 				//update routing headers
-				SETROUTE(message_packet, cache, l2_cache_ptr)
+				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+				//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 				/*stats*/
 				if(!message_packet->protocol_case)
@@ -5648,7 +5653,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				//get the owning node
 				xowning_cache_ptr = &l2_caches[xowning_core];
-				SETROUTE(message_packet, l2_cache_ptr, xowning_cache_ptr)
+				cgm_cache_set_route(message_packet, l2_cache_ptr, xowning_cache_ptr);
+				//SETROUTE(message_packet, l2_cache_ptr, xowning_cache_ptr)
 
 				/*stats*/
 				//warning("store fwd\n");
@@ -5701,8 +5707,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//l2_src_id = message_packet->src_id;
 			//l2_name = strdup(message_packet->src_name);
-
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -8121,7 +8127,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		message_packet->size = 1;
 
 		//update routing headers
-		SETROUTE(message_packet, cache, l2_cache_ptr)
+		cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+		//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
@@ -8168,7 +8175,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->size = 1;
 
 			//update routing headers
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			//send the reply
 			cache_put_io_up_queue(cache, message_packet);
@@ -8221,7 +8229,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 			xowning_cache_ptr = &l2_caches[xowning_core];
 
-			SETROUTE(message_packet, l2_cache_ptr, xowning_cache_ptr)
+			cgm_cache_set_route(message_packet, l2_cache_ptr, xowning_cache_ptr);
+			//SETROUTE(message_packet, l2_cache_ptr, xowning_cache_ptr)
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -8274,7 +8283,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//set block state
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
-			SETROUTE(message_packet, cache, l2_cache_ptr)
+			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
+			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
 			cache_put_io_up_queue(cache, message_packet);
 

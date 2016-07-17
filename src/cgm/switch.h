@@ -113,13 +113,19 @@ enum cpu_l2_map{
 		l2_caches_1,
 		l2_caches_2,
 		l2_caches_3,
-
 		l2_caches_4,
 		l2_caches_5,
 		l2_caches_6,
 		l2_caches_7,
 
-		hub_iommu_0,
+		gpu_l2_caches_0_c,
+		gpu_l2_caches_1_c,
+		gpu_l2_caches_2_c,
+		gpu_l2_caches_3_c,
+		gpu_l2_caches_4_c,
+		gpu_l2_caches_5_c,
+		gpu_l2_caches_6_c,
+		gpu_l2_caches_7_c,
 		l2_number
 };
 

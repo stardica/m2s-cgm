@@ -2859,6 +2859,11 @@ int cache_finish_create(){
 			fatal("invalid protocol at GPU L2 cache init\n");
 		}
 
+		//add pointer to CPU list of caches
+		l2_caches[num_cores + i] = gpu_l2_caches[i];
+
+		/*warning("gpu_group_cache_num = %d num_cores + i %d l2_name %s\n", gpu_group_cache_num, num_cores + i, l2_caches[num_cores + i].name);*/
+
 		//stats//stats
 		//gpu_l2_caches[i].fetches = 0;
 		//gpu_l2_caches[i].loads = 0;

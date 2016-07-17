@@ -132,8 +132,8 @@ void cache_create(void){
 	//initialize the CPU L1 D Caches
 	l1_d_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
 
-	//initialize the CPU L2 caches
-	l2_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
+	//initialize the CPU L2 caches + number of GPU L2 caches (for routing)
+	l2_caches = (void *) calloc(num_cores + gpu_group_cache_num, sizeof(struct cache_t));
 
 	//initialize the L3 caches (1 slice per core).
 	l3_caches = (void *) calloc(num_cores, sizeof(struct cache_t));
@@ -3485,7 +3485,8 @@ void gpu_l2_cache_ctrl(void){
 				if(!gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet))
 					step--;
 			}
-			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx)
+			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx
+					|| access_type == cgm_access_put_clnx)
 			{
 				//Call back function (gpu_cache_access_put)
 				gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet);
@@ -4295,7 +4296,8 @@ void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	//remove packet from cache queue, global queue, and simulator memory
 
-	//fatal("gpu l1 v hit id %llu l3 src %d cycle %llu\n", message_packet->access_id, message_packet->src_id, P_TIME);
+	//warning("gpu l1 v hit id %llu l3 src %d cycle %llu\n",
+		//	message_packet->access_id, message_packet->src_id, P_TIME);
 
 
 	(*message_packet->witness_ptr)++;
