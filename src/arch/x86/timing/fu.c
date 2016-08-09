@@ -94,7 +94,7 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 		//catch the interrupt
 		if(uop->interrupt > 0)
 		{
-			//this needs to be a number greater than the cycles of the ISR.
+			//this needs to be a number greater than the cycles of the syscall.
 			//when finished with the interrupt CGM will overwrite with the correct number of cycles
 			return 1000000000;
 		}

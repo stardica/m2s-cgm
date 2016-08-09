@@ -857,7 +857,6 @@ void X86ContextExecuteInst(X86Context *self)
 	//star >> increments instruction pointer value.
 	regs->eip = regs->eip + self->inst.size;
 
-
 	//set a flag if we run into a syscall
 	if(self->inst.opcode == 255)
 	{

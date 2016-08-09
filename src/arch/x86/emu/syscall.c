@@ -227,7 +227,6 @@ void x86_sys_dump_stats(FILE *f)
 	fprintf(f, "\n");
 }
 
-
 void X86ContextSyscall(X86Context *self)
 {
 	X86Emu *emu = self->emu;
@@ -277,6 +276,7 @@ void X86ContextSyscall(X86Context *self)
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
 		return;
 	}
+	//getchar();
 
 	/* Statistics */
 	x86_sys_call_freq[code]++;
@@ -284,6 +284,12 @@ void X86ContextSyscall(X86Context *self)
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n", x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 	X86ContextDebugCall("system call '%s' (code %d, inst %lld, pid %d)\n", x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
+
+	int i = 0;
+	for(i=0;i<1000;i++)
+	{
+		x86_uinst_new_mem(self, x86_uinst_store, 0xFFFFFFFF, 4, x86_dep_none, 0, 0, 0, 0, 0, 0);
+	}
 
 	/* Perform system call */
 	err = x86_sys_call_func[code](self);
@@ -2898,8 +2904,8 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-static int x86_sys_newuname_impl(X86Context *ctx)
-{
+static int x86_sys_newuname_impl(X86Context *ctx){
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 

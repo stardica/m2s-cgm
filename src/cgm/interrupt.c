@@ -24,7 +24,7 @@
 #include <lib/util/debug.h>
 
 
-#define BASELAT 4000
+#define BASELAT 6000
 #define OCLLAT 1000
 #define SYSLAT 1000
 
@@ -147,7 +147,7 @@ void interrupt_service_request(void){
 	while(1)
 	{
 		/*wait here until there is a job to do.
-		In any given cycle I might have to service 1 to N number of caches*/
+		In any given cycle I might have to service 1 to N number of CPUs*/
 		await(interrupt, step);
 		step++;
 

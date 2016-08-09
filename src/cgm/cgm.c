@@ -1755,6 +1755,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
+	/*if(new_packet->address == 0x0000efff)
+		printf("here 0x%08x cycle %llu\n", new_packet->address, P_TIME);*/
+
 
 	//////////////testing
 	if(mem_system_off == 1)
