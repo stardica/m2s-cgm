@@ -240,6 +240,9 @@ void X86ContextSyscall(X86Context *self)
 	/* Get system call code from 'eax' */
 	code = regs->eax;
 
+	if(regs->eax == 329)
+		warning("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
+
 	/* Check for special system call codes outside of the standard range
 	 * defined in 'syscall.dat'. */
 	if (code < 1 || code >= x86_sys_code_count)
@@ -276,7 +279,6 @@ void X86ContextSyscall(X86Context *self)
 		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
 		return;
 	}
-	//getchar();
 
 	/* Statistics */
 	x86_sys_call_freq[code]++;
@@ -284,12 +286,6 @@ void X86ContextSyscall(X86Context *self)
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n", x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 	X86ContextDebugCall("system call '%s' (code %d, inst %lld, pid %d)\n", x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
-
-	int i = 0;
-	for(i=0;i<1000;i++)
-	{
-		x86_uinst_new_mem(self, x86_uinst_store, 0xFFFFFFFF, 4, x86_dep_none, 0, 0, 0, 0, 0, 0);
-	}
 
 	/* Perform system call */
 	err = x86_sys_call_func[code](self);

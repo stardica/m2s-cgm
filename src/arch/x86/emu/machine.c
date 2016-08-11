@@ -408,14 +408,10 @@ void x86_isa_cmpxchg8b_m64_impl(X86Context *ctx)
 
 
 
-	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextEffectiveAddress(ctx), 8, 0, 0, 0,
-		x86_dep_aux, 0, 0, 0);  /* Load m64 */
-	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_edx, x86_dep_eax, x86_dep_aux,
-		x86_dep_zps, 0, 0, 0);  /* Compare edx-eax with m64 */
-	x86_uinst_new_mem(ctx, x86_uinst_store, X86ContextEffectiveAddress(ctx), 8, x86_dep_zps, x86_dep_ecx, x86_dep_ebx,
-		x86_dep_mem64, 0, 0, 0);  /* Conditionally store m64 */
-	x86_uinst_new(ctx, x86_uinst_move, x86_dep_zps, 0, 0,
-		x86_dep_edx, x86_dep_eax, 0, 0);  /* Conditionaly store edx-eax */
+	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextEffectiveAddress(ctx), 8, 0, 0, 0, x86_dep_aux, 0, 0, 0);  /* Load m64 */
+	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_edx, x86_dep_eax, x86_dep_aux, x86_dep_zps, 0, 0, 0);  /* Compare edx-eax with m64 */
+	x86_uinst_new_mem(ctx, x86_uinst_store, X86ContextEffectiveAddress(ctx), 8, x86_dep_zps, x86_dep_ecx, x86_dep_ebx, x86_dep_mem64, 0, 0, 0);  /* Conditionally store m64 */
+	x86_uinst_new(ctx, x86_uinst_move, x86_dep_zps, 0, 0, x86_dep_edx, x86_dep_eax, 0, 0);  /* Conditionaly store edx-eax */
 }
 
 
@@ -1124,8 +1120,6 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 
 	/*syscall*/
 
-	/*printf("imm8 ecx %u edx %u esi %u\n", ctx->regs->ecx, ctx->regs->edx, ctx->regs->esi);*/
-
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
@@ -1307,6 +1301,7 @@ void x86_isa_mov_r16_rm16_impl(X86Context *ctx)
 void x86_isa_mov_r32_rm32_impl(X86Context *ctx)
 {
 	unsigned int value = X86ContextLoadRm32(ctx);
+
 	X86ContextStoreR32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm32, 0, 0, x86_dep_r32, 0, 0, 0);

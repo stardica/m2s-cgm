@@ -279,8 +279,6 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, X86Cont
 	if (!x86_uinst_mem_dep_size(uinst, index, ctx, NULL))
 		return;
 
-	/*printf("here_1\n");
-	fflush(stdout);*/
 
 	/* Record occurrence */
 	x86_uinst_effaddr_emitted = 1;

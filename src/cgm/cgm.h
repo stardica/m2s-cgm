@@ -261,6 +261,9 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 int remove_from_global(long long id);
 
+void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+
 
 void cgm_dump_system(void);
 long long cgm_get_oldest_access(void);

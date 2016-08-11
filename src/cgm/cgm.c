@@ -1729,6 +1729,39 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	return access_id;
 }
 
+void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+
+	int i = 0;
+
+	for(i = 0; i < size; i++)
+	{
+		//mov data from image to al (reg)
+		x86_uinst_new_mem(ctx, x86_uinst_load, host_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_store, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+
+		host_addr++;
+		guest_addr++;
+	}
+
+	return;
+}
+
+void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+
+	int i = 0;
+
+	for(i = 0; i < size; i++)
+	{
+		x86_uinst_new_mem(ctx, x86_uinst_load, guest_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_store, host_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+
+		host_addr++;
+		guest_addr++;
+	}
+
+	return;
+}
+
 
 void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, long long uop_id, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
@@ -1756,7 +1789,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->cpu_access_type = access_kind;
 
 	/*if(new_packet->address == 0x0000efff)
-		printf("here 0x%08x cycle %llu\n", new_packet->address, P_TIME);*/
+		fatal("here 0x%08x cycle %llu\n", new_packet->address, P_TIME);*/
 
 
 	//////////////testing

@@ -236,7 +236,6 @@ static int opencl_abi_init_impl(X86Context *ctx)
 
 static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 
-
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int size;
@@ -248,9 +247,6 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	host_ptr = regs->edx;
 	opencl_debug("\tsize = %u\n", size);
 
-	//star should this be a system call? I.e the driver runs a system call to do the link?
-	//this will turn shared memory on and off as set in the ini file.
-
 	/* For now, memory allocation in device memory is done by just
 	 * incrementing a pointer to the top of the global memory space.
 	 * Since memory deallocation is not implemented, "holes" in the
@@ -259,6 +255,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	si_emu->video_mem_top += size;
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
+	//this will turn shared memory on and off as set in the ini file.
 	/*link this GPU memory segment to the corresponding host memory space*/
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
@@ -331,6 +328,10 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	mem_write(mem, host_ptr, size, buf);
 	free(buf);
 
+	//m2s-cgm simulate the copy for timing purposes.
+	/*if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		uop_factory_read(ctx, host_ptr, device_ptr, size);*/
+
 	/* Return */
 	return 0;
 }
@@ -391,8 +392,6 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 				size, device_ptr, host_ptr, mmu_get_phyaddr(0, host_ptr, mmu_access_load_store));
 	}
 
-
-
 	/* Check memory range */
 	if (device_ptr + size > si_emu->video_mem_top)
 	{
@@ -404,6 +403,10 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	mem_read(mem, host_ptr, size, buf);
 	mem_write(si_emu->video_mem, device_ptr, size, buf);
 	free(buf);
+
+	//m2s-cgm simulate the copy for timing purposes.
+	/*if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		uop_factory_write(ctx, host_ptr, device_ptr, size);*/
 
 	/* Return */
 	return 0;
@@ -1096,14 +1099,11 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(X86Context *ctx)
 	/* Arguments */
 	host_ptr = regs->ecx;
 
-	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
-		list_count(si_emu->waiting_work_groups);
+	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE - list_count(si_emu->waiting_work_groups);
 
-	opencl_debug("\tavailable buffer entries = %d\n", 
-		available_buffer_entries);
+	opencl_debug("\tavailable buffer entries = %d\n", available_buffer_entries);
 
-	mem_write(mem, host_ptr, sizeof available_buffer_entries,
-		&available_buffer_entries);
+	mem_write(mem, host_ptr, sizeof available_buffer_entries, &available_buffer_entries);
 
 	return 0;
 }
