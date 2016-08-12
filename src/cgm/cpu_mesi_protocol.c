@@ -4884,6 +4884,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		return;
 	}
 
+	/*if(!strcmp(message_packet->src_name, "hub_iommu"))
+		fatal("l3 get hit %d\n", *cache_block_hit_ptr);*/
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:

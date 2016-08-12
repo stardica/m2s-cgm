@@ -260,7 +260,6 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
 
-
 	if(INT == 1)
 	{
 		printf("ABI opencl_abi_si_mem_alloc_impl() code 2 size %u device_ptr 0x%08x host ptr 0x%08x\n", size, device_ptr, host_ptr);
@@ -329,8 +328,8 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	free(buf);
 
 	//m2s-cgm simulate the copy for timing purposes.
-	/*if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		uop_factory_read(ctx, host_ptr, device_ptr, size);*/
+	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		uop_factory_read(ctx, host_ptr, device_ptr, size);
 
 	/* Return */
 	return 0;
@@ -405,8 +404,8 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	free(buf);
 
 	//m2s-cgm simulate the copy for timing purposes.
-	/*if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		uop_factory_write(ctx, host_ptr, device_ptr, size);*/
+	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		uop_factory_write(ctx, host_ptr, device_ptr, size);
 
 	/* Return */
 	return 0;

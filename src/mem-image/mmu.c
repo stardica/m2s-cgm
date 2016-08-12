@@ -69,7 +69,7 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	struct mmu_page_t *gpu_page = NULL;
 	unsigned int tag;
 	int index;
-	int i = 0;
+	//int i = 0;
 
 	enum mmu_page_type_t page_type;
 
@@ -150,14 +150,15 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	{
 		page = data_page;
 	}
-	else if(page_type == mmu_page_gpu && gpu_page)
+	else if(page_type == mmu_page_gpu && data_page) //star i changed this.
 	{
-		page = gpu_page;
+		page = data_page;
 	}
 	else
 	{
+		page = gpu_page;
 
-		LIST_FOR_EACH(mmu->page_list, i)
+		/*LIST_FOR_EACH(mmu->page_list, i)
 		{
 			//pull a page
 			page = list_get(mmu->page_list, i);
@@ -168,13 +169,13 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 				printf("found the page tran_index is %d hub index is %d page type %d access_type %d\n",
 						index, hub_iommu->page_hash_table[index], page->page_type, access_type);
 			}
-		}
+		}*/
 
 		fatal("mmu_page_access(): page miss addr 0x%08x\n", addr);
 	}
 
-	if(page->id == 47)
-		printf("on the initial look up index used %d\n", index);
+	/*if(page->id == 47)
+		printf("on the initial look up index used %d\n", index);*/
 
 	return page;
 }
@@ -255,7 +256,6 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		else if (page->page_type == mmu_page_gpu && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
 		{
 			gpu_page = page;
-
 			break;
 		}
 
@@ -317,9 +317,14 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		page = data_page;
 	}
-	else if(page_type == mmu_page_data && data_page)
+	else if(page_type == mmu_page_gpu && data_page) //star changed this
 	{
-		page = gpu_page;
+		if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
+		{
+			printf("page found\n");
+		}
+
+		page = data_page;
 	}
 	else
 	{
@@ -327,6 +332,10 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		{
 			printf("creating page\n");
 		}
+
+
+		/*if(vtladdr == 0x00000004)
+			printf("creating page\n");*/
 
 		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
@@ -338,16 +347,6 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		page->next = mmu->page_hash_table[index];
 		mmu->page_hash_table[index] = page;
 	}
-
-
-	/*if(page->id == 47)
-	{
-		printf("page index is %d\n", index);
-		getchar();
-	}*/
-
-
-
 
 	return page;
 }
@@ -504,6 +503,7 @@ unsigned int mmu_get_phyaddr(int address_space_index, unsigned int vtl_addr, enu
 	unsigned int phy_addr;
 
 	page = mmu_page_access(address_space_index, mmu_addr_vtl, vtl_addr, access_type);
+	assert(page);
 
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
@@ -833,17 +833,17 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
 	{
-		fatal("mmu_translate(): protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+		fatal("mmu_translate(): 1 protection fault load or store to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
 				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_fetch), P_TIME);
 	}
-	else if(page->page_type == mmu_page_data && access_type != mmu_access_load_store)
+	else if(page->page_type == mmu_page_data && (access_type != mmu_access_load_store && access_type != mmu_access_gpu))
 	{
-		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+		fatal("mmu_translate(): 2 protection fault fetch to data segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
 				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_load_store), P_TIME);
 	}
 	else if(page->page_type == mmu_page_gpu && access_type != mmu_access_gpu)
 	{
-		fatal("mmu_translate(): protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
+		fatal("mmu_translate(): 3 protection fault fetch to text segment type %d vtrl_addr 0x%08x phy_addr 0x%08x page_id %d cycle %llu\n",
 				access_type, vtl_addr, phy_addr, mmu_get_page_id(0, mmu_addr_vtl, vtl_addr, mmu_access_gpu), P_TIME);
 	}
 

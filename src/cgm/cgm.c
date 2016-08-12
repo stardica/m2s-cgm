@@ -1735,8 +1735,15 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 
 	for(i = 0; i < size; i++)
 	{
+		//fatal("here host_vtl_addr 0x%08x host_phy_addr 0x%08x guest_vtl_addr 0x%08x guest_phy_addr 0x%08x\n",
+		//		host_addr, mmu_translate(0, host_addr, mmu_access_load_store), guest_addr, mmu_translate(0, guest_addr, mmu_access_gpu));
+
 		//mov data from image to al (reg)
 		x86_uinst_new_mem(ctx, x86_uinst_load, host_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+
+		/*fatal("here host_vtl_addr 0x%08x host_phy_addr 0x%08x guest_vtl_addr 0x%08x guest_phy_addr 0x%08x\n",
+				host_addr, mmu_translate(0, host_addr, mmu_access_load_store), 0x00000004, mmu_translate(0, 0x00000004, mmu_access_load_store));*/
+
 		x86_uinst_new_mem(ctx, x86_uinst_store, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
 
 		host_addr++;
@@ -1787,10 +1794,6 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
-
-	/*if(new_packet->address == 0x0000efff)
-		fatal("here 0x%08x cycle %llu\n", new_packet->address, P_TIME);*/
-
 
 	//////////////testing
 	if(mem_system_off == 1)
