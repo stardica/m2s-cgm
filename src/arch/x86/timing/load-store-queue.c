@@ -115,7 +115,8 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	struct linked_list_t *preq = self->preq;
 
 	assert(!uop->in_lq && !uop->in_sq);
-	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_prefetch);
+	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store
+			|| uop->uinst->opcode == x86_uinst_prefetch || uop->uinst->opcode == x86_uinst_flush);
 
 	if (uop->uinst->opcode == x86_uinst_load)
 	{
@@ -123,22 +124,14 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 		linked_list_out(lq);
 		linked_list_insert(lq, uop);
 
-		//pthread_mutex_lock(&instrumentation_mutex);
-		//LoadQueueOccupancy(list_count(self->lq));
-		//pthread_mutex_unlock(&instrumentation_mutex);
-
 		uop->in_lq = 1;
 
 	}
-	else if (uop->uinst->opcode == x86_uinst_store)
+	else if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_flush)
 	{
 		//star >> added stat pipe_store++;
 		linked_list_out(sq);
 		linked_list_insert(sq, uop);
-
-		//pthread_mutex_lock(&instrumentation_mutex);
-		//StoreQueueOccupancy(list_count(self->sq));
-		//pthread_mutex_unlock(&instrumentation_mutex);
 
 		uop->in_sq = 1;
 
@@ -147,11 +140,10 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	{
 		linked_list_out(preq);
 		linked_list_insert(preq, uop);
-		//printf("inst flag: %d\n", uop->flags);
-		//fflush(stdout);
-		//getchar();
+
 		uop->in_preq = 1;
 	}
+
 	core->lsq_count++;
 	self->lsq_count++;
 }

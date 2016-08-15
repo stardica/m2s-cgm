@@ -221,7 +221,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 
 		//if(uop->uinst->address == 0xFFFFFFFF)
-		//	printf("pulled a uop id %llu cycle %llu\n", uop->id, P_TIME);
+			//fatal("pulled a uop id %llu cycle %llu\n", uop->id, P_TIME);
 
 		/*printf("uop->neip = 0x%08x\n", uop->neip);
 		if(uop->neip > 2000000000)
@@ -279,7 +279,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53 || uop->uinst->opcode == 54)
+			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53 || uop->uinst->opcode == 54 || uop->uinst->opcode == 55)
 			{
 				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
 
@@ -296,9 +296,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			}
 
 		}
-
-		/*if(uinst->opcode == 52)
-			fatal("here\n");*/
 
 		/* Trace */
 		if (x86_tracing())

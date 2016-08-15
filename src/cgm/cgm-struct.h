@@ -135,6 +135,7 @@ enum cgm_access_kind_t {
 			cgm_access_storex_retry, /*gpu mesi mode*/
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
+			cgm_access_flush,
 			num_access_types
 };
 

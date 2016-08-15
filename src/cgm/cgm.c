@@ -1733,22 +1733,27 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 
 	int i = 0;
 
+	//copy memory from one to the other (load & store)
 	for(i = 0; i < size; i++)
 	{
-		//fatal("here host_vtl_addr 0x%08x host_phy_addr 0x%08x guest_vtl_addr 0x%08x guest_phy_addr 0x%08x\n",
-		//		host_addr, mmu_translate(0, host_addr, mmu_access_load_store), guest_addr, mmu_translate(0, guest_addr, mmu_access_gpu));
-
-		//mov data from image to al (reg)
 		x86_uinst_new_mem(ctx, x86_uinst_load, host_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
-
-		/*fatal("here host_vtl_addr 0x%08x host_phy_addr 0x%08x guest_vtl_addr 0x%08x guest_phy_addr 0x%08x\n",
-				host_addr, mmu_translate(0, host_addr, mmu_access_load_store), 0x00000004, mmu_translate(0, 0x00000004, mmu_access_load_store));*/
-
 		x86_uinst_new_mem(ctx, x86_uinst_store, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
 
 		host_addr++;
 		guest_addr++;
+
 	}
+
+	//rewind the quest address
+	guest_addr = guest_addr - size;
+
+	//flush the addresses that were stored to
+	for(i = 0; i < size; i++)
+	{
+		x86_uinst_new_mem(ctx, x86_uinst_flush, guest_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+		guest_addr++;
+	}
+
 
 	return;
 }
@@ -1770,7 +1775,8 @@ void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int gues
 }
 
 
-void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, long long uop_id, unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
+void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, long long uop_id,
+		unsigned int addr, struct linked_list_t *event_queue, void *event_queue_item){
 
 	X86Thread *thread;
 	thread = self;
@@ -1794,6 +1800,10 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
+
+	if(access_kind == cgm_access_flush)
+		fatal("made it to cgm\n");
+
 
 	//////////////testing
 	if(mem_system_off == 1)

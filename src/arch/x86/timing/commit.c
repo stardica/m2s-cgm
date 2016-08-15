@@ -137,6 +137,11 @@ int X86ThreadCanCommit(X86Thread *self)
 			uop->ready = 1;
 		return uop->ready;
 	}
+	else if (uop->uinst->opcode == x86_uinst_flush)
+	{
+		uop->ready = 1;
+		return uop->ready;
+	}
 	
 	/* Instructions other than stores must be completed. */
 	return uop->completed;
@@ -179,27 +184,6 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			self->btb_writes++;
 		}
 
-		/*if(uop->uinst->opcode == x86_uinst_syscall)
-		{
-			assert(uop->interrupt_lat == 0);
-
-			core_dump_rob(core);
-			getchar();
-		}*/
-
-			/*			printf("pulled syscall %llu at commit rob size %d iq size %d lsq size %d cycle %llu\n",
-					uop->id, self->rob_count, self->iq_count, self->lsq_count, P_TIME);
-
-			if(self->core->rob_count > 0)
-				getchar();*/
-
-		/*else
-		{
-			printf("pulled oup %llu at commit rob size %d (%d) iq size %d lsq size %d cycle %llu\n",
-					uop->id, self->rob_count, list_count(self->core->rob), self->core->iq_count, self->core->lsq_count, P_TIME);
-
-		}*/
-
 		/* Trace cache */
 		if (x86_trace_cache_present)
 			X86ThreadRecordUopInTraceCache(self, uop);
@@ -237,9 +221,8 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (x86_tracing())
 		{
 			//testing if we enter here.
-			printf("x86_tracing() Warning getchar here\n");
-			fflush(stdout);
-			getchar();
+			fatal("x86_tracing() Warning getchar here\n");
+
 			x86_trace("x86.inst id=%lld core=%d stg=\"co\"\n", uop->id_in_core, core->id);
 			X86CpuAddToTraceList(cpu, uop);
 		}
@@ -260,8 +243,6 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			X86CoreReleaseAllFunctionalUnits(core);
 		}
 	}
-
-	//getchar();
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */

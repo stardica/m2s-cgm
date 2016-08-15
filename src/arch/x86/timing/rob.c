@@ -277,41 +277,41 @@ void X86ThreadRemoveROBHead(X86Thread *self)
 
 	switch (x86_rob_kind)
 	{
-	case x86_rob_kind_private:
+		case x86_rob_kind_private:
 
-		//printf("ROB kind private\n");
-		//fflush(stdout);
-		//getchar();
+			//printf("ROB kind private\n");
+			//fflush(stdout);
+			//getchar();
 
-		assert(self->rob_count > 0);
+			assert(self->rob_count > 0);
 
-		uop = list_get(core->rob, self->rob_head);
+			uop = list_get(core->rob, self->rob_head);
 
-		assert(x86_uop_exists(uop));
-		assert(uop->thread == self);
-
-		list_set(core->rob, self->rob_head, NULL);
-		self->rob_head = self->rob_head == self->rob_right_bound ? self->rob_left_bound : self->rob_head + 1;
-		self->rob_count--;
-		break;
+			assert(x86_uop_exists(uop));
+			assert(uop->thread == self);
 	
-	case x86_rob_kind_shared:
-		/*int idx, i;
-		X86CoreTrimROB(core);
-		assert(self->rob_count);
-		for (i = 0; i < core->rob_count; i++)
-		{
-			idx = (core->rob_head + i) % x86_rob_total_size;
-			uop = list_get(core->rob, idx);
-			if (uop && uop->thread == self)
+			list_set(core->rob, self->rob_head, NULL);
+			self->rob_head = self->rob_head == self->rob_right_bound ? self->rob_left_bound : self->rob_head + 1;
+			self->rob_count--;
+			break;
+
+		case x86_rob_kind_shared:
+			/*int idx, i;
+			X86CoreTrimROB(core);
+			assert(self->rob_count);
+			for (i = 0; i < core->rob_count; i++)
 			{
-				list_set(core->rob, idx, NULL);
-				self->rob_count--;
-				break;
-			}
-		}*/
-		fatal("X86ThreadRemoveROBHead(): \"x86_rob_kind_shared\" add this back in\n");
-		break;
+				idx = (core->rob_head + i) % x86_rob_total_size;
+				uop = list_get(core->rob, idx);
+				if (uop && uop->thread == self)
+				{
+					list_set(core->rob, idx, NULL);
+					self->rob_count--;
+					break;
+				}
+			}*/
+			fatal("X86ThreadRemoveROBHead(): \"x86_rob_kind_shared\" add this back in\n");
+			break;
 	}
 
 	/* Free instruction */
@@ -490,10 +490,6 @@ void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 		list_set(self->rob, thread->rob_tail, uop);
 		thread->rob_tail = thread->rob_tail == thread->rob_right_bound ? thread->rob_left_bound : thread->rob_tail + 1;
 
-		//star >> added instrumentation
-		//pthread_mutex_lock(&instrumentation_mutex);
-		//RobQueueOccupancy(list_count(self->rob));
-		//pthread_mutex_unlock(&instrumentation_mutex);
 
 		thread->rob_count++;
 		break;
@@ -514,4 +510,5 @@ void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 
 	/* Instruction is in the ROB */
 	uop->in_rob = 1;
+
 }

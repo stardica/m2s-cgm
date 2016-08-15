@@ -43,6 +43,7 @@
  * Class 'X86Thread'
  */
 
+
 static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 {
 	X86Cpu *cpu = self->cpu;
@@ -61,7 +62,11 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 	{
 		/* Get store */
 		store = linked_list_get(sq);
-		assert(store->uinst->opcode == x86_uinst_store);
+
+		if(store->uinst->opcode == x86_uinst_flush)
+			warning("pulling flush id %llu in rob %d\n", store->id, store->in_rob);
+
+		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_flush);
 
 		/* Only committed stores issue */
 		if (store->in_rob)
@@ -76,11 +81,6 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			break;
 #endif
 
-		//star >> added this
-		/*pthread_mutex_lock(&instrumentation_mutex);
-		IssuedLSQStats(store);
-		pthread_mutex_unlock(&instrumentation_mutex);*/
-
 		/* Remove store from store queue */
 		X86ThreadRemoveFromSQ(self);
 
@@ -90,16 +90,19 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
 		//client_info->prefetcher_eip = store->eip;
 
-		/* Issue store */
-		//pritnf("issue cycle %llu");
-
-		//stores++;
-		/*if(store->phy_addr == 0)
+		//set access type
+		if(store->uinst->opcode == x86_uinst_store)
 		{
-			store->protection_fault = 1;
-		}*/
-
-		cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
+			cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
+		}
+		else if (store->uinst->opcode == x86_uinst_flush)
+		{
+			cgm_issue_lspq_access(self, cgm_access_flush, store->id, store->phy_addr, core->event_queue, store);
+		}
+		else
+		{
+			fatal("X86ThreadIssueSQ(): invalid access type\n");
+		}
 
 #else
 		/* create and fill the mod_client_info_t object */
