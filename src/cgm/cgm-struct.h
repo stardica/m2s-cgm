@@ -135,7 +135,7 @@ enum cgm_access_kind_t {
 			cgm_access_storex_retry, /*gpu mesi mode*/
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
-			cgm_access_flush,
+			cgm_access_cpu_flush,
 			num_access_types
 };
 
@@ -363,6 +363,7 @@ struct cache_t{
 	void (*l1_d_load_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -384,6 +385,8 @@ struct cache_t{
 	void (*l2_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 	int (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l2_upgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_upgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -408,6 +411,7 @@ struct cache_t{
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
 	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);

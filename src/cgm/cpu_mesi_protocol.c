@@ -173,6 +173,126 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
+void cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//CPU is flushing a block, flush and send down to L2 and L3
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	struct cgm_packet_t *wb_packet;
+	int ort_status = -1;
+
+	//enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//charge the delay
+	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s CPU flush block ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	//check the ORT table is there an outstanding access for this block we are trying to flush?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		fatal("not sure about this\n");
+		//ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
+
+	//remove the block from the cache....
+
+	//first check the cache for the block
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_owned:
+		case cgm_cache_block_noncoherent:
+		fatal("cgm_mesi_l1_d_flush_block(): Invalid block state on flush hit %s \n", str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr));
+			break;
+
+		//if invalid check the WB buffer
+		case cgm_cache_block_invalid:
+
+				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+				//found the block in the WB buffer
+				if(wb_packet)
+				{
+					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//remove the block from the WB buffer
+					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+					packet_destroy(wb_packet);
+
+					//set access type inval_ack
+					message_packet->access_type = cgm_access_cpu_flush;
+
+					cache_put_io_down_queue(cache, message_packet);
+				}
+				else
+				{
+
+					/*Dropped if exclusive or shared
+					 Also WB may be in the pipe between L1 and L2 if Modified This will flush it out*/
+					message_packet->size = 1;
+					message_packet->cache_block_state = cgm_cache_block_invalid;
+
+					//set access type inval_ack
+					message_packet->access_type = cgm_access_cpu_flush;
+
+					//reply to the L2 cache
+					cache_put_io_down_queue(cache, message_packet);
+				}
+
+			break;
+
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_shared:
+
+			message_packet->size = 1;
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//set access type inval_ack
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			//reply to the L2 cache
+			cache_put_io_down_queue(cache, message_packet);
+			break;
+
+		case cgm_cache_block_modified:
+
+			//hit and its dirty send the ack and block down to the L2 cache.
+			message_packet->size = cache->block_size;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//set access type inval_ack
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			//reply to the L2 cache
+			cache_put_io_down_queue(cache, message_packet);
+
+			break;
+	}
+
+	return;
+}
+
 
 void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -2981,6 +3101,194 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	/*stats*/
 	cache->EvictInv++;
+
+	return;
+}
+
+void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//CPU flush
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int ort_status = -1;
+
+	//enum cgm_cache_block_state_t victim_trainsient_state;
+
+	struct cgm_packet_t *wb_packet = NULL;
+	struct cache_t *l3_cache_ptr = NULL;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s CPU flush block ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	/*check the ORT table for an outstanding access*/
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		fatal("cgm_mesi_l2_cpu_flush(): not sure what to do with this\n");
+
+		//warning("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		//ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+		//ort_dump(cache);
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
+
+	/*//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_noncoherent:
+		case cgm_cache_block_owned:
+			fatal("cgm_mesi_l2_inval(): L2 id %d invalid block state on inval as %s address %u\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			break;
+
+		case cgm_cache_block_invalid:
+
+			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+			//found the block in the WB buffer
+			if(wb_packet)
+			{
+
+				/*if pending is 0 the L1 cache has been flushed process now*/
+				if(wb_packet->flush_pending == 0)
+				{
+
+					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//remove the block from the WB buffer
+					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+					packet_destroy(wb_packet);
+
+					//set access type inval_ack
+					message_packet->access_type = cgm_access_cpu_flush;
+
+					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+					message_packet->l2_cache_id = cache->id;
+					message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+					SETROUTE(message_packet, cache, l3_cache_ptr)
+
+					//reply to the L3 cache
+					/*printf("l2_flush_block_here_2 id %llu dest_id %d\n", message_packet->evict_id, message_packet->dest_id);*/
+					cache_put_io_down_queue(cache, message_packet);
+
+				}
+				else if(wb_packet->flush_pending == 1)
+				{
+					fatal("cgm_mesi_l2_cpu_flush(): flush pending not sure what to do with this\n");
+
+					/*//waiting on flush to finish insert into pending request buffer
+					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					set flush_join bit
+					wb_packet->L3_flush_join = 1;
+
+					//put the message packet into the pending request buffer
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->pending_request_buffer, message_packet);*/
+				}
+				else
+				{
+					fatal("cgm_mesi_l2_cpu_flush(): wb_packet has invalid flush_pending value\n");
+				}
+			}
+			else
+			{
+
+				//star todo somehow check and make sure these are modified
+				/*if here the L2 cache has already written back, send down so the flush can complete*/
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set access type inval_ack
+				message_packet->access_type = cgm_access_cpu_flush;
+
+				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+				message_packet->l2_cache_id = cache->id;
+				message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+				SETROUTE(message_packet, cache, l3_cache_ptr)
+
+				//reply to the L3 cache
+				cache_put_io_down_queue(cache, message_packet);
+			}
+
+			break;
+
+
+		case cgm_cache_block_modified:
+
+			/*if the block is found in the L2 it may or may not be in the L1 cache
+			we must invalidate here and send an invalidation to the L1 D cache*/
+
+			message_packet->size = cache->block_size;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//set access type inval_ack
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+			message_packet->l2_cache_id = cache->id;
+			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+			SETROUTE(message_packet, cache, l3_cache_ptr)
+
+			//reply to the L3 cache
+			cache_put_io_down_queue(cache, message_packet);
+
+			break;
+
+		case cgm_cache_block_shared:
+		case cgm_cache_block_exclusive:
+
+			/*if the block is found in the L2 it may or may not be in the L1 cache
+			we must invalidate here and send an invalidation to the L1 D cache*/
+
+			message_packet->size = 1;
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//set access type inval_ack
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+			message_packet->l2_cache_id = cache->id;
+			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+			SETROUTE(message_packet, cache, l3_cache_ptr)
+
+			//reply to the L3 cache
+			cache_put_io_down_queue(cache, message_packet);
+
+
+			break;
+	}
 
 	return;
 }
@@ -6385,6 +6693,154 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	/*stats*/
 	cache->TotalWriteBlocks++;
+
+	return;
+}
+
+void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//CPU flush
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int ort_status = -1;
+
+	//enum cgm_cache_block_state_t victim_trainsient_state;
+
+	struct cgm_packet_t *wb_packet = NULL;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s CPU flush block ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	/*check the ORT table for an outstanding access*/
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		fatal("cgm_mesi_l3_cpu_flush(): not sure what to do with this\n");
+
+		//warning("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		//ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+		//ort_dump(cache);
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
+
+	/*//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_noncoherent:
+		case cgm_cache_block_owned:
+			fatal("cgm_mesi_l2_inval(): L2 id %d invalid block state on inval as %s address %u\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			break;
+
+		case cgm_cache_block_invalid:
+
+			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+			//found the block in the WB buffer
+			if(wb_packet)
+			{
+				assert(wb_packet->cache_block_state == cgm_cache_block_modified);
+
+				message_packet->size = cache->block_size;
+				message_packet->cache_block_state = cgm_cache_block_modified;
+
+				//remove the block from the WB buffer
+				wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+				packet_destroy(wb_packet);
+
+				message_packet->access_type = cgm_access_cpu_flush;
+
+				SETROUTE(message_packet, cache, system_agent)
+
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+
+			}
+			else
+			{
+
+				//star todo somehow check and make sure these are modified
+				/*if here the L2 cache has already written back, send down so the flush can complete*/
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set access type inval_ack
+				message_packet->access_type = cgm_access_cpu_flush;
+
+				SETROUTE(message_packet, cache, system_agent)
+
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+			}
+
+			break;
+
+
+		case cgm_cache_block_modified:
+
+			/*if the block is found in the L2 it may or may not be in the L1 cache
+			we must invalidate here and send an invalidation to the L1 D cache*/
+
+			message_packet->size = cache->block_size;
+			message_packet->cache_block_state = cgm_cache_block_modified;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//clear the directory entry
+			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			SETROUTE(message_packet, cache, system_agent)
+
+			//transmit to SA
+			cache_put_io_up_queue(cache, message_packet);
+
+			break;
+
+		case cgm_cache_block_shared:
+		case cgm_cache_block_exclusive:
+
+			/*if the block is found in the L2 it may or may not be in the L1 cache
+			we must invalidate here and send an invalidation to the L1 D cache*/
+
+			message_packet->size = 1;
+			message_packet->cache_block_state = cgm_cache_block_invalid;
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//clear the directory entry
+			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+			message_packet->access_type = cgm_access_cpu_flush;
+
+			SETROUTE(message_packet, cache, system_agent)
+
+			//transmit to SA
+			cache_put_io_up_queue(cache, message_packet);
+
+			break;
+	}
 
 	return;
 }

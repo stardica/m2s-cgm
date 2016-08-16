@@ -69,7 +69,7 @@ void dramsim_print(void){
 int dramsim_add_transaction(enum cgm_access_kind_t access_type, unsigned int addr){
 
 	bool write;
-	(access_type == cgm_access_mc_store) ? (write = true) : (write = false);
+	(access_type == cgm_access_mc_store || access_type == cgm_access_cpu_flush) ? (write = true) : (write = false);
 
 	int return_val = call_add_transaction(DRAM_object_ptr, write, addr);
 
@@ -196,7 +196,7 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 
 	assert(hit == 1);
 	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
-	assert(message_packet->access_type == cgm_access_mc_store);
+	assert(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush);
 
 	//stats/////////
 	mem_ctrl->num_writes++;
@@ -214,8 +214,16 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	mem_ctrl->dram_busy_cycles += elapsed_cycles;
 	//stats/////////
 
+
+	//tell CPU flush is complete if cpu flush
+	if(message_packet->access_type == cgm_access_cpu_flush)
+	{
+		linked_list_add(message_packet->event_queue, message_packet->data);
+	}
+
+
 	message_packet = list_remove(mem_ctrl->pending_accesses, message_packet);
-	free(message_packet);
+	packet_destroy(message_packet);
 
 	DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access complete (Write) ID %llu type %d cycle %llu\n",
 			(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);

@@ -1732,6 +1732,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
 	int i = 0;
+	unsigned int blk_aligned_addr = 0;
+	unsigned int blk_mask = 0x3F;
 
 	//copy memory from one to the other (load & store)
 	for(i = 0; i < size; i++)
@@ -1741,19 +1743,22 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 
 		host_addr++;
 		guest_addr++;
-
 	}
 
 	//rewind the quest address
 	guest_addr = guest_addr - size;
 
-	//flush the addresses that were stored to
+	//align the address
+	blk_aligned_addr = guest_addr & ~(blk_mask);
+
 	for(i = 0; i < size; i++)
 	{
-		x86_uinst_new_mem(ctx, x86_uinst_flush, guest_addr, 0, 0, 0, 0, 0, 0, 0, 0);
-		guest_addr++;
+		if(!(i % blk_mask))
+		{
+			x86_uinst_new_mem(ctx, x86_uinst_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+		}
 	}
-
 
 	return;
 }
@@ -1761,6 +1766,8 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
 	int i = 0;
+
+	fatal("read factory\n");
 
 	for(i = 0; i < size; i++)
 	{
@@ -1801,8 +1808,12 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
-	if(access_kind == cgm_access_flush)
-		fatal("made it to cgm\n");
+	/*if(access_kind == cgm_access_flush)
+		printf("made it to cgm flushing address... blk 0x%08x regular is 0x%08x regular blk 0x%08x\n",
+				new_packet->address, mmu_translate(0, 0x00000000, mmu_access_load_store), (mmu_translate(0, 0x00000000, mmu_access_load_store) & l1_d_caches[0].block_address_mask));*/
+
+	/*if(new_packet->access_id == 162)
+		fatal("address is 0x%08x\n", new_packet->address);*/
 
 
 	//////////////testing
@@ -1850,9 +1861,13 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	{
 		mem_system_stats->cpu_total_store_requests++;
 	}
+	else if(access_kind == cgm_access_cpu_flush)
+	{
+		//ignore for now
+	}
 
 	//For memory system load store request
-	if(access_kind == cgm_access_load || access_kind == cgm_access_store)
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_cpu_flush)
 	{
 
 		if((((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
@@ -1878,6 +1893,10 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		else if(access_kind == cgm_access_store)
 		{
 			l1_d_caches[id].TotalWrites++;
+		}
+		else if(access_kind == cgm_access_cpu_flush)
+		{
+			//ignore for now
 		}
 	}
 	else if(access_kind == cgm_access_prefetch)

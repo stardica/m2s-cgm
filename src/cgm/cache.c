@@ -2782,6 +2782,11 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_store_nack(&(l1_d_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_cpu_flush)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l1_d_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
@@ -3035,6 +3040,11 @@ void l2_cache_ctrl(void){
 				/*stats*/
 				l2_caches[my_pid].l2_flush_block_ack_++;
 			}
+			else if (access_type == cgm_access_cpu_flush)
+			{
+				//Call back function (cgm_mesi_l2_inval_ack)
+				l2_caches[my_pid].l2_cpu_flush(&(l2_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3229,13 +3239,11 @@ void l3_cache_ctrl(void){
 
 				l3_caches[my_pid].l3_upgrade_++;
 			}
-			/*else if(access_type == cgm_access_upgrade_ack)
+			else if(access_type == cgm_access_cpu_flush)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
-				l3_caches[my_pid].l3_upgrade_ack(&(l3_caches[my_pid]), message_packet);
-
-
-			}*/
+				l3_caches[my_pid].l3_cpu_flush(&(l3_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3621,7 +3629,8 @@ void l1_d_cache_down_io_ctrl(void){
 			}
 		}
 		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_cpu_flush)
 		{
 
 			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)

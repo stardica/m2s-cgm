@@ -215,7 +215,7 @@ void memctrl_ctrl(void){
 			if(mem_ctrl->rx_max < list_count(mem_ctrl->Rx_queue_top))
 				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);
 
-			if(message_packet->access_type == cgm_access_mc_store)
+			if(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush)
 			{
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
@@ -283,6 +283,10 @@ void memctrl_ctrl(void){
 					list_enqueue(mem_ctrl->Tx_queue_top, message_packet);
 					advance(mem_ctrl_io_ec);
 				}
+			}
+			else
+			{
+				fatal("memctrl_ctrl(): access type problem\n");
 			}
 
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access start ID %llu queue depth %d type %d cycle %llu\n",

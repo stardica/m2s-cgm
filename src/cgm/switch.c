@@ -1388,7 +1388,7 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
 					|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_write_back
-					|| message_packet->access_type == cgm_access_upgrade_ack)
+					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_cpu_flush)
 			{
 
 				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
@@ -1402,7 +1402,10 @@ void switch_south_io_ctrl(void){
 					SYSTEM_PAUSE(transfer_time);
 
 					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
-						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+					{
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name,
+								l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+					}
 
 					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);

@@ -63,8 +63,8 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* Get store */
 		store = linked_list_get(sq);
 
-		if(store->uinst->opcode == x86_uinst_flush)
-			warning("pulling flush id %llu in rob %d\n", store->id, store->in_rob);
+		/*if(store->uinst->opcode == x86_uinst_flush)
+			warning("pulling flush id %llu in rob %d\n", store->id, store->in_rob);*/
 
 		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_flush);
 
@@ -97,7 +97,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		}
 		else if (store->uinst->opcode == x86_uinst_flush)
 		{
-			cgm_issue_lspq_access(self, cgm_access_flush, store->id, store->phy_addr, core->event_queue, store);
+			cgm_issue_lspq_access(self, cgm_access_cpu_flush, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else
 		{

@@ -220,14 +220,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->target_neip = ctx->target_eip;
 
 
-		//if(uop->uinst->address == 0xFFFFFFFF)
-			//fatal("pulled a uop id %llu cycle %llu\n", uop->id, P_TIME);
-
-		/*printf("uop->neip = 0x%08x\n", uop->neip);
-		if(uop->neip > 2000000000)
-			getchar();*/
-
-
 		//star added this to catch interrupts at issue.
 		//all of the interrupt related data is known by now.
 		//this is kind of Frankensteiny, but it works
@@ -282,7 +274,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53 || uop->uinst->opcode == 54 || uop->uinst->opcode == 55)
 			{
 				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
-
 			}
 			else
 			{

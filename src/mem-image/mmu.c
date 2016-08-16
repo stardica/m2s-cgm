@@ -174,9 +174,6 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 		fatal("mmu_page_access(): page miss addr 0x%08x\n", addr);
 	}
 
-	/*if(page->id == 47)
-		printf("on the initial look up index used %d\n", index);*/
-
 	return page;
 }
 
@@ -332,10 +329,6 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		{
 			printf("creating page\n");
 		}
-
-
-		/*if(vtladdr == 0x00000004)
-			printf("creating page\n");*/
 
 		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
@@ -756,14 +749,6 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	//assign page id
 	page->id = page_number;
 	page_number++;
-
-	//star added this
-	/*page->guest_list = list_create();
-	memset (buff,'\0' , 100);
-	snprintf(buff, 100, "page[%d].guest_list", page->id);
-	page->guest_list->name = xstrdup(buff);*/
-
-	/*printf("---page created %d\n", page_number);*/
 
 	page->vtl_addr = tag;
 	page->address_space_index = address_space_index;
