@@ -271,7 +271,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53 || uop->uinst->opcode == 54 || uop->uinst->opcode == 55)
+			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53
+					|| uop->uinst->opcode == 54 || uop->uinst->opcode == 55
+					|| uop->uinst->opcode == 56)
 			{
 				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
 			}

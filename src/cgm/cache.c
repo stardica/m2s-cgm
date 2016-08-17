@@ -2787,6 +2787,11 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_gpu_flush)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_gpu_flush(&(l1_d_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l1_d_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
@@ -3044,6 +3049,10 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_inval_ack)
 				l2_caches[my_pid].l2_cpu_flush(&(l2_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_gpu_flush)
+			{
+				l2_caches[my_pid].l2_gpu_flush(&(l2_caches[my_pid]), message_packet);
 			}
 			else
 			{
@@ -3514,6 +3523,10 @@ void gpu_l2_cache_ctrl(void){
 				//Call back function (cgm_mesi_gpu_l2_getx)
 				gpu_l2_caches[my_pid].gpu_l2_flush_block_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
+			else if(access_type == cgm_access_gpu_flush)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_gpu_flush(&gpu_l2_caches[my_pid], message_packet);
+			}
 			else
 			{
 				fatal("gpu_l2_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3630,7 +3643,7 @@ void l1_d_cache_down_io_ctrl(void){
 		}
 		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
 				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
-				|| message_packet->access_type == cgm_access_cpu_flush)
+				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush)
 		{
 
 			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
@@ -4658,6 +4671,7 @@ void cache_put_io_up_queue(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	list_enqueue(cache->Tx_queue_top, message_packet);
 	advance(cache->cache_io_up_ec);
+
 	return;
 }
 

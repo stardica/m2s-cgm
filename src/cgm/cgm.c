@@ -1755,7 +1755,7 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 	{
 		if(!(i % blk_mask))
 		{
-			x86_uinst_new_mem(ctx, x86_uinst_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+			x86_uinst_new_mem(ctx, x86_uinst_cpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
 		}
 	}
@@ -1766,8 +1766,25 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
 	int i = 0;
+	unsigned int blk_aligned_addr = 0;
+	unsigned int blk_mask = 0x3F;
 
-	fatal("read factory\n");
+	//flush the GPU
+
+	//align the address
+	blk_aligned_addr = guest_addr & ~(blk_mask);
+
+	for(i = 0; i < size; i++)
+	{
+		if(!(i % blk_mask))
+		{
+			x86_uinst_new_mem(ctx, x86_uinst_gpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+		}
+	}
+
+	//rewind the quest address
+	//guest_addr = guest_addr - size;
 
 	for(i = 0; i < size; i++)
 	{
@@ -1867,7 +1884,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	}
 
 	//For memory system load store request
-	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_cpu_flush)
+	if(access_kind == cgm_access_load || access_kind == cgm_access_store
+			|| access_kind == cgm_access_cpu_flush || access_kind == cgm_access_gpu_flush)
 	{
 
 		if((((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)

@@ -1111,7 +1111,8 @@ void switch_north_io_ctrl(void){
 				SYSTEM_PAUSE(transfer_time);
 
 				if(list_count(hub_iommu->Rx_queue_bottom) > QueueSize)
-					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
+							hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
 
 				message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
 				list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);

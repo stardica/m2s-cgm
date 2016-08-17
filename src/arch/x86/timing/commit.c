@@ -137,11 +137,15 @@ int X86ThreadCanCommit(X86Thread *self)
 			uop->ready = 1;
 		return uop->ready;
 	}
-	else if (uop->uinst->opcode == x86_uinst_flush)
+	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
 		uop->ready = 1;
 		return uop->ready;
 	}
+	/*else
+	{
+		fatal("X86ThreadCanCommit(): bad access type %d\n", uop->uinst->opcode);
+	}*/
 	
 	/* Instructions other than stores must be completed. */
 	return uop->completed;

@@ -261,7 +261,7 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 	int last_queue_num = -1;
-	int l2_src_id = -1;
+	//int l2_src_id = -1;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
@@ -313,15 +313,14 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 	//if we are pointing to the bottom queue route to the correct GPU l2 cache
 	else if(last_queue_num == Rx_queue_bottom)
 	{
-
 		//return trip for memory access
-		l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
+		//l2_src_id = str_map_string(&gpu_l2_strn_map, message_packet->gpu_cache_name);
 
-		if(list_count(hub_iommu->Tx_queue_top[l2_src_id]) <= QueueSize)
+		if(list_count(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)]) <= QueueSize)
 		{
 			message_packet = list_remove(hub_iommu->last_queue, message_packet);
-			list_enqueue(hub_iommu->Tx_queue_top[l2_src_id], message_packet);
-			advance(hub_iommu->hub_iommu_io_up_ec[l2_src_id]);
+			list_enqueue(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)], message_packet);
+			advance(hub_iommu->hub_iommu_io_up_ec[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)]);
 		}
 		else
 		{
@@ -400,6 +399,10 @@ void hub_iommu_ctrl_func(void){
 
 		P_PAUSE(hub_iommu->latency);
 
+		if(message_packet->access_type == cgm_access_gpu_flush_ack)
+			fatal("ack in hub\n");
+
+
 		/*account for coherence and connection type*/
 		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		{
@@ -413,9 +416,6 @@ void hub_iommu_ctrl_func(void){
 		{
 			fatal("hub_iommu_coherent_ctrl(): invalid hub-iommu coherence type\n");
 		}
-
-		/*printf("GPU accessing phy_blk_addr 0x%08x id %llu cycle %llu\n",
-			message_packet->address & gpu_v_caches[0].block_address_mask, message_packet->access_id, P_TIME);*/
 
 		//star the hub multiplexes GPU memory requests.
 		if(hub_iommu_put_next_queue(message_packet))
@@ -485,7 +485,6 @@ unsigned int iommu_translation_table_get_address(int id){
 }
 
 
-
 void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
@@ -498,12 +497,12 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		//message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
 		message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
-			fatal("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
+			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
 	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx)
+			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_gpu_flush)
 	{
-		/*replies coming from system agent*/
+		/*messages coming from system*/
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return phy address in 0x%08x\n", message_packet->address);
 		//message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
@@ -617,9 +616,9 @@ void hub_iommu_io_up_ctrl(void){
 	while(1)
 	{
 		await(hub_iommu->hub_iommu_io_up_ec[my_pid], step);
-		step++;
+		//step++;
 
-		message_packet = list_dequeue(hub_iommu->Tx_queue_top[my_pid]);
+		message_packet = list_get(hub_iommu->Tx_queue_top[my_pid], 0);
 		assert(message_packet);
 
 		/*access_id = message_packet->access_id;*/
@@ -630,10 +629,71 @@ void hub_iommu_io_up_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
 
-		list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
-		advance(&gpu_l2_cache[my_pid]);
+		if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
+					|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
+					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
+					|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_mc_put)
+		{
+
+			if(list_count(gpu_l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				if(list_count(gpu_l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+					warning("hub_iommu_io_up_ctrl(): %s %s size exceeded %d\n",
+							gpu_l2_caches[my_pid].name, gpu_l2_caches[my_pid].Rx_queue_bottom->name, list_count(gpu_l2_caches[my_pid].Rx_queue_bottom));
+
+				message_packet = list_remove(hub_iommu->Tx_queue_top[my_pid], message_packet);
+				list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
+				advance(&gpu_l2_cache[my_pid]);
+
+			}
+		}
+		else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
+				|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
+				|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack
+				|| message_packet->access_type == cgm_access_getx_fwd_nack || message_packet->access_type == cgm_access_gpu_flush)
+		{
+
+			if(list_count(gpu_l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				if(list_count(gpu_l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+					warning("hub_iommu_io_up_ctrl(): %s %s size exceeded %d\n",
+							gpu_l2_caches[my_pid].name, gpu_l2_caches[my_pid].Coherance_Rx_queue->name, list_count(gpu_l2_caches[my_pid].Coherance_Rx_queue));
+
+				message_packet = list_remove(hub_iommu->Tx_queue_top[my_pid], message_packet);
+				list_enqueue(gpu_l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+				advance(&gpu_l2_cache[my_pid]);
+
+			}
+		}
+		else
+		{
+			fatal("hub_iommu_io_up_ctrl(): bad access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		}
+
+		//===================================================
+
+
+
+		/*list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
+		advance(&gpu_l2_cache[my_pid]);*/
 	}
 	return;
 }
