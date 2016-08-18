@@ -69,7 +69,7 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	struct mmu_page_t *gpu_page = NULL;
 	unsigned int tag;
 	int index;
-	//int i = 0;
+	int i = 0;
 
 	enum mmu_page_type_t page_type;
 
@@ -110,6 +110,9 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 		else if(page->page_type == mmu_page_gpu && mmu_search_page(page, addr_type, addr, address_space_index, tag))
 		{
 			gpu_page = page;
+
+			fatal("found a gpu page %d\n", gpu_page->id);
+
 			break;
 		}
 
@@ -156,20 +159,30 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 	}
 	else
 	{
-		page = gpu_page;
 
-		/*LIST_FOR_EACH(mmu->page_list, i)
+		//star todo fix this, for some reason the page wasn't found when hashed.
+
+		/*old code
+		search the page list for a page hit.*/
+		LIST_FOR_EACH(mmu->page_list, i)
 		{
 			//pull a page
 			page = list_get(mmu->page_list, i);
 
 			//check to see if it is a hit and look for both text and data page types
-			if(page->id == 47)
+			if(page->page_type == mmu_page_text && mmu_search_page(page, addr_type, addr, address_space_index, tag))
 			{
-				printf("found the page tran_index is %d hub index is %d page type %d access_type %d\n",
-						index, hub_iommu->page_hash_table[index], page->page_type, access_type);
+				return page;
 			}
-		}*/
+			else if(page->page_type == mmu_page_data && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+			{
+				return page;
+			}
+			else if(page->page_type == mmu_page_gpu && mmu_search_page(page, addr_type, addr, address_space_index, tag))
+			{
+				return page;
+			}
+		}
 
 		fatal("mmu_page_access(): page miss addr 0x%08x\n", addr);
 	}

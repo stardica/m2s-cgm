@@ -1480,7 +1480,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				else
 				{
 					//message is going down to L3 so its a getx
-					message_packet->access_type = cgm_access_get;
+					message_packet->access_type = cgm_access_getx;
 					message_packet->cpu_access_type = cgm_access_load;
 				}
 
@@ -3145,7 +3145,6 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 				/*if pending is 0 the L1 cache has been flushed process now*/
 				if(wb_packet->flush_pending == 0)
 				{
-
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
 					message_packet->size = cache->block_size;
@@ -3163,6 +3162,7 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 				}
 				else if(wb_packet->flush_pending == 1)
 				{
+
 					//waiting on flush to finish insert into pending request buffer
 					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
 
@@ -3206,7 +3206,7 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 					cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), 0);
 
 			//clear the directory entry
-			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
+			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
 			//star todo find a better way to do this...
 			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -3622,7 +3622,6 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 			//set the new directory entry
 			cgm_cache_set_dir(cache, pending_request_packet->set, pending_request_packet->way, pending_request_packet->l1_cache_id);
 
-
 			/*pull the pending request and send to L1 cache*/
 			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
 
@@ -3635,7 +3634,6 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		{
 			assert(!pending_request_packet);
 		}
-
 
 		//free the message packet
 		message_packet = list_remove(cache->last_queue, message_packet);

@@ -153,7 +153,7 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-void cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -256,7 +256,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 //void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 
 //void cgm_mesi_gpu_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 //void cgm_mesi_gpu_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);

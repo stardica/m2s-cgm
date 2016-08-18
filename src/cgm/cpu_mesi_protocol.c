@@ -189,7 +189,7 @@ void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 	return;
 }
 
-void cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//CPU is flushing a block, flush and send down to L2 and L3
 	int cache_block_hit;
@@ -216,11 +216,11 @@ void cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	if(ort_status != cache->mshr_size)
 	{
-		/*yep there is so set the bit in the ort table to 0.
-		 * When the put/putx comes kill it and try again...*/
-		fatal("not sure about this\n");
-		//ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
-		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+		/*CPU is flushing blocks, but we are still waiting on the memory system to bring the block in
+		the CPU is now trying to flush, stall until the block is brought and the progress is made*/
+		//fatal("not sure about this\n");
+
+		return 0;
 	}
 
 	//remove the block from the cache....
@@ -306,7 +306,7 @@ void cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 			break;
 	}
 
-	return;
+	return 1;
 }
 
 
@@ -5112,7 +5112,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 		cgm_cache_update_waylist(&cache->sets[message_packet->set], cache->sets[message_packet->set].way_tail, cache_waylist_head);
 	}
 
-
 	//if access to the block is pending send nack back to requesting core or send block to owning core (silently dropped)
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
@@ -5646,6 +5645,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 	/*grab a ptr to the L2 cache*/
 	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
+
+
+	if(message_packet->access_id == 22147278)
+		fatal("l3 getx hit %d\n", *cache_block_hit_ptr);
 
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{

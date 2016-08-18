@@ -275,9 +275,25 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 		if(list_count(hub_iommu->Tx_queue_bottom) <= QueueSize)
 		{
+			P_PAUSE(hub_iommu->latency);
+
 			//save the gpu l2 cache id
 			message_packet->gpu_cache_id = message_packet->l2_cache_id;
 			message_packet->gpu_cache_name = message_packet->l2_cache_name;
+
+			/*account for coherence and connection type*/
+			if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+			{
+				iommu_nc_translate(message_packet);
+			}
+			else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
+			{
+				iommu_translate(message_packet);
+			}
+			else
+			{
+				fatal("hub_iommu_put_next_queue_func(): invalid hub-iommu coherence type\n");
+			}
 
 			if(hub_iommu_connection_type == hub_to_mc)
 			{
@@ -318,6 +334,23 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 		if(list_count(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)]) <= QueueSize)
 		{
+
+			P_PAUSE(hub_iommu->latency);
+
+			/*account for coherence and connection type*/
+			if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+			{
+				iommu_nc_translate(message_packet);
+			}
+			else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
+			{
+				iommu_translate(message_packet);
+			}
+			else
+			{
+				fatal("hub_iommu_put_next_queue_func(): invalid hub-iommu coherence type\n");
+			}
+
 			message_packet = list_remove(hub_iommu->last_queue, message_packet);
 			list_enqueue(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)], message_packet);
 			advance(hub_iommu->hub_iommu_io_up_ec[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)]);
@@ -397,29 +430,16 @@ void hub_iommu_ctrl_func(void){
 		message_packet = hub_iommu_get_from_queue();
 		assert(message_packet);
 
-		P_PAUSE(hub_iommu->latency);
-
-		if(message_packet->access_type == cgm_access_gpu_flush_ack)
-			fatal("ack in hub\n");
-
-
-		/*account for coherence and connection type*/
-		if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+		//star the hub multiplexes GPU memory requests.
+		if(hub_iommu_put_next_queue(message_packet))
 		{
-			iommu_nc_translate(message_packet);
-		}
-		else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)
-		{
-			iommu_translate(message_packet);
+			step++;
 		}
 		else
 		{
-			fatal("hub_iommu_coherent_ctrl(): invalid hub-iommu coherence type\n");
+			SYSTEM_PAUSE(1);
 		}
 
-		//star the hub multiplexes GPU memory requests.
-		if(hub_iommu_put_next_queue(message_packet))
-			step++;
 	}
 
 	fatal("hub_iommu_ctrl(): reached end of func\n");
@@ -489,12 +509,12 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 	//check to see if the packet is inbound or outbound
 	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
-			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx)
+			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
+			|| message_packet->access_type == cgm_access_gpu_flush_ack)
 	{
 		/*load and stores are heading to the system agent.*/
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu NC ACCESS vtl address in 0x%08x\n", message_packet->address);
-		//message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
+			printf("hub-iommu NC ACCESS vtl address in 0x%08x access type %d id %llu\n", message_packet->address, message_packet->access_type, message_packet->access_id);
 		message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
@@ -504,8 +524,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 	{
 		/*messages coming from system*/
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu NC return phy address in 0x%08x\n", message_packet->address);
-		//message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
+			printf("hub-iommu NC return phy address in 0x%08x access type %d id %llu\n", message_packet->address, message_packet->access_type, message_packet->access_id);
 		message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);

@@ -1389,7 +1389,8 @@ void switch_south_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
 					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
 					|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_write_back
-					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_cpu_flush)
+					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_cpu_flush
+					|| message_packet->access_type == cgm_access_gpu_flush_ack)
 			{
 
 				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)

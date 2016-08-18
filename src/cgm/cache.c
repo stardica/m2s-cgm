@@ -2785,7 +2785,8 @@ void l1_d_cache_ctrl(void){
 			else if (access_type == cgm_access_cpu_flush)
 			{
 				//Call back function (cgm_mesi_l1_d_downgrade)
-				l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet);
+				if(!l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet))
+					step--;
 			}
 			else if (access_type == cgm_access_gpu_flush)
 			{
@@ -3253,6 +3254,11 @@ void l3_cache_ctrl(void){
 				//via call back function (cgm_mesi_l3_upgrade)
 				l3_caches[my_pid].l3_cpu_flush(&(l3_caches[my_pid]), message_packet);
 			}
+			else if(access_type == cgm_access_gpu_flush_ack)
+			{
+				//via call back function (cgm_mesi_l3_upgrade)
+				l3_caches[my_pid].l3_gpu_flush_ack(&(l3_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3487,6 +3493,9 @@ void gpu_l2_cache_ctrl(void){
 		{
 
 			step++;
+
+			if(message_packet->access_id == 27511114)
+				printf("packet is here\n");
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
