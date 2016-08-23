@@ -517,7 +517,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 			printf("hub-iommu NC ACCESS vtl address in 0x%08x access type %d id %llu\n", message_packet->address, message_packet->access_type, message_packet->access_id);
 		message_packet->address = mmu_translate(1, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
-			fatal("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
+			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
 	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
 			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_gpu_flush)
@@ -531,7 +531,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 	}
 	else
 	{
-		fatal("iommu_translate(): invalid message_packet access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		fatal("iommu_nc_translate(): invalid message_packet access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 	}
 
 	return;

@@ -3257,7 +3257,7 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_gpu_flush_ack)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
-				l3_caches[my_pid].l3_gpu_flush_ack(&(l3_caches[my_pid]), message_packet);
+				l3_caches[my_pid].l3_cpu_flush(&(l3_caches[my_pid]), message_packet);
 			}
 			else
 			{

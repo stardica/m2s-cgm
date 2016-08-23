@@ -273,15 +273,29 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			x86_uinst_load_ex,		//54
 			x86_uinst_store_ex,		//55
 			x86_uinst_prefetch,		//56
-			x86_uinst_cpu_flush,	//57 star added this
-			x86_uinst_gpu_flush,	//58 star added this*/
+			x86_uinst_cpu_flush,	//57
+			x86_uinst_gpu_flush,	//58*/
 
 			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 58)
 			{
-				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex
-						|| uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
 				{
 					uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
+				}
+				else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+				{
+					if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+					{
+						uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store);
+					}
+					else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+					{
+						uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
+					}
+					else
+					{
+						fatal("X86ThreadFetchInst(): bad cache protocol\n");
+					}
 				}
 				else
 				{

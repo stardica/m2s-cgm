@@ -92,7 +92,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info->prefetcher_eip = store->eip;
 
 		//set access type
-		if(store->uinst->opcode == x86_uinst_store)
+		if(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
 		{
 			cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
 		}

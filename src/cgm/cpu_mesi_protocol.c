@@ -3050,6 +3050,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 			//star todo find a better way to do this...
 			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
+
 			assert(wb_packet);
 			wb_packet->L3_flush_join = 1;
 
@@ -5647,8 +5648,13 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
 
-	if(message_packet->access_id == 22147278)
-		fatal("l3 getx hit %d\n", *cache_block_hit_ptr);
+	if(message_packet->src_id == 24 && *cache_block_hit_ptr == 1)
+		fatal("hit in L3 cache addr 0x%08x\n", message_packet->address);
+
+	if(message_packet->src_id == 24)
+		printf("%s access here cache addr 0x%08x\n", cache->name, message_packet->address);
+
+
 
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
@@ -6753,9 +6759,12 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
+	int sharers = 0;
+	int owning_core = 0;
+
 	int ort_status = -1;
 
-	//enum cgm_cache_block_state_t victim_trainsient_state;
+	enum cgm_cache_block_state_t victim_trainsient_state;
 
 	struct cgm_packet_t *wb_packet = NULL;
 
@@ -6765,7 +6774,13 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
+	//get number of sharers
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
+
+	//check to see if access is from an already owning core
+	owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
@@ -6788,14 +6803,25 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
+	/*if(sharers == 1 && owning_core == 0)
+	{
+		in a coherent system, its possible for the a cpu core to request a flush
+		in one core and find that the block is in one or more other cores. There
+		are several ways to handle this, from both a memory system and OS perspective.
+		In this implementation we just evict the line and perform a join when the flush_blk_ack comes back.
+
+		fatal("caught you\n");
+	}*/
+
+
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
 		case cgm_cache_block_owned:
-			fatal("cgm_mesi_l2_inval(): L2 id %d invalid block state on inval as %s address %u\n",
-				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			fatal("cgm_mesi_l3_cpu_flush(): %s invalid block state on inval as %s address %u\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
 
 		case cgm_cache_block_invalid:
@@ -6805,21 +6831,29 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			//found the block in the WB buffer
 			if(wb_packet)
 			{
-				assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-				message_packet->size = cache->block_size;
-				message_packet->cache_block_state = cgm_cache_block_modified;
+				if(wb_packet->flush_pending == 0)
+				{
+					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-				//remove the block from the WB buffer
-				wb_packet = list_remove(cache->write_back_buffer, wb_packet);
-				packet_destroy(wb_packet);
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
 
-				message_packet->access_type = cgm_access_cpu_flush;
+					//remove the block from the WB buffer
+					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+					packet_destroy(wb_packet);
 
-				SETROUTE(message_packet, cache, system_agent)
+					message_packet->access_type = cgm_access_cpu_flush;
 
-				//transmit to SA
-				cache_put_io_up_queue(cache, message_packet);
+					SETROUTE(message_packet, cache, system_agent)
+
+					//transmit to SA
+					cache_put_io_up_queue(cache, message_packet);
+				}
+				else
+				{
+					fatal("cgm_mesi_l3_cpu_flush(): wb with a pending flush...\n");
+				}
 
 			}
 			else
@@ -6842,50 +6876,89 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			break;
 
 
+		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
 
-			/*if the block is found in the L2 it may or may not be in the L1 cache
-			we must invalidate here and send an invalidation to the L1 D cache*/
+			//check to make sure the block isn't in another core...
+			if(sharers == 1 && owning_core == 1)
+			{
+				assert(victim_trainsient_state != cgm_cache_block_transient);
 
-			message_packet->size = cache->block_size;
-			message_packet->cache_block_state = cgm_cache_block_modified;
+				if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
+				{
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+				}
+				else
+				{
+					message_packet->size = 1;
+					message_packet->cache_block_state = cgm_cache_block_invalid;
+				}
 
-			//invalidate the local block
-			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+				//invalidate the local block
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
-			//clear the directory entry
-			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-			message_packet->access_type = cgm_access_cpu_flush;
+				message_packet->access_type = cgm_access_cpu_flush;
 
-			SETROUTE(message_packet, cache, system_agent)
+				SETROUTE(message_packet, cache, system_agent)
 
-			//transmit to SA
-			cache_put_io_up_queue(cache, message_packet);
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+
+			}
+			else
+			{
+				warning("cgm_mesi_l3_cpu_flush(): waiting on a join... access id %llu blk addr 0x%08x\n",
+						message_packet->access_id, message_packet->address & cache->block_address_mask);
+
+				assert(victim_trainsient_state != cgm_cache_block_transient);
+
+				/*evict block here*/
+				cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->way,
+						cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), 0);
+
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+				//star todo find a better way to do this...
+				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+				assert(wb_packet);
+				wb_packet->L3_flush_join = 1;
+
+				message_packet = list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->pending_request_buffer, message_packet);
+			}
 
 			break;
 
 		case cgm_cache_block_shared:
-		case cgm_cache_block_exclusive:
 
-			/*if the block is found in the L2 it may or may not be in the L1 cache
-			we must invalidate here and send an invalidation to the L1 D cache*/
+			if(sharers == 1 && owning_core == 1)
+			{
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
 
-			message_packet->size = 1;
-			message_packet->cache_block_state = cgm_cache_block_invalid;
+				//invalidate the local block
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
 
-			//invalidate the local block
-			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-			//clear the directory entry
-			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+				message_packet->access_type = cgm_access_cpu_flush;
 
-			message_packet->access_type = cgm_access_cpu_flush;
+				SETROUTE(message_packet, cache, system_agent)
 
-			SETROUTE(message_packet, cache, system_agent)
-
-			//transmit to SA
-			cache_put_io_up_queue(cache, message_packet);
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+			}
+			else
+			{
+				fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
+			}
 
 			break;
 	}
@@ -6904,17 +6977,15 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	int *cache_block_state_ptr = &cache_block_state;
 
 	struct cgm_packet_t *wb_packet = NULL;
+	struct cgm_packet_t *pending_request_packet = NULL;
 	//struct cgm_packet_t *pending_request_packet = NULL;
 	//int l3_map = 0;
 	int error = 0;
-
 
 	//warning("cgm_mesi_l3_flush_block_ack()\n");
 
 	//charge delay
 	P_PAUSE(cache->latency);
-
-	/*printf("%s flush block ack\n", cache->name);*/
 
 	//get the address set and tag
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -6922,6 +6993,9 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	/*error checking the block should no longer be "in core"*/
 	error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
 	assert(error == 0);
+
+	//if(((message_packet->address & cache->block_address_mask) == 0x0002f480) && pending_request_packet)
+	//	fatal("%s flush block ack\n", cache->name);
 
 	/*block should not be in L3 cache either*/
 	if(*cache_block_hit_ptr == 1)
@@ -6948,26 +7022,73 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 	if(wb_packet)
 	{
-		/*if incoming data from core data is dirty*/
-		if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+
+		if(wb_packet->L3_flush_join == 0)
 		{
-			/*no join bit at L3 so this should be clear*/
-			assert(wb_packet->L3_flush_join == 0);
+			/*if incoming data from core data is dirty*/
+			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				//merge the block.
+				wb_packet->cache_block_state = cgm_cache_block_modified;
 
-			//merge the block.
-			wb_packet->cache_block_state = cgm_cache_block_modified;
+				//clear the pending bit and leave the wb in the buffer
+				wb_packet->flush_pending = 0;
+			}
+			else
+			{
+				//Neither the l1 line or L2 line are dirty clear the wb from the buffer
+				assert(wb_packet->cache_block_state == cgm_cache_block_exclusive);
+				wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+				packet_destroy(wb_packet);
+			}
+		}
+		else if(wb_packet->L3_flush_join == 1)
+		{
+			//CPU initiated flush. Join the flush and finish the eviction.
 
-			//clear the pending bit and leave the wb in the buffer
-			wb_packet->flush_pending = 0;
+			warning("l3 flush join\n");
+
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
+			assert(pending_request_packet);
+			assert(pending_request_packet->access_type == cgm_access_cpu_flush);
+
+			/*if incoming data from core data is dirty*/
+			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			{
+				//merge the block.
+				pending_request_packet->size = cache->block_size;
+				pending_request_packet->cache_block_state = cgm_cache_block_modified;
+			}
+			else
+			{
+				pending_request_packet->size = 1;
+				pending_request_packet->cache_block_state = cgm_cache_block_invalid;
+			}
+
+			//clear the WB
+			wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+			packet_destroy(wb_packet);
+
+			pending_request_packet->access_type = cgm_access_cpu_flush;
+
+			SETROUTE(pending_request_packet, cache, system_agent)
+
+			//transmit to SA
+			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
+
+			list_enqueue(cache->Tx_queue_top, pending_request_packet);
+			advance(cache->cache_io_up_ec);
 		}
 		else
 		{
-			//Neither the l1 line or L2 line are dirty clear the wb from the buffer
-			assert(wb_packet->cache_block_state == cgm_cache_block_exclusive);
-			wb_packet = list_remove(cache->write_back_buffer, wb_packet);
-			packet_destroy(wb_packet);
+			fatal("cgm_mesi_l3_flush_block_ack(): bad flush join setting %d\n", wb_packet->L3_flush_join);
 		}
 	}
+	/*else
+	{
+		fatal("cgm_mesi_l3_flush_block_ack(): no writeback packet\n");
+	}*/
 
 	/*stats*/
 	cache->EvictInv++;

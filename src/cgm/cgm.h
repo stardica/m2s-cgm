@@ -52,7 +52,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0000a000
+#define WATCHBLOCK (unsigned int) 0x0002f480
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 L1-L3,
 #define LEVEL 3
@@ -261,8 +261,11 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, unsigned int addr, int *witness_ptr);
 int remove_from_global(long long id);
 
-void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
-void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+
+void uop_factory_c_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
+void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size);
 
 
 void cgm_dump_system(void);

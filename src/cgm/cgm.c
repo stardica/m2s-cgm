@@ -1729,7 +1729,29 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	return access_id;
 }
 
-void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+void uop_factory_c_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+
+
+	int i = 0;
+	unsigned int blk_aligned_addr = 0;
+	unsigned int blk_mask = 0x3F;
+
+	//align the address
+	blk_aligned_addr = host_addr & ~(blk_mask);
+
+	for(i = 0; i < size; i++)
+	{
+		if(!(i % blk_mask))
+		{
+			x86_uinst_new_mem(ctx, x86_uinst_cpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+		}
+	}
+
+	return;
+}
+
+void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
 	int i = 0;
 	unsigned int blk_aligned_addr = 0;
@@ -1763,7 +1785,28 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 	return;
 }
 
-void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
+
+	int i = 0;
+	unsigned int blk_aligned_addr = 0;
+	unsigned int blk_mask = 0x3F;
+
+	//align the address
+	blk_aligned_addr = host_addr & ~(blk_mask);
+
+	for(i = 0; i < size; i++)
+	{
+		if(!(i % blk_mask))
+		{
+			x86_uinst_new_mem(ctx, x86_uinst_gpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+		}
+	}
+
+	return;
+}
+
+void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
 	int i = 0;
 	unsigned int blk_aligned_addr = 0;

@@ -215,6 +215,23 @@ void memctrl_ctrl(void){
 			if(mem_ctrl->rx_max < list_count(mem_ctrl->Rx_queue_top))
 				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);
 
+
+			if ((message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush_ack)
+					&& message_packet->cache_block_state == cgm_cache_block_invalid)
+			{
+
+				//tell CPU flush is complete if cpu/gpu flush
+				linked_list_add(message_packet->event_queue, message_packet->data);
+
+				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
+				packet_destroy(message_packet);
+
+				//warning("memctrl_ctrl(): used continue for empty flush\n");
+				continue;
+			}
+
+
+
 			if(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush
 					|| message_packet->access_type == cgm_access_gpu_flush_ack)
 			{
@@ -293,19 +310,6 @@ void memctrl_ctrl(void){
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access start ID %llu queue depth %d type %d cycle %llu\n",
 					(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id,
 					list_count(mem_ctrl->pending_accesses), message_packet->access_type, P_TIME);
-
-
-			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-			{
-				if(SYSTEM == 1)
-				{
-					cache_dump_queue(mem_ctrl->pending_accesses);
-
-					printf("block 0x%08x %s DRAM access start ID %llu queue depth %d type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id,
-							list_count(mem_ctrl->pending_accesses), message_packet->access_type, P_TIME);
-				}
-			}*/
 
 			/*stats*/
 			mem_ctrl->busy_cycles += (mem_ctrl->DRAM_latency + 1);

@@ -302,14 +302,14 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		printf("page id %d, page type %d\n", page->id, page->page_type);
 	}*/
 
-	if(access_type == mmu_access_gpu && gpu_page && GPU_HUB_IOMMU == 1)
+	/*if(access_type == mmu_access_gpu && gpu_page && GPU_HUB_IOMMU == 1)
 	{
 		printf("page found\n");
 	}
 	else if(access_type == mmu_access_gpu && !gpu_page && GPU_HUB_IOMMU == 1)
 	{
 		printf("page NOT found\n");
-	}
+	}*/
 
 	//figure out if we are looking for a .text or a data page.
 	page_type = mmu_get_page_type(access_type);
@@ -331,7 +331,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 		{
-			printf("page found\n");
+			printf("page found id %d\n", data_page->id);
 		}
 
 		page = data_page;
@@ -669,7 +669,7 @@ unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_add
 	unsigned int vtl_addr;
 	unsigned int offset;
 
-	assert(address_space_index == 0);
+	assert(address_space_index == 1);
 
 	page = mmu_page_access(address_space_index, mmu_addr_phy, phy_addr, access_type);
 	assert(page);
