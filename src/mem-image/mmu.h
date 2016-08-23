@@ -139,6 +139,7 @@ void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr, unsigned int size);
 struct page_guest_t *mmu_create_guest(void);
 unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_addr, enum mmu_access_t access_type);
+
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr);
 unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid, unsigned int host_phy_addr);
 unsigned int mmu_forward_link_guest_address(int guest_pid, unsigned int vtl_addr);

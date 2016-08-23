@@ -515,9 +515,9 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		/*load and stores are heading to the system agent.*/
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS vtl address in 0x%08x access type %d id %llu\n", message_packet->address, message_packet->access_type, message_packet->access_id);
-		message_packet->address = mmu_translate(0, message_packet->address, mmu_access_gpu);
+		message_packet->address = mmu_translate(1, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
+			fatal("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
 	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
 			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_gpu_flush)
@@ -525,7 +525,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		/*messages coming from system*/
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return phy address in 0x%08x access type %d id %llu\n", message_packet->address, message_packet->access_type, message_packet->access_id);
-		message_packet->address = mmu_reverse_translate(0, message_packet->address, mmu_access_gpu);
+		message_packet->address = mmu_reverse_translate(1, message_packet->address, mmu_access_gpu);
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);
 	}

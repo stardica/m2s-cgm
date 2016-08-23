@@ -115,11 +115,9 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	struct linked_list_t *preq = self->preq;
 
 	assert(!uop->in_lq && !uop->in_sq);
-	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store
-			|| uop->uinst->opcode == x86_uinst_prefetch || uop->uinst->opcode == x86_uinst_cpu_flush
-			|| uop->uinst->opcode == x86_uinst_gpu_flush);
+	assert(uop->uinst->opcode >= x86_uinst_load && uop->uinst->opcode <= x86_uinst_gpu_flush);
 
-	if (uop->uinst->opcode == x86_uinst_load)
+	if (uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_load_ex)
 	{
 		//star >> added stat pipe_load++;
 		linked_list_out(lq);
@@ -128,8 +126,8 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 		uop->in_lq = 1;
 
 	}
-	else if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_cpu_flush
-			|| uop->uinst->opcode == x86_uinst_gpu_flush)
+	else if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
+			|| uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
 		//star >> added stat pipe_store++;
 		linked_list_out(sq);

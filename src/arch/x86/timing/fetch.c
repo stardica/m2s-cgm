@@ -265,29 +265,39 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		 * flags, etc. */
 		x86_uop_count_deps(uop);
 
-		//star added this
-		//x86_uop_print(uop);
-
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			if(uop->uinst->opcode == 52 || uop->uinst->opcode == 53
-					|| uop->uinst->opcode == 54 || uop->uinst->opcode == 55
-					|| uop->uinst->opcode == 56)
+			/*x86_uinst_load,		//52
+			x86_uinst_store,		//53
+			x86_uinst_load_ex,		//54
+			x86_uinst_store_ex,		//55
+			x86_uinst_prefetch,		//56
+			x86_uinst_cpu_flush,	//57 star added this
+			x86_uinst_gpu_flush,	//58 star added this*/
+
+			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 58)
 			{
-				uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
+				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex
+						|| uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+				{
+					uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
+				}
+				else
+				{
+					uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
+				}
 			}
 			else
 			{
 				fatal("X86ThreadFetchInst(): Invalid memory uop\n");
 			}
 
-			if(uop->uinst->opcode == 54)
+			if(uop->uinst->opcode == 56)
 			{
-				fatal("caught a prefetch\n");
+				fatal("caught a prefetch in fetch\n");
 
 			}
-
 		}
 
 		/* Trace */
@@ -466,6 +476,8 @@ static void X86ThreadFetch(X86Thread *self)
 		//star this prints out the current fetch address
 		/*printf("fetch neip vtrl_addr 0x%08x, phy_addr 0x%08x page_id %d\n",
 				self->fetch_neip, mmu_get_phyaddr(0, self->fetch_neip), mmu_get_page_id(0, self->fetch_neip, mmu_access_fetch));*/
+
+		assert(self->ctx->address_space_index == 0);
 
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 		self->fetch_block = block;

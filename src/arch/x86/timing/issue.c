@@ -66,8 +66,8 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/*if(store->uinst->opcode == x86_uinst_flush)
 			warning("pulling flush id %llu in rob %d\n", store->id, store->in_rob);*/
 
-		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_cpu_flush
-				|| store->uinst->opcode == x86_uinst_gpu_flush);
+		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex
+				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_gpu_flush);
 
 		/* Only committed stores issue */
 		if (store->in_rob)
@@ -198,7 +198,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		pthread_mutex_unlock(&instrumentation_mutex);*/
 
 		/* Remove from load queue */
-		assert(load->uinst->opcode == x86_uinst_load);
+		assert(load->uinst->opcode == x86_uinst_load || load->uinst->opcode == x86_uinst_load_ex);
 		X86ThreadRemoveFromLQ(self);
 
 

@@ -1739,7 +1739,7 @@ void uop_factory_write(X86Context *ctx, unsigned int host_addr, unsigned int gue
 	for(i = 0; i < size; i++)
 	{
 		x86_uinst_new_mem(ctx, x86_uinst_load, host_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
-		x86_uinst_new_mem(ctx, x86_uinst_store, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_store_ex, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
 
 		host_addr++;
 		guest_addr++;
@@ -1788,7 +1788,7 @@ void uop_factory_read(X86Context *ctx, unsigned int host_addr, unsigned int gues
 
 	for(i = 0; i < size; i++)
 	{
-		x86_uinst_new_mem(ctx, x86_uinst_load, guest_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
 		x86_uinst_new_mem(ctx, x86_uinst_store, host_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
 
 		host_addr++;

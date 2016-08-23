@@ -235,9 +235,11 @@ enum x86_uinst_opcode_t
 
 	x86_uinst_load,			//52
 	x86_uinst_store,		//53
+	x86_uinst_load_ex,		//52
+	x86_uinst_store_ex,		//53
 	x86_uinst_prefetch,		//54
-	x86_uinst_cpu_flush,	//star added this
-	x86_uinst_gpu_flush,	//star added this
+	x86_uinst_cpu_flush,	//55star added this
+	x86_uinst_gpu_flush,	//56star added this
 
 	x86_uinst_call,			//55
 	x86_uinst_ret,			//56

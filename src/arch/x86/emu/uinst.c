@@ -188,6 +188,8 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 
 	{ "load", X86_UINST_MEM },
 	{ "store", X86_UINST_MEM },
+	{ "load_ex", X86_UINST_MEM }, //star added this
+	{ "store_ex", X86_UINST_MEM }, //star added this
 	{ "prefetch", X86_UINST_MEM },
 	{ "cpu_flush", X86_UINST_MEM }, //star added this
 	{ "gpu_flush", X86_UINST_MEM }, //star added this
