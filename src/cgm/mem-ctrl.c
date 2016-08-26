@@ -220,8 +220,8 @@ void memctrl_ctrl(void){
 					&& message_packet->cache_block_state == cgm_cache_block_invalid)
 			{
 
-				//tell CPU flush is complete if cpu/gpu flush
-				linked_list_add(message_packet->event_queue, message_packet->data);
+				//decerement the cores flush counter
+				l1_d_caches[message_packet->l2_cache_id].flush_counter--;
 
 				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 				packet_destroy(message_packet);

@@ -63,11 +63,9 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* Get store */
 		store = linked_list_get(sq);
 
-		/*if(store->uinst->opcode == x86_uinst_flush)
-			warning("pulling flush id %llu in rob %d\n", store->id, store->in_rob);*/
-
 		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex
-				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_gpu_flush);
+				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_gpu_flush
+				|| store->uinst->opcode == x86_uinst_cpu_fence);
 
 		/* Only committed stores issue */
 		if (store->in_rob)
@@ -103,6 +101,10 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		else if (store->uinst->opcode == x86_uinst_gpu_flush)
 		{
 			cgm_issue_lspq_access(self, cgm_access_gpu_flush, store->id, store->phy_addr, core->event_queue, store);
+		}
+		else if (store->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			cgm_issue_lspq_access(self, cgm_access_cpu_fence, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else
 		{

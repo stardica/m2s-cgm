@@ -240,6 +240,7 @@ enum x86_uinst_opcode_t
 	x86_uinst_prefetch,		//54
 	x86_uinst_cpu_flush,	//55star added this
 	x86_uinst_gpu_flush,	//56star added this
+	x86_uinst_cpu_fence,	//56star added this
 
 	x86_uinst_call,			//55
 	x86_uinst_ret,			//56

@@ -72,8 +72,6 @@ struct str_map_t l2_strn_map =
 		{ "gpu_l2_caches[5]", gpu_l2_caches_5_c},
 		{ "gpu_l2_caches[6]", gpu_l2_caches_6_c},
 		{ "gpu_l2_caches[7]", gpu_l2_caches_7_c},
-
-		//{ "hub-iommu", hub_iommu_0},
 		}
 };
 

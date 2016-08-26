@@ -153,7 +153,7 @@ void cache_gpu_s_return(struct cache_t *cache, struct cgm_packet_t *message_pack
 void cache_gpu_v_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_gpu_lds_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_access_stats(struct cache_t *cache, int hit, int state);
-void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * cache, struct cache_t * l2_cache_ptr);
+void cgm_cache_set_route(struct cgm_packet_t * message_packet, struct cache_t * src_cache, struct cache_t * dest_cache);
 
 //Scheduler functions
 struct cgm_packet_t *cache_get_message(struct cache_t *cache);

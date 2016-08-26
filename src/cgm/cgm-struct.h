@@ -138,6 +138,7 @@ enum cgm_access_kind_t {
 			cgm_access_cpu_flush,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
+			cgm_access_cpu_fence,
 			num_access_types
 };
 
@@ -306,7 +307,6 @@ struct cache_t{
 	int slice_type;
 	int bus_width;
 
-
 	//cache data
 	struct cache_set_t *sets;
 	unsigned int block_mask;
@@ -314,6 +314,9 @@ struct cache_t{
 	int log_block_size;
 	unsigned int set_mask;
 	int log_set_size;
+
+	//cntrl elements
+	unsigned int flush_counter;
 
 	//mshr control links
 	int mshr_size;
@@ -367,6 +370,7 @@ struct cache_t{
 	void (*l1_d_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l1_d_cpu_fence)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -439,6 +443,7 @@ struct cache_t{
 	int (*gpu_l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_get_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//watch dog

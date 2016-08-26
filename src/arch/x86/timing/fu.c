@@ -282,6 +282,7 @@ enum x86_fu_class_t x86_fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_none,  /* x86_uinst_prefetch */
 	x86_fu_none,  /* x86_uinst_cpu_flush */ //star added this
 	x86_fu_none,  /* x86_uinst_gpu_flush */ //star added this
+	x86_fu_none,  /* x86_uinst_cpu_fence */ //star added this
 	x86_fu_none,  /* x86_uinst_call */
 	x86_fu_none,  /* x86_uinst_ret */
 	x86_fu_none,  /* x86_uinst_jump */

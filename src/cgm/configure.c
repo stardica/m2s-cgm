@@ -1890,6 +1890,8 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_cpu_flush = cgm_mesi_cpu_flush;
 			l1_d_caches[i].l1_d_gpu_flush = cgm_mesi_gpu_flush;
 
+			l1_d_caches[i].l1_d_cpu_fence = cgm_mesi_cpu_fence;
+
 		}
 		else
 		{
@@ -2121,14 +2123,15 @@ int cache_finish_create(){
 
 
 		//build the share_mask
-		for(l = 0; l < num_cores; l ++)
+		int total_cores = num_cores + 1; //plus one for the GPU
+
+		for(l = 0; l < total_cores; l++) //plus one for the GPU
 		{
 			l3_caches[i].share_mask++;
 
-			if(l < (num_cores - 1))
+			if(l < (total_cores - 1))
 				l3_caches[i].share_mask = l3_caches[i].share_mask << 1;
 		}
-
 
 		if(!l3_caches[i].policy)
 		{
@@ -2728,7 +2731,8 @@ int cache_finish_create(){
 	{
 
 		memset (buff,'\0' , 100);
-		snprintf(buff, 100, "gpu_l2_caches[%d]", i);
+		//snprintf(buff, 100, "gpu_l2_caches[%d]", i);
+		snprintf(buff, 100, "gpu_l2_caches[0]");
 		gpu_l2_caches[i].name = strdup(buff);
 		gpu_l2_caches[i].id = i;
 		gpu_l2_caches[i].cache_type = gpu_l2_cache_t;
@@ -2861,6 +2865,8 @@ int cache_finish_create(){
 
 			gpu_l2_caches[i].gpu_l2_gpu_flush = cgm_mesi_gpu_l2_gpu_flush;
 
+			gpu_l2_caches[i].gpu_l2_get_getx_fwd = cgm_mesi_gpu_l2_get_getx_fwd;
+
 		}
 		/*else if()
 		{
@@ -2873,6 +2879,7 @@ int cache_finish_create(){
 		}
 
 		//add pointer to CPU list of caches
+		gpu_core_id = num_cores;
 		l2_caches[num_cores + i] = gpu_l2_caches[i];
 
 		/*warning("gpu_group_cache_num = %d num_cores + i %d l2_name %s\n", gpu_group_cache_num, num_cores + i, l2_caches[num_cores + i].name);*/

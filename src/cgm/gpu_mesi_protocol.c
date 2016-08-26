@@ -11,6 +11,9 @@
 
 #include <cgm/protocol.h>
 
+
+int gpu_core_id = 0;
+
 void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	/*GPU S$ contains read only data that is established prior to kernel execution (during OS/driver configuration)
@@ -1261,7 +1264,6 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				/*if(message_packet->access_id == 71992322)
 					warning("l3 checking retries ID %llu\n", message_packet->access_id);*/
-
 			}
 
 			/*star todo find a better way to do this.
@@ -1486,8 +1488,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
 
-				message_packet->l2_cache_id = cache->id;
-				message_packet->l2_cache_name = str_map_value(&gpu_l2_strn_map, cache->id);
+				//L3 should see the entire GPU as a single core.
+				message_packet->l2_cache_id = gpu_core_id;
+				message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
@@ -1999,8 +2002,8 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				message_packet->cache_block_state = cgm_cache_block_modified;
 
-				message_packet->l2_cache_id = cache->id;
-				message_packet->l2_cache_name = str_map_value(&gpu_l2_strn_map, cache->id);
+				message_packet->l2_cache_id = gpu_core_id;
+				message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
 
 				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s store miss ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
@@ -3073,6 +3076,16 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 
 	return;
 }*/
+
+void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	fatal("cgm_mesi_gpu_l2_get_getx_fwd(): BOOM!\n");
+
+
+
+	return;
+}
+
 
 void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 

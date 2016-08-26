@@ -131,7 +131,8 @@ int X86ThreadCanCommit(X86Thread *self)
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
-	if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex)
+	if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
+			|| uop->uinst->opcode == x86_uinst_cpu_fence)
 	{
 		if (!uop->ready && X86ThreadIsUopReady(self, uop))
 			uop->ready = 1;

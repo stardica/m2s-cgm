@@ -2793,6 +2793,12 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_gpu_flush(&(l1_d_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_cpu_fence)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				if(!l1_d_caches[my_pid].l1_d_cpu_fence(&(l1_d_caches[my_pid]), message_packet))
+						step--;
+			}
 			else
 			{
 				fatal("l1_d_cache_ctrl(): %s access_id %llu bad access type %s at cycle %llu\n",
@@ -3535,6 +3541,10 @@ void gpu_l2_cache_ctrl(void){
 			else if(access_type == cgm_access_gpu_flush)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_gpu_flush(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
@@ -5179,7 +5189,7 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int cache_
 int cgm_cache_get_num_shares(enum cgm_processor_kind_t processor, struct cache_t *cache, int set, int way){
 
 	int sharers = 0;
-	int num_cores = x86_cpu_num_cores;
+	//int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 
 	int i = 0;
@@ -5198,10 +5208,14 @@ int cgm_cache_get_num_shares(enum cgm_processor_kind_t processor, struct cache_t
 	bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
 	bit_vector = bit_vector & cache->share_mask;
 
+
 	if(processor == cpu)
 	{
-		for(i = 0; i < num_cores; i ++)
+		while(bit_vector > 0)
 		{
+
+		/*for(i = 0; i < num_cores; i ++)
+		{*/
 			if((bit_vector & 1) == 1)
 				sharers++;
 
@@ -5242,12 +5256,14 @@ int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 
+	int total_cores =  num_cores + 1;
+
 	//cycles through the core and try to match the core id with the share
 
 	if(processor == cpu)
 	{
 
-		for(i = 0; i < num_cores; i++)
+		for(i = 0; i < total_cores; i++)
 		{
 			if(cgm_cache_is_owning_core(cache, set, way, i ))
 			{
@@ -5276,7 +5292,7 @@ int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t 
 
 	//if j is greater than 1 the block is in more than one core; BAD!!!
 	assert(j == 1);
-	assert(xowner >= 0 && xowner < num_cores);
+	assert(xowner >= 0 && xowner < total_cores);
 
 	return xowner;
 

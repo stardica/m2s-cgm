@@ -220,7 +220,8 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	//tell CPU flush is complete if cpu flush
 	if(message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush_ack)
 	{
-		linked_list_add(message_packet->event_queue, message_packet->data);
+		//Decrement the cores flush counter
+		l1_d_caches[message_packet->l2_cache_id].flush_counter--;
 	}
 
 
