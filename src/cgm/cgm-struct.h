@@ -434,6 +434,7 @@ struct cache_t{
 	int (*gpu_v_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_get_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//GPU L2 cache protocol virtual functions
@@ -444,6 +445,7 @@ struct cache_t{
 	void (*gpu_l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_get_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//watch dog

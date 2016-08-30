@@ -256,6 +256,32 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 	return 0;
 }*/
 
+
+void hub_probe_address(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//re-probes the address if it has been changed...
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	//int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	//int *way_ptr = &way;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+	//message_packet->way = way;
+
+	return;
+}
+
 int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 	int num_cus = si_gpu_num_compute_units;
@@ -302,13 +328,27 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 			else if (hub_iommu_connection_type == hub_to_l3)
 			{
 				//update routing headers for the packet
-				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
-				//message_packet->l2_cache_id = hub_iommu->switch_id;
-				//message_packet->l2_cache_name = hub_iommu->name;
+				if(message_packet->access_type != cgm_access_put_clnx && message_packet->access_type != cgm_access_putx)
+				{
 
-				//change src name and id
-				SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
+					hub_probe_address(&l2_caches[0], message_packet);
+
+					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+
+					//message_packet->l2_cache_id = hub_iommu->switch_id;
+					//message_packet->l2_cache_name = hub_iommu->name;
+
+					//change src name and id
+					SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
+				}
+				else
+				{
+					//note dest already set in protocol function.
+					message_packet->src_name = hub_iommu->name;
+					message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+				}
+
 			}
 			else
 			{
@@ -507,10 +547,15 @@ unsigned int iommu_translation_table_get_address(int id){
 
 void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
-	//check to see if the packet is inbound or outbound
-	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
-			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-			|| message_packet->access_type == cgm_access_gpu_flush_ack)
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	int last_queue_num = -1;
+
+	//get the number of the last queue
+	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
+
+	//if we are pointing to one of the top queues put the packet on the switch.
+	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
 	{
 		/*load and stores are heading to the system agent.*/
 		if(GPU_HUB_IOMMU == 1)
@@ -519,8 +564,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
-	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_gpu_flush)
+	else if(last_queue_num == Rx_queue_bottom)
 	{
 		/*messages coming from system*/
 		if(GPU_HUB_IOMMU == 1)
@@ -531,7 +575,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 	}
 	else
 	{
-		fatal("iommu_nc_translate(): invalid message_packet access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		fatal("iommu_nc_translate(): got a queue id that is out of range\n");
 	}
 
 	return;
@@ -539,26 +583,37 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 void iommu_translate(struct cgm_packet_t *message_packet){
 
-	//check to see if the packet is inbound or outbound
-	if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
-			|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx)
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	int last_queue_num = -1;
+
+	//get the number of the last queue
+	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
+
+	//if we are pointing to one of the top queues put the packet on the switch.
+	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
 	{
-		printf("hub-iommu access_id %llu guest vtl address in 0x%08x source %s\n", message_packet->access_id, message_packet->address, message_packet->l2_cache_name);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu access_id %llu guest vtl address in 0x%08x source %s\n", message_packet->access_id, message_packet->address, message_packet->l2_cache_name);
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
-		printf("hub-iommu access_id %llu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->access_id, message_packet->address, get_block_address(message_packet->address, ~0x3F));
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu access_id %llu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->access_id, message_packet->address, get_block_address(message_packet->address, ~0x3F));
 	}
-	else if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_putx
-			|| message_packet->access_type == cgm_access_put_clnx)
+	else if(last_queue_num == Rx_queue_bottom)
 	{
-		/*put coming from the system agent.*/
-		printf("hub-iommu host phy address in 0x%08x\n", message_packet->address);
+		/*message coming from the system agent or L3.*/
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu host phy address in 0x%08x\n", message_packet->address);
 		message_packet->address = mmu_reverse_translate_guest(0, si_emu->pid, message_packet->address);
-		printf("hub-iommu guest vtl address out 0x%08x\n", message_packet->address);
+		if(GPU_HUB_IOMMU == 1)
+			printf("hub-iommu guest vtl address out 0x%08x\n", message_packet->address);
 	}
 	else
 	{
-		fatal("iommu_translate(): access_d %llu invalid message_packet access type as %s\n", message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+		fatal("iommu_translate(): got a queue id that is out of range\n");
 	}
+
+	return;
 }
 
 

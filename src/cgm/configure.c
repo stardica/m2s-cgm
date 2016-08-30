@@ -2605,6 +2605,8 @@ int cache_finish_create(){
 			gpu_v_caches[i].gpu_v_flush_block = cgm_mesi_gpu_l1_v_flush_block;
 			gpu_v_caches[i].gpu_v_load_nack = cgm_mesi_gpu_l1_v_load_nack;
 			gpu_v_caches[i].gpu_v_store_nack = cgm_mesi_gpu_l1_v_store_nack;
+
+			gpu_v_caches[i].gpu_v_get_getx_fwd_inval = cgm_mesi_gpu_l1_v_get_getx_fwd_inval;
 		}
 		/*else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
@@ -2807,7 +2809,7 @@ int cache_finish_create(){
 		snprintf(buff, 100, "gpu_l2_caches[%d].Tx_queue_bottom", i);
 		gpu_l2_caches[i].Tx_queue_bottom->name = strdup(buff);
 
-		//coherance queues
+		//Coherence queues
 		gpu_l2_caches[i].Coherance_Rx_queue = list_create();
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d].Coherance_Rx_queue", i);
@@ -2866,6 +2868,7 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_gpu_flush = cgm_mesi_gpu_l2_gpu_flush;
 
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd = cgm_mesi_gpu_l2_get_getx_fwd;
+			gpu_l2_caches[i].gpu_l2_get_getx_fwd_inval_ack = cgm_mesi_gpu_l2_get_getx_fwd_inval_ack;
 
 		}
 		/*else if()

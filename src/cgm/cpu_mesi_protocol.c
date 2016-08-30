@@ -5562,8 +5562,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(owning_core >= 0 && owning_core <= num_cores);
 
 				if(owning_core == num_cores) //forwarding to GPU
-					warning("TO GPU starting get_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
-							,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
+					warning("%s TO GPU starting get_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
+							, cache->name ,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
 							sharers, owning_core, pending_bit, message_packet->l2_cache_id, owning_core, l2_cache_ptr->name,
 							message_packet->src_id, message_packet->src_name);
 
@@ -5572,8 +5572,6 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(owning_core == 8) //going to hub_iommu
 				{
-					fatal("sending get_fwd to GPU\n");
-
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
 				}
 				else if(message_packet->src_id == 24) //comming from hub_iommu
@@ -6288,7 +6286,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	}
 
 	/*its a down grade which leaves the owning core and requesting core with the block in the shared state
-	so we better have two cores with the block.*/
+	so we better have two cores with the block now.*/
 	assert(cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way) == 2);
 
 	return;
@@ -6443,6 +6441,12 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+	if(pending_bit != 1)
+	printf("block 0x%08x %s getx_fwd_ack ID %llu type %d state %d pending bit %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, pending_bit, P_TIME);
+
+
 	assert(pending_bit == 1);
 
 	//get number of sharers
@@ -6504,12 +6508,13 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 			//this handles the sharing write back as well.
 
+			if(message_packet->src_id == 24)
+				fatal("ack from GPU, need to make the special case\n");
+
 
 
 			//set the local block
 			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
-
-
 
 
 			//clear the directory

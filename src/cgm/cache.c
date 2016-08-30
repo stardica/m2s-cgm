@@ -1466,7 +1466,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	return;*/
 
 	int i = 0;
-	unsigned char bit_vector;
+	unsigned long long bit_vector;
 	int num_cus = si_gpu_num_compute_units;
 
 	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
@@ -1585,7 +1585,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	enum cgm_cache_block_state_t victim_state;
 	int i = 0;
-	unsigned char bit_vector;
+	unsigned long long bit_vector;
 	int num_cores = x86_cpu_num_cores;
 	//int check = 0;
 
@@ -3440,6 +3440,10 @@ void gpu_v_cache_ctrl(void){
 			{
 				gpu_v_caches[my_pid].gpu_v_store_nack(&(gpu_v_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_getx_fwd_inval)
+			{
+				gpu_v_caches[my_pid].gpu_v_get_getx_fwd_inval(&(gpu_v_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3545,6 +3549,10 @@ void gpu_l2_cache_ctrl(void){
 			else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx_fwd_inval_ack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_inval_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
@@ -4189,7 +4197,7 @@ void gpu_l2_cache_up_io_ctrl(void){
 		}
 		else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 				|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
-				|| message_packet->access_type == cgm_access_upgrade_inval)
+				|| message_packet->access_type == cgm_access_upgrade_inval || message_packet->access_type == cgm_access_getx_fwd_inval)
 		{
 
 			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) > QueueSize)

@@ -127,12 +127,13 @@ void (*hub_iommu_ctrl)(void);
 void hub_iommu_ctrl_func(void);
 //void hub_iommu_noncoherent_ctrl(void);
 
-
 struct cgm_packet_t *hub_iommu_get_from_queue(void);
 
 int (*hub_iommu_put_next_queue)(struct cgm_packet_t *message_packet);
 int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet);
 //int hub_iommu_put_next_queue(struct cgm_packet_t *message_packet);
+
+void hub_probe_address(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void hub_iommu_io_up_ctrl(void);
 void hub_iommu_io_down_ctrl(void);
