@@ -251,7 +251,9 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	 * incrementing a pointer to the top of the global memory space.
 	 * Since memory deallocation is not implemented, "holes" in the
 	 * memory space are not considered. */
+
 	device_ptr = si_emu->video_mem_top;
+
 	si_emu->video_mem_top += size;
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
@@ -327,7 +329,7 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	mem_write(mem, host_ptr, size, buf);
 	free(buf);
 
-	//m2s-cgm simulate the copy for timing purposes.
+			//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		uop_factory_nc_read(ctx, host_ptr, device_ptr, size);
 

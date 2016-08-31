@@ -5562,8 +5562,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(owning_core >= 0 && owning_core <= num_cores);
 
 				if(owning_core == num_cores) //forwarding to GPU
-					warning("%s TO GPU starting get_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
-							, cache->name ,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
+					warning("%s TO GPU starting get_fwd addr 0x%08x blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
+							,cache->name, message_packet->address, message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
 							sharers, owning_core, pending_bit, message_packet->l2_cache_id, owning_core, l2_cache_ptr->name,
 							message_packet->src_id, message_packet->src_name);
 
@@ -6418,6 +6418,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
+	int num_cores = x86_cpu_num_cores;
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -6464,14 +6465,6 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_ack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-	/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-	{
-		if(LEVEL == 2 || LEVEL == 3)
-		{
-			printf("block 0x%08x %s getx_fwd_ack ID %llu type %d state %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
-		}
-	}*/
 
 
 	switch(*cache_block_state_ptr)
@@ -6508,37 +6501,59 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 			//this handles the sharing write back as well.
 
+			//fatal("ack from GPU, need to make the special case l2 cache id %d name %s\n", message_packet->l2_cache_id, message_packet->l2_cache_name);
+
+			//special case get_getx_fwd coming from GPU
 			if(message_packet->src_id == 24)
-				fatal("ack from GPU, need to make the special case\n");
+			{
+				warning("%s received get_getx_fwd_ack from GPU blk address 0x%08x\n", cache->name, message_packet->address & cache->block_address_mask);
+
+				assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_exclusive);
+				assert(message_packet->l2_cache_id >= 0 && message_packet->l2_cache_id < num_cores);
+
+				//if the block coming from the GPU is exclusive set as exclusive.
+				if(message_packet->cache_block_state == cgm_cache_block_modified)
+				{
+					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+				}
+				else
+				{
+					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
+				}
+
+			}
+			else
+			{
+				//set the local block modified, traffic is all CPU stuff
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
+			}
 
 
 
-			//set the local block
-			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 
 
 			//clear the directory
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
-			assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);
+			/*assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry_bits.pending == 0);*/
 
-			unsigned long long bit_vector;
+			/*unsigned long long bit_vector;
 
-			bit_vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;
+			bit_vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;*/
 
 			//set the new sharer bit in the directory
 
-			warning("setting the block $id %d name %s curr num sharers %d bit vector value %llu\n",
-					message_packet->l2_cache_id, message_packet->l2_cache_name, cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), bit_vector);
+			/*warning("setting the block $id %d name %s curr num sharers %d bit vector value %llu\n",
+					message_packet->l2_cache_id, message_packet->l2_cache_name, cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), bit_vector);*/
 
 
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 
-			bit_vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;
+			/*bit_vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;
 			//bit_vector = bit_vector & cache->share_mask;
 
 			warning("setting the block $id %d name %s after set num sharers %d bit vector value %llu\n",
-					message_packet->l2_cache_id, message_packet->l2_cache_name, cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), bit_vector);
+					message_packet->l2_cache_id, message_packet->l2_cache_name, cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), bit_vector);*/
 
 
 			//go ahead and destroy the getx_fwd_ack message because we don't need it anymore.

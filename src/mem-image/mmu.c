@@ -559,6 +559,16 @@ void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pt
 
 	struct page_guest_t *guest;
 
+	unsigned int blk_addr_mask = 0x3F;
+	unsigned int quest_base_blk_aligned = 0;
+	unsigned int quest_top_blk_aligned = 0;
+
+	unsigned int host_base_blk_aligned = 0;
+	unsigned int host_top_blk_aligned = 0;
+
+	unsigned int host_base_aligned_size = 0;
+	unsigned int host_top_aligned_size = 0;
+
 	/*int host_vtl_addr_index = 0;
 
 	unsigned int cpu_phy_address = 0;
@@ -570,13 +580,63 @@ void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pt
 	/*add the guest device to the page guest list*/
 	guest = mmu_create_guest();
 	guest->guest_pid = guest_pid;
-	guest->size = size;
 
-	guest->guest_vtl_addr_base = guest_ptr;
-	guest->guest_vtl_addr_top = guest->guest_vtl_addr_base + (size - 1);
+
+	////////
+	//bottom
+	////////
+
+	//get the blk address of the base of the address range for the host and the guest
+	//calculate the size of the shift required to align the blocks...
+	host_base_blk_aligned = host_ptr & ~blk_addr_mask;
+	host_base_aligned_size = host_ptr - host_base_blk_aligned;
+	assert(host_base_aligned_size <= blk_addr_mask); //better not be larger than a single block.
+
+	/////
+	//top
+	/////
+
+	host_top_blk_aligned = ((host_ptr + size) & ~blk_addr_mask) + blk_addr_mask; //gets the last byte of the offset
+	host_top_aligned_size = host_top_blk_aligned - (host_ptr + size);
+	assert(host_top_aligned_size <= blk_addr_mask); //better not be larger than a single block.
+
+
+	/*calculate the guest base aligned address (aligned to the CPU's blk)*/
+	quest_base_blk_aligned = guest_ptr - host_base_aligned_size;
+	quest_top_blk_aligned = guest_ptr + size + host_top_aligned_size;
+
+
+	//set the values
+
+	guest->guest_vtl_addr_base = quest_base_blk_aligned;
+	guest->guest_vtl_addr_top = quest_top_blk_aligned;
+
+	guest->host_vtl_addr_base = host_base_blk_aligned;
+	guest->host_vtl_addr_top = host_top_blk_aligned;
+
+
+	/*guest->guest_vtl_addr_base = guest_ptr;
+	guest->guest_vtl_addr_top = guest->guest_vtl_addr_base + size;
 
 	guest->host_vtl_addr_base = host_ptr;
-	guest->host_vtl_addr_top = guest->host_vtl_addr_base + (size - 1);
+	guest->host_vtl_addr_top = guest->host_vtl_addr_base + size;*/
+
+	//save size
+	guest->size = size + host_base_aligned_size + host_top_aligned_size;
+
+
+	/*printf("guest_base 0x%08x host_base 0x%08x guest_top 0x%08x host_top 0x%08x\n",
+			guest_ptr, host_ptr, (guest_ptr + size), (host_ptr + size));
+
+	printf("guest_base 0x%08x guest top 0x%08x\n",
+			guest->guest_vtl_addr_base, guest->guest_vtl_addr_top);
+
+	printf("host_base 0x%08x host_top 0x%08x\n",
+			guest->host_vtl_addr_base, guest->host_vtl_addr_top);
+
+	printf("size %u bottom_size %u top_size %u total %u\n",
+			size, host_base_aligned_size, host_top_aligned_size, (size + host_base_aligned_size + host_top_aligned_size));*/
+
 
 	/*GPU's vtl address has on io-mmu table needs to result in correct CPU vtl addr hash to find the page
 	cpu_phy_address = mmu_get_phyaddr(address_space_index, guest->host_vtl_addr_base, mmu_access_load_store);
@@ -594,8 +654,15 @@ void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pt
 
 	hub_iommu->page_hash_table[phy_index] = vtl_index;*/
 
+	/*printf("guest_base 0x%08x guest_base_blk 0x%08x host_base 0x%08x host_base_blk 0x%08x\n",
+			guest->guest_vtl_addr_base, (guest->guest_vtl_addr_base & ~blk_addr_mask), guest->host_vtl_addr_base, (guest->host_vtl_addr_base & ~blk_addr_mask));*/
+
+
 	if(GPU_HUB_IOMMU == 1)
-		printf("mmu guest added id %d guest base address 0x%08x host base address 0x%08x\n", guest_pid, guest_ptr, host_ptr);
+		printf("mmu guest added id %d guest base address 0x%08x host base address 0x%08x guest top address 0x%08x host top addr 0x%08x size %u\n",
+				guest_pid, guest_ptr, host_ptr, guest->guest_vtl_addr_top, guest->host_vtl_addr_top, size);
+
+	//fatal("end\n");
 
 	list_enqueue(mmu->guest_list, guest);
 
@@ -657,7 +724,12 @@ unsigned int mmu_reverse_link_host_address(int guest_pid, unsigned int host_vtl_
 		}
 	}
 
-	/*printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);*/
+	if(hit != 1)
+	{
+		warning("trying to link host vtl addr 0x%08x\n", host_vtl_addr);
+	}
+
+
 	assert(hit == 1);
 	return guest_vtl_addr;
 }
@@ -696,6 +768,7 @@ unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid,
 	/*build the host_vtl_addr*/
 	offset = (host_phy_addr & mmu_page_mask);
 	host_vtl_addr = page->vtl_addr | offset;
+
 
 	/*translate to the guest address space*/
 	guest_vtl_addr = mmu_reverse_link_host_address(guest_pid, host_vtl_addr);

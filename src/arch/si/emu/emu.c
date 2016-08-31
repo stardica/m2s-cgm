@@ -50,7 +50,12 @@ void SIEmuCreate(SIEmu *self)
 	/* Initialize */
 	self->video_mem = mem_create();
 	self->video_mem->safe = 0;
-	self->video_mem_top = 0;
+
+	//star changed this to allow for memory address padding alignment.
+	//self->video_mem_top = 0;
+	self->video_mem_top = 64;
+
+
 	self->waiting_work_groups = list_create();
 	self->running_work_groups = list_create();
 	
