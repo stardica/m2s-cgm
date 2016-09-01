@@ -598,6 +598,7 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu access_id %llu host phy address out 0x%08x blk addr is 0x%08x\n", message_packet->access_id, message_packet->address, get_block_address(message_packet->address, ~0x3F));
+
 	}
 	else if(last_queue_num == Rx_queue_bottom)
 	{

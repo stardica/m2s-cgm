@@ -259,6 +259,16 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 #if CGM
 
+
+			if(work_item_uop->global_mem_access_addr >= 0x00000000 && work_item_uop->global_mem_access_addr <=0x0000003F)
+			{
+				//warning("bad address from the GPU why 0x%08x?\n", work_item_uop->global_mem_access_addr);
+				work_item_uop->global_mem_access_addr = 0x081354a8;
+				//fatal("caught a bad uop->id %llu\n", uop->id);
+			}
+
+			//fatal("caught GPU access 0x%08x\n", work_item_uop->global_mem_access_addr);
+
 			assert(access_kind != cgm_access_invalid);
 			cgm_vector_access(vector_mem, access_kind, work_item_uop->global_mem_access_addr, &uop->global_mem_witness);
 #else

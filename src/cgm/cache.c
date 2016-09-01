@@ -3391,9 +3391,12 @@ void gpu_v_cache_ctrl(void){
 			step++;
 
 			/////////testing
-			/*(*message_packet->witness_ptr)++;
-			list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
-			continue;*/
+			if(message_packet->address >= 0x00000000 && message_packet->address <= 0x3F)
+			{
+				(*message_packet->witness_ptr)++;
+				list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
+				continue;
+			}
 			/////////testing
 
 			access_type = message_packet->access_type;

@@ -242,19 +242,30 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	unsigned int device_ptr;
 	unsigned int host_ptr;
 
-	/* Arguments */
-	size = regs->ecx;
-	host_ptr = regs->edx;
-	opencl_debug("\tsize = %u\n", size);
-
 	/* For now, memory allocation in device memory is done by just
 	 * incrementing a pointer to the top of the global memory space.
 	 * Since memory deallocation is not implemented, "holes" in the
 	 * memory space are not considered. */
 
-	device_ptr = si_emu->video_mem_top;
+	/* Arguments */
+	size = regs->ecx;
+	host_ptr = regs->edx;
+	opencl_debug("\tsize = %u\n", size);
 
-	si_emu->video_mem_top += size;
+	//added this
+	device_ptr = host_ptr;
+
+
+	//si_emu->video_mem_top += size
+
+
+	//original code
+	/*device_ptr = si_emu->video_mem_top;
+	si_emu->video_mem_top += size;*/
+
+
+	//fatal("device pointer 0x%08x\n", device_ptr);
+
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
 	//this will turn shared memory on and off as set in the ini file.
@@ -320,8 +331,8 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n", host_ptr, device_ptr, size);
 
 	/* Check memory range */
-	if (device_ptr + size > si_emu->video_mem_top)
-		fatal("%s: accessing device memory not allocated", __FUNCTION__);
+	/*if (device_ptr + size > si_emu->video_mem_top)
+		fatal("%s: accessing device memory not allocated", __FUNCTION__);*/
 
 	/* Read memory from device to host */
 	buf = xmalloc(size);
@@ -329,7 +340,7 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	mem_write(mem, host_ptr, size, buf);
 	free(buf);
 
-			//m2s-cgm simulate the copy for timing purposes.
+	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		uop_factory_nc_read(ctx, host_ptr, device_ptr, size);
 
@@ -397,10 +408,10 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	}
 
 	/* Check memory range */
-	if (device_ptr + size > si_emu->video_mem_top)
+	/*if (device_ptr + size > si_emu->video_mem_top)
 	{
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);
-	}
+	}*/
 
 	/* Write memory from host to device */
 	buf = xmalloc(size);
@@ -1184,10 +1195,8 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
 	mem_read(mem, work_group_sizes_ptr, 3 * 4, work_group_sizes);
 
-	total_num_groups = work_group_count[2] * work_group_count[1] * 
-		work_group_count[0];
-	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
-		list_count(si_emu->waiting_work_groups));
+	total_num_groups = work_group_count[2] * work_group_count[1] * work_group_count[0];
+	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE - list_count(si_emu->waiting_work_groups));
 
 	opencl_debug("\treceiving work groups (%d,%d,%d) through (%d,%d,%d)\n",
 		work_group_start[0], work_group_start[1], work_group_start[2],
@@ -1202,14 +1211,10 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 		{
 			for (k = work_group_start[0]; k < work_group_start[0] + work_group_count[0]; k++)
 			{
-				work_group_id = (i * work_group_sizes[1] * 
-					work_group_sizes[0]) + (j * 
-					work_group_sizes[0]) + k;
+				work_group_id = (i * work_group_sizes[1] * work_group_sizes[0]) + (j * work_group_sizes[0]) + k;
 
-				list_enqueue(si_emu->waiting_work_groups, 
-					(void*)work_group_id);
-				opencl_debug("\tadding wg %ld\n", 
-					work_group_id);
+				list_enqueue(si_emu->waiting_work_groups, (void*)work_group_id);
+				opencl_debug("\tadding wg %ld\n", work_group_id);
 			}
 		}
 	}
