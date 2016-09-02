@@ -1587,10 +1587,12 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	int i = 0;
 	unsigned long long bit_vector;
 	int num_cores = x86_cpu_num_cores;
+	int total_cores = num_cores + 1;
 	//int check = 0;
 
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *flush_packet = NULL;
+	struct cache_t *l2_cache_ptr = NULL;
 
 	assert(sharers >= 0 && sharers <= num_cores);
 	assert(cache->cache_type == l3_cache_t);
@@ -1643,7 +1645,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	//only run the loop if the bit vector has a bit set.
 	if(bit_vector > 0)
 	{
-		for(i = 0; i < num_cores; i++)
+		for(i = 0; i < total_cores; i++)
 		{
 			//for each core that has a copy of the cache block send the eviction
 			if((bit_vector & 1) == 1)
@@ -1658,10 +1660,28 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 					flush_packet->l3_victim_way = victim_way;
 
 				//update routing
-				flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
-				flush_packet->dest_name = str_map_value(&l2_strn_map, flush_packet->dest_id);
-				flush_packet->src_name = cache->name;
-				flush_packet->src_id = str_map_string(&node_strn_map, cache->name);
+				if(i >= 0 && i < num_cores)
+				{
+					//CPU only traffic
+
+					/*flush_packet->dest_id = str_map_string(&node_strn_map, l2_caches[i].name);
+					flush_packet->dest_name = str_map_value(&l2_strn_map, flush_packet->dest_id);
+					flush_packet->src_name = cache->name;
+					flush_packet->src_id = str_map_string(&node_strn_map, cache->name);*/
+
+					l2_cache_ptr = &l2_caches[i];
+
+					SETROUTE(flush_packet, cache, l2_cache_ptr);
+				}
+				else
+				{
+					//route to hub_iommu
+					assert(i == (total_cores - 1));
+
+
+					SETROUTE(flush_packet, cache, hub_iommu);
+
+				}
 
 				list_enqueue(cache->Tx_queue_top, flush_packet);
 				advance(cache->cache_io_up_ec);
@@ -1672,6 +1692,13 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 			//shift the vector to the next position and continue
 			bit_vector = bit_vector >> 1;
 		}
+	}
+
+	if(num_messages != sharers)
+	{
+		printf("block 0x%08x %s evicted num_sharers %d cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+					cache->name, sharers, P_TIME);
 	}
 
 	/*make sure these two are aligned.*/
@@ -3537,6 +3564,10 @@ void gpu_l2_cache_ctrl(void){
 			{
 				if(!gpu_l2_caches[my_pid].gpu_l2_write_back(&gpu_l2_caches[my_pid], message_packet))
 					step--;
+			}
+			else if(access_type == cgm_access_flush_block)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_flush_block(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_flush_block_ack)
 			{

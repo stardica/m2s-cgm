@@ -2863,6 +2863,7 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_getx = cgm_mesi_gpu_l2_getx;
 			gpu_l2_caches[i].gpu_l2_write_block = cgm_mesi_gpu_l2_write_block;
 			gpu_l2_caches[i].gpu_l2_write_back = cgm_mesi_gpu_l2_write_back;
+			gpu_l2_caches[i].gpu_l2_flush_block = cgm_mesi_gpu_l2_flush_block;
 			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
 
 			gpu_l2_caches[i].gpu_l2_gpu_flush = cgm_mesi_gpu_l2_gpu_flush;

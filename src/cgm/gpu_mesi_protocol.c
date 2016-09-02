@@ -4072,6 +4072,234 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
+void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+	//Invalidation/eviction request from L3 cache
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+	//int l3_map = 0;
+	int ort_status = -1;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	int sharers = -1;//, owning_core, pending_bit;
+
+	struct cgm_packet_t *wb_packet = NULL;
+	struct cache_t *l3_cache_ptr = NULL;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	//check transient state
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//check writeback
+	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+	//get number of sharers
+	sharers = cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way);
+	//check to see if access is from an already owning core
+	//owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l1_cache_id);
+	//check pending state
+	//pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	/*check the ORT table for an outstanding access*/
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		fatal("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+	}
+
+	/*//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_noncoherent:
+		case cgm_cache_block_owned:
+			fatal("cgm_mesi_l2_inval(): L2 id %d invalid block state on inval as %s address %u\n",
+				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			break;
+
+		case cgm_cache_block_invalid:
+
+			fatal("cgm_mesi_gpu_l2_flush_block(): %s blk not in cache\n", cache->name);
+			/*wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
+
+			//found the block in the WB buffer
+			if(wb_packet)
+			{
+
+				/*if pending is 0 the L1 cache has been flushed process now*/
+				if(wb_packet->flush_pending == 0)
+				{
+
+					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//remove the block from the WB buffer
+					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+					packet_destroy(wb_packet);
+
+					//set access type inval_ack
+					message_packet->access_type = cgm_access_flush_block_ack;
+
+					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+					message_packet->l2_cache_id = cache->id;
+					message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+					SETROUTE(message_packet, cache, l3_cache_ptr)
+
+					//reply to the L3 cache
+					/*printf("l2_flush_block_here_2 id %llu dest_id %d\n", message_packet->evict_id, message_packet->dest_id);*/
+					cache_put_io_down_queue(cache, message_packet);
+
+				}
+				else if(wb_packet->flush_pending == 1)
+				{
+					//waiting on flush to finish insert into pending request buffer
+					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					/*set flush_join bit*/
+					wb_packet->L3_flush_join = 1;
+
+					//put the message packet into the pending request buffer
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->pending_request_buffer, message_packet);
+				}
+				else
+				{
+					fatal("cgm_mesi_l2_flush_block(): wb_packet has invalid flush_pending value\n");
+				}
+			}
+			else
+			{
+
+				//star todo somehow check and make sure these are modified
+				/*if here the L2 cache has already written back, send down so the flush can complete*/
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set access type inval_ack
+				message_packet->access_type = cgm_access_flush_block_ack;
+
+				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+				message_packet->l2_cache_id = cache->id;
+				message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+				SETROUTE(message_packet, cache, l3_cache_ptr)
+
+				//reply to the L3 cache
+				cache_put_io_down_queue(cache, message_packet);
+			}
+			break;
+
+
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_modified:
+
+			/*if the block is found in the L2 it may or may not be in the L1 cache
+			we must invalidate here and send an invalidation to the L1 D cache*/
+			assert(victim_trainsient_state != cgm_cache_block_transient);
+
+			assert(sharers == 1);
+
+			/*evict block here*/
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way,
+					cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), 0);
+
+			//clear the directory entry
+			cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+
+			//search WB again, because the evict would drop this cache line into the WB buffer..
+			//star todo find a better way to do this...
+			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+			assert(wb_packet);
+			wb_packet->L3_flush_join = 1;
+
+			message_packet = list_remove(cache->last_queue, message_packet);
+			list_enqueue(cache->pending_request_buffer, message_packet);
+
+			break;
+
+		case cgm_cache_block_shared:
+
+			fatal("cgm_mesi_gpu_l2_flush_block(): blk is shared\n");
+
+			//special case...
+			if(victim_trainsient_state == cgm_cache_block_transient
+					&& ort_get_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set) == 0
+					&& cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 1)
+			{
+
+				warning("block 0x%08x %s flush block is shared and transient ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				/*There is an outstanding request to L3 and it is an upgrade
+				depending on the state, L3 may show that the block is modified
+				send ack to L3*/
+
+				assert(victim_trainsient_state == cgm_cache_block_transient);
+
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set access type inval_ack
+				message_packet->access_type = cgm_access_flush_block_ack;
+
+				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+				message_packet->l2_cache_id = cache->id;
+				message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+				SETROUTE(message_packet, cache, l3_cache_ptr)
+
+				//reply to the L3 cache
+				cache_put_io_down_queue(cache, message_packet);
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block is shared and transient ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+				/*evict block here*/
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+
+				/*block should "still" be transient*/
+				assert(victim_trainsient_state == cgm_cache_block_transient);
+
+			}
+			else
+			{
+				/*block is shared drop it no need to send ack to L3 as there is no pending flush in WB*/
+				/*evict block here*/
+
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+				message_packet->l2_victim_way = message_packet->way;
+
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+			}
+
+			break;
+	}
+
+
+	return;
+}
+
 
 void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -4095,9 +4323,14 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 
 	//get the address set and tag
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
-	//assert(*cache_block_hit_ptr == 0);
 
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
+
+	if(*cache_block_hit_ptr == 1)
+		assert(pending_bit == 1);
+
+
+
 
 	error = cache_validate_block_flushed_from_l1(gpu_v_caches, message_packet->l1_cache_id, message_packet->address);
 	if(error != 0)
@@ -4121,6 +4354,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 
 	//find the block in the local WB cache_get_block_statusbuffer
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
 
 
 	if(*cache_block_state_ptr == 1 && wb_packet)
@@ -4347,7 +4581,9 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 
 
 			//reply to the L3 cache
-			/*printf("l2_flush_block_ack_here id %llu dest %d cycle %llu\n", pending_request_packet->evict_id, pending_request_packet->dest_id, P_TIME);*/
+			/*fatal("l2_flush_block_ack_here id %llu dest %d cycle %llu\n",
+					pending_request_packet->evict_id, pending_request_packet->dest_id, P_TIME);*/
+
 			pending_request_packet = list_remove(cache->pending_request_buffer, pending_request_packet);
 			list_enqueue(cache->Tx_queue_bottom, pending_request_packet);
 			advance(cache->cache_io_down_ec);
@@ -4371,17 +4607,19 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		if the block is not in cache or WB at L1 we don't know if there is a M line coming down
 		because the block was exclusive in L2. So Let's see what we got*/
 
-		/*case L3 flushed L2 flushed L1 and now back to L2 and there is no WB waiting at L2*/
+		/*case L3 flushed L2 then L2 flushed L1 and now back to L2 and there is no WB waiting at L2*/
 
 		/*case GPU only, GPU caches are mapped many to 1. its possible that L2 is flushing a compute unit
 		 to service the request of another compute unit. check the pending bit and pending request buffer */
 
-		//check for a pending request....
-		pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
 
 		/*GPU CASE*/
 		if(pending_bit == 1)
 		{
+			//check for a pending request....
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
 			assert(*cache_block_hit_ptr == 1);
 			assert(*cache_block_state_ptr == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_exclusive);
 			assert(pending_request_packet);
@@ -4421,6 +4659,9 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		}
 		else
 		{
+			//check for a pending request....
+			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
 			assert(!pending_request_packet);
 		}
 
