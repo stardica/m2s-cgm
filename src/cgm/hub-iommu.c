@@ -310,6 +310,8 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 			/*account for coherence and connection type*/
 			if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 			{
+				fatal("here\n");
+
 				iommu_nc_translate(message_packet);
 			}
 			else if (cgm_gpu_cache_protocol == cgm_protocol_mesi)

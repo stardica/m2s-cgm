@@ -2961,7 +2961,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	if(ort_status != cache->mshr_size)
 	{
-		warning("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		//warning("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
 
 		/*yep there is so set the bit in the ort table to 0.
 		 * When the put/putx comes kill it and try again...*/
@@ -5561,11 +5561,11 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				assert(owning_core >= 0 && owning_core <= num_cores);
 
-				if(owning_core == num_cores) //forwarding to GPU
+				/*if(owning_core == num_cores) //forwarding to GPU
 					warning("%s TO GPU starting get_fwd addr 0x%08x blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
 							,cache->name, message_packet->address, message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
 							sharers, owning_core, pending_bit, message_packet->l2_cache_id, owning_core, l2_cache_ptr->name,
-							message_packet->src_id, message_packet->src_name);
+							message_packet->src_id, message_packet->src_name);*/
 
 				//get the owning node
 				owning_cache_ptr = &l2_caches[owning_core];
@@ -5690,9 +5690,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 
 
-	if(message_packet->src_id == 24 && *cache_block_hit_ptr == 1)
+	/*if(message_packet->src_id == 24 && *cache_block_hit_ptr == 1)
 		warning("hit in L3 cache blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d\n"
-				,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr, sharers, owning_core, pending_bit, message_packet->l2_cache_id);
+				,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr, sharers, owning_core, pending_bit, message_packet->l2_cache_id);*/
 
 	/*if(message_packet->src_id == 24)
 		printf("%s access here cache addr 0x%08x\n", cache->name, message_packet->address);*/
@@ -6061,11 +6061,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 							message_packet->src_id, message_packet->src_name);
 
 
-				if(message_packet->src_id == 24)
+				/*if(message_packet->src_id == 24)
 					warning("starting getx_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
 							,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
 							sharers, owning_core, pending_bit, message_packet->l2_cache_id, xowning_core, l2_cache_ptr->name,
-							message_packet->src_id, message_packet->src_name);
+							message_packet->src_id, message_packet->src_name);*/
 
 
 				//get the owning node
@@ -6506,7 +6506,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 			//special case get_getx_fwd coming from GPU
 			if(message_packet->src_id == 24)
 			{
-				warning("%s received get_getx_fwd_ack from GPU blk address 0x%08x\n", cache->name, message_packet->address & cache->block_address_mask);
+				/*warning("%s received get_getx_fwd_ack from GPU blk address 0x%08x\n", cache->name, message_packet->address & cache->block_address_mask);*/
 
 				assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_exclusive);
 				assert(message_packet->l2_cache_id >= 0 && message_packet->l2_cache_id < num_cores);
@@ -6930,6 +6930,19 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 		fatal("caught you\n");
 	}*/
 
+	/*if(sharers >= 1)
+	{
+		assert(sharers == 1);
+
+		if(owning_core != 1)
+		{
+			unsigned long long vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;
+			vector = vector & cache->share_mask;
+			fatal("not owning core... l2 id %d vector %llu hit_ptr %d", message_packet->l2_cache_id, vector, *cache_block_hit_ptr);
+		}
+
+	}*/
+
 
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
@@ -7036,7 +7049,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			else
 			{
 
-				assert(sharers >= 1);
+				assert(sharers == 1);
 				assert(owning_core == 0);
 
 				fatal("cgm_mesi_l3_cpu_flush(): waiting on a join... access id %llu blk addr 0x%08x\n",

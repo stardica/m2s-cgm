@@ -219,14 +219,11 @@ void memctrl_ctrl(void){
 			if ((message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush_ack)
 					&& message_packet->cache_block_state == cgm_cache_block_invalid)
 			{
-
-				//decerement the cores flush counter
+				//Decrement the cores flush counter
 				l1_d_caches[message_packet->l2_cache_id].flush_counter--;
 
 				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 				packet_destroy(message_packet);
-
-				//warning("memctrl_ctrl(): used continue for empty flush\n");
 				continue;
 			}
 

@@ -252,19 +252,14 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	host_ptr = regs->edx;
 	opencl_debug("\tsize = %u\n", size);
 
-	//added this
+	/*star changed this... here we make the GPU's vtl memory accesses equal to the CPUs.
+	in non-coherent mode the GPU has its own memory address space*/
 	device_ptr = host_ptr;
 
 
-	//si_emu->video_mem_top += size
-
-
-	//original code
+	// m2s original code
 	/*device_ptr = si_emu->video_mem_top;
 	si_emu->video_mem_top += size;*/
-
-
-	//fatal("device pointer 0x%08x\n", device_ptr);
 
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n", size, device_ptr);
 
@@ -333,6 +328,8 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	/* Check memory range */
 	/*if (device_ptr + size > si_emu->video_mem_top)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);*/
+
+	fatal("mem read check the GPU flush\n");
 
 	/* Read memory from device to host */
 	buf = xmalloc(size);

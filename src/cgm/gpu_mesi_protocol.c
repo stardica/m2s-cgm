@@ -891,7 +891,7 @@ void cgm_mesi_gpu_l1_v_write_back(struct cache_t *cache, struct cgm_packet_t *me
 
 void cgm_mesi_gpu_l1_v_get_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	warning("l1 get getx inval\n");
+	/*warning("l1 get getx inval\n");*/
 
 
 	int cache_block_hit;
@@ -3536,7 +3536,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 
 void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	warning("cgm_mesi_gpu_l2_get_getx_fwd(): BOOM!\n");
+	/*warning("cgm_mesi_gpu_l2_get_getx_fwd(): BOOM!\n");*/
 
 
 	int cache_block_hit;
@@ -3847,7 +3847,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 			inval_packet->l1_cache_id = LOG2(bit_vector);
 
-			warning("bit vector value %llu owning core %d\n", bit_vector, inval_packet->l1_cache_id);
+			/*warning("bit vector value %llu owning core %d\n", bit_vector, inval_packet->l1_cache_id);*/
 
 
 			inval_packet->gpu_access_type = cgm_access_store;
