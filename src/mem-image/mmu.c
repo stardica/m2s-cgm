@@ -231,7 +231,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	struct mmu_page_t *page = NULL;
 	struct mmu_page_t *text_page = NULL;
 	struct mmu_page_t *data_page = NULL;
-	struct mmu_page_t *gpu_page = NULL;
+	//struct mmu_page_t *gpu_page = NULL;
 	unsigned int tag;
 	int index;
 	/*int num_pages;*/
@@ -265,7 +265,10 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 		}
 		else if (page->page_type == mmu_page_gpu && mmu_search_page(page, mmu_addr_vtl, vtladdr, address_space_index, tag))
 		{
-			gpu_page = page;
+			fatal("mmu_get_page(): found a gpu page\n");
+
+			//gpu_page = page;
+
 			break;
 		}
 
@@ -331,18 +334,13 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 		{
-			printf("page found id %d\n", data_page->id);
+			printf("data page found id %d\n", data_page->id);
 		}
 
 		page = data_page;
 	}
 	else
 	{
-		if(access_type == mmu_access_gpu && !gpu_page && GPU_HUB_IOMMU == 1)
-		{
-			printf("creating page\n");
-		}
-
 		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 	}
 
@@ -854,10 +852,10 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 	{
 		if(access_type == mmu_access_gpu && GPU_HUB_IOMMU == 1)
 		{
-			printf("created page %d\n", page->id);
+			printf("created page for gpu %d\n", page->id);
 		}
 
-		page->page_type = mmu_page_gpu;
+		page->page_type = mmu_page_data;
 	}
 	else
 	{

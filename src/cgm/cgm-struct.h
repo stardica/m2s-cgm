@@ -136,6 +136,7 @@ enum cgm_access_kind_t {
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
 			cgm_access_cpu_flush,
+			cgm_access_cpu_flush_ack,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
 			cgm_access_cpu_fence,
@@ -157,6 +158,7 @@ struct cgm_packet_t{
 	int l2_cache_id;
 	int gpu_cache_id;
 	char *gpu_cache_name;
+	int flush_core;
 
 	//access data
 	long long access_id;
@@ -435,6 +437,7 @@ struct cache_t{
 	void (*gpu_v_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_get_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//GPU L2 cache protocol virtual functions

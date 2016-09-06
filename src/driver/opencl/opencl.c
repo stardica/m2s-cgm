@@ -329,8 +329,6 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	/*if (device_ptr + size > si_emu->video_mem_top)
 		fatal("%s: accessing device memory not allocated", __FUNCTION__);*/
 
-	fatal("mem read check the GPU flush\n");
-
 	/* Read memory from device to host */
 	buf = xmalloc(size);
 	mem_read(si_emu->video_mem, device_ptr, size, buf);

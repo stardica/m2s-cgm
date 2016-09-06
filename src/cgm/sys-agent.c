@@ -194,7 +194,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	SYSTEM_PAUSE(system_agent->latency);
 
 	if(access_type == cgm_access_mc_load || access_type == cgm_access_mc_store
-			|| access_type == cgm_access_cpu_flush || access_type == cgm_access_gpu_flush_ack)
+			|| access_type == cgm_access_cpu_flush_ack || access_type == cgm_access_gpu_flush_ack)
 	{
 
 		if(list_count(system_agent->Tx_queue_bottom) > QueueSize)
@@ -275,7 +275,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	}
 	else
 	{
-		fatal("system_agent_route(): access type\n");
+		fatal("system_agent_route(): access type %d \n", message_packet->access_type);
 
 	}
 

@@ -216,7 +216,7 @@ void memctrl_ctrl(void){
 				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);
 
 
-			if ((message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush_ack)
+			if ((message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
 					&& message_packet->cache_block_state == cgm_cache_block_invalid)
 			{
 				//Decrement the cores flush counter
@@ -229,7 +229,7 @@ void memctrl_ctrl(void){
 
 
 
-			if(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush
+			if(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush_ack
 					|| message_packet->access_type == cgm_access_gpu_flush_ack)
 			{
 				/*the message is a store message (Write Back) from a L3 cache

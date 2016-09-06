@@ -3474,6 +3474,10 @@ void gpu_v_cache_ctrl(void){
 			{
 				gpu_v_caches[my_pid].gpu_v_get_getx_fwd_inval(&(gpu_v_caches[my_pid]), message_packet);
 			}
+			else if (access_type == cgm_access_gpu_flush)
+			{
+				gpu_v_caches[my_pid].gpu_v_gpu_flush(&(gpu_v_caches[my_pid]), message_packet);
+			}
 			else
 			{
 				fatal("gpu_v_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
@@ -4209,7 +4213,7 @@ void gpu_l2_cache_up_io_ctrl(void){
 		//drop into the correct l1 cache queue and lane.
 		if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 				|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
-				|| message_packet->access_type == cgm_access_getx_nack)
+				|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_gpu_flush)
 		{
 
 			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom) >= QueueSize)
@@ -4221,9 +4225,6 @@ void gpu_l2_cache_up_io_ctrl(void){
 				step++;
 
 				P_PAUSE(transfer_time);
-
-				if(message_packet->access_id == 6310108)
-					printf("l2 going up id %llu access type %d\n", message_packet->access_id, message_packet->access_type);
 
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);

@@ -1878,13 +1878,11 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
-	/*if(access_kind == cgm_access_cpu_fence)
+	/*if(access_kind == cgm_access_gpu_flush)
+	{
 		fatal("made it to cgm flushing address... blk 0x%08x regular is 0x%08x regular blk 0x%08x\n",
-				new_packet->address, mmu_translate(0, 0x00000000, mmu_access_load_store), (mmu_translate(0, 0x00000000, mmu_access_load_store) & l1_d_caches[0].block_address_mask));*/
-
-	/*if(new_packet->access_id == 162)
-		fatal("address is 0x%08x\n", new_packet->address);*/
-
+				new_packet->address, mmu_translate(0, 0x00000000, mmu_access_load_store), (mmu_translate(0, 0x00000000, mmu_access_load_store) & l1_d_caches[0].block_address_mask));
+	}*/
 
 	//////////////testing
 	if(mem_system_off == 1)

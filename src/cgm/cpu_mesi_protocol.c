@@ -199,9 +199,10 @@ void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 	message_packet->size = 1;
 	message_packet->access_type = cgm_access_gpu_flush;
 
+	//increment the cache flush counter
+	cache->flush_counter++;
 
 	cache_put_io_down_queue(cache, message_packet);
-
 
 	return;
 }
@@ -3153,8 +3154,21 @@ void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	message_packet->size = 1;
 	message_packet->access_type = cgm_access_gpu_flush;
 
+	//set flush core id
+	message_packet->flush_core = cache->id;
+
 	//set dest and src
-	SETROUTE(message_packet, cache, hub_iommu)
+	if(hub_iommu_connection_type == hub_to_mc)
+	{
+		SETROUTE(message_packet, cache, hub_iommu)
+	}
+	else
+	{
+		assert(hub_iommu_connection_type == hub_to_l3);
+
+		fatal("cgm_mesi_l2_gpu_flush(): sending to L3\n");
+		SETROUTE(message_packet, cache, hub_iommu)
+	}
 
 	//transmit to SA
 	cache_put_io_down_queue(cache, message_packet);
@@ -6972,7 +6986,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
 					packet_destroy(wb_packet);
 
-					message_packet->access_type = cgm_access_cpu_flush;
+					message_packet->access_type = cgm_access_cpu_flush_ack;
 
 					l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
 
@@ -6996,7 +7010,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
-				message_packet->access_type = cgm_access_cpu_flush;
+				message_packet->access_type = cgm_access_cpu_flush_ack;
 
 
 				l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
@@ -7015,9 +7029,6 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			//check to make sure the block isn't in another core...
 			if((sharers == 1 && owning_core == 1) || sharers == 0)
 			{
-
-				//fatal("caught you 0x%08x\n", message_packet->address & cache->block_address_mask);
-
 				assert(victim_trainsient_state != cgm_cache_block_transient);
 
 				if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
@@ -7037,7 +7048,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-				message_packet->access_type = cgm_access_cpu_flush;
+				message_packet->access_type = cgm_access_cpu_flush_ack;
 
 				l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
 				SETROUTE(message_packet, l2_cache_ptr, system_agent)
@@ -7048,7 +7059,6 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			}
 			else
 			{
-
 				assert(sharers == 1);
 				assert(owning_core == 0);
 
@@ -7077,6 +7087,8 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			break;
 
 		case cgm_cache_block_shared:
+
+			fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
 
 			if((sharers == 1 && owning_core == 1) || sharers == 0)
 			{

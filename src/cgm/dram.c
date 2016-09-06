@@ -69,7 +69,7 @@ void dramsim_print(void){
 int dramsim_add_transaction(enum cgm_access_kind_t access_type, unsigned int addr){
 
 	bool write;
-	(access_type == cgm_access_mc_store || access_type == cgm_access_cpu_flush
+	(access_type == cgm_access_mc_store || access_type == cgm_access_cpu_flush_ack
 			|| access_type == cgm_access_gpu_flush_ack) ? (write = true) : (write = false);
 
 	int return_val = call_add_transaction(DRAM_object_ptr, write, addr);
@@ -197,7 +197,7 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 
 	assert(hit == 1);
 	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
-	assert(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush
+	assert(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush_ack
 			|| message_packet->access_type == cgm_access_gpu_flush_ack);
 
 	//stats/////////
@@ -218,7 +218,7 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 
 
 	//tell CPU flush is complete if cpu flush
-	if(message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush_ack)
+	if(message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
 	{
 		//Decrement the cores flush counter
 		l1_d_caches[message_packet->l2_cache_id].flush_counter--;

@@ -2606,7 +2606,9 @@ int cache_finish_create(){
 			gpu_v_caches[i].gpu_v_load_nack = cgm_mesi_gpu_l1_v_load_nack;
 			gpu_v_caches[i].gpu_v_store_nack = cgm_mesi_gpu_l1_v_store_nack;
 
+			gpu_v_caches[i].gpu_v_gpu_flush = cgm_mesi_gpu_l1_v_gpu_flush;
 			gpu_v_caches[i].gpu_v_get_getx_fwd_inval = cgm_mesi_gpu_l1_v_get_getx_fwd_inval;
+
 		}
 		/*else if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 		{
