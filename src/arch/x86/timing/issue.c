@@ -200,7 +200,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		pthread_mutex_unlock(&instrumentation_mutex);*/
 
 		/* Remove from load queue */
-		assert(load->uinst->opcode == x86_uinst_load || load->uinst->opcode == x86_uinst_load_ex);
+		assert(load->uinst->opcode == x86_uinst_load || load->uinst->opcode == x86_uinst_load_ex
+				|| load->uinst->opcode == x86_uinst_cpu_load_fence);
 		X86ThreadRemoveFromLQ(self);
 
 
@@ -213,7 +214,14 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 			load->protection_fault = 1;
 		}*/
 
-		cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
+		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
+		{
+			cgm_issue_lspq_access(self, cgm_access_cpu_load_fence, load->id, load->phy_addr, core->event_queue, load);
+		}
+		else
+		{
+			cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
+		}
 
 #else
 		/* create and fill the mod_client_info_t object */

@@ -221,7 +221,7 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	if(message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
 	{
 		//Decrement the cores flush counter
-		l1_d_caches[message_packet->l2_cache_id].flush_counter--;
+		l1_d_caches[message_packet->flush_core].flush_counter--;
 	}
 
 

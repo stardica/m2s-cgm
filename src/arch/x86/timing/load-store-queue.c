@@ -115,9 +115,10 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	struct linked_list_t *preq = self->preq;
 
 	assert(!uop->in_lq && !uop->in_sq);
-	assert(uop->uinst->opcode >= x86_uinst_load && uop->uinst->opcode <= x86_uinst_cpu_fence);
+	assert(uop->uinst->opcode >= x86_uinst_load && uop->uinst->opcode <= x86_uinst_cpu_load_fence);
 
-	if (uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_load_ex)
+	if (uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_load_ex
+			|| uop->uinst->opcode == x86_uinst_cpu_load_fence)
 	{
 		//star >> added stat pipe_load++;
 		linked_list_out(lq);

@@ -235,22 +235,23 @@ enum x86_uinst_opcode_t
 
 	x86_uinst_load,			//52
 	x86_uinst_store,		//53
-	x86_uinst_load_ex,		//52
-	x86_uinst_store_ex,		//53
-	x86_uinst_prefetch,		//54
-	x86_uinst_cpu_flush,	//55star added this
-	x86_uinst_gpu_flush,	//56star added this
-	x86_uinst_cpu_fence,	//56star added this
+	x86_uinst_load_ex,		//54
+	x86_uinst_store_ex,		//55
+	x86_uinst_prefetch,		//56
+	x86_uinst_cpu_flush,	//57star added this
+	x86_uinst_gpu_flush,	//58star added this
+	x86_uinst_cpu_fence,	//59star added this
+	x86_uinst_cpu_load_fence,//60star added this
 
-	x86_uinst_call,			//55
-	x86_uinst_ret,			//56
-	x86_uinst_jump,			//57
-	x86_uinst_branch,		//58
-	x86_uinst_ibranch,		//59
+	x86_uinst_call,			//61
+	x86_uinst_ret,			//62
+	x86_uinst_jump,			//63
+	x86_uinst_branch,		//64
+	x86_uinst_ibranch,		//65
 
-	x86_uinst_syscall,		//60
+	x86_uinst_syscall,		//66
 
-	x86_uinst_opcode_count	//61
+	x86_uinst_opcode_count	//67
 };
 
 

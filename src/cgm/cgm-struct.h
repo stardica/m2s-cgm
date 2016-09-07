@@ -140,6 +140,7 @@ enum cgm_access_kind_t {
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
 			cgm_access_cpu_fence,
+			cgm_access_cpu_load_fence,
 			num_access_types
 };
 
@@ -422,6 +423,7 @@ struct cache_t{
 	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	//void (*l3_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_gpu_flush_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
@@ -448,6 +450,7 @@ struct cache_t{
 	void (*gpu_l2_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_gpu_flush_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 

@@ -2267,6 +2267,7 @@ int cache_finish_create(){
 			l3_caches[i].l3_flush_block_ack = cgm_mesi_l3_flush_block_ack;
 
 			l3_caches[i].l3_cpu_flush = cgm_mesi_l3_cpu_flush;
+			//l3_caches[i].l3_gpu_flush = cgm_mesi_l3_gpu_flush;
 			l3_caches[i].l3_gpu_flush_ack = cgm_mesi_l3_gpu_flush_ack;
 		}
 		else
@@ -2869,6 +2870,7 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
 
 			gpu_l2_caches[i].gpu_l2_gpu_flush = cgm_mesi_gpu_l2_gpu_flush;
+			gpu_l2_caches[i].gpu_l2_gpu_flush_ack = cgm_mesi_gpu_l2_gpu_flush_ack;
 
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd = cgm_mesi_gpu_l2_get_getx_fwd;
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd_inval_ack = cgm_mesi_gpu_l2_get_getx_fwd_inval_ack;

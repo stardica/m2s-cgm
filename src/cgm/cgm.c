@@ -1834,7 +1834,7 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	blk_aligned_addr = guest_addr & ~(blk_mask);
 
 	//this is a simulated fence...
-	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	//rewind the quest address
 	//guest_addr = guest_addr - size;
@@ -1878,9 +1878,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
-	/*if(access_kind == cgm_access_gpu_flush)
+	/*if(access_kind == cgm_access_cpu_load_fence)
 	{
-		fatal("made it to cgm flushing address... blk 0x%08x regular is 0x%08x regular blk 0x%08x\n",
+		fatal("made it to cgm fencing address... blk 0x%08x regular is 0x%08x regular blk 0x%08x\n",
 				new_packet->address, mmu_translate(0, 0x00000000, mmu_access_load_store), (mmu_translate(0, 0x00000000, mmu_access_load_store) & l1_d_caches[0].block_address_mask));
 	}*/
 
@@ -1937,7 +1937,7 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//For memory system load store request
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store
 			|| access_kind == cgm_access_cpu_flush || access_kind == cgm_access_gpu_flush
-			|| access_kind == cgm_access_cpu_fence)
+			|| access_kind == cgm_access_cpu_fence || access_kind == cgm_access_cpu_load_fence)
 	{
 
 		if((((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)

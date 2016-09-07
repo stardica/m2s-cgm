@@ -2820,7 +2820,7 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_gpu_flush(&(l1_d_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_cpu_fence)
+			else if (access_type == cgm_access_cpu_fence || access_type == cgm_access_cpu_load_fence)
 			{
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				if(!l1_d_caches[my_pid].l1_d_cpu_fence(&(l1_d_caches[my_pid]), message_packet))
@@ -3290,8 +3290,13 @@ void l3_cache_ctrl(void){
 			else if(access_type == cgm_access_gpu_flush_ack)
 			{
 				//via call back function (cgm_mesi_l3_upgrade)
-				l3_caches[my_pid].l3_cpu_flush(&(l3_caches[my_pid]), message_packet);
+				l3_caches[my_pid].l3_gpu_flush_ack(&(l3_caches[my_pid]), message_packet);
 			}
+			/*else if(access_type == cgm_access_gpu_flush)
+			{
+				//via call back function (cgm_mesi_l3_upgrade)
+				l3_caches[my_pid].l3_gpu_flush(&(l3_caches[my_pid]), message_packet);
+			}*/
 			else
 			{
 				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
@@ -3583,6 +3588,10 @@ void gpu_l2_cache_ctrl(void){
 			else if(access_type == cgm_access_gpu_flush)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_gpu_flush(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_gpu_flush_ack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_gpu_flush_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
 			{
@@ -4149,7 +4158,8 @@ void gpu_v_cache_down_io_ctrl(void){
 			}
 		}
 		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_gpu_flush_ack)
 		{
 
 			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize)

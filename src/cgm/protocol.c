@@ -76,8 +76,9 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_cpu_flush", cgm_access_cpu_flush},
 		{"cgm_access_cpu_flush_ack", cgm_access_cpu_flush_ack},
 		{"cgm_access_gpu_flush", cgm_access_gpu_flush},
-		{"cgm_access_gpu_flush", cgm_access_gpu_flush_ack},
+		{"cgm_access_gpu_flush_ack", cgm_access_gpu_flush_ack},
 		{"cgm_access_cpu_fence", cgm_access_cpu_fence},
+		{"cgm_access_cpu_load_fence", cgm_access_cpu_load_fence},
 		{"num_access_types", num_access_types}
 		}
 };

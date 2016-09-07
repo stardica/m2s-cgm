@@ -178,6 +178,7 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//charge delay
 	P_PAUSE(cache->latency);
 
+	//warning(" CPU fence\n");
 
 	//if the flush counter is 0 retire the fence
 	if(cache->flush_counter == 0)
@@ -199,8 +200,14 @@ void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 	message_packet->size = 1;
 	message_packet->access_type = cgm_access_gpu_flush;
 
+	//clear the CPU's dependences on this access finishing (fence will sort this out)
+	linked_list_add(message_packet->event_queue, message_packet->data);
+
 	//increment the cache flush counter
 	cache->flush_counter++;
+
+	//set the flush core
+	message_packet->flush_core = cache->id;
 
 	cache_put_io_down_queue(cache, message_packet);
 
@@ -241,11 +248,15 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		return 0;
 	}
 
+	//clear the CPU's dependences on this access finishing (fence will sort this out)
+	linked_list_add(message_packet->event_queue, message_packet->data);
+
 	//increment the cache flush counter
 	cache->flush_counter++;
 
-	//clear the CPU's dependences on this access finishing (fence will sort this out)
-	linked_list_add(message_packet->event_queue, message_packet->data);
+	//set the flush core
+	message_packet->flush_core = cache->id;
+
 
 	//remove the block from the cache....
 	switch(*cache_block_state_ptr)
@@ -3147,6 +3158,18 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//forward flush to GPU
+	/*int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	struct cache_t *l3_cache_ptr = NULL;*/
+
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -3157,8 +3180,11 @@ void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	//set flush core id
 	message_packet->flush_core = cache->id;
 
+	//always forward to GPU, L3 cleanup will happen last.
+	SETROUTE(message_packet, cache, hub_iommu)
+
 	//set dest and src
-	if(hub_iommu_connection_type == hub_to_mc)
+	/*if(hub_iommu_connection_type == hub_to_mc)
 	{
 		SETROUTE(message_packet, cache, hub_iommu)
 	}
@@ -3166,9 +3192,24 @@ void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	{
 		assert(hub_iommu_connection_type == hub_to_l3);
 
-		fatal("cgm_mesi_l2_gpu_flush(): sending to L3\n");
-		SETROUTE(message_packet, cache, hub_iommu)
-	}
+		//update routing headers for the packet
+
+		cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+		//store the decode in the packet for now.
+		message_packet->tag = tag;
+		message_packet->set = set;
+		message_packet->offset = offset;
+
+
+		l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+		assert(l3_cache_ptr);
+
+		message_packet->l2_cache_id = cache->id;
+		message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+		SETROUTE(message_packet, cache, l3_cache_ptr)
+	}*/
 
 	//transmit to SA
 	cache_put_io_down_queue(cache, message_packet);
@@ -5586,6 +5627,11 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				if(owning_core == 8) //going to hub_iommu
 				{
+					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+						fatal("%s starting get_fwd to GPU blk addr0x%08x\n",
+								cache->name, message_packet->address & cache->block_address_mask);
+
+
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
 				}
 				else if(message_packet->src_id == 24) //comming from hub_iommu
@@ -6087,6 +6133,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				if(xowning_core == 8) //hub_iommu
 				{
+					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+						fatal("%s starting getx_fwd to GPU blk addr0x%08x\n",
+								cache->name, message_packet->address & cache->block_address_mask);
+
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
 				}
 				else if(message_packet->src_id == 24)
@@ -6874,11 +6924,196 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	fatal("l3 gpu flush ack\n");
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int sharers = -1;
+	//int owning_core = -1;
+	int ort_status = -1;
+
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	struct cgm_packet_t *wb_packet = NULL;
+	//struct cache_t *l2_cache_ptr = NULL;
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+	//assert(victim_trainsient_state != cgm_cache_block_transient)
+
+	//get number of sharers
+	sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
+
+	//check to see if access is from an already owning core
+	//owning_core = cgm_cache_is_owning_core(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
+
+	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s GPU flush block ack ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	/*check the ORT table for an outstanding access*/
+	//check the ORT table is there an outstanding access for this block we are trying to evict?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		fatal("cgm_mesi_l3_cpu_flush(): not sure what to do with this\n");
+
+		//warning("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		/*yep there is so set the bit in the ort table to 0.
+		 * When the put/putx comes kill it and try again...*/
+		//ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
+		//ort_dump(cache);
+		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
+	}
+
+	/*//search the WB buffer for the data
+	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
+	switch(*cache_block_state_ptr)
+	{
+		case cgm_cache_block_noncoherent:
+		case cgm_cache_block_owned:
+			fatal("cgm_mesi_l3_cpu_flush(): %s invalid block state on inval as %s address %u\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
+			break;
+
+		case cgm_cache_block_invalid:
+
+			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+
+			//found the block in the WB buffer
+			if(wb_packet)
+			{
+				if(wb_packet->flush_pending == 0)
+				{
+					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
+
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//remove the block from the WB buffer
+					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
+					packet_destroy(wb_packet);
+
+					message_packet->access_type = cgm_access_gpu_flush_ack;
+
+					SETROUTE(message_packet, cache, system_agent)
+
+					//transmit to SA
+					cache_put_io_up_queue(cache, message_packet);
+				}
+				else
+				{
+					fatal("cgm_mesi_l3_cpu_flush(): wb with a pending flush...\n");
+				}
+
+			}
+			else
+			{
+
+				//star todo somehow check and make sure these are modified
+				/*if here the L2 cache has already written back, send down so the flush can complete*/
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//set access type inval_ack
+				message_packet->access_type = cgm_access_gpu_flush_ack;
+
+				SETROUTE(message_packet, cache, system_agent)
+
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+			}
+
+			break;
+
+
+		case cgm_cache_block_exclusive:
+		case cgm_cache_block_modified:
+
+			//check to make sure the block isn't in another core...
+
+			assert(sharers == 1);
+
+
+			assert(victim_trainsient_state != cgm_cache_block_transient);
+
+			if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
+			{
+				message_packet->size = cache->block_size;
+				message_packet->cache_block_state = cgm_cache_block_modified;
+			}
+			else
+			{
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+			}
+
+			//invalidate the local block
+			cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+			//clear the directory entry
+			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+			message_packet->access_type = cgm_access_gpu_flush_ack;
+
+			SETROUTE(message_packet, cache, system_agent)
+
+			//transmit to SA
+			cache_put_io_up_queue(cache, message_packet);
+
+			break;
+
+		case cgm_cache_block_shared:
+
+			fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
+
+			/*if((sharers == 1 && owning_core == 1) || sharers == 0)
+			{
+				message_packet->size = 1;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
+
+				//invalidate the local block
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+
+				message_packet->access_type = cgm_access_cpu_flush;
+
+				l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
+				SETROUTE(message_packet, l2_cache_ptr, system_agent)
+
+				//transmit to SA
+				cache_put_io_up_queue(cache, message_packet);
+			}
+			else
+			{
+				fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
+			}*/
+
+			break;
+	}
 
 
 	return;
 }
+
+/*void cgm_mesi_l3_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	fatal("l3 gpu flush\n");
+
+
+	return;
+}*/
+
 
 void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -6897,7 +7132,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	struct cgm_packet_t *wb_packet = NULL;
 
-	struct cache_t *l2_cache_ptr = NULL;
+	//struct cache_t *l2_cache_ptr = NULL;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -6988,9 +7223,9 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					message_packet->access_type = cgm_access_cpu_flush_ack;
 
-					l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
+					//l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
 
-					SETROUTE(message_packet, l2_cache_ptr, system_agent)
+					SETROUTE(message_packet, cache, system_agent)
 
 					//transmit to SA
 					cache_put_io_up_queue(cache, message_packet);
@@ -7013,8 +7248,8 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				message_packet->access_type = cgm_access_cpu_flush_ack;
 
 
-				l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
-				SETROUTE(message_packet, l2_cache_ptr, system_agent)
+				//l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
+				SETROUTE(message_packet, cache, system_agent)
 
 				//transmit to SA
 				cache_put_io_up_queue(cache, message_packet);
@@ -7050,8 +7285,8 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				message_packet->access_type = cgm_access_cpu_flush_ack;
 
-				l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
-				SETROUTE(message_packet, l2_cache_ptr, system_agent)
+				//l2_cache_ptr = &l2_caches[message_packet->l2_cache_id];
+				SETROUTE(message_packet, cache, system_agent)
 
 				//transmit to SA
 				cache_put_io_up_queue(cache, message_packet);
@@ -7065,9 +7300,9 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				fatal("cgm_mesi_l3_cpu_flush(): waiting on a join... access id %llu blk addr 0x%08x\n",
 						message_packet->access_id, message_packet->address & cache->block_address_mask);
 
-				assert(victim_trainsient_state != cgm_cache_block_transient);
+				/*assert(victim_trainsient_state != cgm_cache_block_transient);
 
-				/*evict block here*/
+				evict block here
 				cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->way,
 						cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), 0);
 
@@ -7081,7 +7316,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				wb_packet->L3_flush_join = 1;
 
 				message_packet = list_remove(cache->last_queue, message_packet);
-				list_enqueue(cache->pending_request_buffer, message_packet);
+				list_enqueue(cache->pending_request_buffer, message_packet);*/
 			}
 
 			break;
@@ -7090,7 +7325,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 			fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
 
-			if((sharers == 1 && owning_core == 1) || sharers == 0)
+			/*if((sharers == 1 && owning_core == 1) || sharers == 0)
 			{
 				message_packet->size = 1;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
@@ -7112,7 +7347,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			else
 			{
 				fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
-			}
+			}*/
 
 			break;
 	}

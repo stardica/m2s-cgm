@@ -194,6 +194,7 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "cpu_flush", X86_UINST_MEM }, //star added this
 	{ "gpu_flush", X86_UINST_MEM }, //star added this
 	{ "cpu_fence", X86_UINST_MEM }, //star added this
+	{ "cpu_load_fence", X86_UINST_MEM }, //star added this
 
 	{ "call", X86_UINST_CTRL | X86_UINST_UNCOND },
 	{ "ret", X86_UINST_CTRL | X86_UINST_UNCOND },
