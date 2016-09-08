@@ -1731,24 +1731,31 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 void uop_factory_c_write(X86Context *ctx, unsigned int host_addr, unsigned int guest_addr, int size){
 
-
 	int i = 0;
+	//int j = 0;
 	unsigned int blk_aligned_addr = 0;
 	unsigned int blk_mask = 0x3F;
+	unsigned int blk = 0x40;
+
+	assert(host_addr == guest_addr);
 
 	//align the address
 	blk_aligned_addr = host_addr & ~(blk_mask);
 
+	//j = (size - 1);
+
 	for(i = 0; i < size; i++)
 	{
-		if(!(i % blk_mask))
+		if(!(i % blk))
 		{
+			assert(blk_aligned_addr <= (host_addr + size));
+
 			x86_uinst_new_mem(ctx, x86_uinst_cpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
-			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+			blk_aligned_addr = blk_aligned_addr + blk;
 		}
 	}
 
-	blk_aligned_addr = guest_addr & ~(blk_mask);
+	blk_aligned_addr = host_addr & ~(blk_mask);
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1761,6 +1768,7 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 	int i = 0;
 	unsigned int blk_aligned_addr = 0;
 	unsigned int blk_mask = 0x3F;
+	unsigned int blk = 0x40;
 
 	//copy memory from one to the other (load & store)
 	for(i = 0; i < size; i++)
@@ -1780,10 +1788,10 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 
 	for(i = 0; i < size; i++)
 	{
-		if(!(i % blk_mask))
+		if(!(i % blk))
 		{
 			x86_uinst_new_mem(ctx, x86_uinst_cpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
-			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+			blk_aligned_addr = blk_aligned_addr + blk;
 		}
 	}
 
@@ -1800,20 +1808,36 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 	int i = 0;
 	unsigned int blk_aligned_addr = 0;
 	unsigned int blk_mask = 0x3F;
+	unsigned int blk = 0x40;
 
 	//align the address
 	blk_aligned_addr = host_addr & ~(blk_mask);
 
+	assert(host_addr == guest_addr);
+
 	for(i = 0; i < size; i++)
 	{
-		if(!(i % blk_mask))
+		if(!(i % blk))
 		{
+			assert(blk_aligned_addr <= (host_addr + size));
+
 			x86_uinst_new_mem(ctx, x86_uinst_gpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
-			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+			blk_aligned_addr = blk_aligned_addr + blk;
 		}
 	}
 
-	blk_aligned_addr = guest_addr & ~(blk_mask);
+
+	/*if(blk_aligned_addr > (host_addr + size))
+				fatal("flush exceeded size blk_addr 0x%08x host size 0x%08x\n", blk_aligned_addr, (host_addr + size));*/
+
+			/*assert(blk_aligned_addr < (host_addr + size));*/
+
+	/*if(blk_aligned_addr > (host_addr + size))
+				fatal("flush exceeded size blk_addr 0x%08x host size 0x%08x\n", blk_aligned_addr, (host_addr + size));*/
+
+
+
+	blk_aligned_addr = host_addr & ~(blk_mask);
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1826,6 +1850,7 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	int i = 0;
 	unsigned int blk_aligned_addr = 0;
 	unsigned int blk_mask = 0x3F;
+	unsigned int blk = 0x40;
 
 	//flush the GPU
 
@@ -1834,10 +1859,10 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 
 	for(i = 0; i < size; i++)
 	{
-		if(!(i % blk_mask))
+		if(!(i % blk))
 		{
 			x86_uinst_new_mem(ctx, x86_uinst_gpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
-			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
+			blk_aligned_addr = blk_aligned_addr + blk;
 		}
 	}
 

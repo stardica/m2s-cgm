@@ -137,6 +137,7 @@ enum cgm_access_kind_t {
 			cgm_access_retry_i,//not used
 			cgm_access_cpu_flush,
 			cgm_access_cpu_flush_ack,
+			cgm_access_cpu_flush_fwd,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
 			cgm_access_cpu_fence,
@@ -396,6 +397,7 @@ struct cache_t{
 	void (*l2_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l2_cpu_flush_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l2_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	int (*l2_upgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);

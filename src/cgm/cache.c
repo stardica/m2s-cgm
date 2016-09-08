@@ -2809,7 +2809,7 @@ void l1_d_cache_ctrl(void){
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				l1_d_caches[my_pid].l1_d_store_nack(&(l1_d_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_cpu_flush)
+			else if (access_type == cgm_access_cpu_flush || access_type == cgm_access_cpu_flush_fwd)
 			{
 				//Call back function (cgm_mesi_l1_d_downgrade)
 				if(!l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet))
@@ -3083,6 +3083,11 @@ void l2_cache_ctrl(void){
 			{
 				//Call back function (cgm_mesi_l2_inval_ack)
 				l2_caches[my_pid].l2_cpu_flush(&(l2_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_cpu_flush_fwd)
+			{
+				//Call back function (cgm_mesi_l2_inval_ack)
+				l2_caches[my_pid].l2_cpu_flush_fwd(&(l2_caches[my_pid]), message_packet);
 			}
 			else if (access_type == cgm_access_gpu_flush)
 			{
@@ -3798,7 +3803,7 @@ void l2_cache_up_io_ctrl(void){
 		{
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
-					|| message_packet->access_type == cgm_access_getx_nack)
+					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_cpu_flush_fwd)
 			{
 
 				if(list_count(l1_d_caches[my_pid].Rx_queue_bottom) > QueueSize)

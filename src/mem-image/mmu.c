@@ -795,7 +795,8 @@ unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid,
 	page = mmu_page_access(address_space_index, mmu_addr_vtl, host_vtl_addr, mmu_access_load_store);
 	assert(page);
 
-	printf("mmu trans page %d guest id %d host vtl_addr 0x%08x\n", page->id, guest_pid, host_vtl_addr);
+	if(GPU_HUB_IOMMU == 1)
+		printf("mmu trans page %d guest id %d host vtl_addr 0x%08x\n", page->id, guest_pid, host_vtl_addr);
 
 	offset = host_vtl_addr & mmu_page_mask;
 	host_phy_addr = page->phy_addr | offset;

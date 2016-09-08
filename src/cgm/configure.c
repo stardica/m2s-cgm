@@ -2083,6 +2083,7 @@ int cache_finish_create(){
 			l2_caches[i].l2_flush_block_ack = cgm_mesi_l2_flush_block_ack;
 
 			l2_caches[i].l2_cpu_flush = cgm_mesi_l2_cpu_flush;
+			l2_caches[i].l2_cpu_flush_fwd = cgm_mesi_l2_cpu_flush_fwd;
 			l2_caches[i].l2_gpu_flush = cgm_mesi_l2_gpu_flush;
 
 		}

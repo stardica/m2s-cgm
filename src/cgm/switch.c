@@ -1031,7 +1031,7 @@ void switch_north_io_ctrl(void){
 					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
 					|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
 					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
-					|| message_packet->access_type == cgm_access_upgrade)
+					|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush_fwd)
 			{
 
 				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)

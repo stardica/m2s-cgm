@@ -248,14 +248,27 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		return 0;
 	}
 
-	//clear the CPU's dependences on this access finishing (fence will sort this out)
-	linked_list_add(message_packet->event_queue, message_packet->data);
 
-	//increment the cache flush counter
-	cache->flush_counter++;
+	//set the flush core only on a cpu flush coming from this CORE (i.e. dont set if flush was forwarded
+	if(message_packet->access_type == cgm_access_cpu_flush)
+	{
+		message_packet->flush_core = cache->id;
 
-	//set the flush core
-	message_packet->flush_core = cache->id;
+		//clear the CPU's dependences on this access finishing (fence will sort this out)
+		linked_list_add(message_packet->event_queue, message_packet->data);
+
+		//increment the cache flush counter
+		cache->flush_counter++;
+	}
+	else
+	{
+		/*fatal("l1_d flush fwd access type %s",
+				str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));*/
+
+		assert(message_packet->access_type == cgm_access_cpu_flush_fwd);
+
+		message_packet->access_type = cgm_access_cpu_flush;
+	}
 
 
 	//remove the block from the cache....
@@ -283,7 +296,6 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 					wb_packet = list_remove(cache->write_back_buffer, wb_packet);
 					packet_destroy(wb_packet);
 
-					//set access type inval_ack
 					message_packet->access_type = cgm_access_cpu_flush;
 
 					cache_put_io_down_queue(cache, message_packet);
@@ -3218,6 +3230,26 @@ void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	return;
 }
 
+void cgm_mesi_l2_cpu_flush_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	//memory system has forwarded a flush to this particular core. forward up to L1 cache.
+
+	//charge delay
+	P_PAUSE(cache->latency);
+
+	assert(message_packet->size == 1);
+	assert(message_packet->access_type == cgm_access_cpu_flush_fwd);
+
+	//fixed this for routing.
+	message_packet->cpu_access_type = cgm_access_store;
+
+	//send up to L1 D cache
+	cache_put_io_up_queue(cache, message_packet);
+
+
+	return;
+}
+
 
 void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -4616,10 +4648,13 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
 		if(message_packet->access_id == 21871144)
-			fatal("caught the pending problem\n");
+
 
 		if(!pending_get_getx_fwd)
 		{
+
+			fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx\n");
+
 			/*printf("\n");
 
 			ort_dump(cache);
@@ -7130,7 +7165,9 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	struct cgm_packet_t *wb_packet = NULL;
 
-	//struct cache_t *l2_cache_ptr = NULL;
+	unsigned long long bit_vector;
+
+	struct cache_t *l2_cache_ptr = NULL;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -7236,7 +7273,6 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			}
 			else
 			{
-
 				//star todo somehow check and make sure these are modified
 				/*if here the L2 cache has already written back, send down so the flush can complete*/
 				message_packet->size = 1;
@@ -7258,6 +7294,16 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_modified:
+
+
+			/*we have to flush the block out of the CPU, its possible for the block to be in
+			no cores, one core, or in more than one core. To flush, send flush_fwd to each
+			core that has the block. When the flush_ack comes remove that core from the directory
+			the last message will end up with the directory showing zero sharers. The final
+			message can then be turned into an ack and sent to MC. NO JOIN REQUIRED!*/
+
+			/*block is E or M which means its in only one core
+			figure out if we need to fwd the message*/
 
 			//check to make sure the block isn't in another core...
 			if((sharers == 1 && owning_core == 1) || sharers == 0)
@@ -7292,34 +7338,35 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			}
 			else
 			{
+
+				assert(cgm_gpu_cache_protocol == cgm_protocol_mesi);
+
 				assert(sharers == 1);
 				assert(owning_core == 0);
 
-				fatal("cgm_mesi_l3_cpu_flush(): blk is in another core... access id %llu blk addr 0x%08x\n",
-						message_packet->access_id, message_packet->address & cache->block_address_mask);
+				//send the flush on as a flush_fwd
 
-				/*assert(victim_trainsient_state != cgm_cache_block_transient);
+				//get the presence bits from the directory
+				bit_vector = cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry;
+				bit_vector = bit_vector & cache->share_mask;
 
-				evict block here
-				cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->way,
-						cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way), 0);
+				//making sure something didn't happen to these fields.
+				message_packet->size = 1;
+				message_packet->access_type = cgm_access_cpu_flush_fwd;
 
-				//clear the directory entry
-				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
+				l2_cache_ptr = &l2_caches[LOG2(bit_vector)];
 
-				//star todo find a better way to do this...
-				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+				SETROUTE(message_packet, cache, l2_cache_ptr);
 
-				assert(wb_packet);
-				wb_packet->L3_flush_join = 1;
-
-				message_packet = list_remove(cache->last_queue, message_packet);
-				list_enqueue(cache->pending_request_buffer, message_packet);*/
+				//transmit to owning core
+				cache_put_io_up_queue(cache, message_packet);
 			}
 
 			break;
 
 		case cgm_cache_block_shared:
+
+			/*send the flush_fwd to the other cores*/
 
 			fatal("cgm_mesi_l3_cpu_flush(): shared, this needs to be implemented.\n");
 

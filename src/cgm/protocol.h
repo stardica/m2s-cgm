@@ -118,7 +118,6 @@ void dump_stat_bandwidth(void);
 
 
 
-
 struct cgm_packet_t *packet_create(void);
 void packet_destroy(struct cgm_packet_t *packet);
 struct cgm_packet_status_t *status_packet_create(void);
@@ -182,6 +181,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_cpu_flush_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 

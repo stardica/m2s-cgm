@@ -4503,24 +4503,57 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 			we must invalidate here and send an invalidation to the L1 D cache*/
 			assert(victim_trainsient_state != cgm_cache_block_transient);
 
-			assert(sharers == 1);
+			//assert(sharers == 1);
 
-			/*evict block here*/
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way,
-					cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), 0);
+			if(sharers == 1)
+			{
+				/*evict block here*/
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way,
+						cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), 0);
 
-			//clear the directory entry
-			cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+				//clear the directory entry
+				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
 
-			//search WB again, because the evict would drop this cache line into the WB buffer..
-			//star todo find a better way to do this...
-			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
+				//search WB again, because the evict would drop this cache line into the WB buffer..
+				//star todo find a better way to do this...
+				wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
-			assert(wb_packet);
-			wb_packet->L3_flush_join = 1;
+				assert(wb_packet);
+				wb_packet->L3_flush_join = 1;
 
-			message_packet = list_remove(cache->last_queue, message_packet);
-			list_enqueue(cache->pending_request_buffer, message_packet);
+				message_packet = list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->pending_request_buffer, message_packet);
+			}
+			else
+			{
+
+				//block is not up in one of the vector caches...
+
+				assert(sharers == 0);
+
+				/*evict block here*/
+				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_invalid);
+
+				//clear the directory entry
+				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
+
+				if(*cache_block_state_ptr == cgm_cache_block_modified)
+				{
+					message_packet->size = cache->block_size;
+					message_packet->cache_block_state = cgm_cache_block_modified;
+				}
+				else
+				{
+					message_packet->size = 1;
+					message_packet->cache_block_state = cgm_cache_block_invalid;
+				}
+
+				message_packet->access_type = cgm_access_flush_block_ack;
+
+				//reply to the L3 cache
+				cache_put_io_down_queue(cache, message_packet);
+
+			}
 
 			break;
 
