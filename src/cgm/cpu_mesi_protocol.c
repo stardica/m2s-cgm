@@ -4000,11 +4000,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 							(message_packet->address & cache->block_address_mask), cache->name,message_packet->access_id,
 							message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-					if(message_packet->access_id == 8966422)
-					{
-						warning("id %llu join ort status is %d\n", message_packet->access_id, ort_status);
-					}
-
 					/*set the bit in the ort table to 0*/
 					ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
 
@@ -4620,6 +4615,9 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
+		if(message_packet->access_id == 21871144)
+			fatal("caught the pending problem\n");
+
 		if(!pending_get_getx_fwd)
 		{
 			/*printf("\n");
@@ -4665,7 +4663,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//clear the ort
 		ort_clear(cache, message_packet);
 
-		//remove the pending request (upgrade)
+		//clear the message packet...
 		message_packet = list_remove(cache->last_queue, message_packet);
 		list_enqueue(cache->retry_queue, message_packet);
 
@@ -7297,7 +7295,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				assert(sharers == 1);
 				assert(owning_core == 0);
 
-				fatal("cgm_mesi_l3_cpu_flush(): waiting on a join... access id %llu blk addr 0x%08x\n",
+				fatal("cgm_mesi_l3_cpu_flush(): blk is in another core... access id %llu blk addr 0x%08x\n",
 						message_packet->access_id, message_packet->address & cache->block_address_mask);
 
 				/*assert(victim_trainsient_state != cgm_cache_block_transient);
@@ -7379,9 +7377,12 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	//get the address set and tag
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block ack ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
 	/*error checking the block should no longer be "in core"*/
 	error = cache_validate_block_flushed_from_core(message_packet->l2_cache_id, message_packet->address);
-	assert(error == 0);
+		assert(error == 0);
 
 	//if(((message_packet->address & cache->block_address_mask) == 0x0002f480) && pending_request_packet)
 	//	fatal("%s flush block ack\n", cache->name);
@@ -8794,9 +8795,6 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 						{
 							/*block conflict case, L3 has evicted the block during the putx_n epoch
 							kill this and retry as a new getx.*/
-
-							warning("possible seg fault here\n");
-							fflush(stderr);
 
 							DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s putx_n killed by conflict retrying as getx (from L2) ID %llu type %d state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);

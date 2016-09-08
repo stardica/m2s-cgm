@@ -1748,6 +1748,11 @@ void uop_factory_c_write(X86Context *ctx, unsigned int host_addr, unsigned int g
 		}
 	}
 
+	blk_aligned_addr = guest_addr & ~(blk_mask);
+
+	//this is a simulated fence...
+	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
 	return;
 }
 
@@ -1807,6 +1812,11 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 			blk_aligned_addr = blk_aligned_addr + (blk_mask + 1);
 		}
 	}
+
+	blk_aligned_addr = guest_addr & ~(blk_mask);
+
+	//this is a simulated fence...
+	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	return;
 }
@@ -2212,7 +2222,7 @@ void PrintCycle(void){
 		curr_time = get_wall_time();
 		curr_cycle = P_TIME;
 
-		printf("---Total Cycles %lluM Simulated Cycles Per Sec %d---\r", P_TIME/SKIP, (int) ((curr_cycle - last_cycle)/(curr_time - last_time)));
+		printf("---Total Cycles %lluM Simulated Cycles Per Sec %d---\n", P_TIME/SKIP, (int) ((curr_cycle - last_cycle)/(curr_time - last_time)));
 		fflush(stdout);
 
 		last_time = curr_time;

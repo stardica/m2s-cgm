@@ -7328,9 +7328,6 @@ void cgm_mesi_gpu_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *
 							block conflict case, L3 has evicted the block during the putx_n epoch
 							kill this and retry as a new getx.
 
-							warning("possible seg fault here\n");
-							fflush(stderr);
-
 							DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s putx_n killed by conflict retrying as getx (from L2) ID %llu type %d state %d cycle %llu\n",
 							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 

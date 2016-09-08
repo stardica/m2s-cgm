@@ -5653,13 +5653,14 @@ int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 		/*fatal("\terror check l1_hit %d l2_hit %d cycle %llu\n", l1_hit, l2_hit, P_TIME);*/
 		printf("\terror check l1_hit_ptr %d l1_state_ptr %d\n"
 			  "\terror check l2_hit_ptr %d l2_state_ptr %d\n"
-			  "\terror L1_wb id %d L2_wb id %d\n",
+			  "\terror L1_wb %d L2_wb %d\n",
 			  *l1_cache_block_hit_ptr, *l1_cache_block_state_ptr,
 			  *l2_cache_block_hit_ptr, *l2_cache_block_hit_ptr,
 			  l1_wb_hit, l2_wb_hit);
 
 		printf("block 0x%08x searching for set %d tag %d\n", addr, l1_set, l1_tag);
 		cgm_cache_print_set_tag(&l1_d_caches[core_id], addr);
+		cgm_cache_dump_set(&l1_d_caches[core_id], l1_set);
 		if(l1_write_back_packet)
 		{
 			printf("block 0x%08x l1 wb_addr 0x%08x id %llu wb_set %d wb_tag %d\n",
