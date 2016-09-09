@@ -2,9 +2,6 @@
 import ConfigParser
 from optparse import OptionParser
 
-cache_combined = 1
-
-
 
 def print_cache_stats(options):
 
@@ -14,191 +11,57 @@ def print_cache_stats(options):
 
 	#pull stats
 	if options.PrintSection == 'FullRunStats':
-		cache_stats = dict(cache_data.items('FullRunStats'))
+		cache_stats_dict = dict(cache_data.items('FullRunStats'))
 	elif options.PrintSection == 'ParallelStats':
-		cache_stats = dict(cache_data.items('ParallelStats'))
+		cache_stats_dict = dict(cache_data.items('ParallelStats'))
 	else:
 		print "print_cache_stats(): invalid section"
 		exit(0)
 
-
-	for key, value in cache_stats.items(): # get the (key, value) tuples one at a time
+	for key, value in cache_stats_dict.items(): # get the (key, value) tuples one at a time
 		try:
-			cache_stats[key] = int(value)
+			cache_stats_dict[key] = int(value)
 		except ValueError:
-			cache_stats[key] = float(value)
+			cache_stats_dict[key] = float(value)
+
+
+	var = ""
+	cache_stats = ["Occupancy", "OccupancyPct", "Stalls", "TotalWriteBlocks", "CoalescePut", "CoalesceGet", "WbMerges", "MergeRetries", "WbRecieved", "WbSent", "SharingWbSent", "WbDropped", "UpgradeMisses", "TotalUpgrades", "TotalUpgradeAcks", "TotalUpgradeInvals", "TotalDowngrades", "TotalGetxFwdInvals", "EvictInv", "TotalUpgradeInvals", "AveCyclesPerAdvance", "TotalAdvances", "TotalAccesses", "TotalHits", "TotalMisses", "MissRate", "TotalReads", "TotalReadMisses", "ReadMissRate", "TotalWrites", "TotalWriteMisses", "WriteMissRate", "TotalGet", "TotalGet", "TotalGetx", "GetMissRate", "GetMissRate", "GetxMissRate", "UpgradeMissRate", "TotalWriteBacks", "CacheUtilization"]
+
+	l1_i_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
+	l1_d_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
+	l2_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
+	l3_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
+	
+	for i in range (0,len(cache_stats)):
+		l1_i_stats_table[i][0] = cache_stats[i]
+		for j in range (0,num_cores):
+			var = "l1_i_" + str(j) + "_" + cache_stats[i]
+			l1_i_stats_table[i][(j+1)] = cache_stats_dict[var]
+
+	for i in range (0,len(cache_stats)):
+		l1_d_stats_table[i][0] = cache_stats[i]
+		for j in range (0,num_cores):
+			var = "l1_d_" + str(j) + "_" + cache_stats[i]
+			l1_d_stats_table[i][(j+1)] = cache_stats_dict[var]
+
+	for i in range (0,len(cache_stats)):
+		l2_stats_table[i][0] = cache_stats[i]
+		for j in range (0,num_cores):
+			var = "l2_" + str(j) + "_" + cache_stats[i]
+			l2_stats_table[i][(j+1)] = cache_stats_dict[var]
+			
+	for i in range (0,len(cache_stats)):
+		l3_stats_table[i][0] = cache_stats[i]
+		for j in range (0,num_cores):
+			var = "l3_" + str(j) + "_" + cache_stats[i]
+			l3_stats_table[i][(j+1)] = cache_stats_dict[var]
+
+
+	
 		
 	
-	l1_i_Occupancy = cache_stats['l1_i_0_Occupancy'] + cache_stats['l1_i_1_Occupancy'] + cache_stats['l1_i_2_Occupancy'] + cache_stats['l1_i_3_Occupancy']
-	l1_i_OccupancyPct = cache_stats['l1_i_0_OccupancyPct'] + cache_stats['l1_i_1_OccupancyPct'] + cache_stats['l1_i_2_OccupancyPct'] + cache_stats['l1_i_3_OccupancyPct']	
-	l1_i_Stalls = cache_stats['l1_i_0_Stalls'] + cache_stats['l1_i_1_Stalls'] + cache_stats['l1_i_2_Stalls'] + cache_stats['l1_i_3_Stalls']
-	l1_i_WriteBlocks = cache_stats['l1_i_0_TotalWriteBlocks'] + cache_stats['l1_i_1_TotalWriteBlocks'] + cache_stats['l1_i_2_TotalWriteBlocks'] + cache_stats['l1_i_3_TotalWriteBlocks']
-	l1_i_CoalescePut = cache_stats['l1_i_0_CoalescePut'] + cache_stats['l1_i_1_CoalescePut'] + cache_stats['l1_i_2_CoalescePut'] + cache_stats['l1_i_3_CoalescePut']
-	l1_i_CoalesceGet = cache_stats['l1_i_0_CoalesceGet'] + cache_stats['l1_i_1_CoalesceGet'] + cache_stats['l1_i_2_CoalesceGet'] + cache_stats['l1_i_3_CoalesceGet']
-	l1_i_WbMerges = cache_stats['l1_i_0_WbMerges'] + cache_stats['l1_i_1_WbMerges'] + cache_stats['l1_i_2_WbMerges'] + cache_stats['l1_i_3_WbMerges']
-	l1_i_MergeRetries = cache_stats['l1_i_0_MergeRetries'] + cache_stats['l1_i_1_MergeRetries'] + cache_stats['l1_i_2_MergeRetries'] + cache_stats['l1_i_3_MergeRetries']
-	l1_i_WbRecieved = cache_stats['l1_i_0_WbRecieved'] + cache_stats['l1_i_1_WbRecieved'] + cache_stats['l1_i_2_WbRecieved'] + cache_stats['l1_i_3_WbRecieved']
-	l1_i_WbSent = cache_stats['l1_i_0_WbSent'] + cache_stats['l1_i_1_WbSent'] + cache_stats['l1_i_2_WbSent'] + cache_stats['l1_i_3_WbSent']
-	l1_i_SharingWbSent = cache_stats['l1_i_0_SharingWbSent'] + cache_stats['l1_i_1_SharingWbSent'] + cache_stats['l1_i_2_SharingWbSent'] + cache_stats['l1_i_3_SharingWbSent']
-	l1_i_WbDropped = cache_stats['l1_i_0_WbDropped'] + cache_stats['l1_i_1_WbDropped'] + cache_stats['l1_i_2_WbDropped'] + cache_stats['l1_i_3_WbDropped']
-	l1_i_UpgradeMisses = cache_stats['l1_i_0_UpgradeMisses'] + cache_stats['l1_i_1_UpgradeMisses'] + cache_stats['l1_i_2_UpgradeMisses'] + cache_stats['l1_i_3_UpgradeMisses']
-	l1_i_UpgradeAcks = cache_stats['l1_i_0_TotalUpgradeAcks'] + cache_stats['l1_i_1_TotalUpgradeAcks'] + cache_stats['l1_i_2_TotalUpgradeAcks'] + cache_stats['l1_i_3_TotalUpgradeAcks']
-	l1_i_Downgrades = cache_stats['l1_i_0_TotalDowngrades'] + cache_stats['l1_i_1_TotalDowngrades'] + cache_stats['l1_i_2_TotalDowngrades'] + cache_stats['l1_i_3_TotalDowngrades']
-	l1_i_GetxFwdInval = cache_stats['l1_i_0_TotalGetxFwdInvals'] + cache_stats['l1_i_1_TotalGetxFwdInvals'] + cache_stats['l1_i_2_TotalGetxFwdInvals'] + cache_stats['l1_i_3_TotalGetxFwdInvals']
-	l1_i_EvictInv = cache_stats['l1_i_0_EvictInv'] + cache_stats['l1_i_1_EvictInv'] + cache_stats['l1_i_2_EvictInv'] + cache_stats['l1_i_3_EvictInv']
-	l1_i_UpgradeInvals = cache_stats['l1_i_0_TotalUpgradeInvals'] + cache_stats['l1_i_1_TotalUpgradeInvals'] + cache_stats['l1_i_2_TotalUpgradeInvals'] + cache_stats['l1_i_3_TotalUpgradeInvals']
-	
-	l1_i_AveCyclesPerAdvance = cache_stats['l1_i_0_AveCyclesPerAdvance'] + cache_stats['l1_i_1_AveCyclesPerAdvance'] + cache_stats['l1_i_2_AveCyclesPerAdvance'] + cache_stats['l1_i_3_AveCyclesPerAdvance']
-	l1_i_TotalAdvances = cache_stats['l1_i_0_TotalAdvances'] + cache_stats['l1_i_1_TotalAdvances'] + cache_stats['l1_i_2_TotalAdvances'] + cache_stats['l1_i_3_TotalAdvances']
-	l1_i_TotalAccesses = cache_stats['l1_i_0_TotalAccesses'] + cache_stats['l1_i_1_TotalAccesses'] + cache_stats['l1_i_2_TotalAccesses'] + cache_stats['l1_i_3_TotalAccesses']
-	l1_i_TotalHits = cache_stats['l1_i_0_TotalHits'] + cache_stats['l1_i_1_TotalHits'] + cache_stats['l1_i_2_TotalHits'] + cache_stats['l1_i_3_TotalHits']
-	l1_i_TotalMisses = cache_stats['l1_i_0_TotalMisses'] + cache_stats['l1_i_1_TotalMisses'] + cache_stats['l1_i_2_TotalMisses'] + cache_stats['l1_i_3_TotalMisses']
-	l1_i_MissRate = cache_stats['l1_i_0_MissRate'] + cache_stats['l1_i_1_MissRate'] + cache_stats['l1_i_2_MissRate'] + cache_stats['l1_i_3_MissRate']
-	l1_i_TotalReads = cache_stats['l1_i_0_TotalReads'] + cache_stats['l1_i_1_TotalReads'] + cache_stats['l1_i_2_TotalReads'] + cache_stats['l1_i_3_TotalReads']
-	l1_i_TotalReadMisses = cache_stats['l1_i_0_TotalReadMisses'] + cache_stats['l1_i_1_TotalReadMisses'] + cache_stats['l1_i_2_TotalReadMisses'] + cache_stats['l1_i_3_TotalReadMisses']
-	l1_i_ReadMissRate = cache_stats['l1_i_0_ReadMissRate'] + cache_stats['l1_i_1_ReadMissRate'] + cache_stats['l1_i_2_ReadMissRate'] + cache_stats['l1_i_3_ReadMissRate']
-	l1_i_TotalWrites = cache_stats['l1_i_0_TotalWrites'] + cache_stats['l1_i_1_TotalWrites'] + cache_stats['l1_i_2_TotalWrites'] + cache_stats['l1_i_3_TotalWrites']
-	l1_i_TotalWriteMisses = cache_stats['l1_i_0_TotalWriteMisses'] + cache_stats['l1_i_1_TotalWriteMisses'] + cache_stats['l1_i_2_TotalWriteMisses'] + cache_stats['l1_i_3_TotalWriteMisses']
-	l1_i_WriteMissRate = cache_stats['l1_i_0_WriteMissRate'] + cache_stats['l1_i_1_WriteMissRate'] + cache_stats['l1_i_2_WriteMissRate'] + cache_stats['l1_i_3_WriteMissRate']
-	l1_i_TotalGets = cache_stats['l1_i_0_TotalGets'] +  cache_stats['l1_i_1_TotalGets'] +  cache_stats['l1_i_2_TotalGets'] + cache_stats['l1_i_3_TotalGets']
-	l1_i_TotalGet = cache_stats['l1_i_0_TotalGet'] +  cache_stats['l1_i_1_TotalGet'] +  cache_stats['l1_i_2_TotalGet'] + cache_stats['l1_i_3_TotalGet']
-	l1_i_TotalGetx = cache_stats['l1_i_0_TotalGetx'] + cache_stats['l1_i_1_TotalGetx'] + cache_stats['l1_i_2_TotalGetx'] + cache_stats['l1_i_3_TotalGetx']
-	l1_i_GetsMissRate = cache_stats['l1_i_0_GetsMissRate'] + cache_stats['l1_i_1_GetsMissRate'] + cache_stats['l1_i_2_GetsMissRate'] + cache_stats['l1_i_3_GetsMissRate']
-	l1_i_GetMissRate = cache_stats['l1_i_0_GetMissRate'] + cache_stats['l1_i_1_GetMissRate'] + cache_stats['l1_i_2_GetMissRate'] + cache_stats['l1_i_3_GetMissRate']
-	l1_i_GetxMissRate = cache_stats['l1_i_0_GetxMissRate'] + cache_stats['l1_i_1_GetxMissRate'] + cache_stats['l1_i_2_GetxMissRate'] + cache_stats['l1_i_3_GetxMissRate']
-	l1_i_TotalUpgrades = cache_stats['l1_i_0_TotalUpgrades'] + cache_stats['l1_i_1_TotalUpgrades'] + cache_stats['l1_i_2_TotalUpgrades'] + cache_stats['l1_i_3_TotalUpgrades']
-	l1_i_UpgradeMissRate = cache_stats['l1_i_0_UpgradeMissRate'] + cache_stats['l1_i_1_UpgradeMissRate'] + cache_stats['l1_i_2_UpgradeMissRate'] + cache_stats['l1_i_3_UpgradeMissRate']
-	l1_i_TotalWriteBacks = cache_stats['l1_i_0_TotalWriteBacks'] + cache_stats['l1_i_1_TotalWriteBacks'] + cache_stats['l1_i_2_TotalWriteBacks'] + cache_stats['l1_i_3_TotalWriteBacks']
-	l1_i_CacheUtilization = cache_stats['l1_i_0_CacheUtilization'] + cache_stats['l1_i_1_CacheUtilization'] + cache_stats['l1_i_2_CacheUtilization'] + cache_stats['l1_i_3_CacheUtilization']
 
-	l1_d_Occupancy = cache_stats['l1_d_0_Occupancy'] + cache_stats['l1_d_1_Occupancy'] + cache_stats['l1_d_2_Occupancy'] + cache_stats['l1_d_3_Occupancy']
-	l1_d_OccupancyPct = cache_stats['l1_d_0_OccupancyPct'] + cache_stats['l1_d_1_OccupancyPct'] + cache_stats['l1_d_2_OccupancyPct'] + cache_stats['l1_d_3_OccupancyPct']
-	l1_d_Stalls = cache_stats['l1_d_0_Stalls'] + cache_stats['l1_d_1_Stalls'] + cache_stats['l1_d_2_Stalls'] + cache_stats['l1_d_3_Stalls']
-	l1_d_WriteBlocks = cache_stats['l1_d_0_TotalWriteBlocks'] + cache_stats['l1_d_1_TotalWriteBlocks'] + cache_stats['l1_d_2_TotalWriteBlocks'] + cache_stats['l1_d_3_TotalWriteBlocks']
-	l1_d_CoalescePut = cache_stats['l1_d_0_CoalescePut'] + cache_stats['l1_d_1_CoalescePut'] + cache_stats['l1_d_2_CoalescePut'] + cache_stats['l1_d_3_CoalescePut']
-	l1_d_CoalesceGet = cache_stats['l1_d_0_CoalesceGet'] + cache_stats['l1_d_1_CoalesceGet'] + cache_stats['l1_d_2_CoalesceGet'] + cache_stats['l1_d_3_CoalesceGet']
-	l1_d_WbMerges = cache_stats['l1_d_0_WbMerges'] + cache_stats['l1_d_1_WbMerges'] + cache_stats['l1_d_2_WbMerges'] + cache_stats['l1_d_3_WbMerges']
-	l1_d_MergeRetries = cache_stats['l1_d_0_MergeRetries'] + cache_stats['l1_d_1_MergeRetries'] + cache_stats['l1_d_2_MergeRetries'] + cache_stats['l1_d_3_MergeRetries']
-	l1_d_WbRecieved = cache_stats['l1_d_0_WbRecieved'] + cache_stats['l1_d_1_WbRecieved'] + cache_stats['l1_d_2_WbRecieved'] + cache_stats['l1_d_3_WbRecieved']
-	l1_d_WbSent = cache_stats['l1_d_0_WbSent'] + cache_stats['l1_d_1_WbSent'] + cache_stats['l1_d_2_WbSent'] + cache_stats['l1_d_3_WbSent']
-	l1_d_SharingWbSent = cache_stats['l1_d_0_SharingWbSent'] + cache_stats['l1_d_1_SharingWbSent'] + cache_stats['l1_d_2_SharingWbSent'] + cache_stats['l1_d_3_SharingWbSent']
-	l1_d_WbDropped = cache_stats['l1_d_0_WbDropped'] + cache_stats['l1_d_1_WbDropped'] + cache_stats['l1_d_2_WbDropped'] + cache_stats['l1_d_3_WbDropped']
-	l1_d_UpgradeMisses = cache_stats['l1_d_0_UpgradeMisses'] + cache_stats['l1_d_1_UpgradeMisses'] + cache_stats['l1_d_2_UpgradeMisses'] + cache_stats['l1_d_3_UpgradeMisses']
-	l1_d_UpgradeAcks = cache_stats['l1_d_0_TotalUpgradeAcks'] + cache_stats['l1_d_1_TotalUpgradeAcks'] + cache_stats['l1_d_2_TotalUpgradeAcks'] + cache_stats['l1_d_3_TotalUpgradeAcks']
-	l1_d_Downgrades = cache_stats['l1_d_0_TotalDowngrades'] + cache_stats['l1_d_1_TotalDowngrades'] + cache_stats['l1_d_2_TotalDowngrades'] + cache_stats['l1_d_3_TotalDowngrades']
-	l1_d_GetxFwdInval = cache_stats['l1_d_0_TotalGetxFwdInvals'] + cache_stats['l1_d_1_TotalGetxFwdInvals'] + cache_stats['l1_d_2_TotalGetxFwdInvals'] + cache_stats['l1_d_3_TotalGetxFwdInvals']
-	l1_d_EvictInv = cache_stats['l1_d_0_EvictInv'] + cache_stats['l1_d_1_EvictInv'] + cache_stats['l1_d_2_EvictInv'] + cache_stats['l1_d_3_EvictInv']	
-	l1_d_UpgradeInvals = cache_stats['l1_d_0_TotalUpgradeInvals'] + cache_stats['l1_d_1_TotalUpgradeInvals'] + cache_stats['l1_d_2_TotalUpgradeInvals'] + cache_stats['l1_d_3_TotalUpgradeInvals']
-	
-	
-	l1_d_AveCyclesPerAdvance = cache_stats['l1_d_0_AveCyclesPerAdvance'] + cache_stats['l1_d_1_AveCyclesPerAdvance'] + cache_stats['l1_d_2_AveCyclesPerAdvance'] + cache_stats['l1_d_3_AveCyclesPerAdvance']
-	l1_d_TotalAdvances = cache_stats['l1_d_0_TotalAdvances'] + cache_stats['l1_d_1_TotalAdvances'] + cache_stats['l1_d_2_TotalAdvances'] + cache_stats['l1_d_3_TotalAdvances']
-	l1_d_TotalAccesses = cache_stats['l1_d_0_TotalAccesses'] + cache_stats['l1_d_1_TotalAccesses'] + cache_stats['l1_d_2_TotalAccesses'] + cache_stats['l1_d_3_TotalAccesses']
-	l1_d_TotalHits = cache_stats['l1_d_0_TotalHits'] + cache_stats['l1_d_1_TotalHits'] + cache_stats['l1_d_2_TotalHits'] + cache_stats['l1_d_3_TotalHits']
-	l1_d_TotalMisses = cache_stats['l1_d_0_TotalMisses'] + cache_stats['l1_d_1_TotalMisses'] + cache_stats['l1_d_2_TotalMisses'] + cache_stats['l1_d_3_TotalMisses']
-	l1_d_MissRate = cache_stats['l1_d_0_MissRate'] + cache_stats['l1_d_1_MissRate'] + cache_stats['l1_d_2_MissRate'] + cache_stats['l1_d_3_MissRate']
-	l1_d_TotalReads = cache_stats['l1_d_0_TotalReads'] + cache_stats['l1_d_1_TotalReads'] + cache_stats['l1_d_2_TotalReads'] + cache_stats['l1_d_3_TotalReads']
-	l1_d_TotalReadMisses = cache_stats['l1_d_0_TotalReadMisses'] + cache_stats['l1_d_1_TotalReadMisses'] + cache_stats['l1_d_2_TotalReadMisses'] + cache_stats['l1_d_3_TotalReadMisses']
-	l1_d_ReadMissRate = cache_stats['l1_d_0_ReadMissRate'] + cache_stats['l1_d_1_ReadMissRate'] + cache_stats['l1_d_2_ReadMissRate'] + cache_stats['l1_d_3_ReadMissRate']
-	l1_d_TotalWrites = cache_stats['l1_d_0_TotalWrites'] + cache_stats['l1_d_1_TotalWrites'] + cache_stats['l1_d_2_TotalWrites'] + cache_stats['l1_d_3_TotalWrites']
-	l1_d_TotalWriteMisses = cache_stats['l1_d_0_TotalWriteMisses'] + cache_stats['l1_d_1_TotalWriteMisses'] + cache_stats['l1_d_2_TotalWriteMisses'] + cache_stats['l1_d_3_TotalWriteMisses']
-	l1_d_WriteMissRate = cache_stats['l1_d_0_WriteMissRate'] + cache_stats['l1_d_1_WriteMissRate'] + cache_stats['l1_d_2_WriteMissRate'] + cache_stats['l1_d_3_WriteMissRate']
-	l1_d_TotalGets = cache_stats['l1_d_0_TotalGets'] +  cache_stats['l1_d_1_TotalGets'] +  cache_stats['l1_d_2_TotalGets'] + cache_stats['l1_d_3_TotalGets']
-	l1_d_TotalGet = cache_stats['l1_d_0_TotalGet'] +  cache_stats['l1_d_1_TotalGet'] +  cache_stats['l1_d_2_TotalGet'] + cache_stats['l1_d_3_TotalGet']
-	l1_d_TotalGetx = cache_stats['l1_d_0_TotalGetx'] + cache_stats['l1_d_1_TotalGetx'] + cache_stats['l1_d_2_TotalGetx'] + cache_stats['l1_d_3_TotalGetx']
-	l1_d_GetsMissRate = cache_stats['l1_d_0_GetsMissRate'] + cache_stats['l1_d_1_GetsMissRate'] + cache_stats['l1_d_2_GetsMissRate'] + cache_stats['l1_d_3_GetsMissRate']
-	l1_d_GetMissRate = cache_stats['l1_d_0_GetMissRate'] + cache_stats['l1_d_1_GetMissRate'] + cache_stats['l1_d_2_GetMissRate'] + cache_stats['l1_d_3_GetMissRate']
-	l1_d_GetxMissRate = cache_stats['l1_d_0_GetxMissRate'] + cache_stats['l1_d_1_GetxMissRate'] + cache_stats['l1_d_2_GetxMissRate'] + cache_stats['l1_d_3_GetxMissRate']
-	l1_d_TotalUpgrades = cache_stats['l1_d_0_TotalUpgrades'] + cache_stats['l1_d_1_TotalUpgrades'] + cache_stats['l1_d_2_TotalUpgrades'] + cache_stats['l1_d_3_TotalUpgrades']
-	l1_d_UpgradeMissRate = cache_stats['l1_d_0_UpgradeMissRate'] + cache_stats['l1_d_1_UpgradeMissRate'] + cache_stats['l1_d_2_UpgradeMissRate'] + cache_stats['l1_d_3_UpgradeMissRate']
-	l1_d_TotalWriteBacks = cache_stats['l1_d_0_TotalWriteBacks'] + cache_stats['l1_d_1_TotalWriteBacks'] + cache_stats['l1_d_2_TotalWriteBacks'] + cache_stats['l1_d_3_TotalWriteBacks']
-	l1_d_CacheUtilization = cache_stats['l1_d_0_CacheUtilization'] + cache_stats['l1_d_1_CacheUtilization'] + cache_stats['l1_d_2_CacheUtilization'] + cache_stats['l1_d_3_CacheUtilization']
-
-	l2_Occupancy = cache_stats['l2_0_Occupancy'] + cache_stats['l2_1_Occupancy'] + cache_stats['l2_2_Occupancy'] + cache_stats['l2_3_Occupancy']
-	l2_OccupancyPct = cache_stats['l2_0_OccupancyPct'] + cache_stats['l2_1_OccupancyPct'] + cache_stats['l2_2_OccupancyPct'] + cache_stats['l2_3_OccupancyPct']	
-	l2_Stalls = cache_stats['l2_0_Stalls'] + cache_stats['l2_1_Stalls'] + cache_stats['l2_2_Stalls'] + cache_stats['l2_3_Stalls']
-	l2_WriteBlocks = cache_stats['l2_0_TotalWriteBlocks'] + cache_stats['l2_1_TotalWriteBlocks'] + cache_stats['l2_2_TotalWriteBlocks'] + cache_stats['l2_3_TotalWriteBlocks']	
-	l2_CoalescePut = cache_stats['l2_0_CoalescePut'] + cache_stats['l2_1_CoalescePut'] + cache_stats['l2_2_CoalescePut'] + cache_stats['l2_3_CoalescePut']
-	l2_CoalesceGet = cache_stats['l2_0_CoalesceGet'] + cache_stats['l2_1_CoalesceGet'] + cache_stats['l2_2_CoalesceGet'] + cache_stats['l2_3_CoalesceGet']
-	l2_WbMerges = cache_stats['l2_0_WbMerges'] + cache_stats['l2_1_WbMerges'] + cache_stats['l2_2_WbMerges'] + cache_stats['l2_3_WbMerges']
-	l2_MergeRetries = cache_stats['l2_0_MergeRetries'] + cache_stats['l2_1_MergeRetries'] + cache_stats['l2_2_MergeRetries'] + cache_stats['l2_3_MergeRetries']
-	l2_WbRecieved = cache_stats['l2_0_WbRecieved'] + cache_stats['l2_1_WbRecieved'] + cache_stats['l2_2_WbRecieved'] + cache_stats['l2_3_WbRecieved']
-	l2_WbSent = cache_stats['l2_0_WbSent'] + cache_stats['l2_1_WbSent'] + cache_stats['l2_2_WbSent'] + cache_stats['l2_3_WbSent']
-	l2_SharingWbSent = cache_stats['l2_0_SharingWbSent'] + cache_stats['l2_1_SharingWbSent'] + cache_stats['l2_2_SharingWbSent'] + cache_stats['l2_3_SharingWbSent']
-	l2_WbDropped = cache_stats['l2_0_WbDropped'] + cache_stats['l2_1_WbDropped'] + cache_stats['l2_2_WbDropped'] + cache_stats['l2_3_WbDropped']
-	l2_UpgradeMisses = cache_stats['l2_0_UpgradeMisses'] + cache_stats['l2_1_UpgradeMisses'] + cache_stats['l2_2_UpgradeMisses'] + cache_stats['l2_3_UpgradeMisses']
-	l2_UpgradeAcks = cache_stats['l2_0_TotalUpgradeAcks'] + cache_stats['l2_1_TotalUpgradeAcks'] + cache_stats['l2_2_TotalUpgradeAcks'] + cache_stats['l2_3_TotalUpgradeAcks']
-	l2_Downgrades = 0
-	l2_GetxFwdInval = 0
-	l2_EvictInv = cache_stats['l2_0_EvictInv'] + cache_stats['l2_1_EvictInv'] + cache_stats['l2_2_EvictInv'] + cache_stats['l2_3_EvictInv']
-	l2_UpgradeInvals = cache_stats['l2_0_TotalUpgradeInvals'] + cache_stats['l2_1_TotalUpgradeInvals'] + cache_stats['l2_2_TotalUpgradeInvals'] + cache_stats['l2_3_TotalUpgradeInvals']
-
-	
-	l2_AveCyclesPerAdvance = cache_stats['l2_0_AveCyclesPerAdvance'] + cache_stats['l2_1_AveCyclesPerAdvance'] + cache_stats['l2_2_AveCyclesPerAdvance'] + cache_stats['l2_3_AveCyclesPerAdvance']
-	l2_TotalAdvances = cache_stats['l2_0_TotalAdvances'] + cache_stats['l2_1_TotalAdvances'] + cache_stats['l2_2_TotalAdvances'] + cache_stats['l2_3_TotalAdvances']
-	l2_TotalAccesses = cache_stats['l2_0_TotalAccesses'] + cache_stats['l2_1_TotalAccesses'] + cache_stats['l2_2_TotalAccesses'] + cache_stats['l2_3_TotalAccesses']
-	l2_TotalHits = cache_stats['l2_0_TotalHits'] + cache_stats['l2_1_TotalHits'] + cache_stats['l2_2_TotalHits'] + cache_stats['l2_3_TotalHits']
-	l2_TotalMisses = cache_stats['l2_0_TotalMisses'] + cache_stats['l2_1_TotalMisses'] + cache_stats['l2_2_TotalMisses'] + cache_stats['l2_3_TotalMisses']
-	l2_MissRate = cache_stats['l2_0_MissRate'] + cache_stats['l2_1_MissRate'] + cache_stats['l2_2_MissRate'] + cache_stats['l2_3_MissRate']
-	l2_TotalReads = cache_stats['l2_0_TotalReads'] + cache_stats['l2_1_TotalReads'] + cache_stats['l2_2_TotalReads'] + cache_stats['l2_3_TotalReads']
-	l2_TotalReadMisses = cache_stats['l2_0_TotalReadMisses'] + cache_stats['l2_1_TotalReadMisses'] + cache_stats['l2_2_TotalReadMisses'] + cache_stats['l2_3_TotalReadMisses']
-	l2_ReadMissRate = cache_stats['l2_0_ReadMissRate'] + cache_stats['l2_1_ReadMissRate'] + cache_stats['l2_2_ReadMissRate'] + cache_stats['l2_3_ReadMissRate']
-	l2_TotalWrites = cache_stats['l2_0_TotalWrites'] + cache_stats['l2_1_TotalWrites'] + cache_stats['l2_2_TotalWrites'] + cache_stats['l2_3_TotalWrites']
-	l2_TotalWriteMisses = cache_stats['l2_0_TotalWriteMisses'] + cache_stats['l2_1_TotalWriteMisses'] + cache_stats['l2_2_TotalWriteMisses'] + cache_stats['l2_3_TotalWriteMisses']
-	l2_WriteMissRate = cache_stats['l2_0_WriteMissRate'] + cache_stats['l2_1_WriteMissRate'] + cache_stats['l2_2_WriteMissRate'] + cache_stats['l2_3_WriteMissRate']
-	l2_TotalGets = cache_stats['l2_0_TotalGets'] +  cache_stats['l2_1_TotalGets'] +  cache_stats['l2_2_TotalGets'] + cache_stats['l2_3_TotalGets']
-	l2_TotalGet = cache_stats['l2_0_TotalGet'] +  cache_stats['l2_1_TotalGet'] +  cache_stats['l2_2_TotalGet'] + cache_stats['l2_3_TotalGet']
-	l2_TotalGetx = cache_stats['l2_0_TotalGetx'] + cache_stats['l2_1_TotalGetx'] + cache_stats['l2_2_TotalGetx'] + cache_stats['l2_3_TotalGetx']
-	l2_GetsMissRate = cache_stats['l2_0_GetsMissRate'] + cache_stats['l2_1_GetsMissRate'] + cache_stats['l2_2_GetsMissRate'] + cache_stats['l2_3_GetsMissRate']
-	l2_GetMissRate = cache_stats['l2_0_GetMissRate'] + cache_stats['l2_1_GetMissRate'] + cache_stats['l2_2_GetMissRate'] + cache_stats['l2_3_GetMissRate']
-	l2_GetxMissRate = cache_stats['l2_0_GetxMissRate'] + cache_stats['l2_1_GetxMissRate'] + cache_stats['l2_2_GetxMissRate'] + cache_stats['l2_3_GetxMissRate']
-	l2_TotalUpgrades = cache_stats['l2_0_TotalUpgrades'] + cache_stats['l2_1_TotalUpgrades'] + cache_stats['l2_2_TotalUpgrades'] + cache_stats['l2_3_TotalUpgrades']
-	l2_UpgradeMissRate = cache_stats['l2_0_UpgradeMissRate'] + cache_stats['l2_1_UpgradeMissRate'] + cache_stats['l2_2_UpgradeMissRate'] + cache_stats['l2_3_UpgradeMissRate']
-	l2_TotalWriteBacks = cache_stats['l2_0_TotalWriteBacks'] + cache_stats['l2_1_TotalWriteBacks'] + cache_stats['l2_2_TotalWriteBacks'] + cache_stats['l2_3_TotalWriteBacks']
-	l2_CacheUtilization = cache_stats['l2_0_CacheUtilization'] + cache_stats['l2_1_CacheUtilization'] + cache_stats['l2_2_CacheUtilization'] + cache_stats['l2_3_CacheUtilization']
-
-	l3_Occupancy = cache_stats['l3_0_Occupancy'] + cache_stats['l3_1_Occupancy'] + cache_stats['l3_2_Occupancy'] + cache_stats['l3_3_Occupancy']
-	l3_OccupancyPct = cache_stats['l3_0_OccupancyPct'] + cache_stats['l3_1_OccupancyPct'] + cache_stats['l3_2_OccupancyPct'] + cache_stats['l3_3_OccupancyPct']	
-	l3_Stalls = cache_stats['l3_0_Stalls'] + cache_stats['l3_1_Stalls'] + cache_stats['l3_2_Stalls'] + cache_stats['l3_3_Stalls']
-	l3_WriteBlocks = cache_stats['l3_0_TotalWriteBlocks'] + cache_stats['l3_1_TotalWriteBlocks'] + cache_stats['l3_2_TotalWriteBlocks'] + cache_stats['l3_3_TotalWriteBlocks']	
-	l3_CoalescePut = cache_stats['l3_0_CoalescePut'] + cache_stats['l3_1_CoalescePut'] + cache_stats['l3_2_CoalescePut'] + cache_stats['l3_3_CoalescePut']
-	l3_CoalesceGet = cache_stats['l3_0_CoalesceGet'] + cache_stats['l3_1_CoalesceGet'] + cache_stats['l3_2_CoalesceGet'] + cache_stats['l3_3_CoalesceGet']
-	l3_WbMerges = cache_stats['l3_0_WbMerges'] + cache_stats['l3_1_WbMerges'] + cache_stats['l3_2_WbMerges'] + cache_stats['l3_3_WbMerges']
-	l3_MergeRetries = cache_stats['l3_0_MergeRetries'] + cache_stats['l3_1_MergeRetries'] + cache_stats['l3_2_MergeRetries'] + cache_stats['l3_3_MergeRetries']
-	l3_WbRecieved = cache_stats['l3_0_WbRecieved'] + cache_stats['l3_1_WbRecieved'] + cache_stats['l3_2_WbRecieved'] + cache_stats['l3_3_WbRecieved']
-	l3_WbSent = cache_stats['l3_0_WbSent'] + cache_stats['l3_1_WbSent'] + cache_stats['l3_2_WbSent'] + cache_stats['l3_3_WbSent']
-	l3_SharingWbSent = cache_stats['l3_0_SharingWbSent'] + cache_stats['l3_1_SharingWbSent'] + cache_stats['l3_2_SharingWbSent'] + cache_stats['l3_3_SharingWbSent']
-	l3_WbDropped = cache_stats['l3_0_WbDropped'] + cache_stats['l3_1_WbDropped'] + cache_stats['l3_2_WbDropped'] + cache_stats['l3_3_WbDropped']
-	l3_UpgradeMisses = cache_stats['l3_0_UpgradeMisses'] + cache_stats['l3_1_UpgradeMisses'] + cache_stats['l3_2_UpgradeMisses'] + cache_stats['l3_3_UpgradeMisses']
-	l3_UpgradeAcks = cache_stats['l3_0_TotalUpgradeAcks'] + cache_stats['l3_1_TotalUpgradeAcks'] + cache_stats['l3_2_TotalUpgradeAcks'] + cache_stats['l3_3_TotalUpgradeAcks']
-	l3_Downgrades = 0
-	l3_GetxFwdInval = 0
-	l3_EvictInv = cache_stats['l3_0_EvictInv'] + cache_stats['l3_1_EvictInv'] + cache_stats['l3_2_EvictInv'] + cache_stats['l3_3_EvictInv']
-	l3_UpgradeInvals = cache_stats['l3_0_TotalUpgradeInvals'] + cache_stats['l3_1_TotalUpgradeInvals'] + cache_stats['l3_2_TotalUpgradeInvals'] + cache_stats['l3_3_TotalUpgradeInvals']
-
-	
-	l3_AveCyclesPerAdvance = cache_stats['l3_0_AveCyclesPerAdvance'] + cache_stats['l3_1_AveCyclesPerAdvance'] + cache_stats['l3_2_AveCyclesPerAdvance'] + cache_stats['l3_3_AveCyclesPerAdvance']
-	l3_TotalAdvances = cache_stats['l3_0_TotalAdvances'] + cache_stats['l3_1_TotalAdvances'] + cache_stats['l3_2_TotalAdvances'] + cache_stats['l3_3_TotalAdvances']
-	l3_TotalAccesses = cache_stats['l3_0_TotalAccesses'] + cache_stats['l3_1_TotalAccesses'] + cache_stats['l3_2_TotalAccesses'] + cache_stats['l3_3_TotalAccesses']
-	l3_TotalHits = cache_stats['l3_0_TotalHits'] + cache_stats['l3_1_TotalHits'] + cache_stats['l3_2_TotalHits'] + cache_stats['l3_3_TotalHits']
-	l3_TotalMisses = cache_stats['l3_0_TotalMisses'] + cache_stats['l3_1_TotalMisses'] + cache_stats['l3_2_TotalMisses'] + cache_stats['l3_3_TotalMisses']
-	l3_MissRate = cache_stats['l3_0_MissRate'] + cache_stats['l3_1_MissRate'] + cache_stats['l3_2_MissRate'] + cache_stats['l3_3_MissRate']
-	l3_TotalReads = cache_stats['l3_0_TotalReads'] + cache_stats['l3_1_TotalReads'] + cache_stats['l3_2_TotalReads'] + cache_stats['l3_3_TotalReads']
-	l3_TotalReadMisses = cache_stats['l3_0_TotalReadMisses'] + cache_stats['l3_1_TotalReadMisses'] + cache_stats['l3_2_TotalReadMisses'] + cache_stats['l3_3_TotalReadMisses']
-	l3_ReadMissRate = cache_stats['l3_0_ReadMissRate'] + cache_stats['l3_1_ReadMissRate'] + cache_stats['l3_2_ReadMissRate'] + cache_stats['l3_3_ReadMissRate']
-	l3_TotalWrites = cache_stats['l3_0_TotalWrites'] + cache_stats['l3_1_TotalWrites'] + cache_stats['l3_2_TotalWrites'] + cache_stats['l3_3_TotalWrites']
-	l3_TotalWriteMisses = cache_stats['l3_0_TotalWriteMisses'] + cache_stats['l3_1_TotalWriteMisses'] + cache_stats['l3_2_TotalWriteMisses'] + cache_stats['l3_3_TotalWriteMisses']
-	l3_WriteMissRate = cache_stats['l3_0_WriteMissRate'] + cache_stats['l3_1_WriteMissRate'] + cache_stats['l3_2_WriteMissRate'] + cache_stats['l3_3_WriteMissRate']
-	l3_TotalGets = cache_stats['l3_0_TotalGets'] + cache_stats['l3_1_TotalGets'] + cache_stats['l3_2_TotalGets'] + cache_stats['l3_3_TotalGets']
-	l3_TotalGet = cache_stats['l3_0_TotalGet'] + cache_stats['l3_1_TotalGet'] + cache_stats['l3_2_TotalGet'] + cache_stats['l3_3_TotalGet']
-	l3_TotalGetx = cache_stats['l3_0_TotalGetx'] + cache_stats['l3_1_TotalGetx'] + cache_stats['l3_2_TotalGetx'] + cache_stats['l3_3_TotalGetx']
-	l3_GetsMissRate = cache_stats['l3_0_GetsMissRate'] + cache_stats['l3_1_GetsMissRate'] + cache_stats['l3_2_GetsMissRate'] + cache_stats['l3_3_GetsMissRate']
-	l3_GetMissRate = cache_stats['l3_0_GetMissRate'] + cache_stats['l3_1_GetMissRate'] + cache_stats['l3_2_GetMissRate'] + cache_stats['l3_3_GetMissRate']
-	l3_GetxMissRate = cache_stats['l3_0_GetxMissRate'] + cache_stats['l3_1_GetxMissRate'] + cache_stats['l3_2_GetxMissRate'] + cache_stats['l3_3_GetxMissRate']
-	l3_TotalUpgrades = cache_stats['l3_0_TotalUpgrades'] + cache_stats['l3_1_TotalUpgrades'] + cache_stats['l3_2_TotalUpgrades'] + cache_stats['l3_3_TotalUpgrades']
-	l3_UpgradeMissRate = cache_stats['l3_0_UpgradeMissRate'] + cache_stats['l3_1_UpgradeMissRate'] + cache_stats['l3_2_UpgradeMissRate'] + cache_stats['l3_3_UpgradeMissRate']
-	l3_TotalWriteBacks = cache_stats['l3_0_TotalWriteBacks'] + cache_stats['l3_1_TotalWriteBacks'] + cache_stats['l3_2_TotalWriteBacks'] + cache_stats['l3_3_TotalWriteBacks']
-	l3_CacheUtilization = cache_stats['l3_0_CacheUtilization'] + cache_stats['l3_1_CacheUtilization'] + cache_stats['l3_2_CacheUtilization'] + cache_stats['l3_3_CacheUtilization']
 
 	table_cache_combined = [
 			["Occupancy", l1_i_Occupancy, l1_d_Occupancy, l2_Occupancy, l3_Occupancy],
@@ -295,6 +158,9 @@ def print_cache_stats(options):
 	f.close()
 
 	return
+
+
+
 
 def print_switch_stats(options):
 	
@@ -601,7 +467,7 @@ def print_cpu_stats(options):
 	cpu_data = ConfigParser.ConfigParser()
 	cpu_data.optionxform = str
 	cpu_data.read(options.InFileName)
-	
+
 	#pull stats
 	if options.PrintSection == 'FullRunStats':
 		cpu_stats = dict(cpu_data.items('FullRunStats'))
@@ -610,33 +476,19 @@ def print_cpu_stats(options):
 	else:
 		print "print_cpu_stats(): invalid section"
 		exit(0)
-
-	table_P4 = [
-		["NumSyscalls", cpu_stats['core_0_NumSyscalls'], cpu_stats['core_1_NumSyscalls'], cpu_stats['core_2_NumSyscalls'], cpu_stats['core_3_NumSyscalls']],
-		["ROBStalls", cpu_stats['core_0_ROBStalls'], cpu_stats['core_1_ROBStalls'], cpu_stats['core_2_ROBStalls'], cpu_stats['core_3_ROBStalls']],
-		["ROBStallLoad", cpu_stats['core_0_ROBStallLoad'], cpu_stats['core_1_ROBStallLoad'], cpu_stats['core_2_ROBStallLoad'], cpu_stats['core_3_ROBStallLoad']],
-		["ROBStallStore", cpu_stats['core_0_ROBStallStore'], cpu_stats['core_1_ROBStallStore'], cpu_stats['core_2_ROBStallStore'], cpu_stats['core_3_ROBStallStore']],
-		["ROBStallOther", cpu_stats['core_0_ROBStallOther'], cpu_stats['core_1_ROBStallOther'], cpu_stats['core_2_ROBStallOther'], cpu_stats['core_3_ROBStallOther']],
-		["FirstFetchCycle", cpu_stats['core_0_FirstFetchCycle'], cpu_stats['core_1_FirstFetchCycle'], cpu_stats['core_2_FirstFetchCycle'], cpu_stats['core_3_FirstFetchCycle']],
-		["LastCommitCycle", cpu_stats['core_0_LastCommitCycle'], cpu_stats['core_1_LastCommitCycle'], cpu_stats['core_2_LastCommitCycle'], cpu_stats['core_3_LastCommitCycle']],
-		["FetchStall", cpu_stats['core_0_FetchStall'], cpu_stats['core_1_FetchStall'], cpu_stats['core_2_FetchStall'], cpu_stats['core_3_FetchStall']],
-		["RunTime", cpu_stats['core_0_RunTime'], cpu_stats['core_1_RunTime'], cpu_stats['core_2_RunTime'], cpu_stats['core_3_RunTime']],
-		["IdleTime", cpu_stats['core_0_IdleTime'], cpu_stats['core_1_IdleTime'], cpu_stats['core_2_IdleTime'], cpu_stats['core_3_IdleTime']],
-		["SystemTime(SysCalls)", cpu_stats['core_0_SystemTime'], cpu_stats['core_1_SystemTime'], cpu_stats['core_2_SystemTime'], cpu_stats['core_3_SystemTime']],
-		["StallTime", cpu_stats['core_0_StallTime'], cpu_stats['core_1_StallTime'], cpu_stats['core_2_StallTime'], cpu_stats['core_3_StallTime']],
-		["BusyTime", cpu_stats['core_0_BusyTime'], cpu_stats['core_1_BusyTime'], cpu_stats['core_2_BusyTime'], cpu_stats['core_3_BusyTime']],
-		["IdlePct", cpu_stats['core_0_IdlePct'], cpu_stats['core_1_IdlePct'], cpu_stats['core_2_IdlePct'], cpu_stats['core_3_IdlePct']],
-		["RunPct", cpu_stats['core_0_RunPct'], cpu_stats['core_1_RunPct'], cpu_stats['core_2_RunPct'], cpu_stats['core_3_RunPct']],
-		["SystemPct", cpu_stats['core_0_SystemPct'], cpu_stats['core_1_SystemPct'], cpu_stats['core_2_SystemPct'], cpu_stats['core_3_SystemPct']],
-		["StallPct", cpu_stats['core_0_StallPct'], cpu_stats['core_1_StallPct'], cpu_stats['core_2_StallPct'], cpu_stats['core_3_StallPct']],
-		["BusyPct", cpu_stats['core_0_BusyPct'], cpu_stats['core_1_BusyPct'], cpu_stats['core_2_BusyPct'], cpu_stats['core_3_BusyPct']],
-		["StallfetchPct", cpu_stats['core_0_StallfetchPct'], cpu_stats['core_1_StallfetchPct'], cpu_stats['core_2_StallfetchPct'], cpu_stats['core_3_StallfetchPct']],
-		["StallLoadPct", cpu_stats['core_0_StallLoadPct'], cpu_stats['core_1_StallLoadPct'], cpu_stats['core_2_StallLoadPct'], cpu_stats['core_3_StallLoadPct']],	
-		["StallStorePct", cpu_stats['core_0_StallStorePct'], cpu_stats['core_1_StallStorePct'], cpu_stats['core_2_StallStorePct'], cpu_stats['core_3_StallStorePct']],
-		["StallOtherPct", cpu_stats['core_0_StallOtherPct'], cpu_stats['core_1_StallOtherPct'], cpu_stats['core_2_StallOtherPct'], cpu_stats['core_3_StallOtherPct']]
-		]
-
 	
+	var = ""
+	stats = ["NumSyscalls", "ROBStalls", "ROBStallLoad", "ROBStallStore", "ROBStallOther", "FirstFetchCycle", "LastCommitCycle", "FetchStall", "RunTime", "IdleTime", "SystemTime", "StallTime", "BusyTime", "IdlePct", "RunPct", "SystemPct", "StallPct", "BusyPct", "StallfetchPct", "StallLoadPct", "StallStorePct", "StallOtherPct"]
+	stat_table = [[0 for x in range(num_cores + 1)] for y in range(len(stats))]
+	
+	
+	for i in range (0,len(stats)):
+		stat_table[i][0] = stats[i]
+		for j in range (0,num_cores):
+			var = "core_" + str(j) + "_" + stats[i]
+			stat_table[i][(j+1)] = cpu_stats[var]
+
+			
 	f = open(options.OutFileName, 'a')
 
 	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
@@ -646,7 +498,7 @@ def print_cpu_stats(options):
 	max_title_length = len('CPU Stats All Cores')
 	current_title_length = 0
 
-	for tup in table_P4:
+	for tup in stat_table:
 		for item in tup[0:1]:
 			current_title_length = len(tup[0])
 			if max_title_length < current_title_length:
@@ -656,8 +508,8 @@ def print_cpu_stats(options):
 	max_element_length = 0
 	current_element_length = 0
 
-	for tup in table_P4:
-		for item in tup[1:5]:
+	for tup in stat_table:
+		for item in tup[1:num_cores]:
 			current_element_length = len(str(item))
 			if max_element_length < current_element_length:
 				max_element_length = current_element_length
@@ -669,18 +521,41 @@ def print_cpu_stats(options):
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
-	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("CPU Stats All Cores",'Core_0', 'Core_1', 'Core_2', 'Core_3', title_width=max_title_length, data_width=max_element_length) + '\n')
-	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-	#print the table's data
-	for tup in table_P4:
-		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the table headers
+	f.write("{:<{title_width}}".format("CPU Stats All Cores", title_width=max_title_length))
+
+	for i in range(0,num_cores):
+		var = "Core_" + str(i)
+		f.write("{:>{data_width}}".format(var, data_width=max_element_length))
 
 	f.write('\n')
 
+
+	#print the bars
+	f.write("{:<{title_width}}".format(title_bar, title_width=max_title_length))
+
+	for i in range(0,num_cores):
+		f.write("{:>{data_width}}".format(data_bar, data_width=max_element_length))
+
+	f.write('\n')
+
+
+	#print the stats
+	for tup in stat_table:
+		f.write("{:<{title_width}}".format(tup[0], title_width=max_title_length))
+		for i in range(0,num_cores):
+			f.write("{:>{data_width}}".format(tup[i+1], data_width=max_element_length))	
+
+		f.write('\n')
+	f.write('\n')
+	
 	f.close
+	
 	return
+
+
+
 
 def print_general_stats(options):
 
@@ -711,7 +586,7 @@ def print_general_stats(options):
 	["ParallelSectionCycles", general_stats['ParallelSectionCycles']],
 	["CPURunTime(sec)", general_stats['SimulationRunTimeSeconds(cpu)']],
 	["WallRunTime(sec)", general_stats['SimulationRunTimeSeconds(wall)']],
-	["SimulatedCyclesPerSec", general_stats['SimulatedCyclesPerSec']],
+	["SimulatedCyclesPerSec(ave)", general_stats['SimulatedCyclesPerSec']],
 	["CPUNumCores", general_stats['CPU_NumCores']],
 	["CPUThreadsPerCore", general_stats['CPU_ThreadsPerCore']],
 	["CPUFreqGhz", general_stats['CPU_FreqGHz']],
@@ -780,9 +655,14 @@ if not options.InFileName:
 	parser.print_usage()
 	exit(0)
 
+#globals
+num_cores = 8
+cache_combined = 1
+
 print_general_stats(options)
 print_cpu_stats(options)
-print_mem_system_stats(options)
 print_cache_stats(options)
-print_switch_stats(options)
-print_samc_stats(options)
+#print_mem_system_stats(options)
+
+#print_switch_stats(options)
+#print_samc_stats(options)
