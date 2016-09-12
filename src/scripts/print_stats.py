@@ -30,53 +30,55 @@ def print_cache_stats(options):
 
 	var = ""
 	cache_stats = [	
+			"CacheUtilization",
 			"Occupancy",
-			"OccupancyPct",
-			"Stalls",
-			"TotalWriteBlocks",
-			"CoalescePut",
-			"CoalesceGet",
-			"WbMerges",
-			"MergeRetries",
-			"WbRecieved",
-			"WbSent",
-			"SharingWbSent",
-			"WbDropped",
-			"UpgradeMisses",
-			"TotalUpgrades",
-			"TotalUpgradeAcks",
-			"TotalUpgradeInvals",
-			"TotalDowngrades",
-			"TotalGetxFwdInvals",
-			"EvictInv",
-			"TotalUpgradeInvals",
-			"AveCyclesPerAdvance",
-			"TotalAdvances",
-			"TotalAccesses",
-			"TotalHits",
-			"TotalMisses",
-			"MissRate",
-			"TotalReads",
-			"TotalReadMisses",
-			"ReadMissRate",
-			"TotalWrites",
-			"TotalWriteMisses",
-			"WriteMissRate",
-			"TotalGet",
-			"TotalGet",
-			"TotalGetx",
-			"GetMissRate",
-			"GetMissRate",
-			"GetxMissRate",
-			"UpgradeMissRate",
-			"TotalWriteBacks",
-			"CacheUtilization"
+			"OccupancyPct"
+			#"Stalls",
+			#"TotalWriteBlocks",
+			#"CoalescePut",
+			#"CoalesceGet",
+			#"WbMerges",
+			#"MergeRetries",
+			#"WbRecieved",
+			#"WbSent",
+			#"SharingWbSent",
+			#"WbDropped",
+			#"UpgradeMisses",
+			#"TotalUpgrades",
+			#"TotalUpgradeAcks",
+			#"TotalUpgradeInvals",
+			#"TotalDowngrades",
+			#"TotalGetxFwdInvals",
+			#"EvictInv",
+			#"TotalUpgradeInvals",
+			#"AveCyclesPerAdvance",
+			#"TotalAdvances",
+			#"TotalAccesses",
+			#"TotalHits",
+			#"TotalMisses",
+			#"MissRate",
+			#"TotalReads",
+			#"TotalReadMisses",
+			#"ReadMissRate",
+			#"TotalWrites",
+			#"TotalWriteMisses",
+			#"WriteMissRate",
+			#"TotalGet",
+			#"TotalGet",
+			#"TotalGetx",
+			#"GetMissRate",
+			#"GetMissRate",
+			#"GetxMissRate",
+			#"UpgradeMissRate",
+			#"TotalWriteBacks"
 			]
 
 	l1_i_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
 	l1_d_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
 	l2_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
 	l3_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
+
+	
 	
 	for i in range (0,len(cache_stats)):
 		l1_i_stats_table[i][0] = cache_stats[i]
@@ -101,6 +103,17 @@ def print_cache_stats(options):
 		for j in range (0,num_cores):
 			var = "l3_" + str(j) + "_" + cache_stats[i]
 			l3_stats_table[i][(j+1)] = cache_stats_dict[var]
+	
+	print l1_i_stats_table[0]
+
+	print l1_d_stats_table[0]
+
+	print l2_stats_table[0]
+
+	print l3_stats_table[0]
+
+	exit(0)
+
 
 	cache_stats_table_combined = [[0 for x in range(cache_levels + 2)] for y in range(len(cache_stats))]
 	

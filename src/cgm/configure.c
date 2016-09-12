@@ -2303,6 +2303,7 @@ int cache_finish_create(){
 			for (way = 0; way < l1_i_caches[i].assoc; way++)
 			{
 				block = &l1_i_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &l1_i_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l1_i_caches[i].assoc - 1 ? &l1_i_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2321,6 +2322,7 @@ int cache_finish_create(){
 			for (way = 0; way < l1_d_caches[i].assoc; way++)
 			{
 				block = &l1_d_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &l1_d_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l1_d_caches[i].assoc - 1 ? &l1_d_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2339,6 +2341,7 @@ int cache_finish_create(){
 			for (way = 0; way < l2_caches[i].assoc; way++)
 			{
 				block = &l2_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &l2_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l2_caches[i].assoc - 1 ? &l2_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2357,6 +2360,7 @@ int cache_finish_create(){
 			for (way = 0; way < l3_caches[i].assoc; way++)
 			{
 				block = &l3_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &l3_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < l3_caches[i].assoc - 1 ? &l3_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2685,6 +2689,7 @@ int cache_finish_create(){
 			for (way = 0; way < gpu_v_caches[i].assoc; way++)
 			{
 				block = &gpu_v_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &gpu_v_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < gpu_v_caches[i].assoc - 1 ? &gpu_v_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2702,6 +2707,7 @@ int cache_finish_create(){
 			for (way = 0; way < gpu_s_caches[i].assoc; way++)
 			{
 				block = &gpu_s_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &gpu_s_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < gpu_s_caches[i].assoc - 1 ? &gpu_s_caches[i].sets[set].blocks[way + 1] : NULL;
@@ -2918,6 +2924,7 @@ int cache_finish_create(){
 			for (way = 0; way < gpu_l2_caches[i].assoc; way++)
 			{
 				block = &gpu_l2_caches[i].sets[set].blocks[way];
+				assert(block->written == 0);
 				block->way = way;
 				block->way_prev = way ? &gpu_l2_caches[i].sets[set].blocks[way - 1] : NULL;
 				block->way_next = way < gpu_l2_caches[i].assoc - 1 ? &gpu_l2_caches[i].sets[set].blocks[way + 1] : NULL;

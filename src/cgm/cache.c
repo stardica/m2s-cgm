@@ -1323,15 +1323,6 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 	cache->sets[set].blocks[way].transient_tag = tag;
 	cache->sets[set].blocks[way].written = 1;
 
-	/*if (cache->cache_type == l2_cache_t && set == 69 && tag == 57)
-	{
-		printf("\t writing set %d tag %d state %d to way %d cycle %llu\n", set, tag, state, way, P_TIME);
-		cgm_cache_dump_set(cache, set);
-
-		if(way == 0)
-			run_watch_dog = 1;
-	}*/
-
 	return;
 }
 
@@ -1732,6 +1723,23 @@ int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag){
 	return type;
 }
 
+void cgm_cache_clear_block_usage(struct cache_t *cache){
+
+	int set = 0;
+	int way = 0;
+
+	for (set = 0; set < cache->num_sets; set++)
+	{
+		for (way = 0; way < cache->assoc; way++)
+		{
+			cache->sets[set].blocks[way].written = 0;
+		}
+	}
+
+	return;
+}
+
+
 int cgm_cache_get_block_usage(struct cache_t *cache){
 
 	int count = 0;
@@ -1742,7 +1750,7 @@ int cgm_cache_get_block_usage(struct cache_t *cache){
 	{
 		for (way = 0; way < cache->assoc; way++)
 		{
-			if( cache->sets[set].blocks[way].written == 1)
+			if(cache->sets[set].blocks[way].written == 1)
 			{
 				count++;
 			}
@@ -1974,6 +1982,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 	for(i = 0; i < num_cores; i++)
 	{
 		cgm_stat_container->l1_i_Occupancy[i] = l1_i_caches[i].Occupancy;
+		cgm_stat_container->l1_i_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_i_caches[i]);
 		cgm_stat_container->l1_i_CoalescePut[i] = l1_i_caches[i].CoalescePut;
 		cgm_stat_container->l1_i_CoalesceGet[i] = l1_i_caches[i].CoalesceGet;
 		cgm_stat_container->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
@@ -2010,6 +2019,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l1_d_Occupancy[i] = l1_d_caches[i].Occupancy;
+		cgm_stat_container->l1_d_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_d_caches[i]);
 		cgm_stat_container->l1_d_TotalAdvances[i] = l1_d_caches[i].TotalAdvances;
 		cgm_stat_container->l1_d_TotalAcesses[i] = l1_d_caches[i].TotalAcesses;
 		cgm_stat_container->l1_d_TotalMisses[i] = l1_d_caches[i].TotalMisses;
@@ -2046,6 +2056,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l2_Occupancy[i] = l2_caches[i].Occupancy;
+		cgm_stat_container->l2_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l2_caches[i]);
 		cgm_stat_container->l2_TotalAdvances[i] = l2_caches[i].TotalAdvances;
 		cgm_stat_container->l2_TotalAcesses[i] = l2_caches[i].TotalAcesses;
 		cgm_stat_container->l2_TotalMisses[i] = l2_caches[i].TotalMisses;
@@ -2102,6 +2113,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l3_Occupancy[i] = l3_caches[i].Occupancy;
+		cgm_stat_container->l3_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l3_caches[i]);
 		cgm_stat_container->l3_TotalAdvances[i] = l3_caches[i].TotalAdvances;
 		cgm_stat_container->l3_TotalAcesses[i] = l3_caches[i].TotalAcesses;
 		cgm_stat_container->l3_TotalMisses[i] = l3_caches[i].TotalMisses;
@@ -2163,6 +2175,7 @@ void cache_reset_stats(void){
 	for(i = 0; i < num_cores; i++)
 	{
 		l1_i_caches[i].Occupancy = 0;
+		cgm_cache_clear_block_usage(&l1_i_caches[i]);
 		l1_i_caches[i].CoalescePut = 0;
 		l1_i_caches[i].CoalesceGet = 0;
 		l1_i_caches[i].TotalHits = 0;
@@ -2200,6 +2213,7 @@ void cache_reset_stats(void){
 
 
 		l1_d_caches[i].Occupancy = 0;
+		cgm_cache_clear_block_usage(&l1_d_caches[i]);
 		l1_d_caches[i].TotalAdvances = 0;
 		l1_d_caches[i].WbMerges = 0;
 		l1_d_caches[i].MergeRetries = 0;
@@ -2239,6 +2253,7 @@ void cache_reset_stats(void){
 
 
 		l2_caches[i].Occupancy = 0;
+		cgm_cache_clear_block_usage(&l2_caches[i]);
 		l2_caches[i].TotalAdvances = 0;
 		l2_caches[i].TotalAcesses = 0;
 		l2_caches[i].WbMerges = 0;
@@ -2299,6 +2314,7 @@ void cache_reset_stats(void){
 
 
 		l3_caches[i].Occupancy = 0;
+		cgm_cache_clear_block_usage(&l3_caches[i]);
 		l3_caches[i].TotalAdvances = 0;
 		l3_caches[i].TotalAcesses = 0;
 		l3_caches[i].WbMerges = 0;
@@ -2362,7 +2378,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	//int num_cus = si_gpu_num_compute_units;
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
-	int blocks_written = 0;
+	//int blocks_written = 0;
 
 	/*CPU caches*/
 	for(i = 0; i < num_cores; i++)
@@ -2427,8 +2443,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		//CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_i_TotalUpgrades[i]/(double) cgm_stat_container->l1_i_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_UpgradeMissRate = %0.2f\n", i, (float)0);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBacks[i]);
-		blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
-		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+		//blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
+		//CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l1_i_BlockUtilization[i])/((double) l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
@@ -2485,8 +2502,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalUpgrades = %llu\n", i, cgm_stat_container->l1_d_TotalUpgrades[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l1_d_TotalUpgrades[i] / (double) cgm_stat_container->l1_d_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBacks[i]);
-		blocks_written = cgm_cache_get_block_usage(&l1_d_caches[i]);
-		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
+		//blocks_written = cgm_cache_get_block_usage(&l1_d_caches[i]);
+		//CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l1_d_BlockUtilization[i])/((double) l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
@@ -2543,8 +2561,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalGetx[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l2_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l2_TotalUpgrades[i] / (double) cgm_stat_container->l2_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l2_TotalWriteBacks[i]);
-		blocks_written = cgm_cache_get_block_usage(&l2_caches[i]);
-		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
+		//blocks_written = cgm_cache_get_block_usage(&l2_caches[i]);
+		//CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l2_BlockUtilization[i])/((double) l2_caches[i].num_sets * l2_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
@@ -2600,8 +2619,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_GetxMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalGetx[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l3_%d_UpgradeMissRate = %0.2f\n", i, ((double) cgm_stat_container->l3_TotalUpgrades[i] / (double) cgm_stat_container->l3_TotalWrites[i]));
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l3_TotalWriteBacks[i]);
-		blocks_written = cgm_cache_get_block_usage(&l3_caches[i]);
-		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
+		//blocks_written = cgm_cache_get_block_usage(&l3_caches[i]);
+		//CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
+		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l3_BlockUtilization[i])/((double) l3_caches[i].num_sets * l3_caches[i].assoc));
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 
@@ -2719,6 +2739,7 @@ void l1_d_cache_ctrl(void){
 		await(&l1_d_cache[my_pid], step);
 
 		l1_d_caches[my_pid].TotalAdvances = l1_d_cache[my_pid].count;
+
 		occ_start = P_TIME;
 
 		//get the message out of the queue
@@ -3330,6 +3351,8 @@ void gpu_s_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
+	long long occ_start = 0;
+
 	assert(my_pid <= num_cus);
 	set_id((unsigned int)my_pid);
 
@@ -3337,6 +3360,9 @@ void gpu_s_cache_ctrl(void){
 	{
 		//wait here until there is a job to do
 		await(&gpu_s_cache[my_pid], step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		//get a message from the top or bottom queues.
 		message_packet = cache_get_message(&(gpu_s_caches[my_pid]));
@@ -3381,6 +3407,9 @@ void gpu_s_cache_ctrl(void){
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
+
+		/*stats occupancy*/
+		gpu_s_caches[my_pid].Occupancy += (P_TIME - occ_start);
 	}
 
 	//should never get here
@@ -3398,6 +3427,9 @@ void gpu_v_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
+	/*stats*/
+	long long occ_start = 0;
+
 	assert(my_pid <= num_cus);
 	set_id((unsigned int)my_pid);
 
@@ -3406,6 +3438,9 @@ void gpu_v_cache_ctrl(void){
 		//wait here until there is a job to do.
 		//In any given cycle I might have to service 1 to N number of caches
 		await(&gpu_v_cache[my_pid], step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
@@ -3494,6 +3529,9 @@ void gpu_v_cache_ctrl(void){
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
+
+		/*stats occupancy*/
+		gpu_v_caches[my_pid].Occupancy += (P_TIME - occ_start);
 	}
 	//should never get here
 	fatal("gpu_v_cache_ctrl task is broken\n");
@@ -3513,6 +3551,8 @@ void gpu_l2_cache_ctrl(void){
 	enum cgm_access_kind_t access_type;
 	long long access_id = 0;
 
+	long long occ_start = 0;
+
 
 	assert(my_pid <= gpu_group_cache_num);
 	set_id((unsigned int)my_pid);
@@ -3522,6 +3562,9 @@ void gpu_l2_cache_ctrl(void){
 
 		/*wait here until there is a job to do. */
 		await(&gpu_l2_cache[my_pid], step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
@@ -3612,6 +3655,10 @@ void gpu_l2_cache_ctrl(void){
 					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
+
+		/*stats occupancy*/
+		gpu_l2_caches[my_pid].Occupancy += (P_TIME - occ_start);
+
 	}
 
 	/*should never get here*/

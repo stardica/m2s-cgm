@@ -648,6 +648,7 @@ struct cgm_stats_t{
 
 	//caches
 	long long *l1_i_Occupancy;
+	long long *l1_i_BlockUtilization;
 	long long *l1_i_CoalescePut;
 	long long *l1_i_CoalesceGet;
 	long long *l1_i_TotalMisses;
@@ -685,6 +686,7 @@ struct cgm_stats_t{
 
 
 	long long *l1_d_Occupancy;
+	long long *l1_d_BlockUtilization;
 	long long *l1_d_CoalescePut;
 	long long *l1_d_CoalesceGet;
 	long long *l1_d_TotalHits;
@@ -720,6 +722,7 @@ struct cgm_stats_t{
 	long long *l1_d_mshr_entries;
 
 	long long *l2_Occupancy;
+	long long *l2_BlockUtilization;
 	long long *l2_CoalescePut;
 	long long *l2_CoalesceGet;
 	long long *l2_TotalAdvances;
@@ -781,6 +784,7 @@ struct cgm_stats_t{
 
 
 	long long *l3_Occupancy;
+	long long *l3_BlockUtilization;
 	long long *l3_CoalescePut;
 	long long *l3_CoalesceGet;
 	long long *l3_TotalAdvances;
