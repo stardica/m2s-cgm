@@ -5,6 +5,10 @@ from optparse import OptionParser
 
 def print_cache_stats(options):
 
+	if cache_combined != 1:
+		print "error: cache combined must be set 1"
+		exit(0)
+
 	cache_data = ConfigParser.RawConfigParser()
 	cache_data.optionxform = str 
 	cache_data.read(options.InFileName)
@@ -24,9 +28,50 @@ def print_cache_stats(options):
 		except ValueError:
 			cache_stats_dict[key] = float(value)
 
-
 	var = ""
-	cache_stats = ["Occupancy", "OccupancyPct", "Stalls", "TotalWriteBlocks", "CoalescePut", "CoalesceGet", "WbMerges", "MergeRetries", "WbRecieved", "WbSent", "SharingWbSent", "WbDropped", "UpgradeMisses", "TotalUpgrades", "TotalUpgradeAcks", "TotalUpgradeInvals", "TotalDowngrades", "TotalGetxFwdInvals", "EvictInv", "TotalUpgradeInvals", "AveCyclesPerAdvance", "TotalAdvances", "TotalAccesses", "TotalHits", "TotalMisses", "MissRate", "TotalReads", "TotalReadMisses", "ReadMissRate", "TotalWrites", "TotalWriteMisses", "WriteMissRate", "TotalGet", "TotalGet", "TotalGetx", "GetMissRate", "GetMissRate", "GetxMissRate", "UpgradeMissRate", "TotalWriteBacks", "CacheUtilization"]
+	cache_stats = [	
+			"Occupancy",
+			"OccupancyPct",
+			"Stalls",
+			"TotalWriteBlocks",
+			"CoalescePut",
+			"CoalesceGet",
+			"WbMerges",
+			"MergeRetries",
+			"WbRecieved",
+			"WbSent",
+			"SharingWbSent",
+			"WbDropped",
+			"UpgradeMisses",
+			"TotalUpgrades",
+			"TotalUpgradeAcks",
+			"TotalUpgradeInvals",
+			"TotalDowngrades",
+			"TotalGetxFwdInvals",
+			"EvictInv",
+			"TotalUpgradeInvals",
+			"AveCyclesPerAdvance",
+			"TotalAdvances",
+			"TotalAccesses",
+			"TotalHits",
+			"TotalMisses",
+			"MissRate",
+			"TotalReads",
+			"TotalReadMisses",
+			"ReadMissRate",
+			"TotalWrites",
+			"TotalWriteMisses",
+			"WriteMissRate",
+			"TotalGet",
+			"TotalGet",
+			"TotalGetx",
+			"GetMissRate",
+			"GetMissRate",
+			"GetxMissRate",
+			"UpgradeMissRate",
+			"TotalWriteBacks",
+			"CacheUtilization"
+			]
 
 	l1_i_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
 	l1_d_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
@@ -57,58 +102,18 @@ def print_cache_stats(options):
 			var = "l3_" + str(j) + "_" + cache_stats[i]
 			l3_stats_table[i][(j+1)] = cache_stats_dict[var]
 
+	cache_stats_table_combined = [[0 for x in range(cache_levels + 2)] for y in range(len(cache_stats))]
+	
+	#need to account for ave stats here...
+	for i in range (0,len(cache_stats)):
+		cache_stats_table_combined[i][0] = cache_stats[i]
+		for j in range (1, num_cores + 1):
+			cache_stats_table_combined[i][1] += l1_i_stats_table[i][j]
+			cache_stats_table_combined[i][2] += l1_d_stats_table[i][j]
+			cache_stats_table_combined[i][3] += l2_stats_table[i][j]
+			cache_stats_table_combined[i][4] += l3_stats_table[i][j]
 
 	
-		
-	
-
-
-	table_cache_combined = [
-			["Occupancy", l1_i_Occupancy, l1_d_Occupancy, l2_Occupancy, l3_Occupancy],
-			["OccupancyPct(X.XX%)", l1_i_OccupancyPct, l1_d_OccupancyPct, l2_OccupancyPct, l3_OccupancyPct],			
-			["Stalls", l1_i_Stalls, l1_d_Stalls, l2_Stalls, l3_Stalls],
-			["WriteBlocks", l1_i_WriteBlocks, l1_d_WriteBlocks, l2_WriteBlocks, l3_WriteBlocks],
-			["CoalescePut", l1_i_CoalescePut, l1_d_CoalescePut, l2_CoalescePut, l3_CoalescePut],
-			["CoalesceGet", l1_i_CoalesceGet, l1_d_CoalesceGet, l2_CoalesceGet, l3_CoalesceGet],
-			["WbMerges", l1_i_WbMerges, l1_d_WbMerges, l2_WbMerges, l3_WbMerges],
-			["MergeRetries", l1_i_MergeRetries, l1_d_MergeRetries, l2_MergeRetries, l3_MergeRetries],
-			["WbRecieved", l1_i_WbRecieved, l1_d_WbRecieved, l2_WbRecieved, l3_WbRecieved],
-			["WbSent", l1_i_WbSent, l1_d_WbSent, l2_WbSent, l3_WbSent],
-			["SharingWbSent", l1_i_SharingWbSent, l1_d_SharingWbSent, l2_SharingWbSent, l3_SharingWbSent],
-			["WbDropped", l1_i_WbDropped, l1_d_WbDropped, l2_WbDropped, l3_WbDropped],
-			["UpgradeMisses", l1_i_UpgradeMisses, l1_d_UpgradeMisses, l2_UpgradeMisses, l3_UpgradeMisses],
-			["TotalUpgrades", l1_i_TotalUpgrades, l1_d_TotalUpgrades, l2_TotalUpgrades, l3_TotalUpgrades],
-			["UpgradeAcks", l1_i_UpgradeAcks, l1_d_UpgradeAcks, l2_UpgradeAcks, l3_UpgradeAcks],
-			["UpgradeInvals", l1_i_UpgradeInvals, l1_d_UpgradeInvals, l2_UpgradeInvals, l3_UpgradeInvals],
-			["Downgrades", l1_i_Downgrades, l1_d_Downgrades, l2_Downgrades, l3_Downgrades],
-			["GetxFwdInval", l1_i_GetxFwdInval, l1_d_GetxFwdInval, l2_GetxFwdInval, l3_GetxFwdInval],
-			["EvictInv", l1_i_EvictInv, l1_d_EvictInv, l2_EvictInv, l3_EvictInv],			
-			
-			
-			["AveCyclesPerAdvance", l1_i_AveCyclesPerAdvance, l1_d_AveCyclesPerAdvance, l2_AveCyclesPerAdvance, l3_AveCyclesPerAdvance],
-			["TotalAdvances", l1_i_TotalAdvances, l1_d_TotalAdvances, l2_TotalAdvances, l3_TotalAdvances],
-			["TotalAccesses", l1_i_TotalAccesses, l1_d_TotalAccesses, l2_TotalAccesses, l3_TotalAccesses], 
-			["TotalHits", l1_i_TotalHits, l1_d_TotalHits, l2_TotalHits, l3_TotalHits],
-			["TotalMisses", l1_i_TotalMisses, l1_d_TotalMisses, l2_TotalMisses, l3_TotalMisses],
-			["MissRate", l1_i_MissRate, l1_d_MissRate, l2_MissRate, l3_MissRate],
-			["TotalReads", l1_i_TotalReads, l1_d_TotalReads, l2_TotalReads, l3_TotalReads],
-			["TotalReadMisses", l1_i_TotalReadMisses, l1_d_TotalReadMisses, l2_TotalReadMisses, l3_TotalReadMisses],
-			["ReadMissRate", l1_i_ReadMissRate, l1_d_ReadMissRate, l2_ReadMissRate, l3_ReadMissRate],
-			["TotalWrites", l1_i_TotalWrites, l1_d_TotalWrites, l2_TotalWrites, l3_TotalWrites],
-			["TotalWriteMisses", l1_i_TotalWriteMisses, l1_d_TotalWriteMisses, l2_TotalWriteMisses, l3_TotalWriteMisses],
-			["WriteMissRate", l1_i_WriteMissRate, l1_d_WriteMissRate, l2_WriteMissRate, l3_WriteMissRate],
-			["TotalGet", l1_i_TotalGets, l1_d_TotalGets, l2_TotalGets, l3_TotalGets],
-			["TotalGet", l1_i_TotalGet, l1_d_TotalGet, l2_TotalGet, l3_TotalGet],
-			["TotalGetx", l1_i_TotalGetx, l1_d_TotalGetx, l2_TotalGetx, l3_TotalGetx],
-			["GetMissRate", l1_i_GetsMissRate, l1_d_GetsMissRate, l2_GetsMissRate, l3_GetsMissRate],
-			["GetMissRate", l1_i_GetMissRate, l1_d_GetMissRate, l2_GetMissRate, l3_GetMissRate],
-			["GetxMissRate", l1_i_GetxMissRate, l1_d_GetxMissRate, l2_GetxMissRate, l3_GetxMissRate],
-			
-			["UpgradeMissRate", l1_i_UpgradeMissRate, l1_d_UpgradeMissRate, l2_UpgradeMissRate, l3_UpgradeMissRate],
-			["TotalWriteBacks", l1_i_TotalWriteBacks, l1_d_TotalWriteBacks, l2_TotalWriteBacks, l3_TotalWriteBacks],
-			["CacheUtilization", l1_i_CacheUtilization, l1_d_CacheUtilization, l2_CacheUtilization, l3_CacheUtilization]
-			]
-
 	f = open(options.OutFileName, 'a')
 
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
@@ -118,7 +123,7 @@ def print_cache_stats(options):
 	max_title_length = len('Cache stats combined')
 	current_title_length = 0
 
-	for tup in table_cache_combined:
+	for tup in cache_stats_table_combined:
 		for item in tup[0:1]:
 			current_title_length = len(tup[0])
 			if max_title_length < current_title_length:
@@ -128,7 +133,7 @@ def print_cache_stats(options):
 	max_element_length = 0
 	current_element_length = 0
 
-	for tup in table_cache_combined:
+	for tup in cache_stats_table_combined:
 		for item in tup[1:5]:
 			current_element_length = len(str(item))
 			if max_element_length < current_element_length:
@@ -146,8 +151,9 @@ def print_cache_stats(options):
 
 	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
+
 	#print the table's data
-	for tup in table_cache_combined:
+	for tup in cache_stats_table_combined:
 		if isinstance(tup[1], int):
 			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
 		else:
@@ -169,50 +175,59 @@ def print_switch_stats(options):
 	switch_data.read(options.InFileName)
 
 	#pull of the memory system stats 	
-	switch_stats = dict(switch_data.items('FullRunStats'))
+	switch_stats_dict = dict(switch_data.items('FullRunStats'))
 
-	for key, value in switch_stats.items(): #get the (key, value) tuples one at a time
+	for key, value in switch_stats_dict.items(): #get the (key, value) tuples one at a time
 		try:
-			switch_stats[key] = int(value)
+			switch_stats_dict[key] = int(value)
 		except ValueError:
-			switch_stats[key] = float(value)
+			switch_stats_dict[key] = float(value)
+
+	var = ""
+	switch_stats = [
+			"TotalSwitchCtrlLoops",
+			"SwitchOccupance",
+			"NumberLinks",
+			"MaxNumberLinks",
+			"AveNumberLinksPerAccess",
+			"NorthIOTransfers",
+			"NorthIOCycles",
+			"NorthIOBytesTransfered",
+			"NorthRxQueueMaxDepth",
+			"NorthRxQueueAveDepth",
+			"NorthTxQueueMaxDepth",
+			"NorthTxQueueAveDepth",
+			"EastIOTransfers",
+			"EastIOCycles",
+			"EastIOBytesTransfered",
+			"EastRxQueueMaxDepth",
+			"EastRxQueueAveDepth",
+			"EastTxQueueMaxDepth",
+			"EastTxQueueAveDepth",
+			"SouthIOTransfers",
+			"SouthIOCycles",
+			"SouthIOBytesTransfered",
+			"SouthRxQueueMaxDepth",
+			"SouthRxQueueAveDepth",
+			"SouthTxQueueMaxDepth",
+			"SouthTxQueueAveDepth",
+			"WestIOTransfers",
+			"WestIOCycles",
+			"WestIOBytesTransfered",
+			"WestRxQueueMaxDepth",
+			"WestRxQueueAveDepth",
+			"WestTxQueueMaxDepth",
+			"WestTxQueueAveDepth",
+			]
+
+	switch_stats_table = [[0 for x in range(num_cores + 2)] for y in range(len(switch_stats))]
+		
+	for i in range (0,len(switch_stats)):
+		switch_stats_table[i][0] = switch_stats[i]
+		for j in range (0,num_cores + 1):
+			var = "s_" + str(j) + "_" + switch_stats[i]
+			switch_stats_table[i][(j+1)] = switch_stats_dict[var]
 	
-	
-	table_switch_data_p4 = [
-	["TotalSwitchCtrlLoops", switch_stats['s_0_TotalSwitchCtrlLoops'], switch_stats['s_1_TotalSwitchCtrlLoops'], switch_stats['s_2_TotalSwitchCtrlLoops'], switch_stats['s_3_TotalSwitchCtrlLoops'], switch_stats['s_4_TotalSwitchCtrlLoops']],
-	["SwitchOccupancy", switch_stats['s_0_SwitchOccupance'], switch_stats['s_1_SwitchOccupance'], switch_stats['s_2_SwitchOccupance'], switch_stats['s_3_SwitchOccupance'], switch_stats['s_4_SwitchOccupance']],
-	["NumberLinks", switch_stats['s_0_NumberLinks'], switch_stats['s_1_NumberLinks'], switch_stats['s_2_NumberLinks'], switch_stats['s_3_NumberLinks'], switch_stats['s_4_NumberLinks']],
-	["MaxNumberLinks", switch_stats['s_0_MaxNumberLinks'], switch_stats['s_1_MaxNumberLinks'], switch_stats['s_2_MaxNumberLinks'], switch_stats['s_3_MaxNumberLinks'], switch_stats['s_4_MaxNumberLinks']],
-	["AveNumberLinksPerAccess", switch_stats['s_0_AveNumberLinksPerAccess'], switch_stats['s_1_AveNumberLinksPerAccess'], switch_stats['s_2_AveNumberLinksPerAccess'], switch_stats['s_3_AveNumberLinksPerAccess'], switch_stats['s_4_AveNumberLinksPerAccess']],
-	["NorthIOTransfers", switch_stats['s_0_NorthIOTransfers'], switch_stats['s_1_NorthIOTransfers'], switch_stats['s_2_NorthIOTransfers'], switch_stats['s_3_NorthIOTransfers'], switch_stats['s_4_NorthIOTransfers']],
-	["NorthIOCycles", switch_stats['s_0_NorthIOCycles'], switch_stats['s_1_NorthIOCycles'], switch_stats['s_2_NorthIOCycles'], switch_stats['s_3_NorthIOCycles'], switch_stats['s_4_NorthIOCycles']],
-	["NorthIOBytesTransfered", switch_stats['s_0_NorthIOBytesTransfered'], switch_stats['s_1_NorthIOBytesTransfered'], switch_stats['s_2_NorthIOBytesTransfered'], switch_stats['s_3_NorthIOBytesTransfered'], switch_stats['s_4_NorthIOBytesTransfered']],
-	["NorthRxQueueMaxDepth", switch_stats['s_0_NorthRxQueueMaxDepth'], switch_stats['s_1_NorthRxQueueMaxDepth'], switch_stats['s_2_NorthRxQueueMaxDepth'], switch_stats['s_3_NorthRxQueueMaxDepth'], switch_stats['s_4_NorthRxQueueMaxDepth']],
-	["NorthRxQueueAveDepth", switch_stats['s_0_NorthRxQueueAveDepth'], switch_stats['s_1_NorthRxQueueAveDepth'], switch_stats['s_2_NorthRxQueueAveDepth'], switch_stats['s_3_NorthRxQueueAveDepth'], switch_stats['s_4_NorthRxQueueAveDepth']],
-	["NorthTxQueueMaxDepth", switch_stats['s_0_NorthTxQueueMaxDepth'], switch_stats['s_1_NorthTxQueueMaxDepth'], switch_stats['s_2_NorthTxQueueMaxDepth'], switch_stats['s_3_NorthTxQueueMaxDepth'], switch_stats['s_4_NorthTxQueueMaxDepth']],
-	["NorthTxQueueAveDepth", switch_stats['s_0_NorthTxQueueAveDepth'], switch_stats['s_1_NorthTxQueueAveDepth'], switch_stats['s_2_NorthTxQueueAveDepth'], switch_stats['s_3_NorthTxQueueAveDepth'], switch_stats['s_4_NorthTxQueueAveDepth']],
-	["EastIOTransfers", switch_stats['s_0_EastIOTransfers'], switch_stats['s_1_EastIOTransfers'], switch_stats['s_2_EastIOTransfers'], switch_stats['s_3_EastIOTransfers'], switch_stats['s_4_EastIOTransfers']],
-	["EastIOCycles", switch_stats['s_0_EastIOCycles'], switch_stats['s_1_EastIOCycles'], switch_stats['s_2_EastIOCycles'], switch_stats['s_3_EastIOCycles'], switch_stats['s_4_EastIOCycles']],
-	["EastIOBytesTransfered", switch_stats['s_0_EastIOBytesTransfered'], switch_stats['s_1_EastIOBytesTransfered'], switch_stats['s_2_EastIOBytesTransfered'], switch_stats['s_3_EastIOBytesTransfered'], switch_stats['s_4_EastIOBytesTransfered']],
-	["EastRxQueueMaxDepth", switch_stats['s_0_EastRxQueueMaxDepth'], switch_stats['s_1_EastRxQueueMaxDepth'], switch_stats['s_2_EastRxQueueMaxDepth'], switch_stats['s_3_EastRxQueueMaxDepth'], switch_stats['s_4_EastRxQueueMaxDepth']],
-	["EastRxQueueAveDepth", switch_stats['s_0_EastRxQueueAveDepth'], switch_stats['s_1_EastRxQueueAveDepth'], switch_stats['s_2_EastRxQueueAveDepth'], switch_stats['s_3_EastRxQueueAveDepth'], switch_stats['s_4_EastRxQueueAveDepth']],
-	["EastTxQueueMaxDepth", switch_stats['s_0_EastTxQueueMaxDepth'], switch_stats['s_1_EastTxQueueMaxDepth'], switch_stats['s_2_EastTxQueueMaxDepth'], switch_stats['s_3_EastTxQueueMaxDepth'], switch_stats['s_4_EastTxQueueMaxDepth']],
-	["EastTxQueueAveDepth", switch_stats['s_0_EastTxQueueAveDepth'], switch_stats['s_1_EastTxQueueAveDepth'], switch_stats['s_2_EastTxQueueAveDepth'], switch_stats['s_3_EastTxQueueAveDepth'], switch_stats['s_4_EastTxQueueAveDepth']],
-	["SouthIOTransfers", switch_stats['s_0_SouthIOTransfers'], switch_stats['s_1_SouthIOTransfers'], switch_stats['s_2_SouthIOTransfers'], switch_stats['s_3_SouthIOTransfers'], switch_stats['s_4_SouthIOTransfers']],
-	["SouthIOCycles", switch_stats['s_0_SouthIOCycles'], switch_stats['s_1_SouthIOCycles'], switch_stats['s_2_SouthIOCycles'], switch_stats['s_3_SouthIOCycles'], switch_stats['s_4_SouthIOCycles']],
-	["SouthIOBytesTransfered", switch_stats['s_0_SouthIOBytesTransfered'], switch_stats['s_1_SouthIOBytesTransfered'], switch_stats['s_2_SouthIOBytesTransfered'], switch_stats['s_3_SouthIOBytesTransfered'], switch_stats['s_4_SouthIOBytesTransfered']],
-	["SouthRxQueueMaxDepth", switch_stats['s_0_SouthRxQueueMaxDepth'], switch_stats['s_1_SouthRxQueueMaxDepth'], switch_stats['s_2_SouthRxQueueMaxDepth'], switch_stats['s_3_SouthRxQueueMaxDepth'], switch_stats['s_4_SouthRxQueueMaxDepth']],
-	["SouthRxQueueAveDepth", switch_stats['s_0_SouthRxQueueAveDepth'], switch_stats['s_1_SouthRxQueueAveDepth'], switch_stats['s_2_SouthRxQueueAveDepth'], switch_stats['s_3_SouthRxQueueAveDepth'], switch_stats['s_4_SouthRxQueueAveDepth']],
-	["SouthTxQueueMaxDepth", switch_stats['s_0_SouthTxQueueMaxDepth'], switch_stats['s_1_SouthTxQueueMaxDepth'], switch_stats['s_2_SouthTxQueueMaxDepth'], switch_stats['s_3_SouthTxQueueMaxDepth'], switch_stats['s_4_SouthTxQueueMaxDepth']],
-	["SouthTxQueueAveDepth", switch_stats['s_0_SouthTxQueueAveDepth'], switch_stats['s_1_SouthTxQueueAveDepth'], switch_stats['s_2_SouthTxQueueAveDepth'], switch_stats['s_3_SouthTxQueueAveDepth'], switch_stats['s_4_SouthTxQueueAveDepth']],
-	["WestIOTransfers", switch_stats['s_0_WestIOTransfers'], switch_stats['s_1_WestIOTransfers'], switch_stats['s_2_WestIOTransfers'], switch_stats['s_3_WestIOTransfers'], switch_stats['s_4_WestIOTransfers']],
-	["WestIOCycles", switch_stats['s_0_WestIOCycles'], switch_stats['s_1_WestIOCycles'], switch_stats['s_2_WestIOCycles'], switch_stats['s_3_WestIOCycles'], switch_stats['s_4_WestIOCycles']],
-	["WestIOBytesTransfered", switch_stats['s_0_WestIOBytesTransfered'], switch_stats['s_1_WestIOBytesTransfered'], switch_stats['s_2_WestIOBytesTransfered'], switch_stats['s_3_WestIOBytesTransfered'], switch_stats['s_4_WestIOBytesTransfered']],
-	["WestRxQueueMaxDepth", switch_stats['s_0_WestRxQueueMaxDepth'], switch_stats['s_1_WestRxQueueMaxDepth'], switch_stats['s_2_WestRxQueueMaxDepth'], switch_stats['s_3_WestRxQueueMaxDepth'], switch_stats['s_4_WestRxQueueMaxDepth']],
-	["WestRxQueueAveDepth", switch_stats['s_0_WestRxQueueAveDepth'], switch_stats['s_1_WestRxQueueAveDepth'], switch_stats['s_2_WestRxQueueAveDepth'], switch_stats['s_3_WestRxQueueAveDepth'], switch_stats['s_4_WestRxQueueAveDepth']],
-	["WestTxQueueMaxDepth", switch_stats['s_0_WestTxQueueMaxDepth'], switch_stats['s_1_WestTxQueueMaxDepth'], switch_stats['s_2_WestTxQueueMaxDepth'], switch_stats['s_3_WestTxQueueMaxDepth'], switch_stats['s_4_WestTxQueueMaxDepth']],
-	["WestTxQueueAveDepth", switch_stats['s_0_WestTxQueueAveDepth'], switch_stats['s_1_WestTxQueueAveDepth'], switch_stats['s_2_WestTxQueueAveDepth'], switch_stats['s_3_WestTxQueueAveDepth'], switch_stats['s_4_WestTxQueueAveDepth']],
-	]
 
 	f = open(options.OutFileName, 'a')
 	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
@@ -223,7 +238,7 @@ def print_switch_stats(options):
 	current_title_length = 0
 
 	
-	for tup in table_switch_data_p4:
+	for tup in switch_stats_table:
 		for item in tup[0:1]:
 			current_title_length = len(tup[0])
 			if max_title_length < current_title_length:
@@ -233,7 +248,7 @@ def print_switch_stats(options):
 	max_element_length = 0
 	current_element_length = 0
 
-	for tup in table_switch_data_p4:
+	for tup in switch_stats_table:
 		for item in tup[1:5]:
 			current_element_length = len(str(item))
 			if max_element_length < current_element_length:
@@ -246,16 +261,34 @@ def print_switch_stats(options):
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
-	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format("Stat Switch",'S0', 'S1', 'S2', 'S3', 'S4', title_width=max_title_length, data_width=max_element_length) + '\n')
-	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-	#print the table's data
-	for tup in table_switch_data_p4:
-		f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], tup[5], title_width=max_title_length, data_width=max_element_length) + '\n')
+	#print the table headers
+	f.write("{:<{title_width}}".format("Stat Switch", title_width=max_title_length))
+
+	for i in range(0,num_cores + 1):
+		var = "S_" + str(i)
+		f.write("{:>{data_width}}".format(var, data_width=max_element_length))
 
 	f.write('\n')
+
 	
+	#print the bars
+	f.write("{:<{title_width}}".format(title_bar, title_width=max_title_length))
+
+	for i in range(0,num_cores + 1):
+		f.write("{:>{data_width}}".format(data_bar, data_width=max_element_length))
+
+	f.write('\n')
+
+	#print the stats
+	for tup in switch_stats_table:
+		f.write("{:<{title_width}}".format(tup[0], title_width=max_title_length))
+		for i in range(0,num_cores+1):
+			f.write("{:>{data_width}}".format(tup[i+1], data_width=max_element_length))	
+
+		f.write('\n')
+	f.write('\n')
+
 	f.close
 	return
 
@@ -275,6 +308,7 @@ def print_samc_stats(options):
 			samc_stats[key] = int(value)
 		except ValueError:
 			samc_stats[key] = float(value)
+
 
 	#bridge some of the stats so we can put evetyhing in one table...
 	samc_0 = 0;
@@ -356,7 +390,6 @@ def print_samc_stats(options):
 
 def print_mem_system_stats(options):
 
-
 	ms_data = ConfigParser.RawConfigParser()
 	ms_data.optionxform = str 
 	ms_data.read(options.InFileName)
@@ -377,44 +410,49 @@ def print_mem_system_stats(options):
 		except ValueError:
 			ms_stats[key] = float(value)
 
-	table_mem_system_data = [
-			["FirstAccessLat(Fetch)", ms_stats['MemSystem_FirstAccessLat(Fetch)']],
-			["TotalCPUFetchRequests", ms_stats['MemSystem_TotalCPUFetchRequests']],
-			["TotalCPUFetchReplys", ms_stats['MemSystem_TotalCPUFetchReplys']],
-			["L1FetchHits", ms_stats['MemSystem_L1FetchHits']],
-			["L2TotalFetches", ms_stats['MemSystem_L2TotalFetches']],
-			["L2FetchHits", ms_stats['MemSystem_L2FetchHits']],
-			["L3TotalFetches", ms_stats['MemSystem_L3TotalFetches']],
-			["L3FetchHits", ms_stats['MemSystem_L3FetchHits']],
-			["MMFetches", ms_stats['MemSystem_FetchesMemory']],
 
-			["TotalCPULoadRequests", ms_stats['MemSystem_TotalCPULoadRequests']],
-			["TotalCPULoadReplys", ms_stats['MemSystem_TotalCPULoadReplys']],
-			["L1LoadHits", ms_stats['MemSystem_L1LoadHits']],
-			["L2TotalLoads", ms_stats['MemSystem_L2TotalLoads']],
-			["L2LoadHits", ms_stats['MemSystem_L2LoadHits']],
-			["L3TotalLoads", ms_stats['MemSystem_L3TotalLoads']],
-			["L3LoadHits", ms_stats['MemSystem_L3LoadHits']],
-			["MMLoads", ms_stats['MemSystem_LoadsMemory']],
-			["LoadGetFwd", ms_stats['MemSystem_LoadsGetFwd']],
-			["L2LoadNacks", ms_stats['MemSystem_l2_LoadNacks']],
-			["L3LoadNacks", ms_stats['MemSystem_l3_LoadNacks']],
+	var = ""
+	mem_stats = ["FirstAccessLat(Fetch)",
+			"TotalCPUFetchRequests",
+			"TotalCPUFetchReplys",
+			"L1FetchHits",
+			"L2TotalFetches",
+			"L2FetchHits",
+			"L3TotalFetches",
+			"L3FetchHits",
+			"FetchesMemory",
+			"TotalCPULoadRequests",
+			"TotalCPULoadReplys",
+			"L1LoadHits",
+			"L2TotalLoads",
+			"L2LoadHits",
+			"L3TotalLoads",
+			"L3LoadHits",
+			"LoadsMemory",
+			"LoadsGetFwd",
+			"l2_LoadNacks",
+			"l3_LoadNacks",
+			"TotalCPUStoreRequests",
+			"TotalCPUStoreReplys",
+			"L1StoreHits",
+			"L2TotalStores",
+			"L2StoreHits",
+			"L3TotalStores",
+			"L3StoreHits",
+			"StoresMemory",
+			"StoresGetxFwd",
+			"StoresUpgrade",
+			"l2_StoreNacks",
+			"l3_StoreNacks"]
 
-			["TotalCPUStoreRequests", ms_stats['MemSystem_TotalCPUStoreRequests']],
-			["TotalCPUStoreReplys", ms_stats['MemSystem_TotalCPUStoreReplys']],
-			["L1StoreHits", ms_stats['MemSystem_L1StoreHits']],
-			["L2TotalStores", ms_stats['MemSystem_L2TotalStores']],
-			["L2StoreHits", ms_stats['MemSystem_L2StoreHits']],
-			["L3TotalStores", ms_stats['MemSystem_L3TotalStores']],
-			["L3StoreHits", ms_stats['MemSystem_L3StoreHits']],
-			["MMStores", ms_stats['MemSystem_StoresMemory']],
-			["StoreGetxFwd", ms_stats['MemSystem_StoresGetxFwd']],
-			["StoreUpgrade", ms_stats['MemSystem_StoresUpgrade']],
-			["L2StoreNacks", ms_stats['MemSystem_l2_StoreNacks']],
-			["L3StoreNacks", ms_stats['MemSystem_l3_StoreNacks']],
-			]
+	mem_sys_stats = [[0 for x in range(2)] for y in range(len(mem_stats))]
+	
+	for i in range (0,len(mem_stats)):
+		mem_sys_stats[i][0] = mem_stats[i]
+		var = "MemSystem_" + mem_stats[i]
+		mem_sys_stats[i][1] = ms_stats[var]
 
-
+	
 	f = open(options.OutFileName, 'a')
 
 	f.write("//Mem-System Stats/////////////////////////////////////////////" + '\n')
@@ -424,7 +462,7 @@ def print_mem_system_stats(options):
 	max_title_length = len('Stat Mem System')
 	current_title_length = 0
 
-	for tup in table_mem_system_data:
+	for tup in mem_sys_stats:
 		for item in tup[0:1]:
 			current_title_length = len(tup[0])
 			if max_title_length < current_title_length:
@@ -434,7 +472,7 @@ def print_mem_system_stats(options):
 	max_element_length = 0
 	current_element_length = 0
 
-	for tup in table_mem_system_data:
+	for tup in mem_sys_stats:
 		for item in tup[1:2]:
 			current_element_length = len(str(item))
 			if max_element_length < current_element_length:
@@ -452,7 +490,7 @@ def print_mem_system_stats(options):
 	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	#print the table's data
-	for tup in table_mem_system_data:
+	for tup in mem_sys_stats:
 		f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	f.write('\n')
@@ -478,7 +516,31 @@ def print_cpu_stats(options):
 		exit(0)
 	
 	var = ""
-	stats = ["NumSyscalls", "ROBStalls", "ROBStallLoad", "ROBStallStore", "ROBStallOther", "FirstFetchCycle", "LastCommitCycle", "FetchStall", "RunTime", "IdleTime", "SystemTime", "StallTime", "BusyTime", "IdlePct", "RunPct", "SystemPct", "StallPct", "BusyPct", "StallfetchPct", "StallLoadPct", "StallStorePct", "StallOtherPct"]
+	stats = [
+		"NumSyscalls",
+		"ROBStalls",
+		"ROBStallLoad",
+		"ROBStallStore",
+		"ROBStallOther",
+		"FirstFetchCycle",
+		"LastCommitCycle",
+		"FetchStall",
+		"RunTime",
+		"IdleTime",
+		"SystemTime",
+		"StallTime",
+		"BusyTime",
+		"IdlePct",
+		"RunPct",
+		"SystemPct",
+		"StallPct",
+		"BusyPct",
+		"StallfetchPct",
+		"StallLoadPct",
+		"StallStorePct",
+		"StallOtherPct"
+		]
+
 	stat_table = [[0 for x in range(num_cores + 1)] for y in range(len(stats))]
 	
 	
@@ -658,11 +720,11 @@ if not options.InFileName:
 #globals
 num_cores = 8
 cache_combined = 1
+cache_levels = 3
 
 print_general_stats(options)
 print_cpu_stats(options)
 print_cache_stats(options)
-#print_mem_system_stats(options)
-
-#print_switch_stats(options)
-#print_samc_stats(options)
+print_mem_system_stats(options)
+print_switch_stats(options)
+print_samc_stats(options)
