@@ -1982,7 +1982,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 	for(i = 0; i < num_cores; i++)
 	{
 		cgm_stat_container->l1_i_Occupancy[i] = l1_i_caches[i].Occupancy;
-		cgm_stat_container->l1_i_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_i_caches[i]);
+		cgm_stat_container->l1_i_CacheUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_i_caches[i]);
 		cgm_stat_container->l1_i_CoalescePut[i] = l1_i_caches[i].CoalescePut;
 		cgm_stat_container->l1_i_CoalesceGet[i] = l1_i_caches[i].CoalesceGet;
 		cgm_stat_container->l1_i_TotalHits[i] = l1_i_caches[i].TotalHits;
@@ -2019,7 +2019,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l1_d_Occupancy[i] = l1_d_caches[i].Occupancy;
-		cgm_stat_container->l1_d_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_d_caches[i]);
+		cgm_stat_container->l1_d_CacheUtilization[i] = (long long) cgm_cache_get_block_usage(&l1_d_caches[i]);
 		cgm_stat_container->l1_d_TotalAdvances[i] = l1_d_caches[i].TotalAdvances;
 		cgm_stat_container->l1_d_TotalAcesses[i] = l1_d_caches[i].TotalAcesses;
 		cgm_stat_container->l1_d_TotalMisses[i] = l1_d_caches[i].TotalMisses;
@@ -2056,7 +2056,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l2_Occupancy[i] = l2_caches[i].Occupancy;
-		cgm_stat_container->l2_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l2_caches[i]);
+		cgm_stat_container->l2_CacheUtilization[i] = (long long) cgm_cache_get_block_usage(&l2_caches[i]);
 		cgm_stat_container->l2_TotalAdvances[i] = l2_caches[i].TotalAdvances;
 		cgm_stat_container->l2_TotalAcesses[i] = l2_caches[i].TotalAcesses;
 		cgm_stat_container->l2_TotalMisses[i] = l2_caches[i].TotalMisses;
@@ -2113,7 +2113,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 
 		cgm_stat_container->l3_Occupancy[i] = l3_caches[i].Occupancy;
-		cgm_stat_container->l3_BlockUtilization[i] = (long long) cgm_cache_get_block_usage(&l3_caches[i]);
+		cgm_stat_container->l3_CacheUtilization[i] = (long long) cgm_cache_get_block_usage(&l3_caches[i]);
 		cgm_stat_container->l3_TotalAdvances[i] = l3_caches[i].TotalAdvances;
 		cgm_stat_container->l3_TotalAcesses[i] = l3_caches[i].TotalAcesses;
 		cgm_stat_container->l3_TotalMisses[i] = l3_caches[i].TotalMisses;
@@ -2385,19 +2385,24 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		/*CGM_STATS(cgm_stats_file, ";---Core %d---\n", i);
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
+		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l1_i_CacheUtilization[i])/((double) l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_Occupancy[i]);
+
 		if(cgm_stat_container->stats_type == systemStats)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) P_TIME)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) P_TIME));
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.4f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
+			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l1_i_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
+
+
+		//-------------------------------
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CoalescePut = %llu\n", i, cgm_stat_container->l1_i_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l1_i_CoalesceGet[i]);
@@ -2445,11 +2450,30 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_i_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_i_TotalWriteBacks[i]);
 		//blocks_written = cgm_cache_get_block_usage(&l1_i_caches[i]);
 		//CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
-		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l1_i_BlockUtilization[i])/((double) l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
+
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
+
+
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
+		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l1_d_CacheUtilization[i])/((double) l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_Occupancy[i]);
+		if(cgm_stat_container->stats_type == systemStats)
+		{
+			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)P_TIME));
+		}
+		else if (cgm_stat_container->stats_type == parallelSection)
+		{
+			//fatal("occ %llu cycles %llu then %0.2f\n", cgm_stat_container->l1_d_occupancy[i], cgm_stat_container->total_parallel_section_cycles, cgm_stat_container->l1_d_occupancy[i]/cgm_stat_container->total_parallel_section_cycles);
+			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.6f\n", i, (((double)cgm_stat_container->l1_d_Occupancy[i])/((double)cgm_stat_container->total_parallel_section_cycles)));
+		}
+		else
+		{
+			fatal("cache_dump_stats(): bad container type\n");
+		}
+
+
+		//-----------------------------------
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_CoalescePut = %llu\n", i, cgm_stat_container->l1_d_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l1_d_CoalesceGet[i]);
@@ -2466,19 +2490,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l1_d_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBlocks[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l1_d_Occupancy[i]/ (double) cgm_stat_container->l1_d_TotalAdvances[i]));
-		if(cgm_stat_container->stats_type == systemStats)
-		{
-			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)P_TIME)*100);
-		}
-		else if (cgm_stat_container->stats_type == parallelSection)
-		{
-			//fatal("occ %llu cycles %llu then %0.2f\n", cgm_stat_container->l1_d_occupancy[i], cgm_stat_container->total_parallel_section_cycles, cgm_stat_container->l1_d_occupancy[i]/cgm_stat_container->total_parallel_section_cycles);
-			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
-		}
-		else
-		{
-			fatal("cache_dump_stats(): bad container type\n");
-		}
+
+
 
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l1_d_TotalAdvances[i]);
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l1_d_TotalAcesses[i]);
@@ -2504,11 +2517,26 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l1_d_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l1_d_TotalWriteBacks[i]);
 		//blocks_written = cgm_cache_get_block_usage(&l1_d_caches[i]);
 		//CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
-		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l1_d_BlockUtilization[i])/((double) l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
+
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
+		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l2_CacheUtilization[i])/((double) l2_caches[i].num_sets * l2_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_Occupancy[i]);
+		if(cgm_stat_container->stats_type == systemStats)
+		{
+			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/(double)P_TIME));
+		}
+		else if (cgm_stat_container->stats_type == parallelSection)
+		{
+			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.6f\n", i, (((double)cgm_stat_container->l2_Occupancy[i])/((double)cgm_stat_container->total_parallel_section_cycles)));
+		}
+		else
+		{
+			fatal("cache_dump_stats(): bad container type\n");
+		}
+
+		//--------------------------------------------
 		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_CoalescePut = %llu\n", i, cgm_stat_container->l2_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l2_CoalesceGet[i]);
@@ -2526,18 +2554,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l2_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l2_TotalWriteBlocks[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/ (double) cgm_stat_container->l2_TotalAdvances[i]));
-		if(cgm_stat_container->stats_type == systemStats)
-		{
-			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/(double)P_TIME)*100);
-		}
-		else if (cgm_stat_container->stats_type == parallelSection)
-		{
-			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l2_Occupancy[i]/(double)cgm_stat_container->total_parallel_section_cycles)*100);
-		}
-		else
-		{
-			fatal("cache_dump_stats(): bad container type\n");
-		}
+
 
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l2_TotalAdvances[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l2_TotalAcesses[i]);
@@ -2563,11 +2580,28 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l2_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l2_TotalWriteBacks[i]);
 		//blocks_written = cgm_cache_get_block_usage(&l2_caches[i]);
 		//CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l2_caches[i].num_sets * l2_caches[i].assoc));
-		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l2_BlockUtilization[i])/((double) l2_caches[i].num_sets * l2_caches[i].assoc));
+
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
+		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l3_CacheUtilization[i])/((double) l3_caches[i].num_sets * l3_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_Occupancy[i]);
+		if(cgm_stat_container->stats_type == systemStats)
+		{
+			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
+		}
+		else if (cgm_stat_container->stats_type == parallelSection)
+		{
+			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+		}
+		else
+		{
+			fatal("cache_dump_stats(): bad container type\n");
+		}
+
+
+
+		//---------------------------
 		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_CoalescePut = %llu\n", i, cgm_stat_container->l3_CoalescePut[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_CoalesceGet = %llu\n", i, cgm_stat_container->l3_CoalesceGet[i]);
@@ -2584,18 +2618,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalUpgradeInvals = %llu\n", i, cgm_stat_container->l3_TotalUpgradeInvals[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteBlocks = %llu\n", i, cgm_stat_container->l3_TotalWriteBlocks[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_AveCyclesPerAdvance = %0.2f\n", i, ((double) cgm_stat_container->l3_Occupancy[i]/ (double) cgm_stat_container->l3_TotalAdvances[i]));
-		if(cgm_stat_container->stats_type == systemStats)
-		{
-			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME)*100);
-		}
-		else if (cgm_stat_container->stats_type == parallelSection)
-		{
-			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.2f\n", i, ((double) cgm_stat_container->l3_Occupancy[i]/(double) cgm_stat_container->total_parallel_section_cycles)*100);
-		}
-		else
-		{
-			fatal("cache_dump_stats(): bad container type\n");
-		}
+
 
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalAdvances = %llu\n", i, cgm_stat_container->l3_TotalAdvances[i]);
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalAccesses = %llu\n", i, cgm_stat_container->l3_TotalAcesses[i]);
@@ -2621,7 +2644,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "l3_%d_TotalWriteBacks = %llu\n", i, cgm_stat_container->l3_TotalWriteBacks[i]);
 		//blocks_written = cgm_cache_get_block_usage(&l3_caches[i]);
 		//CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l3_caches[i].num_sets * l3_caches[i].assoc));
-		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.2f\n", i, ((double) cgm_stat_container->l3_BlockUtilization[i])/((double) l3_caches[i].num_sets * l3_caches[i].assoc));
+
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 

@@ -2,6 +2,11 @@
 import ConfigParser
 from optparse import OptionParser
 
+num_cores = 8
+cache_combined = 1
+cache_levels = 3
+#total_paralell_cycles = 0
+
 
 def print_cache_stats(options):
 
@@ -79,7 +84,6 @@ def print_cache_stats(options):
 	l3_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats))]
 
 	
-	
 	for i in range (0,len(cache_stats)):
 		l1_i_stats_table[i][0] = cache_stats[i]
 		for j in range (0,num_cores):
@@ -104,29 +108,30 @@ def print_cache_stats(options):
 			var = "l3_" + str(j) + "_" + cache_stats[i]
 			l3_stats_table[i][(j+1)] = cache_stats_dict[var]
 	
-	print l1_i_stats_table[0]
-
-	print l1_d_stats_table[0]
-
-	print l2_stats_table[0]
-
-	print l3_stats_table[0]
-
-	exit(0)
-
-
 	cache_stats_table_combined = [[0 for x in range(cache_levels + 2)] for y in range(len(cache_stats))]
 	
+
 	#need to account for ave stats here...
 	for i in range (0,len(cache_stats)):
 		cache_stats_table_combined[i][0] = cache_stats[i]
-		for j in range (1, num_cores + 1):
-			cache_stats_table_combined[i][1] += l1_i_stats_table[i][j]
-			cache_stats_table_combined[i][2] += l1_d_stats_table[i][j]
-			cache_stats_table_combined[i][3] += l2_stats_table[i][j]
-			cache_stats_table_combined[i][4] += l3_stats_table[i][j]
+		if cache_stats_table_combined[i][0] == "OccupancyPct":
+			cache_stats_table_combined[i][1] = float(cache_stats_table_combined[1][1]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][2] = float(cache_stats_table_combined[1][2]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][3] = float(cache_stats_table_combined[1][3]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][4] = float(cache_stats_table_combined[1][4]) / float(total_paralell_cycles)
+		else:
+			for j in range (1, num_cores + 1):
+				cache_stats_table_combined[i][1] += l1_i_stats_table[i][j]
+				cache_stats_table_combined[i][2] += l1_d_stats_table[i][j]
+				cache_stats_table_combined[i][3] += l2_stats_table[i][j]
+				cache_stats_table_combined[i][4] += l3_stats_table[i][j]
 
-	
+	#print cache_stats_table_combined[2]
+	#print l1_i_stats_table[1]
+	#print l1_d_stats_table[1]
+	#print l2_stats_table[1]
+	#print l3_stats_table[1]
+
 	f = open(options.OutFileName, 'a')
 
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
@@ -164,16 +169,92 @@ def print_cache_stats(options):
 
 	f.write("{:<{title_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(title_bar, data_bar, data_bar, data_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
-
 	#print the table's data
 	for tup in cache_stats_table_combined:
-		if isinstance(tup[1], int):
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+		if tup[0] == "CacheUtilization":
+			f.write("{:<{title_width}s}{:>{data_width}.2f}{:>{data_width}.2f}{:>{data_width}.2f}{:>{data_width}.2f}".format(tup[0], (tup[1]/8), (tup[2]/8), (tup[3]/8), (tup[4]/8), title_width=max_title_length, data_width=max_element_length) + '\n')
+		elif tup[0] == "OccupancyPct":
+			f.write("{:<{title_width}s}{:>{data_width}.2f}{:>{data_width}.2f}{:>{data_width}.2f}{:>{data_width}.2f}".format(tup[0], (tup[1]), (tup[2]), (tup[3]), (tup[4]), title_width=max_title_length, data_width=max_element_length) + '\n')
 		else:
-			f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+			if isinstance(tup[1], int):
+				f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+			else:
+				f.write("{:<{title_width}s}{:>{data_width}}{:>{data_width}}{:>{data_width}}{:>{data_width}}".format(tup[0], tup[1], tup[2], tup[3], tup[4], title_width=max_title_length, data_width=max_element_length) + '\n')
+	
+	f.write('\n')
+
+	#take our 4 tables and make them one big table...
+	cache_stats_table = [[0 for x in range(num_cores + 1)] for y in range(len(cache_stats) * 4)]
+
+	j = 0	
+	for i in range(0, len(cache_stats)):
+		cache_stats_table[j] = l1_i_stats_table[i]
+		cache_stats_table[j+1] = l1_d_stats_table[i]
+		cache_stats_table[j+2] = l2_stats_table[i]
+		cache_stats_table[j+3] = l3_stats_table[i]
+		j += 4
+
+	#get the largest title length	
+	max_title_length = len('I Cache stats individual')
+	current_title_length = 0
+
+	for tup in cache_stats_table:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in cache_stats_table:
+		for item in tup[1:num_cores]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+
+	#print the table headers
+	f.write("{:<{title_width}}".format("Cache stats individual", title_width=max_title_length))
+
+	for i in range(0,num_cores):
+		var = "Cache_" + str(i)
+		f.write("{:>{data_width}}".format(var, data_width=max_element_length))
 
 	f.write('\n')
-		
+
+
+	#print the bars
+	f.write("{:<{title_width}}".format(title_bar, title_width=max_title_length))
+
+	for i in range(0,num_cores):
+		f.write("{:>{data_width}}".format(data_bar, data_width=max_element_length))
+
+	f.write('\n')
+
+
+	#print the stats
+	for tup in cache_stats_table:
+		f.write("{:<{title_width}}".format(tup[0], title_width=max_title_length))
+		if isinstance(tup[1], int):
+			for i in range(0,num_cores):
+				f.write("{:>{data_width}}".format(tup[i+1], data_width=max_element_length))	
+		else:
+			for i in range(0,num_cores):
+				f.write("{:>{data_width}.2f}".format(tup[i+1], data_width=max_element_length))	
+
+		f.write('\n')
+	f.write('\n')
+	
 	f.close()
 
 	return
@@ -188,7 +269,16 @@ def print_switch_stats(options):
 	switch_data.read(options.InFileName)
 
 	#pull of the memory system stats 	
-	switch_stats_dict = dict(switch_data.items('FullRunStats'))
+	#switch_stats_dict = dict(switch_data.items('FullRunStats'))
+
+	#pull stats
+	if options.PrintSection == 'FullRunStats':
+		switch_stats_dict = dict(switch_data.items('FullRunStats'))
+	elif options.PrintSection == 'ParallelStats':
+		switch_stats_dict = dict(switch_data.items('ParallelStats'))
+	else:
+		print "print_switch_stats(): invalid section"
+		exit(0)
 
 	for key, value in switch_stats_dict.items(): #get the (key, value) tuples one at a time
 		try:
@@ -196,41 +286,42 @@ def print_switch_stats(options):
 		except ValueError:
 			switch_stats_dict[key] = float(value)
 
+
 	var = ""
 	switch_stats = [
-			"TotalSwitchCtrlLoops",
 			"SwitchOccupance",
-			"NumberLinks",
-			"MaxNumberLinks",
-			"AveNumberLinksPerAccess",
-			"NorthIOTransfers",
-			"NorthIOCycles",
-			"NorthIOBytesTransfered",
-			"NorthRxQueueMaxDepth",
-			"NorthRxQueueAveDepth",
-			"NorthTxQueueMaxDepth",
-			"NorthTxQueueAveDepth",
-			"EastIOTransfers",
-			"EastIOCycles",
-			"EastIOBytesTransfered",
-			"EastRxQueueMaxDepth",
-			"EastRxQueueAveDepth",
-			"EastTxQueueMaxDepth",
-			"EastTxQueueAveDepth",
-			"SouthIOTransfers",
-			"SouthIOCycles",
-			"SouthIOBytesTransfered",
-			"SouthRxQueueMaxDepth",
-			"SouthRxQueueAveDepth",
-			"SouthTxQueueMaxDepth",
-			"SouthTxQueueAveDepth",
-			"WestIOTransfers",
-			"WestIOCycles",
-			"WestIOBytesTransfered",
-			"WestRxQueueMaxDepth",
-			"WestRxQueueAveDepth",
-			"WestTxQueueMaxDepth",
-			"WestTxQueueAveDepth",
+			"OccupancyPct"
+			#"NumberLinks",
+			#"MaxNumberLinks",
+			#"AveNumberLinksPerAccess",
+			#"NorthIOTransfers",
+			#"NorthIOCycles",
+			#"NorthIOBytesTransfered",
+			#"NorthRxQueueMaxDepth",
+			#"NorthRxQueueAveDepth",
+			#"NorthTxQueueMaxDepth",
+			#"NorthTxQueueAveDepth",
+			#"EastIOTransfers",
+			#"EastIOCycles",
+			#"EastIOBytesTransfered",
+			#"EastRxQueueMaxDepth",
+			#"EastRxQueueAveDepth",
+			#"EastTxQueueMaxDepth",
+			#"EastTxQueueAveDepth",
+			#"SouthIOTransfers",
+			#"SouthIOCycles",
+			#"SouthIOBytesTransfered",
+			#"SouthRxQueueMaxDepth",
+			#"SouthRxQueueAveDepth",
+			#"SouthTxQueueMaxDepth",
+			#"SouthTxQueueAveDepth",
+			#"WestIOTransfers",
+			#"WestIOCycles",
+			#"WestIOBytesTransfered",
+			#"WestRxQueueMaxDepth",
+			#"WestRxQueueAveDepth",
+			#"WestTxQueueMaxDepth",
+			#"WestTxQueueAveDepth"
 			]
 
 	switch_stats_table = [[0 for x in range(num_cores + 2)] for y in range(len(switch_stats))]
@@ -240,17 +331,71 @@ def print_switch_stats(options):
 		for j in range (0,num_cores + 1):
 			var = "s_" + str(j) + "_" + switch_stats[i]
 			switch_stats_table[i][(j+1)] = switch_stats_dict[var]
+
+
+	#for a combined switch stat
+	switch_stats_table_combined = [[0 for x in range(2)] for y in range(len(switch_stats))]
 	
+	#need to account for ave stats here...
+	for i in range (0,len(switch_stats)):
+		switch_stats_table_combined[i][0] = switch_stats[i]
+		if switch_stats_table_combined[i][0] == "OccupancyPct":
+			switch_stats_table_combined[i][1] = float(switch_stats_table_combined[0][1]) / float(total_paralell_cycles)
+		else:
+			for j in range (1, num_cores + 2):
+				switch_stats_table_combined[i][1] += switch_stats_table[i][j]
 
 	f = open(options.OutFileName, 'a')
 	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
 	f.write('///////////////////////////////////////////////////////////////'  + '\n\n')	
 	
+
+	#combined swtich stats
+
 	#get the largest title length	
-	max_title_length = len('Stat Switches')
+	max_title_length = len('Switch stats combined')
 	current_title_length = 0
 
-	
+	for tup in switch_stats_table_combined:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = 0
+	current_element_length = 0
+
+	for tup in switch_stats_table_combined:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("Switch stats combined",'SW', title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in switch_stats_table_combined:
+			if isinstance(tup[1], int):
+				f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+			else:
+				f.write("{:<{title_width}s}{:>{data_width}.2f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write('\n')
+
+	#get the largest title length	
+	max_title_length = len('Switch stats individual')
+	current_title_length = 0
+
 	for tup in switch_stats_table:
 		for item in tup[0:1]:
 			current_title_length = len(tup[0])
@@ -276,7 +421,7 @@ def print_switch_stats(options):
 
 
 	#print the table headers
-	f.write("{:<{title_width}}".format("Stat Switch", title_width=max_title_length))
+	f.write("{:<{title_width}}".format("Switch stats individual", title_width=max_title_length))
 
 	for i in range(0,num_cores + 1):
 		var = "S_" + str(i)
@@ -297,7 +442,10 @@ def print_switch_stats(options):
 	for tup in switch_stats_table:
 		f.write("{:<{title_width}}".format(tup[0], title_width=max_title_length))
 		for i in range(0,num_cores+1):
-			f.write("{:>{data_width}}".format(tup[i+1], data_width=max_element_length))	
+			if isinstance(tup[1], int):
+				f.write("{:>{data_width}}".format(tup[i+1], data_width=max_element_length))	
+			else: 
+				f.write("{:>{data_width}.2f}".format(tup[i+1], data_width=max_element_length))	
 
 		f.write('\n')
 	f.write('\n')
@@ -668,6 +816,12 @@ def print_general_stats(options):
 	["GPUNumCUs", general_stats['GPU_NumCUs']],
 	["GPUFreqGhz", general_stats['GPU_FreqGHz']]
 	]
+
+	#for other stats...
+
+	global total_paralell_cycles 
+
+	total_paralell_cycles = general_stats['ParallelSectionCycles']
 		
 	f = open(options.OutFileName, 'w')
 
@@ -730,14 +884,9 @@ if not options.InFileName:
 	parser.print_usage()
 	exit(0)
 
-#globals
-num_cores = 8
-cache_combined = 1
-cache_levels = 3
-
 print_general_stats(options)
-print_cpu_stats(options)
+#print_cpu_stats(options)
 print_cache_stats(options)
-print_mem_system_stats(options)
+#print_mem_system_stats(options)
 print_switch_stats(options)
-print_samc_stats(options)
+#print_samc_stats(options)

@@ -314,9 +314,9 @@ struct switch_t{
 	int next_west_id;
 
 	/*switch stats*/
+	long long switch_occupance;
 	long long switch_total_links;
 	int switch_max_links;
-	long long switch_total_wakes;
 	long long switch_north_io_transfers;
 	long long switch_north_io_transfer_cycles;
 	long long switch_north_io_bytes_transfered;

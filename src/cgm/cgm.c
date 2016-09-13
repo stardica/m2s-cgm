@@ -190,6 +190,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l1_i_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_i_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_WbMerges = (long long *)calloc(num_cores, sizeof(long long));
@@ -226,6 +227,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 
 	cgm_stat_container->l1_d_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_d_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
@@ -260,6 +262,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l1_d_TotalWriteBlocks = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->l2_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l2_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
@@ -317,6 +320,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 
 	cgm_stat_container->l3_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalAcesses = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_TotalMisses = (long long *)calloc(num_cores, sizeof(long long));
@@ -367,9 +371,11 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_upgrade_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_upgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
 
+
+
 	cgm_stat_container->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
-	cgm_stat_container->switch_total_wakes = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat_container->switch_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
@@ -745,7 +751,7 @@ void cgm_consolidate_stats(void){
 	{
 		cgm_stat->switch_total_links[i] = JOINLL(switch_total_links[i]);
 		cgm_stat->switch_max_links[i] = JOINMAX(switch_max_links[i]);
-		cgm_stat->switch_total_wakes[i] = JOINLL(switch_total_wakes[i]);
+		cgm_stat->switch_occupance[i] = JOINLL(switch_occupance[i]);
 		cgm_stat->switch_north_io_transfers[i] = JOINLL(switch_north_io_transfers[i]);
 		cgm_stat->switch_north_io_transfer_cycles[i] = JOINLL(switch_north_io_transfer_cycles[i]);
 		cgm_stat->switch_north_io_bytes_transfered[i] = JOINLL(switch_north_io_bytes_transfered[i]);

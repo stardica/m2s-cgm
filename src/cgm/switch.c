@@ -610,7 +610,7 @@ void switch_ctrl(void){
 
 	long long queue_depth;
 
-	/*long long access_id = 0;*/
+	long long occ_start = 0;
 
 	assert(my_pid <= (num_cores + num_cus));
 
@@ -621,6 +621,8 @@ void switch_ctrl(void){
 		/*we have been advanced. Note that it's possible for a
 		switch to be advanced more than once per cycle*/
 		await(&switches_ec[my_pid], step);
+
+		occ_start = P_TIME;
 
 		SYSTEM_PAUSE(switches[my_pid].latency);
 
@@ -640,15 +642,6 @@ void switch_ctrl(void){
 
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
 					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-
-			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-			{
-				if(SYSTEM == 1)
-				{
-					printf("block 0x%08x %s routing north ID %llu type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-				}
-			}*/
 
 			if(list_count(switches[my_pid].Tx_north_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_north_queue->name, list_count(switches[my_pid].Tx_north_queue));
@@ -678,15 +671,6 @@ void switch_ctrl(void){
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
 					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-			{
-				if(SYSTEM == 1)
-				{
-					printf("block 0x%08x %s routing east ID %llu type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-				}
-			}*/
-
 			if(list_count(switches[my_pid].Tx_east_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_east_queue->name, list_count(switches[my_pid].Tx_east_queue));
 
@@ -714,15 +698,6 @@ void switch_ctrl(void){
 
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
 					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-
-			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-			{
-				if(SYSTEM == 1)
-				{
-					printf("block 0x%08x %s routing south ID %llu type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-				}
-			}*/
 
 			if(list_count(switches[my_pid].Tx_south_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_south_queue->name, list_count(switches[my_pid].Tx_south_queue));
@@ -752,15 +727,6 @@ void switch_ctrl(void){
 			DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
 					(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-			/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-			{
-				if(SYSTEM == 1)
-				{
-					printf("block 0x%08x %s routing west ID %llu type %d cycle %llu\n",
-							(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, message_packet->access_id, message_packet->access_type, P_TIME);
-				}
-			}*/
-
 			if(list_count(switches[my_pid].Tx_west_queue) > QueueSize)
 				warning("%s size = %d\n", switches[my_pid].Tx_west_queue->name, list_count(switches[my_pid].Tx_west_queue));
 
@@ -786,7 +752,7 @@ void switch_ctrl(void){
 			switches[my_pid].switch_max_links = switches[my_pid].crossbar->num_pairs;
 
 		switches[my_pid].switch_total_links += switches[my_pid].crossbar->num_pairs;
-		switches[my_pid].switch_total_wakes++;
+		//switches[my_pid].switch_total_wakes++;
 
 		//increase step by number of pairs formed
 		step += switches[my_pid].crossbar->num_pairs;
@@ -798,6 +764,9 @@ void switch_ctrl(void){
 		message_packet = NULL;
 
 		next_queue = switches[my_pid].queue;
+
+		/*stats occupancy*/
+		switches[my_pid].switch_occupance += (P_TIME - occ_start);
 	}
 
 	fatal("switch_ctrl() quit\n");
@@ -1479,7 +1448,7 @@ void switch_store_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		cgm_stat_container->switch_total_links[i] = switches[i].switch_total_links;
 		cgm_stat_container->switch_max_links[i] = switches[i].switch_max_links;
-		cgm_stat_container->switch_total_wakes[i] = switches[i].switch_total_wakes;
+		cgm_stat_container->switch_occupance[i] = switches[i].switch_occupance;
 		cgm_stat_container->switch_north_io_transfers[i] = switches[i].switch_north_io_transfers;
 		cgm_stat_container->switch_north_io_transfer_cycles[i] = switches[i].switch_north_io_transfer_cycles;
 		cgm_stat_container->switch_north_io_bytes_transfered[i] = switches[i].switch_north_io_bytes_transfered;
@@ -1533,9 +1502,11 @@ void switch_reset_stats(void){
 	//switch stats
 	for(i = 0; i < (num_cores + 1); i++)
 	{
+		switches[i].switch_occupance = 0;
+
+
 		switches[i].switch_total_links = 0;
 		switches[i].switch_max_links = 0;
-		switches[i].switch_total_wakes = 0;
 		switches[i].switch_north_io_transfers = 0;
 		switches[i].switch_north_io_transfer_cycles = 0;
 		switches[i].switch_north_io_bytes_transfered = 0;
@@ -1590,12 +1561,34 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	/*there is a switch for the GPU this for loop will pick it up*/
 	for(i = 0; i <= num_cores; i++)
 	{
+		CGM_STATS(cgm_stats_file, "s_%d_SwitchOccupance = %llu\n", i, cgm_stat_container->switch_occupance[i]);
+		if(cgm_stat_container->stats_type == systemStats)
+		{
+			CGM_STATS(cgm_stats_file, "s_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->switch_occupance[i]/(double) P_TIME));
+		}
+		else if (cgm_stat_container->stats_type == parallelSection)
+		{
+			printf("switch dump s_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->switch_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			printf("switch dump s_%d_Occupancy = %llu\n", i, cgm_stat_container->switch_occupance[i]);
+			printf("switch dump psection cycles = %llu\n",cgm_stat_container->total_parallel_section_cycles);
+			getchar();
+
+
+			CGM_STATS(cgm_stats_file, "s_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->switch_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+		}
+		else
+		{
+			fatal("cache_dump_stats(): bad container type\n");
+		}
+
+
+		//------------------
 		/*CGM_STATS(cgm_stats_file, "[Switch_%d]\n", i);*/
-		CGM_STATS(cgm_stats_file, "s_%d_TotalSwitchCtrlLoops = %llu\n", i, cgm_stat_container->switch_total_wakes[i]);
-		CGM_STATS(cgm_stats_file, "s_%d_SwitchOccupance = %0.2f\n", i, (double) cgm_stat_container->switch_total_wakes[i]/ (double) P_TIME);
+		//CGM_STATS(cgm_stats_file, "s_%d_TotalSwitchCtrlLoops = %llu\n", i, cgm_stat_container->switch_total_wakes[i]);
+
 		CGM_STATS(cgm_stats_file, "s_%d_NumberLinks = %llu\n", i, cgm_stat_container->switch_total_links[i]);
 		CGM_STATS(cgm_stats_file, "s_%d_MaxNumberLinks = %d\n", i, cgm_stat_container->switch_max_links[i]);
-		CGM_STATS(cgm_stats_file, "s_%d_AveNumberLinksPerAccess = %.02f\n", i, (double)cgm_stat_container->switch_total_links[i]/(double)cgm_stat_container->switch_total_wakes[i]);
+		//CGM_STATS(cgm_stats_file, "s_%d_AveNumberLinksPerAccess = %.02f\n", i, (double)cgm_stat_container->switch_total_links[i]/(double)cgm_stat_container->switch_total_wakes[i]);
 		CGM_STATS(cgm_stats_file, "s_%d_NorthIOTransfers = %llu\n", i, cgm_stat_container->switch_north_io_transfers[i]);
 		CGM_STATS(cgm_stats_file, "s_%d_NorthIOCycles = %llu\n", i, cgm_stat_container->switch_north_io_transfer_cycles[i]);
 		CGM_STATS(cgm_stats_file, "s_%d_NorthIOBytesTransfered = %llu\n", i, cgm_stat_container->switch_north_io_bytes_transfered[i]);
