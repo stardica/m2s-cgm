@@ -86,11 +86,16 @@ void memctrl_ctrl_io(void){
 	int transfer_time = 0;
 	int queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(mem_ctrl_io_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(mem_ctrl->system_agent_queue) > QueueSize)
 		{
@@ -140,6 +145,9 @@ void memctrl_ctrl_io(void){
 			system_agent->ave_south_rxqueue_depth = ((((double) system_agent->south_gets - 1) * system_agent->ave_south_rxqueue_depth) + (double) queue_depth) / (double) system_agent->south_gets;
 		}
 
+		/*stats occupancy*/
+		mem_ctrl->up_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("memctrl_ctrl_io(): out of while loop\n");
@@ -156,6 +164,7 @@ void memctrl_ctrl(void){
 
 	int queue_depth = 0;
 	long long num_inserts = 0;
+	long long occ_start = 0;
 
 	/*long long access_id = 0;
 	enum cgm_access_kind_t access_type;
@@ -198,6 +207,8 @@ void memctrl_ctrl(void){
 	{
 		await(mem_ctrl_ec, step);
 
+		occ_start = P_TIME;
+
 		if(list_count(mem_ctrl->pending_accesses) >= 32)	//!sys_agent_can_access_bottom())
 		{
 			//warning("MC stalling dram ctrl full cycle size %d %llu\n", list_count(mem_ctrl->pending_accesses), P_TIME);
@@ -207,6 +218,8 @@ void memctrl_ctrl(void){
 		else
 		{
 			step++;
+
+			SYSTEM_PAUSE(mem_ctrl->latency);
 
 			message_packet = list_get(mem_ctrl->Rx_queue_top, 0);
 			assert(message_packet);
@@ -319,13 +332,21 @@ void memctrl_ctrl(void){
 			mem_ctrl->dram_ave_queue_depth = ((((double) num_inserts - 1) * mem_ctrl->dram_ave_queue_depth) + (double) queue_depth) / (double) num_inserts;
 
 		}
+
+		/*stats occupancy*/
+		mem_ctrl->occupance += (P_TIME - occ_start);
+
 	}
+
 	return;
 }
 
 void memctrl_store_stats(struct cgm_stats_t *cgm_stat_container){
 
+
 	//Memory controller and DRAMSim
+	cgm_stat_container->mem_ctrl_occupance = mem_ctrl->occupance;
+
 	cgm_stat_container->mem_ctrl_busy_cycles = mem_ctrl->busy_cycles;
 	cgm_stat_container->mem_ctrl_num_reads = mem_ctrl->num_reads;
 	cgm_stat_container->mem_ctrl_num_writes = mem_ctrl->num_writes;
@@ -345,12 +366,17 @@ void memctrl_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->mem_ctrl_bytes_wrote = mem_ctrl->bytes_wrote;
 	cgm_stat_container->mem_ctrl_io_busy_cycles = mem_ctrl->io_busy_cycles;
 
+	//IO Ctrl
+	cgm_stat_container->mem_ctrl_up_io_occupance = mem_ctrl->up_io_occupance;
+
 	return;
 }
 
 void memctrl_reset_stats(void){
 
 	//Memory controller and DRAMSim
+	mem_ctrl->occupance = 0;
+
 	mem_ctrl->busy_cycles = 0;
 	mem_ctrl->num_reads = 0;
 	mem_ctrl->num_writes = 0;
@@ -370,6 +396,8 @@ void memctrl_reset_stats(void){
 	mem_ctrl->bytes_wrote = 0;
 	mem_ctrl->io_busy_cycles = 0;
 
+	mem_ctrl->up_io_occupance = 0;
+
 	return;
 }
 
@@ -384,6 +412,22 @@ void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	}*/
 
 	/*CGM_STATS(cgm_stats_file, "[MemCtrl]\n");*/
+	CGM_STATS(cgm_stats_file, "mc_Occupance = %llu\n", cgm_stat_container->mem_ctrl_occupance);
+	if(cgm_stat_container->stats_type == systemStats)
+	{
+		CGM_STATS(cgm_stats_file, "mc_OccupancyPct = %0.6f\n", ((double) cgm_stat_container->mem_ctrl_occupance/(double) P_TIME));
+	}
+	else if (cgm_stat_container->stats_type == parallelSection)
+	{
+		CGM_STATS(cgm_stats_file, "mc_OccupancyPct = %0.6f\n", (((double) cgm_stat_container->mem_ctrl_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
+	}
+	else
+	{
+		fatal("sys_agent_dump_stats(): bad container type\n");
+	}
+
+
+
 	CGM_STATS(cgm_stats_file, "mc_MemCtrlBusyCycles = %llu\n", cgm_stat_container->mem_ctrl_busy_cycles);
 	CGM_STATS(cgm_stats_file, "mc_DramBusyCycles = %llu\n", cgm_stat_container->mem_ctrl_dram_busy_cycles);
 	CGM_STATS(cgm_stats_file, "mc_TotalReads = %llu\n", cgm_stat_container->mem_ctrl_num_reads);

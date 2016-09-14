@@ -1,5 +1,36 @@
 
+#bridge some of the stats so we can put evetyhing in one table...
+	samc_0 = 0;
 
+	table_sa_data = [
+	["TotalCtrlLoops", samc_stats['sa_TotalCtrlLoops'], samc_stats['mc_MemCtrlBusyCycles']],
+	["TotalLoads", samc_stats['sa_MCLoads'], samc_stats['mc_TotalReads']],
+	["TotalStores", samc_stats['sa_MCStores'], samc_stats['mc_TotalWrites']],
+	["TotalReturns", samc_stats['sa_MCReturns'], samc_0],
+	["NorthIOCycles", samc_stats['sa_NorthIOBusyCycles'], samc_stats['mc_IOBusyCycles']],
+	["NorthMaxRxQueueDepth", samc_stats['sa_MaxNorthRxQueueDepth'], samc_stats['mc_RxMax']],
+	["NorthAveRxQueueDepth", samc_stats['sa_AveNorthRxQueueDepth'], samc_0],
+	["NorthMaxTxQueueDepth", samc_stats['sa_MaxNorthTxQueueDepth'], samc_stats['mc_TxMax']],
+	["NorthAveTxQueueDepth", samc_stats['sa_AveNorthTxQueueDepth'], samc_0],
+	["SouthIOCycles", samc_stats['sa_SouthIOBusyCycles'], samc_0],
+	["SouthMaxRxQueueDepth", samc_stats['sa_MaxSouthRxQueueDepth'], samc_0],
+	["SouthAveRxQueueDepth", samc_stats['sa_AveSouthRxQueueDepth'], samc_0],
+	["SouthMaxTxQueueDepth", samc_stats['sa_MaxSouthTxQueueDepth'], samc_0],
+	["SouthAveTxQueueDepth", samc_stats['sa_AveSouthTxQueueDepth'], samc_0],
+	["DramBusyCycles", samc_0, samc_stats['mc_DramBusyCycles']],
+	["DramAveReadLat", samc_0, samc_stats['mc_AveDramReadLat']],
+	["DramAveWriteLat", samc_0, samc_stats['mc_AveDramWriteLat']],
+	["DramAveTotalLat(cyc)", samc_0, samc_stats['mc_AveDramTotalLat(cycles)']],
+	["DramAveTotalLat(ns)", samc_0, samc_stats['mc_AveDramTotalLat(ns)']],
+	["DramReadMinLat", samc_0, samc_stats['mc_ReadMinLat']],
+	["DramReadMaxLat", samc_0, samc_stats['mc_ReadMaxLat']],
+	["DramWriteMinLat", samc_0, samc_stats['mc_WriteMinLat']],
+	["DramWriteMaxLat", samc_0, samc_stats['mc_WriteMaxLat']],
+	["DramMaxQueueDepth", samc_0, samc_stats['mc_DramMaxQueueDepth']],
+	["DramAveQueueDepth", samc_0, samc_stats['mc_DramAveQueueDepth']],
+	["DramTotalBytesRead", samc_0, samc_stats['mc_ByteRead']],
+	["DramTotalBytesWritten", samc_0, samc_stats['mc_BytesWrote']],
+	]
 
 
 

@@ -304,11 +304,16 @@ void sys_agent_ctrl_io_up(void){
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(system_agent_io_up_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(system_agent->switch_queue) > QueueSize)
 		{
@@ -342,6 +347,10 @@ void sys_agent_ctrl_io_up(void){
 			list_enqueue(system_agent->switch_queue, message_packet);
 			advance(&switches_ec[system_agent->switch_id]);
 		}
+
+		/*stats occupancy*/
+		system_agent->up_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("sys_agent_ctrl_io_up(): out of while loop\n");
@@ -358,11 +367,16 @@ void sys_agent_ctrl_io_down(void){
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(system_agent_io_down_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(mem_ctrl->Rx_queue_top) >= QueueSize)
 		{
@@ -405,6 +419,10 @@ void sys_agent_ctrl_io_down(void){
 			list_enqueue(mem_ctrl->Rx_queue_top, message_packet);
 			advance(mem_ctrl_ec);
 		}
+
+		/*stats occupancy*/
+		system_agent->down_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("sys_agent_ctrl_io_down(): out of while loop\n");
@@ -420,11 +438,15 @@ void sys_agent_ctrl(void){
 	long long step = 1;
 	//int queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(system_agent_ec, step);
+
+		occ_start = P_TIME;
 
 		if(list_count(system_agent->Tx_queue_bottom) >= QueueSize || list_count(system_agent->Tx_queue_top) >= QueueSize)
 		{
@@ -445,6 +467,10 @@ void sys_agent_ctrl(void){
 			/*stats*/
 			system_agent->busy_cycles += (system_agent->latency + 1);
 		}
+
+		/*stats occupancy*/
+		system_agent->occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("sys_agent_ctrl task is broken\n");
@@ -454,6 +480,8 @@ void sys_agent_ctrl(void){
 void sys_agent_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 	//system agent
+	cgm_stat_container->system_agent_occupance = system_agent->occupance;
+
 	cgm_stat_container->system_agent_busy_cycles = system_agent->busy_cycles;
 	cgm_stat_container->system_agent_north_io_busy_cycles = system_agent->north_io_busy_cycles;
 	cgm_stat_container->system_agent_south_io_busy_cycles = system_agent->south_io_busy_cycles;
@@ -473,12 +501,18 @@ void sys_agent_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->system_agent_north_puts = system_agent->north_puts;
 	cgm_stat_container->system_agent_south_puts = system_agent->south_puts;*/
 
+	//IO ctrl
+	cgm_stat_container->system_agent_up_io_occupance = system_agent->up_io_occupance;
+	cgm_stat_container->system_agent_down_io_occupance = system_agent->down_io_occupance;
+
 	return;
 }
 
 void sys_agent_reset_stats(void){
 
 	//system agent
+	system_agent->occupance = 0;
+
 	system_agent->busy_cycles = 0;
 	system_agent->north_io_busy_cycles = 0;
 	system_agent->south_io_busy_cycles = 0;
@@ -498,12 +532,30 @@ void sys_agent_reset_stats(void){
 	system_agent->north_puts = 0;
 	system_agent->south_puts = 0;
 
+	system_agent->up_io_occupance = 0;
+	system_agent->down_io_occupance = 0;
+
 	return;
 }
 
 void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	/*CGM_STATS(cgm_stats_file, "[SystemAgent]\n");*/
+	CGM_STATS(cgm_stats_file, "sa_Occupance = %llu\n", cgm_stat_container->system_agent_occupance);
+
+	if(cgm_stat_container->stats_type == systemStats)
+	{
+		CGM_STATS(cgm_stats_file, "sa_OccupancyPct = %0.6f\n", ((double) cgm_stat_container->system_agent_occupance/(double) P_TIME));
+	}
+	else if (cgm_stat_container->stats_type == parallelSection)
+	{
+		CGM_STATS(cgm_stats_file, "sa_OccupancyPct = %0.6f\n", (((double) cgm_stat_container->system_agent_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
+	}
+	else
+	{
+		fatal("sys_agent_dump_stats(): bad container type\n");
+	}
+
 	CGM_STATS(cgm_stats_file, "sa_TotalCtrlLoops = %llu\n", cgm_stat_container->system_agent_busy_cycles);
 	CGM_STATS(cgm_stats_file, "sa_MCLoads = %llu\n", cgm_stat_container->system_agent_mc_loads);
 	CGM_STATS(cgm_stats_file, "sa_MCStores = %llu\n", cgm_stat_container->system_agent_mc_stores);

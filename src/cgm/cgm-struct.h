@@ -460,6 +460,11 @@ struct cache_t{
 	//watch dog
 	/*unsigned int *outstanding_addresses;*/
 
+	//IO Cntrl
+	long long IOUpOccupancy;
+	long long IODownOccupancy;
+
+
 	//statistics
 	long long Occupancy;
 	long long CoalescePut;
@@ -539,7 +544,6 @@ struct cache_t{
 	long long l3_get_fwd_upgrade_nack_;
 	long long l3_upgrade_;
 	long long l3_upgrade_ack_;
-
 
 	unsigned int *fetch_address_history;
 	unsigned int *load_address_history;
@@ -649,6 +653,7 @@ struct cgm_stats_t{
 	//caches
 	long long *l1_i_Occupancy;
 	long long *l1_i_CacheUtilization;
+
 	long long *l1_i_CoalescePut;
 	long long *l1_i_CoalesceGet;
 	long long *l1_i_TotalMisses;
@@ -885,6 +890,11 @@ struct cgm_stats_t{
 	long long *switch_west_rx_inserts;
 
 	//system agent
+	long long system_agent_occupance;
+	long long system_agent_up_io_occupance;
+	long long system_agent_down_io_occupance;
+
+
 	long long system_agent_busy_cycles;
 	long long system_agent_north_io_busy_cycles;
 	long long system_agent_south_io_busy_cycles;
@@ -905,6 +915,9 @@ struct cgm_stats_t{
 	long long system_agent_south_puts;*/
 
 	//Memory controller and DRAMSim
+	long long mem_ctrl_occupance;
+	long long mem_ctrl_up_io_occupance;
+
 	long long mem_ctrl_busy_cycles;
 	long long mem_ctrl_num_reads;
 	long long mem_ctrl_num_writes;
@@ -924,8 +937,24 @@ struct cgm_stats_t{
 	long long mem_ctrl_bytes_wrote;
 	long long mem_ctrl_io_busy_cycles;
 
+
+	//IO Controllers
+	long long *l1_i_down_io_occupance;
+	long long *l1_d_down_io_occupance;
+	long long *l2_up_io_occupance;
+	long long *l2_down_io_occupance;
+	long long *l3_up_io_occupance;
+	long long *l3_down_io_occupance;
+
+	long long *switch_north_io_occupance;
+	long long *switch_east_io_occupance;
+	long long *switch_south_io_occupance;
+	long long *switch_west_io_occupance;
+
+	long long sa_up_io_occupance;
+	long long sa_down_io_occupance;
+	long long mc_up_io_occupance;
+
 };
 
 #endif /* CGMSTRUCT_H_ */
-
-

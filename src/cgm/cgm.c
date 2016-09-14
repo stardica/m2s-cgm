@@ -372,10 +372,10 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_upgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
 
 
+	cgm_stat_container->switch_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 
 	cgm_stat_container->switch_total_links = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_max_links = (int *)calloc(num_cores + 1, sizeof(int));
-	cgm_stat_container->switch_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_transfers = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_transfer_cycles = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_north_io_bytes_transfered = (long long *)calloc(num_cores + 1, sizeof(long long));
@@ -412,6 +412,20 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->switch_east_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_south_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_west_rx_inserts = (long long *)calloc(num_cores + 1, sizeof(long long));
+
+
+	//IO Controllers
+	cgm_stat_container->l1_i_down_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l1_d_down_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_up_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l2_down_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_up_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_down_io_occupance = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat_container->switch_north_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat_container->switch_east_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat_container->switch_south_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
+	cgm_stat_container->switch_west_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 
 	return;
 }

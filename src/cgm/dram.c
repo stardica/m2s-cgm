@@ -164,15 +164,6 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 	DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access complete (Read) ID %llu type %d cycle %llu\n",
 			(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-	/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-	{
-		if(SYSTEM == 1)
-		{
-			printf("block 0x%08x %s DRAM access complete (Read) ID %llu type %d cycle %llu\n",
-					(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
-		}
-	}*/
-
 	return;
 }
 
@@ -231,15 +222,6 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	DEBUGSYS(SYSTEM == 1, "block 0x%08x %s DRAM access complete (Write) ID %llu type %d cycle %llu\n",
 			(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-	/*if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
-	{
-		if(SYSTEM == 1)
-		{
-			printf("block 0x%08x %s DRAM access complete (Write) ID %llu type %d cycle %llu\n",
-					(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
-		}
-	}*/
-
 	return;
 }
 
@@ -266,8 +248,6 @@ void dramsim_ctrl(void){
 		//printf("mem_ctrl\n");
 		await(dramsim, step);
 		step++;
-
-		//printf("dramsim tick cycle %llu\n", P_TIME);
 
 		dramsim_update_cpu_clock();
 	}

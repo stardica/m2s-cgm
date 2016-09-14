@@ -975,12 +975,16 @@ void switch_north_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	int transfer_time = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(switches[my_pid].switches_north_io_ec, step);
 
+		/*stats*/
+		occ_start = P_TIME;
 
 		message_packet = list_get(switches[my_pid].Tx_north_queue, 0);
 		assert(message_packet);
@@ -1096,6 +1100,11 @@ void switch_north_io_ctrl(void){
 		{
 			fatal("switch_north_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
+
+
+		/*stats occupancy*/
+		switches[my_pid].switch_north_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("switch_north_io_ctrl(): out of while loop\n");
@@ -1116,11 +1125,16 @@ void switch_east_io_ctrl(void){
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(switches[my_pid].switches_east_io_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		message_packet = list_get(switches[my_pid].Tx_east_queue, 0);
 		assert(message_packet);
@@ -1165,6 +1179,11 @@ void switch_east_io_ctrl(void){
 				((((double) switches[switches[my_pid].next_east_id].west_rx_inserts - 1) * switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth)
 						+ (double) queue_depth) / (double) switches[switches[my_pid].next_east_id].west_rx_inserts;
 		}
+
+		/*stats occupancy*/
+		switches[my_pid].switch_east_io_occupance += (P_TIME - occ_start);
+
+
 	}
 
 	fatal("switch_east_io_ctrl(): out of while loop\n");
@@ -1185,11 +1204,16 @@ void switch_west_io_ctrl(void){
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(switches[my_pid].switches_west_io_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		message_packet = list_get(switches[my_pid].Tx_west_queue, 0);
 		assert(message_packet);
@@ -1236,6 +1260,10 @@ void switch_west_io_ctrl(void){
 				((((double) switches[switches[my_pid].next_west_id].east_rx_inserts - 1) * switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth)
 						+ (double) queue_depth) / (double) switches[switches[my_pid].next_west_id].east_rx_inserts;
 		}
+
+		/*stats occupancy*/
+		switches[my_pid].switch_west_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("switch_west_io_ctrl(): out of while loop\n");
@@ -1274,11 +1302,16 @@ void switch_south_io_ctrl(void){
 	int transfer_time = 0;
 	int queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(switches[my_pid].switches_south_io_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		/*find out what queue the packet needs to go into if the queue is full stall
 		if not process and get ready for the next queue*/
@@ -1431,6 +1464,10 @@ void switch_south_io_ctrl(void){
 		{
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
+
+		/*stats occupancy*/
+		switches[my_pid].switch_south_io_occupance += (P_TIME - occ_start);
+
 	}
 
 	fatal("switch_south_io_ctrl(): out of while loop\n");
@@ -1489,6 +1526,12 @@ void switch_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->switch_east_rx_inserts[i] = switches[i].east_rx_inserts;
 		cgm_stat_container->switch_south_rx_inserts[i] = switches[i].south_rx_inserts;
 		cgm_stat_container->switch_west_rx_inserts[i] = switches[i].west_rx_inserts;
+
+		//IO Ctrl
+		cgm_stat_container->switch_north_io_occupance[i] = switches[i].switch_north_io_occupance;
+		cgm_stat_container->switch_east_io_occupance[i] = switches[i].switch_east_io_occupance;
+		cgm_stat_container->switch_south_io_occupance[i] = switches[i].switch_south_io_occupance;
+		cgm_stat_container->switch_west_io_occupance[i] = switches[i].switch_west_io_occupance;
 	}
 
 	return;
@@ -1546,6 +1589,13 @@ void switch_reset_stats(void){
 		switches[i].east_rx_inserts = 0;
 		switches[i].south_rx_inserts = 0;
 		switches[i].west_rx_inserts = 0;
+
+		//IO Ctrl
+		switches[i].switch_north_io_occupance = 0;
+		switches[i].switch_east_io_occupance = 0;
+		switches[i].switch_south_io_occupance = 0;
+		switches[i].switch_west_io_occupance = 0;
+
 	}
 
 
@@ -1568,12 +1618,6 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			printf("switch dump s_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->switch_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
-			printf("switch dump s_%d_Occupancy = %llu\n", i, cgm_stat_container->switch_occupance[i]);
-			printf("switch dump psection cycles = %llu\n",cgm_stat_container->total_parallel_section_cycles);
-			getchar();
-
-
 			CGM_STATS(cgm_stats_file, "s_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->switch_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else

@@ -46,6 +46,7 @@ struct mem_ctrl_t{
 	int bus_width;
 
 	/*stats*/
+	long long occupance;
 	long long busy_cycles;
 	long long num_reads;
 	long long num_writes;
@@ -64,6 +65,7 @@ struct mem_ctrl_t{
 	long long bytes_read;
 	long long bytes_wrote;
 	long long io_busy_cycles;
+	long long up_io_occupance;
 
 };
 

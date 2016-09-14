@@ -57,7 +57,12 @@ struct system_agent_t{
 	int up_bus_width;
 	int down_bus_width;
 
+	/*IO ctrl stats*/
+	long long up_io_occupance;
+	long long down_io_occupance;
+
 	/*stats*/
+	long long occupance;
 	long long busy_cycles;
 	long long north_io_busy_cycles;
 	long long south_io_busy_cycles;
@@ -107,8 +112,9 @@ int sys_agent_can_access_top(void);
 int sys_agent_can_access_bottom(void);
 
 void sys_agent_ctrl(void);
-void sys_agent_ctrl_io_down(void);
 void sys_agent_ctrl_io_up(void);
+void sys_agent_ctrl_io_down(void);
+
 
 void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container);
 void sys_agent_reset_stats(void);

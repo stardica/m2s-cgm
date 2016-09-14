@@ -317,15 +317,23 @@ struct switch_t{
 	long long switch_occupance;
 	long long switch_total_links;
 	int switch_max_links;
+
+	long long switch_north_io_occupance;
 	long long switch_north_io_transfers;
 	long long switch_north_io_transfer_cycles;
 	long long switch_north_io_bytes_transfered;
+
+	long long switch_east_io_occupance;
 	long long switch_east_io_transfers;
 	long long switch_east_io_transfer_cycles;
 	long long switch_east_io_bytes_transfered;
+
+	long long switch_south_io_occupance;
 	long long switch_south_io_transfers;
 	long long switch_south_io_transfer_cycles;
 	long long switch_south_io_bytes_transfered;
+
+	long long switch_west_io_occupance;
 	long long switch_west_io_transfers;
 	long long switch_west_io_transfer_cycles;
 	long long switch_west_io_bytes_transfered;
@@ -389,8 +397,8 @@ void switch_create_tasks(void);
 void switch_ctrl(void);
 void switch_north_io_ctrl(void);
 void switch_east_io_ctrl(void);
-void switch_west_io_ctrl(void);
 void switch_south_io_ctrl(void);
+void switch_west_io_ctrl(void);
 
 float switch_get_distance(int dest_node, int src_node);
 int switch_can_access(struct list_t *queue);

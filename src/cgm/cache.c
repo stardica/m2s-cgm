@@ -2161,6 +2161,14 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_upgrade_[i] = l3_caches[i].l3_upgrade_;
 		cgm_stat_container->l3_upgrade_ack_[i] = l3_caches[i].l3_upgrade_ack_;
 
+		//IO Controllers
+		cgm_stat_container->l1_i_down_io_occupance[i] = l1_i_caches[i].IODownOccupancy;
+		cgm_stat_container->l1_d_down_io_occupance[i] = l1_d_caches[i].IODownOccupancy;
+		cgm_stat_container->l2_up_io_occupance[i] = l2_caches[i].IOUpOccupancy;
+		cgm_stat_container->l2_down_io_occupance[i] = l2_caches[i].IODownOccupancy;
+		cgm_stat_container->l3_up_io_occupance[i] = l3_caches[i].IOUpOccupancy;
+		cgm_stat_container->l3_down_io_occupance[i] = l3_caches[i].IODownOccupancy;
+
 	}
 
 	return;
@@ -2367,6 +2375,15 @@ void cache_reset_stats(void){
 		l3_caches[i].l3_upgrade_ = 0;
 		l3_caches[i].l3_upgrade_ack_ = 0;
 
+
+		//IO Ctrl
+		l1_i_caches[i].IODownOccupancy = 0;
+		l1_d_caches[i].IODownOccupancy = 0;
+		l2_caches[i].IOUpOccupancy = 0;
+		l2_caches[i].IODownOccupancy = 0;
+		l3_caches[i].IOUpOccupancy = 0;
+		l3_caches[i].IODownOccupancy = 0;
+
 	}
 
 	return;
@@ -2400,6 +2417,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
+
+		CGM_STATS(cgm_stats_file, "l1_i_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_i_down_io_occupance[i]);
+
 
 
 		//-------------------------------
@@ -2472,6 +2492,7 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 			fatal("cache_dump_stats(): bad container type\n");
 		}
 
+		CGM_STATS(cgm_stats_file, "l1_d_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_d_down_io_occupance[i]);
 
 		//-----------------------------------
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_Stalls[i]);
@@ -2536,6 +2557,9 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 			fatal("cache_dump_stats(): bad container type\n");
 		}
 
+		CGM_STATS(cgm_stats_file, "l2_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l2_up_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l2_down_io_occupance[i]);
+
 		//--------------------------------------------
 		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_Stalls[i]);
 		CGM_STATS(cgm_stats_file, "l2_%d_CoalescePut = %llu\n", i, cgm_stat_container->l2_CoalescePut[i]);
@@ -2599,6 +2623,26 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 			fatal("cache_dump_stats(): bad container type\n");
 		}
 
+		CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l3_up_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l3_down_io_occupance[i]);
+
+		if(cgm_stat_container->stats_type == systemStats)
+		{
+			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
+			CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
+		}
+		else if (cgm_stat_container->stats_type == parallelSection)
+		{
+			fatal("fix these stats\n");
+
+
+			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "l3_%d_IOdownOccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+		}
+		else
+		{
+			fatal("cache_dump_stats(): bad container type\n");
+		}
 
 
 		//---------------------------
@@ -3696,12 +3740,17 @@ void l1_i_cache_down_io_ctrl(void){
 
 	struct cgm_packet_t *message_packet;
 	int transfer_time = 0;
+	long long occ_start = 0;
+
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l1_i_caches[my_pid].cache_io_down_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(l2_caches[my_pid].Rx_queue_top) > QueueSize)
 		{
@@ -3733,6 +3782,10 @@ void l1_i_cache_down_io_ctrl(void){
 			if(message_packet->access_type == cgm_access_gets)
 				l2_caches[my_pid].TotalReads++;
 		}
+
+		/*stats occupancy*/
+		l1_i_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
+
 	}
 
 	return;
@@ -3746,12 +3799,16 @@ void l1_d_cache_down_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long occ_start = 0;
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l1_d_caches[my_pid].cache_io_down_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		message_packet = list_get(l1_d_caches[my_pid].Tx_queue_bottom, 0);
 		assert(message_packet);
@@ -3818,6 +3875,11 @@ void l1_d_cache_down_io_ctrl(void){
 		{
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 		}
+
+
+		/*stats occupancy*/
+		l1_d_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
+
 	}
 
 	fatal("l1_d_cache_down_io_ctrl(): out of while loop\n");
@@ -3833,12 +3895,16 @@ void l2_cache_up_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
+	long long occ_start = 0;
 
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l2_caches[my_pid].cache_io_up_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		message_packet = list_get(l2_caches[my_pid].Tx_queue_top, 0);
 		assert(message_packet);
@@ -3920,6 +3986,10 @@ void l2_cache_up_io_ctrl(void){
 		{
 			fatal("l2_cache_up_io_ctrl(): bad cpu access type %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
+
+		/*stats occupancy*/
+		l2_caches[my_pid].IOUpOccupancy += (P_TIME - occ_start);
+
 	}
 	return;
 }
@@ -3935,11 +4005,16 @@ void l2_cache_down_io_ctrl(void){
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l2_caches[my_pid].cache_io_down_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(switches[my_pid].north_queue) >= QueueSize)
 		{
@@ -3995,6 +4070,9 @@ void l2_cache_down_io_ctrl(void){
 
 		}
 
+		/*stats occupancy*/
+		l2_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
+
 	}
 
 	fatal("l2_cache_down_io_ctrl(): out of while loop\n");
@@ -4015,11 +4093,16 @@ void l3_cache_up_io_ctrl(void){
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(l3_caches[my_pid].cache_io_up_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(switches[my_pid].south_queue) > QueueSize)
 		{
@@ -4060,6 +4143,10 @@ void l3_cache_up_io_ctrl(void){
 			switches[my_pid].south_rxqueue_ave_depth =
 				((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
 		}
+
+		/*stats occupancy*/
+		l3_caches[my_pid].IOUpOccupancy += (P_TIME - occ_start);
+
 	}
 
 	fatal("l3_cache_up_io_ctrl(): out of while loop\n");
@@ -4076,6 +4163,8 @@ void l3_cache_down_io_ctrl(void){
 	int transfer_time = 0;
 	long long queue_depth = 0;
 
+	long long occ_start = 0;
+
 	/*int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;*/
 
@@ -4087,6 +4176,9 @@ void l3_cache_down_io_ctrl(void){
 	while(1)
 	{
 		await(l3_caches[my_pid].cache_io_down_ec, step);
+
+		/*stats*/
+		occ_start = P_TIME;
 
 		if(list_count(switches[my_pid].south_queue) >= QueueSize)
 		{
@@ -4123,6 +4215,10 @@ void l3_cache_down_io_ctrl(void){
 				((((double) switches[my_pid].south_rx_inserts - 1) * switches[my_pid].south_rxqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_rx_inserts;
 
 		}
+
+		/*stats occupancy*/
+		l3_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
+
 	}
 
 	fatal("l3_cache_down_io_ctrl(): out of while loop\n");
