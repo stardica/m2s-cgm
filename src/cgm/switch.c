@@ -1440,6 +1440,8 @@ void switch_south_io_ctrl(void){
 			{
 				step++;
 
+				SYSTEM_PAUSE(transfer_time);
+
 				if(list_count(system_agent->Rx_queue_top) > QueueSize)
 					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", system_agent->name, system_agent->Rx_queue_top->name, list_count(system_agent->Rx_queue_top));
 
@@ -1464,6 +1466,8 @@ void switch_south_io_ctrl(void){
 		{
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
+
+
 
 		/*stats occupancy*/
 		switches[my_pid].switch_south_io_occupance += (P_TIME - occ_start);
@@ -1611,7 +1615,12 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	/*there is a switch for the GPU this for loop will pick it up*/
 	for(i = 0; i <= num_cores; i++)
 	{
-		CGM_STATS(cgm_stats_file, "s_%d_SwitchOccupance = %llu\n", i, cgm_stat_container->switch_occupance[i]);
+
+		CGM_STATS(cgm_stats_file, "s_%d_Occupancy = %llu\n", i, cgm_stat_container->switch_occupance[i]);
+		CGM_STATS(cgm_stats_file, "s_%d_IONorthOccupancy = %llu\n", i, cgm_stat_container->switch_north_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "s_%d_IOEastOccupancy = %llu\n", i, cgm_stat_container->switch_east_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "s_%d_IOSouthOccupancy = %llu\n", i, cgm_stat_container->switch_south_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "s_%d_IOWestOccupancy = %llu\n", i, cgm_stat_container->switch_west_io_occupance[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "s_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->switch_occupance[i]/(double) P_TIME));
@@ -1619,6 +1628,15 @@ void switch_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 			CGM_STATS(cgm_stats_file, "s_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->switch_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+
+			CGM_STATS(cgm_stats_file, "s_%d_IONorthOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->switch_north_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "s_%d_IOEastOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->switch_east_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "s_%d_IOSouthOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->switch_south_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "s_%d_IOWestOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->switch_west_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{

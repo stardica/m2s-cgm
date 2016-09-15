@@ -412,7 +412,8 @@ void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	}*/
 
 	/*CGM_STATS(cgm_stats_file, "[MemCtrl]\n");*/
-	CGM_STATS(cgm_stats_file, "mc_Occupance = %llu\n", cgm_stat_container->mem_ctrl_occupance);
+	CGM_STATS(cgm_stats_file, "mc_Occupancy = %llu\n", cgm_stat_container->mem_ctrl_occupance);
+	CGM_STATS(cgm_stats_file, "mc_IOUpOccupancy = %llu\n", cgm_stat_container->mem_ctrl_up_io_occupance);
 	if(cgm_stat_container->stats_type == systemStats)
 	{
 		CGM_STATS(cgm_stats_file, "mc_OccupancyPct = %0.6f\n", ((double) cgm_stat_container->mem_ctrl_occupance/(double) P_TIME));
@@ -420,6 +421,7 @@ void memctrl_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	else if (cgm_stat_container->stats_type == parallelSection)
 	{
 		CGM_STATS(cgm_stats_file, "mc_OccupancyPct = %0.6f\n", (((double) cgm_stat_container->mem_ctrl_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
+		CGM_STATS(cgm_stats_file, "mc_IOUpOccupancyPct = %0.6f\n", (((double) cgm_stat_container->mem_ctrl_up_io_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
 	}
 	else
 	{

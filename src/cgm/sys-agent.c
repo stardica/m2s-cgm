@@ -541,7 +541,10 @@ void sys_agent_reset_stats(void){
 void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container){
 
 	/*CGM_STATS(cgm_stats_file, "[SystemAgent]\n");*/
-	CGM_STATS(cgm_stats_file, "sa_Occupance = %llu\n", cgm_stat_container->system_agent_occupance);
+
+	CGM_STATS(cgm_stats_file, "sa_Occupancy = %llu\n", cgm_stat_container->system_agent_occupance);
+	CGM_STATS(cgm_stats_file, "sa_IOUpOccupancy = %llu\n", cgm_stat_container->system_agent_up_io_occupance);
+	CGM_STATS(cgm_stats_file, "sa_IODownOccupancy = %llu\n", cgm_stat_container->system_agent_down_io_occupance);
 
 	if(cgm_stat_container->stats_type == systemStats)
 	{
@@ -550,6 +553,8 @@ void sys_agent_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	else if (cgm_stat_container->stats_type == parallelSection)
 	{
 		CGM_STATS(cgm_stats_file, "sa_OccupancyPct = %0.6f\n", (((double) cgm_stat_container->system_agent_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
+		CGM_STATS(cgm_stats_file, "sa_IOUpOccupancyPct = %0.6f\n", (((double) cgm_stat_container->system_agent_up_io_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
+		CGM_STATS(cgm_stats_file, "sa_IODownOccupancyPct = %0.6f\n", (((double) cgm_stat_container->system_agent_down_io_occupance)/((double) cgm_stat_container->total_parallel_section_cycles)));
 	}
 	else
 	{

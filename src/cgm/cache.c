@@ -2404,23 +2404,25 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "[L1_I_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l1_i_CacheUtilization[i])/((double) l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_i_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_i_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_i_down_io_occupance[i]);
 
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->l1_i_Occupancy[i]/(double) P_TIME));
+
+			CGM_STATS(cgm_stats_file, "l1_i_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l1_i_down_io_occupance[i]/(double)P_TIME));
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 			CGM_STATS(cgm_stats_file, "l1_i_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l1_i_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+
+			CGM_STATS(cgm_stats_file, "l1_i_%d_IOdownOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l1_i_down_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
-
-		CGM_STATS(cgm_stats_file, "l1_i_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_i_down_io_occupance[i]);
-
-
 
 		//-------------------------------
 		CGM_STATS(cgm_stats_file, "l1_i_%d_Stalls = %llu\n", i, cgm_stat_container->l1_i_Stalls[i]);
@@ -2478,21 +2480,25 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "[L1_D_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l1_d_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l1_d_CacheUtilization[i])/((double) l1_d_caches[i].num_sets * l1_d_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Occupancy = %llu\n", i, cgm_stat_container->l1_d_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l1_d_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_d_down_io_occupance[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l1_d_Occupancy[i]/(double)P_TIME));
+
+			CGM_STATS(cgm_stats_file, "l1_d_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l1_d_down_io_occupance[i]/(double)P_TIME));
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
-			//fatal("occ %llu cycles %llu then %0.2f\n", cgm_stat_container->l1_d_occupancy[i], cgm_stat_container->total_parallel_section_cycles, cgm_stat_container->l1_d_occupancy[i]/cgm_stat_container->total_parallel_section_cycles);
 			CGM_STATS(cgm_stats_file, "l1_d_%d_OccupancyPct = %0.6f\n", i, (((double)cgm_stat_container->l1_d_Occupancy[i])/((double)cgm_stat_container->total_parallel_section_cycles)));
+
+			CGM_STATS(cgm_stats_file, "l1_d_%d_IOdownOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l1_d_down_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
 
-		CGM_STATS(cgm_stats_file, "l1_d_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l1_d_down_io_occupance[i]);
 
 		//-----------------------------------
 		CGM_STATS(cgm_stats_file, "l1_d_%d_Stalls = %llu\n", i, cgm_stat_container->l1_d_Stalls[i]);
@@ -2544,21 +2550,28 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "[L2_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l2_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l2_CacheUtilization[i])/((double) l2_caches[i].num_sets * l2_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l2_%d_Occupancy = %llu\n", i, cgm_stat_container->l2_Occupancy[i]);
-		if(cgm_stat_container->stats_type == systemStats)
+		CGM_STATS(cgm_stats_file, "l2_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l2_up_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "l2_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l2_down_io_occupance[i]);
+				if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.6f\n", i, ((double) cgm_stat_container->l2_Occupancy[i]/(double)P_TIME));
+
+			CGM_STATS(cgm_stats_file, "l2_%d_IOUpOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l2_up_io_occupance[i]/(double)P_TIME));
+			CGM_STATS(cgm_stats_file, "l2_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l2_down_io_occupance[i]/(double)P_TIME));
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 			CGM_STATS(cgm_stats_file, "l2_%d_OccupancyPct = %0.6f\n", i, (((double)cgm_stat_container->l2_Occupancy[i])/((double)cgm_stat_container->total_parallel_section_cycles)));
+
+			CGM_STATS(cgm_stats_file, "l2_%d_IOUpOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l2_up_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "l2_%d_IOdownOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l2_down_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
-
-		CGM_STATS(cgm_stats_file, "l2_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l2_up_io_occupance[i]);
-		CGM_STATS(cgm_stats_file, "l2_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l2_down_io_occupance[i]);
 
 		//--------------------------------------------
 		CGM_STATS(cgm_stats_file, "l2_%d_Stalls = %llu\n", i, cgm_stat_container->l2_Stalls[i]);
@@ -2610,40 +2623,28 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "[L3_Cache_%d]\n", i);*/
 		CGM_STATS(cgm_stats_file, "l3_%d_CacheUtilization = %0.4f\n", i, ((double) cgm_stat_container->l3_CacheUtilization[i])/((double) l3_caches[i].num_sets * l3_caches[i].assoc));
 		CGM_STATS(cgm_stats_file, "l3_%d_Occupancy = %llu\n", i, cgm_stat_container->l3_Occupancy[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l3_up_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l3_down_io_occupance[i]);
 		if(cgm_stat_container->stats_type == systemStats)
 		{
 			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
+
+			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_up_io_occupance[i]/(double)P_TIME));
+			CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_down_io_occupance[i]/(double)P_TIME));
 		}
 		else if (cgm_stat_container->stats_type == parallelSection)
 		{
 			CGM_STATS(cgm_stats_file, "l3_%d_OccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+
+			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l3_up_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
+			CGM_STATS(cgm_stats_file, "l3_%d_IOdownOccupancyPct = %0.6f\n"
+					, i, (((double) cgm_stat_container->l3_down_io_occupance[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
 		}
 		else
 		{
 			fatal("cache_dump_stats(): bad container type\n");
 		}
-
-		CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->l3_up_io_occupance[i]);
-		CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancy = %llu\n", i, cgm_stat_container->l3_down_io_occupance[i]);
-
-		if(cgm_stat_container->stats_type == systemStats)
-		{
-			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
-			CGM_STATS(cgm_stats_file, "l3_%d_IODownOccupancyPct = %0.6f\n", i, ((double)cgm_stat_container->l3_Occupancy[i]/(double)P_TIME));
-		}
-		else if (cgm_stat_container->stats_type == parallelSection)
-		{
-			fatal("fix these stats\n");
-
-
-			CGM_STATS(cgm_stats_file, "l3_%d_IOUpOccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
-			CGM_STATS(cgm_stats_file, "l3_%d_IOdownOccupancyPct = %0.6f\n", i, (((double) cgm_stat_container->l3_Occupancy[i])/((double) cgm_stat_container->total_parallel_section_cycles)));
-		}
-		else
-		{
-			fatal("cache_dump_stats(): bad container type\n");
-		}
-
 
 		//---------------------------
 		CGM_STATS(cgm_stats_file, "l3_%d_Stalls = %llu\n", i, cgm_stat_container->l3_Stalls[i]);
