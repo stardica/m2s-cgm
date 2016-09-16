@@ -124,7 +124,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
 				{
 					//printf("syscallstalls\n");
-					//cgm_stat->core_rob_stall_syscall[core->id]++;
+					cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
 				}
 				else
 				{
