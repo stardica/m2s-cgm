@@ -46,7 +46,7 @@
 
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
-#define SYSTEM_LATENCY_FACTOR 2
+#define SYSTEM_LATENCY_FACTOR 1
 #define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
 
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
@@ -54,7 +54,7 @@
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
 #define WATCHBLOCK (unsigned int) 0x0232c2c0
 #define WATCHLINE 0
-//Level 0 = no blk trace, 1 = l1-L2, 2 = L2-L3, 3 L1-L3,
+//Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 L1-L3,
 #define LEVEL 2
 //dumps the system trace 0 off 1 on
 #define SYSTEM 0

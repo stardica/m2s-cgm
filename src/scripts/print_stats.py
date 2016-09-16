@@ -6,27 +6,68 @@ num_cores = 8
 cache_combined = 1
 cache_levels = 3
 #total_paralell_cycles = 0
+gpu_stats = 0
 
-def print_switch_io_stats(options):
+def get_stats(options):
 
-	io_data = ConfigParser.ConfigParser()
-	io_data.optionxform = str
-	io_data.read(options.InFileName)
+	stats = ConfigParser.ConfigParser()
+	stats.optionxform = str
+	stats.read(options.InFileName)
 
 	#pull stats
 	if options.PrintSection == 'FullRunStats':
-		io_stats_dict = dict(io_data.items('FullRunStats'))
+		stats_dict = dict(stats.items('FullRunStats'))
 	elif options.PrintSection == 'ParallelStats':
-		io_stats_dict = dict(io_data.items('ParallelStats'))
+		stats_dict = dict(stats.items('ParallelStats'))
 	else:
 		print "print_switch_io_stats(): invalid section"
 		exit(0)
 
-	for key, value in io_stats_dict.items(): # get the (key, value) tuples one at a time
+	for key, value in stats_dict.items(): # get the (key, value) tuples one at a time
 		try:
-			io_stats_dict[key] = int(value)
+			stats_dict[key] = int(value)
 		except ValueError:
-			io_stats_dict[key] = float(value)
+			stats_dict[key] = float(value)
+
+	return stats_dict
+
+
+def get_margins(table, title, element):
+
+	#combined swtich stats
+
+	#get the largest title length	
+	max_title_length = len(title)
+	current_title_length = 0
+
+	for tup in table:
+		for item in tup[0:1]:
+			current_title_length = len(tup[0])
+			if max_title_length < current_title_length:
+				max_title_length = current_title_length
+
+	#get the largest data element length
+	max_element_length = len(element)
+	current_element_length = 0
+
+	for tup in table:
+		for item in tup[1:5]:
+			current_element_length = len(str(item))
+			if max_element_length < current_element_length:
+				max_element_length = current_element_length
+
+	max_title_length += 2
+	max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+
+	return max_title_length, max_element_length
+
+
+
+def print_switch_io_stats(options):
+	
+	io_stats_dict = get_stats(options)
+	
 	
 	var = ""
 	io_stats = 	[
@@ -39,8 +80,8 @@ def print_switch_io_stats(options):
 			"IOWestOccupancy",
 			"IOWestOccupancyPct"
 			]
-
-
+	
+	
 	switch_io_stats_table = [[0 for x in range(num_cores + 2)] for y in range(len(io_stats))]
 
 	
@@ -72,31 +113,9 @@ def print_switch_io_stats(options):
 	
 
 	#combined swtich stats
+	max_title_length, max_element_length = get_margins(switch_stats_table_combined, 'Switch IO stats combined', "")
 
-	#get the largest title length	
-	max_title_length = len('Switch IO stats combined')
-	current_title_length = 0
-
-	for tup in switch_stats_table_combined:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in switch_stats_table_combined:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
-
+	
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
@@ -114,33 +133,11 @@ def print_switch_io_stats(options):
 	f.write('\n')
 
 	
-	#get the largest title length	
-	max_title_length = len('Switch IO stats individual')
-	current_title_length = 0
-
-	for tup in switch_io_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in switch_io_stats_table:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(switch_io_stats_table, 'Switch IO stats individual', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
-
 
 	#print the table headers
 	f.write("{:<{title_width}}".format("Switch IO stats individual", title_width=max_title_length))
@@ -179,25 +176,8 @@ def print_switch_io_stats(options):
 
 def print_cache_io_stats(options):
 
-	io_data = ConfigParser.ConfigParser()
-	io_data.optionxform = str
-	io_data.read(options.InFileName)
+	io_stats_dict = get_stats(options)
 
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		io_stats_dict = dict(io_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		io_stats_dict = dict(io_data.items('ParallelStats'))
-	else:
-		print "print_io_stats(): invalid section"
-		exit(0)
-
-	for key, value in io_stats_dict.items(): # get the (key, value) tuples one at a time
-		try:
-			io_stats_dict[key] = int(value)
-		except ValueError:
-			io_stats_dict[key] = float(value)
-	
 	var = ""
 	io_stats = 	[
 			"IOUpOccupancy",
@@ -267,29 +247,8 @@ def print_cache_io_stats(options):
 	f.write("//Cache IO Stats///////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	#get the largest title length	
-	max_title_length = len('Cache io stats combined')
-	current_title_length = 0
-
-	for tup in cache_stats_table_combined:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in cache_stats_table_combined:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(cache_stats_table_combined, 'Cache io stats combined', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -323,30 +282,9 @@ def print_cache_io_stats(options):
 		io_stats_table[j+3] = l3_io_stats_table[i]
 		j += 4
 
-	#get the largest title length	
-	max_title_length = len('Cache IO stats individual')
-	current_title_length = 0
 
-	for tup in io_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in io_stats_table:
-		for item in tup[1:num_cores]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(io_stats_table, 'Cache IO stats individual', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -404,28 +342,11 @@ def print_cache_io_stats(options):
 
 def print_cache_stats(options):
 
+	cache_stats_dict = io_stats_dict = get_stats(options)
+
 	if cache_combined != 1:
 		print "error: cache combined must be set 1"
 		exit(0)
-
-	cache_data = ConfigParser.RawConfigParser()
-	cache_data.optionxform = str 
-	cache_data.read(options.InFileName)
-
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		cache_stats_dict = dict(cache_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		cache_stats_dict = dict(cache_data.items('ParallelStats'))
-	else:
-		print "print_cache_stats(): invalid section"
-		exit(0)
-
-	for key, value in cache_stats_dict.items(): # get the (key, value) tuples one at a time
-		try:
-			cache_stats_dict[key] = int(value)
-		except ValueError:
-			cache_stats_dict[key] = float(value)
 
 	var = ""
 	cache_stats = [	
@@ -530,29 +451,9 @@ def print_cache_stats(options):
 	f.write("//Cache Stats//////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	#get the largest title length	
-	max_title_length = len('Cache stats combined')
-	current_title_length = 0
 
-	for tup in cache_stats_table_combined:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in cache_stats_table_combined:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(cache_stats_table_combined, 'Cache stats combined', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -587,30 +488,8 @@ def print_cache_stats(options):
 		cache_stats_table[j+3] = l3_stats_table[i]
 		j += 4
 
-	#get the largest title length	
-	max_title_length = len('Cache stats individual')
-	current_title_length = 0
 
-	for tup in cache_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in cache_stats_table:
-		for item in tup[1:num_cores]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	max_title_length, max_element_length = get_margins(cache_stats_table, 'Cache stats individual', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -665,30 +544,9 @@ def print_cache_stats(options):
 
 
 def print_switch_stats(options):
+
+	switch_stats_dict = io_stats_dict = get_stats(options)
 	
-	switch_data = ConfigParser.ConfigParser()
-	switch_data.optionxform = str 
-	switch_data.read(options.InFileName)
-
-	#pull of the memory system stats 	
-	#switch_stats_dict = dict(switch_data.items('FullRunStats'))
-
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		switch_stats_dict = dict(switch_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		switch_stats_dict = dict(switch_data.items('ParallelStats'))
-	else:
-		print "print_switch_stats(): invalid section"
-		exit(0)
-
-	for key, value in switch_stats_dict.items(): #get the (key, value) tuples one at a time
-		try:
-			switch_stats_dict[key] = int(value)
-		except ValueError:
-			switch_stats_dict[key] = float(value)
-
-
 	var = ""
 	switch_stats = [
 			"Occupancy",
@@ -753,30 +611,7 @@ def print_switch_stats(options):
 	
 
 	#combined swtich stats
-
-	#get the largest title length	
-	max_title_length = len('Switch stats combined')
-	current_title_length = 0
-
-	for tup in switch_stats_table_combined:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in switch_stats_table_combined:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	max_title_length, max_element_length = get_margins(switch_stats_table_combined, 'Switch stats combined', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -794,29 +629,9 @@ def print_switch_stats(options):
 				f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
 	f.write('\n')
 
-	#get the largest title length	
-	max_title_length = len('Switch stats individual')
-	current_title_length = 0
 
-	for tup in switch_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in switch_stats_table:
-		for item in tup[1:5]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(switch_stats_table, 'Switch stats individual', "")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
@@ -858,28 +673,7 @@ def print_switch_stats(options):
 
 def print_samc_stats(options):
 
-	samc_data = ConfigParser.ConfigParser()
-	samc_data.optionxform = str
-	samc_data.read(options.InFileName)
-
-	#pull of the memory system stats 	
-	#samc_stats = dict(samc_data.items('FullRunStats'))
-
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		samc_stats_dict = dict(samc_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		samc_stats_dict = dict(samc_data.items('ParallelStats'))
-	else:
-		print "print_samc_stats(): invalid section"
-		exit(0)
-
-	for key, value in samc_stats_dict.items(): #get the (key, value) tuples one at a time
-		try:
-			samc_stats_dict[key] = int(value)
-		except ValueError:
-			samc_stats_dict[key] = float(value)
-
+	samc_stats_dict = io_stats_dict = get_stats(options)
 
 	sa_stats = [
 			"Occupancy",
@@ -972,30 +766,10 @@ def print_samc_stats(options):
 	f.write("//System Agent Stats///////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 		
-	#get the largest title length	
-	max_title_length = len('System agent stats')
-	current_title_length = 0
 
-	for tup in sa_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(sa_stats_table, 'System agent stats', "")
 
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in sa_stats_table:
-		for item in tup[1:2]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
@@ -1015,36 +789,16 @@ def print_samc_stats(options):
 
 	f.write("//Memory Ctrl Stats////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-		
-	#get the largest title length	
-	max_title_length = len('Memory ctrl stats')
-	current_title_length = 0
-
-	for tup in mc_stats_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in mc_stats_table:
-		for item in tup[1:2]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	
+	
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(mc_stats_table, 'Memory ctrl stats', "")
 	
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
 	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}".format("Memory Ctrl stats",'MC', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format("Memory ctrl stats",'MC', title_width=max_title_length, data_width=max_element_length) + '\n')
 	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	#print the table's data
@@ -1056,34 +810,13 @@ def print_samc_stats(options):
 
 	f.write('\n')
 
-
-
 	f.close
 	return
 
 
 def print_mem_system_stats(options):
 
-	ms_data = ConfigParser.RawConfigParser()
-	ms_data.optionxform = str 
-	ms_data.read(options.InFileName)
-
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		ms_stats = dict(ms_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		ms_stats = dict(ms_data.items('ParallelStats'))
-	else:
-		print "print_cache_stats(): invalid section"
-		exit(0)
-
-
-	for key, value in ms_stats.items(): # get the (key, value) tuples one at a time
-		try:
-			ms_stats[key] = int(value)
-		except ValueError:
-			ms_stats[key] = float(value)
-
+	ms_stats = get_stats(options)
 
 	var = ""
 	mem_stats = ["FirstAccessLat(Fetch)",
@@ -1132,30 +865,9 @@ def print_mem_system_stats(options):
 	f.write("//Mem-System Stats/////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	#get the largest title length	
-	max_title_length = len('Stat Mem System')
-	current_title_length = 0
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(mem_sys_stats, 'Stat Mem System', "")
 
-	for tup in mem_sys_stats:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in mem_sys_stats:
-		for item in tup[1:2]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
@@ -1176,19 +888,8 @@ def print_mem_system_stats(options):
 
 def print_cpu_stats(options):
 
-	cpu_data = ConfigParser.ConfigParser()
-	cpu_data.optionxform = str
-	cpu_data.read(options.InFileName)
+	cpu_stats = get_stats(options)
 
-	#pull stats
-	if options.PrintSection == 'FullRunStats':
-		cpu_stats = dict(cpu_data.items('FullRunStats'))
-	elif options.PrintSection == 'ParallelStats':
-		cpu_stats = dict(cpu_data.items('ParallelStats'))
-	else:
-		print "print_cpu_stats(): invalid section"
-		exit(0)
-	
 	var = ""
 	stats = [
 		"NumSyscalls",
@@ -1196,23 +897,23 @@ def print_cpu_stats(options):
 		"ROBStallLoad",
 		"ROBStallStore",
 		"ROBStallOther",
-		"FirstFetchCycle",
-		"LastCommitCycle",
+		#"FirstFetchCycle",
+		#"LastCommitCycle",
 		"FetchStall",
-		"RunTime",
-		"IdleTime",
+		#"RunTime",
+		#"IdleTime",
 		"SystemTime",
 		"StallTime",
-		"BusyTime",
-		"IdlePct",
-		"RunPct",
-		"SystemPct",
-		"StallPct",
-		"BusyPct",
-		"StallfetchPct",
-		"StallLoadPct",
-		"StallStorePct",
-		"StallOtherPct"
+		"BusyTime"
+		#"IdlePct",
+		#"RunPct",
+		#"SystemPct",
+		#"StallPct",
+		#"BusyPct",
+		#"StallfetchPct",
+		#"StallLoadPct",
+		#"StallStorePct",
+		#"StallOtherPct"
 		]
 
 	stat_table = [[0 for x in range(num_cores + 1)] for y in range(len(stats))]
@@ -1230,33 +931,12 @@ def print_cpu_stats(options):
 	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 	
-	#get the largest title length	
-	max_title_length = len('CPU Stats All Cores')
-	current_title_length = 0
 
-	for tup in stat_table:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in stat_table:
-		for item in tup[1:num_cores]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(stat_table, 'CPU Stats All Cores', "Core_0")
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
-
 
 	#print the table headers
 	f.write("{:<{title_width}}".format("CPU Stats All Cores", title_width=max_title_length))
@@ -1302,18 +982,9 @@ def print_general_stats(options):
 	#pull of the general stats 	
 	general_stats = dict(general_data.items('General'))
 
-	#bench_args = general_data.get('General', 'Benchmark')
-	#day_time = general_data.get('General', 'Day&Time')
-	#total_cycles = general_data.getint('General', 'TotalCycles')
-	#run_time_cpu = general_data.getfloat('General', 'SimulationRunTimeSeconds(cpu)')
-	#run_time_wall = general_data.getfloat('General', 'SimulationRunTimeSeconds(wall)')
-	#simulated_cycles_per_sec = general_data.getfloat('General', 'SimulatedCyclesPerSec')
-	#cpu_num_cores = general_data.getint('General', 'CPU_NumCores')
-	#cpu_threads_per_core = general_data.getint('General', 'CPU_ThreadsPerCore')
-	#cpu_freq_ghz = general_data.getint('General', 'CPU_FreqGHz')
-	
 	table_general_data = [
-	["BenchmarkArgs", general_stats['Benchmark']],
+	["Benchmark", general_stats['Benchmark']],
+	["BenchmarkArgs", general_stats['Args']],
 	["DateTime", general_stats['Day&Time']],
 	["ExeSuccessful", general_stats['ExecutionSuccessful']],
 	["TotalCycles", general_stats['TotalCycles']],
@@ -1339,30 +1010,9 @@ def print_general_stats(options):
 	f.write("//General Stats////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	#get the largest title length	
-	max_title_length = len('General Stats')
-	current_title_length = 0
+	#combined swtich stats
+	max_title_length, max_element_length = get_margins(table_general_data, 'General Stats', "")
 
-	for tup in table_general_data:
-		for item in tup[0:1]:
-			current_title_length = len(tup[0])
-			if max_title_length < current_title_length:
-				max_title_length = current_title_length
-
-	#get the largest data element length
-	max_element_length = 0
-	current_element_length = 0
-
-	for tup in table_general_data:
-		for item in tup[1:2]:
-			current_element_length = len(str(item))
-			if max_element_length < current_element_length:
-				max_element_length = current_element_length
-
-	max_title_length += 2
-	max_element_length += 2
-	#print "max title {} max data {}".format(max_title_length, max_element_length)
-	
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
@@ -1397,7 +1047,7 @@ if not options.InFileName:
 	exit(0)
 
 print_general_stats(options)
-#print_cpu_stats(options)
+print_cpu_stats(options)
 print_cache_stats(options)
 print_cache_io_stats(options)
 #print_mem_system_stats(options)

@@ -1,4 +1,29 @@
 
+#get the largest title length	
+	#max_title_length = len('Switch IO stats combined')
+	#current_title_length = 0
+
+	#for tup in switch_stats_table_combined:
+	#	for item in tup[0:1]:
+	#		current_title_length = len(tup[0])
+	#		if max_title_length < current_title_length:
+	#			max_title_length = current_title_length
+
+	#get the largest data element length
+	#max_element_length = 0
+	#current_element_length = 0
+
+	#for tup in switch_stats_table_combined:
+	#	for item in tup[1:5]:
+	#		current_element_length = len(str(item))
+	#		if max_element_length < current_element_length:
+	#			max_element_length = current_element_length
+
+	#max_title_length += 2
+	#max_element_length += 2
+	#print "max title {} max data {}".format(max_title_length, max_element_length)
+
+
 #bridge some of the stats so we can put evetyhing in one table...
 	samc_0 = 0;
 
