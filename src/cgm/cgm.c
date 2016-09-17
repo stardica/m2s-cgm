@@ -438,6 +438,7 @@ void init_cpu_gpu_stats(void){
 	/*configure data structures*/
 	cpu_gpu_stats->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_syscall_stalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));

@@ -128,8 +128,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				}
 				else
 				{
-					cpu_gpu_stats->core_rob_stall_other[core->id]++;
-					cpu_gpu_stats->core_rob_stalls[core->id]++;
+					//cpu_gpu_stats->core_rob_stall_other[core->id]++;
+					//cpu_gpu_stats->core_rob_stalls[core->id]++;
 				}
 			}
 			else if(stall == x86_dispatch_stall_lsq)
