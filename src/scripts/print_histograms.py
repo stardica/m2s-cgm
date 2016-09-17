@@ -20,14 +20,6 @@ def print_histograms(options):
 	return
 
 
-
-
-
-
-
-
-
-
 parser = OptionParser()
 parser.usage = "%prog -f fetchlogfile -l loadlogfile -s storelogfile"
 parser.add_option("-f", "--fetchlog", dest="fetchlog", default="", help="Specifiy the fetch log file.")
