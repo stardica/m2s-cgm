@@ -222,6 +222,7 @@ void interrupt_service_request(void){
 			id++; //go to the next core
 		}
 	}
+
 	/* should never get here*/
 	fatal("interrupt_service_request task is broken\n");
 	return;

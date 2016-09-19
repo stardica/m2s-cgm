@@ -159,7 +159,7 @@ void cpu_configure(Timing *self, struct config_t *config){
 
 	if(num_cores <= 0 || num_cores > 8)
 	{
-		fatal("For now, number of cores must be between 1 - 32\n");
+		fatal("For now, number of cores must be between 1 - 8\n");
 	}
 
 	return;

@@ -3,9 +3,7 @@ import ConfigParser
 from optparse import OptionParser
 
 num_cores = 8
-cache_combined = 1
 cache_levels = 3
-#total_paralell_cycles = 0
 gpu_stats = 0
 
 def get_stats(options):
@@ -91,7 +89,6 @@ def print_switch_io_stats(options):
 			var = "s_" + str(j) + "_" + io_stats[i]
 			switch_io_stats_table[i][(j+1)] = io_stats_dict[var]
 
-
 	switch_stats_table_combined = [[0 for x in range(2)] for y in range(len(io_stats))]
 	
 	#need to account for ave stats here...
@@ -99,12 +96,13 @@ def print_switch_io_stats(options):
 		switch_stats_table_combined[i][0] = io_stats[i]
 		if switch_stats_table_combined[i][0] == "IONorthOccupancyPct" or switch_stats_table_combined[i][0] == "IOEastOccupancyPct" \
 		or switch_stats_table_combined[i][0] == "IOSouthOccupancyPct" or switch_stats_table_combined[i][0] == "IOWestOccupancyPct":
-			switch_stats_table_combined[i][1] = float((switch_stats_table_combined[i-1][1]/(num_cores + 1))) / float(total_paralell_cycles)
+			switch_stats_table_combined[i][1] = float(switch_stats_table_combined[i-1][1])/float(total_paralell_cycles)
 		else:
-			for j in range (1, (num_cores + 1)):
+			for j in range (1, (num_cores + 2)):
 				switch_stats_table_combined[i][1] += switch_io_stats_table[i][j]
+			switch_stats_table_combined[i][1] = switch_stats_table_combined[i][1]/(num_cores + 1)
 		
-
+	#print switch_stats_table_combined
 	
 
 	f = open(options.OutFileName, 'a')
@@ -133,7 +131,7 @@ def print_switch_io_stats(options):
 	f.write('\n')
 
 	
-	#combined swtich stats
+	#individual swtich stats
 	max_title_length, max_element_length = get_margins(switch_io_stats_table, 'Switch IO stats individual', "")
 
 	title_bar = '-' * (max_title_length - 1)
@@ -230,16 +228,20 @@ def print_cache_io_stats(options):
 	for i in range (0,len(io_stats)):
 		cache_stats_table_combined[i][0] = io_stats[i]
 		if cache_stats_table_combined[i][0] == "IOUpOccupancyPct" or cache_stats_table_combined[i][0] == "IOdownOccupancyPct":
-			cache_stats_table_combined[i][1] = float((cache_stats_table_combined[i-1][1]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][2] = float((cache_stats_table_combined[i-1][2]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][3] = float((cache_stats_table_combined[i-1][3]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][4] = float((cache_stats_table_combined[i-1][4]/num_cores)) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][1] = float(cache_stats_table_combined[i-1][1]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][2] = float(cache_stats_table_combined[i-1][2]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][3] = float(cache_stats_table_combined[i-1][3]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][4] = float(cache_stats_table_combined[i-1][4]) / float(total_paralell_cycles)
 		else:
 			for j in range (1, num_cores + 1):
 				cache_stats_table_combined[i][1] += l1_i_io_stats_table[i][j]
 				cache_stats_table_combined[i][2] += l1_d_io_stats_table[i][j]
 				cache_stats_table_combined[i][3] += l2_io_stats_table[i][j]
 				cache_stats_table_combined[i][4] += l3_io_stats_table[i][j]
+			cache_stats_table_combined[i][1] = cache_stats_table_combined[i][1]/num_cores
+			cache_stats_table_combined[i][2] = cache_stats_table_combined[i][2]/num_cores
+			cache_stats_table_combined[i][3] = cache_stats_table_combined[i][3]/num_cores
+			cache_stats_table_combined[i][4] = cache_stats_table_combined[i][4]/num_cores
 
 
 	f = open(options.OutFileName, 'a')
@@ -344,10 +346,6 @@ def print_cache_stats(options):
 
 	cache_stats_dict = io_stats_dict = get_stats(options)
 
-	if cache_combined != 1:
-		print "error: cache combined must be set 1"
-		exit(0)
-
 	var = ""
 	cache_stats = [	
 			"CacheUtilization",
@@ -429,16 +427,20 @@ def print_cache_stats(options):
 	for i in range (0,len(cache_stats)):
 		cache_stats_table_combined[i][0] = cache_stats[i]
 		if cache_stats_table_combined[i][0] == "OccupancyPct":
-			cache_stats_table_combined[i][1] = float((cache_stats_table_combined[1][1]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][2] = float((cache_stats_table_combined[1][2]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][3] = float((cache_stats_table_combined[1][3]/num_cores)) / float(total_paralell_cycles)
-			cache_stats_table_combined[i][4] = float((cache_stats_table_combined[1][4]/num_cores)) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][1] = float(cache_stats_table_combined[1][1]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][2] = float(cache_stats_table_combined[1][2]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][3] = float(cache_stats_table_combined[1][3]) / float(total_paralell_cycles)
+			cache_stats_table_combined[i][4] = float(cache_stats_table_combined[1][4]) / float(total_paralell_cycles)
 		else:
 			for j in range (1, num_cores + 1):
 				cache_stats_table_combined[i][1] += l1_i_stats_table[i][j]
 				cache_stats_table_combined[i][2] += l1_d_stats_table[i][j]
 				cache_stats_table_combined[i][3] += l2_stats_table[i][j]
 				cache_stats_table_combined[i][4] += l3_stats_table[i][j]
+			cache_stats_table_combined[i][1] = cache_stats_table_combined[i][1]/num_cores
+			cache_stats_table_combined[i][2] = cache_stats_table_combined[i][2]/num_cores
+			cache_stats_table_combined[i][3] = cache_stats_table_combined[i][3]/num_cores
+			cache_stats_table_combined[i][4] = cache_stats_table_combined[i][4]/num_cores
 
 	#print cache_stats_table_combined[2]
 	#print l1_i_stats_table[1]
@@ -600,10 +602,11 @@ def print_switch_stats(options):
 	for i in range (0,len(switch_stats)):
 		switch_stats_table_combined[i][0] = switch_stats[i]
 		if switch_stats_table_combined[i][0] == "OccupancyPct":
-			switch_stats_table_combined[i][1] = float((switch_stats_table_combined[0][1])/(num_cores + 1)) / float(total_paralell_cycles)
+			switch_stats_table_combined[i][1] = float(switch_stats_table_combined[0][1]) / float(total_paralell_cycles)
 		else:
 			for j in range (1, num_cores + 2):
 				switch_stats_table_combined[i][1] += switch_stats_table[i][j]
+			switch_stats_table_combined[i][1] = switch_stats_table_combined[i][1]/(num_cores + 1)
 
 	f = open(options.OutFileName, 'a')
 	f.write('//Switch Stats/////////////////////////////////////////////////' +'\n')
@@ -896,20 +899,21 @@ def print_cpu_stats(options):
 		"ROBStalls",
 		"ROBStallLoad",
 		"ROBStallStore",
-		"ROBStallOther",
+		#"ROBStallOther",
 		#"FirstFetchCycle",
 		#"LastCommitCycle",
-		"FetchStall",
+		"ROBStallFetch",
+		"ROBStallSyscall",
 		#"RunTime",
 		#"IdleTime",
 		"SystemTime",
 		"StallTime",
-		"BusyTime"
+		"BusyTime",
+		"SystemTimePct",
+		"StallTimePct",
+		"BusyTimePct"
 		#"IdlePct",
 		#"RunPct",
-		#"SystemPct",
-		#"StallPct",
-		#"BusyPct",
 		#"StallfetchPct",
 		#"StallLoadPct",
 		#"StallStorePct",
@@ -925,14 +929,48 @@ def print_cpu_stats(options):
 			var = "core_" + str(j) + "_" + stats[i]
 			stat_table[i][(j+1)] = cpu_stats[var]
 
-			
+	
+
+
+	stats_table_combined = [[0 for x in range(2)] for y in range(len(stats))]
+
+	#need to account for ave stats here...
+	for i in range (0,len(stats)):
+		stats_table_combined[i][0] = stats[i]
+		for j in range (1, (num_cores + 1)):
+			stats_table_combined[i][1] += stat_table[i][j]
+		#stats_table_combined[i][1] = float(stats_table_combined[i][1])/float(num_cores)
+		stats_table_combined[i][1] = stats_table_combined[i][1]/num_cores
+
 	f = open(options.OutFileName, 'a')
 
 	f.write("//CPU Stats////////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-	
+
 
 	#combined swtich stats
+	max_title_length, max_element_length = get_margins(stats_table_combined, 'CPU stats combined', "CPU")
+
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("CPU stats combined",'CPU', title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in stats_table_combined:
+			if isinstance(tup[1], int):
+				f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+			else:
+				f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write('\n')
+
+
+
+	#Individual CPU stats
 	max_title_length, max_element_length = get_margins(stat_table, 'CPU Stats All Cores', "Core_0")
 
 	title_bar = '-' * (max_title_length - 1)
@@ -979,7 +1017,7 @@ def print_general_stats(options):
 	general_data.optionxform = str 
 	general_data.read(options.InFileName)
 	
-	#pull of the general stats 	
+	#pull off the general stats 	
 	general_stats = dict(general_data.items('General'))
 
 	table_general_data = [
@@ -996,7 +1034,8 @@ def print_general_stats(options):
 	["CPUThreadsPerCore", general_stats['CPU_ThreadsPerCore']],
 	["CPUFreqGhz", general_stats['CPU_FreqGHz']],
 	["GPUNumCUs", general_stats['GPU_NumCUs']],
-	["GPUFreqGhz", general_stats['GPU_FreqGHz']]
+	["GPUFreqGhz", general_stats['GPU_FreqGHz']],
+	["MemLatFactor", general_stats['Mem_LatFactor']]
 	]
 
 	#for other stats...
@@ -1011,13 +1050,13 @@ def print_general_stats(options):
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
 	#combined swtich stats
-	max_title_length, max_element_length = get_margins(table_general_data, 'General Stats', "")
+	max_title_length, max_element_length = get_margins(table_general_data, 'General Stats', 'Stats')
 
 	title_bar = '-' * (max_title_length - 1)
 	data_bar = '-' * (max_element_length - 1)
 
 	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}".format("General Stats",'Stats', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format("General Stats","Stats", title_width=max_title_length, data_width=max_element_length) + '\n')
 	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
 
 	#print the table's data
