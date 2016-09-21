@@ -3212,6 +3212,9 @@ int switch_finish_create(void){
 			switches[i].Tx_west_queue->name = strdup(buff);
 
 
+
+
+
 			//init the queue pointer
 			switches[i].queue = west_queue;
 

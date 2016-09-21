@@ -1177,6 +1177,32 @@ struct switch_t{
 	//struct list_t *west_queue_lane1;
 	//struct list_t *west_queue_lane2;
 
+	//for switches with 4 ports
+	struct list_t *north_rx_request_queue;
+	struct list_t *north_rx_reply_queue;
+	struct list_t *north_rx_coherence_queue;
+	struct list_t *north_tx_request_queue;
+	struct list_t *north_tx_reply_queue;
+	struct list_t *north_tx_coherence_queue;
+	struct list_t *east_rx_request_queue;
+	struct list_t *east_rx_reply_queue;
+	struct list_t *east_rx_coherence_queue;
+	struct list_t *east_tx_request_queue;
+	struct list_t *east_tx_reply_queue;
+	struct list_t *east_tx_coherence_queue;
+	struct list_t *south_rx_request_queue;
+	struct list_t *south_rx_reply_queue;
+	struct list_t *south_rx_coherence_queue;
+	struct list_t *south_tx_request_queue;
+	struct list_t *south_tx_reply_queue;
+	struct list_t *south_tx_coherence_queue;
+	struct list_t *west_rx_request_queue;
+	struct list_t *west_rx_reply_queue;
+	struct list_t *west_rx_coherence_queue;
+	struct list_t *west_tx_request_queue;
+	struct list_t *west_tx_reply_queue;
+	struct list_t *west_tx_coherence_queue;
+
 	//io ctrl
 	eventcount volatile *switches_north_io_ec;
 	task *switches_north_io_tasks;
