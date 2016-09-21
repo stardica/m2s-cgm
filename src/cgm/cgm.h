@@ -32,6 +32,7 @@
 #include <cgm/interrupt.h>
 #include <cgm/switch.h>
 #include <cgm/dram.h>
+#include <cgm/hub-iommu.h>
 
 #include <arch/x86/timing/core.h>
 #include <arch/x86/timing/thread.h>
@@ -187,6 +188,8 @@ struct cpu_gpu_stats_t{
 	long long *core_bytes_rx;
 	long long *core_bytes_tx;
 
+	long long gpu_total_cycles;
+
 	struct list_t **bandwidth;
 
 	/*gpu stats*/
@@ -272,6 +275,10 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 void cgm_dump_system(void);
 long long cgm_get_oldest_access(void);
 long long cache_get_oldest_access(struct cache_t *cache);
+long long hub_get_oldest_access(struct hub_iommu_t *hub_iommu);
+long long switch_get_oldest_access(struct switch_t *switches);
+long long sa_get_oldest_access(struct system_agent_t *system_agent);
+long long mc_get_oldest_access(struct mem_ctrl_t *mem_ctrl);
 
 //debugging and stats related
 void PrintCycle(void);

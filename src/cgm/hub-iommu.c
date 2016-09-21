@@ -477,6 +477,11 @@ void hub_iommu_ctrl_func(void){
 		}
 		else
 		{
+
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", hub_iommu->name);
+
+
 			SYSTEM_PAUSE(1);
 		}
 

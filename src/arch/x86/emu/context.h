@@ -203,6 +203,7 @@ CLASS_END(X86Context)
 
 void X86ContextCreate(X86Context *self, X86Emu *emu);
 void X86ContextCreateAndClone(X86Context *self, X86Context *cloned);
+
 void X86ContextCreateAndFork(X86Context *self, X86Context *forked);
 
 void X86ContextDestroy(X86Context *self);

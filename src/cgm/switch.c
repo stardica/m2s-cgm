@@ -1479,6 +1479,24 @@ void switch_south_io_ctrl(void){
 	return;
 }
 
+void switch_dump_queue(struct list_t *queue){
+
+	int i = 0;
+	struct cgm_packet_t *packet = NULL;
+
+	LIST_FOR_EACH(queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		packet = list_get(queue, i);
+		printf("\t %s slot %d packet id %llu access type %s addr 0x%08x blk addr 0x%08x dest_name %s start_cycle %llu\n",
+				queue->name, i, packet->access_id, str_map_value(&cgm_mem_access_strn_map, packet->access_type), packet->address,
+				(packet->address & l3_caches[0].block_address_mask), packet->dest_name, packet->start_cycle);
+	}
+
+	return;
+}
+
+
 void switch_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;

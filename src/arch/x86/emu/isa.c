@@ -860,6 +860,8 @@ void X86ContextExecuteInst(X86Context *self)
 	//set a flag if we run into a syscall
 	if(self->inst.opcode == 255)
 	{
+		//printf("fetch eax %u ecx %u edx %u esi %u\n", regs->eax, regs->ecx, regs->edx, regs->esi);
+
 		syscall_flag++;
 
 		//set a flag if we run into an opencl related syscall
@@ -867,7 +869,6 @@ void X86ContextExecuteInst(X86Context *self)
 		{
 			//the value of the flag is the OpenCL ABI code.
 			opencl_syscall_flag = regs->ebx;
-			/*printf("fetch ecx %u edx %u esi %u\n", regs->ecx, regs->edx, regs->esi);*/
 		}
 	}
 

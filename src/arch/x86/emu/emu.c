@@ -137,6 +137,8 @@ void X86EmuProcessEventsSchedule(X86Emu *self)
 	pthread_mutex_unlock(&self->process_events_mutex);
 }
 
+#include <cgm/cgm.h>
+
 
 /* Check for events detected in spawned host threads, like waking up contexts or sending signals.
  * The list is only processed if flag 'self->process_events_force' is set. */
@@ -584,11 +586,17 @@ void X86EmuProcessEvents(X86Emu *self)
 	pthread_mutex_unlock(&self->process_events_mutex);
 }
 
+/*
+#include <cgm/cgm.h>
+#include <stdio.h>
+*/
 
 int X86EmuRun(Emu *self)
 {
 	X86Emu *emu = asX86Emu(self);
 	X86Context *ctx;
+
+	fatal("emu run\n");
 
 	/* Stop if there is no context running */
 	if (emu->finished_list_count >= emu->context_list_count)

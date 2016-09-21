@@ -60,53 +60,7 @@ enum hub_connect_type_t
 extern struct str_map_t Rx_queue_strn_map;
 extern struct str_map_t Tx_queue_strn_map;
 
-struct hub_iommu_t{
 
-	char *name;
-	int id;
-	unsigned int wire_latency;
-	unsigned int gpu_l2_num;
-	int latency;
-	int bus_width;
-
-	struct list_t *switch_queue;
-	int switch_id;
-
-	struct list_t **Rx_queue_top;
-	struct list_t *Rx_queue_bottom;
-	struct list_t *next_queue;
-	struct list_t *last_queue;
-
-	struct list_t **Tx_queue_top;
-	struct list_t *Tx_queue_bottom;
-
-	//io ctrl
-	eventcount volatile **hub_iommu_io_up_ec;
-	task **hub_iommu_io_up_tasks;
-	eventcount volatile *hub_iommu_io_down_ec;
-	task *hub_iommu_io_down_tasks;
-
-	/*translation table*/
-
-	/*reverse lookup Hash table*/
-	int page_hash_table[MMU_PAGE_HASH_SIZE];
-
-	unsigned int **translation_table;
-	int translation_table_size;
-
-	/*protocol related structures*/
-
-	//mshr control links
-	int mshr_size;
-	struct mshr_t *mshrs;
-
-	//outstanding request table
-	int **ort;
-	struct list_t *ort_list;
-	int max_coal;
-
-
-};
 
 extern struct hub_iommu_t *hub_iommu;
 extern eventcount volatile *hub_iommu_ec;

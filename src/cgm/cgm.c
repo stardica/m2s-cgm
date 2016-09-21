@@ -451,6 +451,8 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
 
+	cpu_gpu_stats->gpu_total_cycles = 0;
+
 	cpu_gpu_stats->bandwidth = (void *)calloc(num_cores, sizeof(struct list_t *));
 	for(i = 0; i < num_cores; i ++)
 		cpu_gpu_stats->bandwidth[i] = list_create();
@@ -1309,6 +1311,8 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "core_%d_SystemTimePct = %0.6f\n", i, (double)system_time/(double)run_time);
 		CGM_STATS(cgm_stats_file, "core_%d_StallTimePct = %0.6f\n", i, (double)stall_time/(double)run_time);
 		CGM_STATS(cgm_stats_file, "core_%d_BusyTimePct = %0.6f\n", i, (double)busy_time/(double)run_time);
+
+
 		//CGM_STATS(cgm_stats_file, "core_%d_StallfetchPct = %0.2f\n", i, (double)cgm_stat_container->core_fetch_stalls[i]/(double)stall_time);
 		//CGM_STATS(cgm_stats_file, "core_%d_StallLoadPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_load[i]/(double)stall_time);
 		//CGM_STATS(cgm_stats_file, "core_%d_StallStorePct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_store[i]/(double)stall_time);
@@ -1316,6 +1320,8 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		//CGM_STATS(cgm_stats_file, "core_%d_StallOtherPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_other[i]/(double)stall_time);
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
+
+	CGM_STATS(cgm_stats_file, "GPU_GPUTime = %lld\n", cpu_gpu_stats->gpu_total_cycles);
 
 	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat_container->cpu_fetch_stalls);
 	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat_container->cpu_ls_stalls);
@@ -2306,30 +2312,279 @@ long long cgm_get_time(void)
 long long cgm_get_oldest_access(void){
 
 	long long system_start = (P_TIME + 2);
-	long long cache_start = 0;
+	long long oldest_access = 0;
 	int i = 0;
-	//int num_cores = x86_cpu_num_cores;
+
+	int num_cores = x86_cpu_num_cores;
+	int num_switches = num_cores + 1;
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 
+
+	//CPU
+	for(i = 0; i < num_cores; i++)
+	{
+		oldest_access = cache_get_oldest_access(&l1_d_caches[i]);
+
+		if(oldest_access < system_start)
+			system_start = oldest_access;
+
+		oldest_access = cache_get_oldest_access(&l2_caches[i]);
+
+		if(oldest_access < system_start)
+			system_start = oldest_access;
+
+		oldest_access = cache_get_oldest_access(&l3_caches[i]);
+
+		if(oldest_access < system_start)
+			system_start = oldest_access;
+
+	}
+
+	//GPU
 	for(i = 0; i < num_cus; i++)
 	{
-		cache_start = cache_get_oldest_access(&gpu_v_caches[i]);
+		oldest_access = cache_get_oldest_access(&gpu_v_caches[i]);
 
-		if(cache_start < system_start)
-			system_start = cache_start;
+		if(oldest_access < system_start)
+			system_start = oldest_access;
 	}
 
 
 	for(i = 0; i < gpu_group_cache_num; i++)
 	{
-		cache_start = cache_get_oldest_access(&gpu_l2_caches[i]);
+		oldest_access = cache_get_oldest_access(&gpu_l2_caches[i]);
 
-		if(cache_start < system_start)
-			system_start = cache_start;
+		if(oldest_access < system_start)
+			system_start = oldest_access;
 	}
 
+
+	//switches
+	for(i = 0; i < num_switches; i++)
+	{
+		oldest_access = switch_get_oldest_access(&switches[i]);
+
+		if(oldest_access < system_start)
+			system_start = oldest_access;
+	}
+
+	oldest_access = hub_get_oldest_access(hub_iommu);
+
+	if(oldest_access < system_start)
+		system_start = oldest_access;
+
+	oldest_access = sa_get_oldest_access(system_agent);
+
+	if(oldest_access < system_start)
+		system_start = oldest_access;
+
+	oldest_access = mc_get_oldest_access(mem_ctrl);
+
+	if(oldest_access < system_start)
+		system_start = oldest_access;
+
 	return system_start;
+}
+
+
+long long switch_get_oldest_access(struct switch_t *switches){
+
+	long long start_time = (P_TIME + 2);
+	struct cgm_packet_t *packet = NULL;
+	int i = 0;
+
+
+	LIST_FOR_EACH(switches->west_queue, i)
+	{
+		packet = list_get(switches->west_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(switches->Tx_west_queue, i)
+	{
+		packet = list_get(switches->Tx_west_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(switches->south_queue, i)
+	{
+		packet = list_get(switches->south_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(switches->Tx_south_queue, i)
+	{
+		packet = list_get(switches->Tx_south_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+
+	LIST_FOR_EACH(switches->east_queue, i)
+	{
+		packet = list_get(switches->east_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(switches->Tx_east_queue, i)
+	{
+		packet = list_get(switches->Tx_east_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+
+	LIST_FOR_EACH(switches->north_queue, i)
+	{
+		packet = list_get(switches->north_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(switches->Tx_north_queue, i)
+	{
+		packet = list_get(switches->Tx_north_queue, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	return start_time;
+}
+
+
+long long mc_get_oldest_access(struct mem_ctrl_t *mem_ctrl){
+
+	long long start_time = (P_TIME + 2);
+	struct cgm_packet_t *packet = NULL;
+	int i = 0;
+
+	LIST_FOR_EACH(mem_ctrl->Rx_queue_top, i)
+	{
+		packet = list_get(mem_ctrl->Rx_queue_top, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(mem_ctrl->Tx_queue_top, i)
+	{
+		packet = list_get(mem_ctrl->Tx_queue_top, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	return start_time;
+}
+
+
+
+long long sa_get_oldest_access(struct system_agent_t *system_agent){
+
+	long long start_time = (P_TIME + 2);
+	struct cgm_packet_t *packet = NULL;
+	int i = 0;
+
+	LIST_FOR_EACH(system_agent->Rx_queue_top, i)
+	{
+		packet = list_get(system_agent->Rx_queue_top, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(system_agent->Tx_queue_top, i)
+	{
+		packet = list_get(system_agent->Tx_queue_top, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(system_agent->Rx_queue_bottom, i)
+	{
+		packet = list_get(system_agent->Rx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(system_agent->Tx_queue_bottom, i)
+	{
+		packet = list_get(system_agent->Tx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	return start_time;
+}
+
+
+long long hub_get_oldest_access(struct hub_iommu_t *hub_iommu){
+
+	long long start_time = (P_TIME + 2);
+	struct cgm_packet_t *packet = NULL;
+	int i = 0;
+	int j = 0;
+
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+
+
+	for(j = 0; j < gpu_group_cache_num; j ++)
+	{
+		LIST_FOR_EACH(hub_iommu->Rx_queue_top[j], i)
+		{
+			packet = list_get(hub_iommu->Rx_queue_top[j], i);
+
+			if(packet->start_cycle < start_time)
+				start_time = packet->start_cycle;
+		}
+	}
+
+	for(j = 0; j < gpu_group_cache_num; j ++)
+	{
+		LIST_FOR_EACH(hub_iommu->Tx_queue_top[j], i)
+		{
+			packet = list_get(hub_iommu->Tx_queue_top[j], i);
+
+			if(packet->start_cycle < start_time)
+				start_time = packet->start_cycle;
+		}
+	}
+
+
+	LIST_FOR_EACH(hub_iommu->Rx_queue_bottom, i)
+	{
+		packet = list_get(hub_iommu->Rx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	LIST_FOR_EACH(hub_iommu->Tx_queue_bottom, i)
+	{
+		packet = list_get(hub_iommu->Tx_queue_bottom, i);
+
+		if(packet->start_cycle < start_time)
+			start_time = packet->start_cycle;
+	}
+
+	return start_time;
 }
 
 
@@ -2354,6 +2609,17 @@ long long cache_get_oldest_access(struct cache_t *cache){
 
 		if(packet->start_cycle < start_time)
 			start_time = packet->start_cycle;
+	}
+
+	if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	{
+		LIST_FOR_EACH(cache->Tx_queue_top, i)
+		{
+			packet = list_get(cache->Tx_queue_top, i);
+
+			if(packet->start_cycle < start_time)
+				start_time = packet->start_cycle;
+		}
 	}
 
 	LIST_FOR_EACH(cache->Tx_queue_bottom, i)
@@ -2410,7 +2676,7 @@ void cgm_dump_system(void){
 	int num_cus = si_gpu_num_compute_units;
 	int gpu_group_cache_num = (num_cus/4);
 
-	printf("Oldest start_time in the system is %llu\n", cgm_get_oldest_access());
+	printf("\n\nOldest start_time in the system is %llu\n", cgm_get_oldest_access());
 
 	printf("\n---L1_v_caches---\n");
 	for(i = 0; i < num_cus; i++)
@@ -2608,20 +2874,28 @@ void cgm_dump_system(void){
 	{
 		printf("---%s North in queue size %d---\n",
 				switches[i].name, list_count(switches[i].north_queue));
+		switch_dump_queue(switches[i].north_queue);
 		printf("---%s North out queue size %d---\n",
 				switches[i].name, list_count(switches[i].Tx_north_queue));
+		switch_dump_queue(switches[i].Tx_north_queue);
 		printf("---%s East in queue size %d---\n",
 				switches[i].name, list_count(switches[i].east_queue));
+		switch_dump_queue(switches[i].east_queue);
 		printf("---%s East out queue size %d---\n",
 				switches[i].name, list_count(switches[i].Tx_east_queue));
+		switch_dump_queue(switches[i].Tx_east_queue);
 		printf("---%s South in queue size %d---\n",
 				switches[i].name, list_count(switches[i].south_queue));
+		switch_dump_queue(switches[i].south_queue);
 		printf("---%s South out queue size %d---\n",
 				switches[i].name, list_count(switches[i].Tx_south_queue));
+		switch_dump_queue(switches[i].Tx_south_queue);
 		printf("---%s West in queue size %d---\n",
 				switches[i].name, list_count(switches[i].west_queue));
+		switch_dump_queue(switches[i].west_queue);
 		printf("---%s West out queue size %d---\n",
 				switches[i].name, list_count(switches[i].Tx_west_queue));
+				switch_dump_queue(switches[i].Tx_west_queue);
 		printf("\n");
 	}
 

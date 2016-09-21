@@ -13,6 +13,7 @@
 
 #include <cgm/tasking.h>
 #include <cgm/directory.h>
+#include <mem-image/mmu.h>
 
 #define HISTSIZE 40000
 
@@ -954,6 +955,313 @@ struct cgm_stats_t{
 	long long sa_up_io_occupance;
 	long long sa_down_io_occupance;
 	long long mc_up_io_occupance;
+
+};
+
+
+struct hub_iommu_t{
+
+	char *name;
+	int id;
+	unsigned int wire_latency;
+	unsigned int gpu_l2_num;
+	int latency;
+	int bus_width;
+
+	struct list_t *switch_queue;
+	int switch_id;
+
+	struct list_t **Rx_queue_top;
+	struct list_t *Rx_queue_bottom;
+	struct list_t *next_queue;
+	struct list_t *last_queue;
+
+	struct list_t **Tx_queue_top;
+	struct list_t *Tx_queue_bottom;
+
+	//io ctrl
+	eventcount volatile **hub_iommu_io_up_ec;
+	task **hub_iommu_io_up_tasks;
+	eventcount volatile *hub_iommu_io_down_ec;
+	task *hub_iommu_io_down_tasks;
+
+	/*translation table*/
+
+	/*reverse lookup Hash table*/
+	int page_hash_table[MMU_PAGE_HASH_SIZE];
+
+	unsigned int **translation_table;
+	int translation_table_size;
+
+	/*protocol related structures*/
+
+	//mshr control links
+	int mshr_size;
+	struct mshr_t *mshrs;
+
+	//outstanding request table
+	int **ort;
+	struct list_t *ort_list;
+	int max_coal;
+
+
+};
+
+struct system_agent_t{
+
+	char *name;
+	int switch_id;
+	unsigned int wire_latency;
+	unsigned int num_ports;
+	int latency;
+
+	//queues
+	struct list_t *Rx_queue_top;
+	struct list_t *Rx_queue_bottom;
+	struct list_t *Tx_queue_top;
+	struct list_t *Tx_queue_bottom;
+
+	struct list_t *next_queue;
+	struct list_t *last_queue;
+
+	//ptr to switch
+	struct list_t *switch_queue;
+
+	//bus
+	int up_bus_width;
+	int down_bus_width;
+
+	/*IO ctrl stats*/
+	long long up_io_occupance;
+	long long down_io_occupance;
+
+	/*stats*/
+	long long occupance;
+	long long busy_cycles;
+	long long north_io_busy_cycles;
+	long long south_io_busy_cycles;
+	long long mc_loads;
+	long long mc_stores;
+	long long mc_returns;
+	int max_north_rxqueue_depth;
+	double ave_north_rxqueue_depth;
+	int max_south_rxqueue_depth;
+	double ave_south_rxqueue_depth;
+	int max_north_txqueue_depth;
+	double ave_north_txqueue_depth;
+	int max_south_txqueue_depth;
+	double ave_south_txqueue_depth;
+	long long north_gets;
+	long long south_gets;
+	long long north_puts;
+	long long south_puts;
+};
+
+
+struct mem_ctrl_t{
+
+	//Physical Characteristics
+	char *name;
+	int wire_latency;
+	int DRAM_latency;
+	int latency;
+
+	unsigned int block_size;
+	unsigned int block_mask;
+
+	//pointer to memory image.
+	struct mem_t *mem;
+
+	struct list_t *Rx_queue_top;
+	struct list_t *Tx_queue_top;
+
+	struct list_t *pending_accesses;
+
+	//ptr to system agent Rx queue
+	struct list_t *system_agent_queue;
+
+	//bus
+	int bus_width;
+
+	/*stats*/
+	long long occupance;
+	long long busy_cycles;
+	long long num_reads;
+	long long num_writes;
+	double ave_dram_read_lat;
+	double ave_dram_write_lat;
+	double ave_dram_total_lat;
+	long long read_min;
+	long long read_max;
+	long long write_min;
+	long long write_max;
+	long long dram_max_queue_depth;
+	double dram_ave_queue_depth;
+	long long dram_busy_cycles;
+	long long rx_max;
+	long long tx_max;
+	long long bytes_read;
+	long long bytes_wrote;
+	long long io_busy_cycles;
+	long long up_io_occupance;
+
+};
+
+enum port_name
+{
+	invalid_queue = 0,
+	north_queue,
+	east_queue,
+	south_queue,
+	west_queue,
+	port_num
+
+};
+
+enum arbitrate{
+
+	round_robin = 0,
+	prioity
+
+};
+
+//star todo this is currently only programmed for a 4 port switch
+struct crossbar_t{
+
+	int num_ports;
+	int num_pairs;
+
+	//in queues
+	enum port_name north_in_out_linked_queue;
+	enum port_name east_in_out_linked_queue;
+	enum port_name south_in_out_linked_queue;
+	enum port_name west_in_out_linked_queue;
+};
+
+struct switch_t{
+
+	char *name;
+	int switch_id;
+	int switch_node_number;
+	float switch_median_node;
+	int port_num;
+	int latency;
+	int bus_width;
+
+	/*int num_routes;
+	struct route_t *my_routes;*/
+
+	enum port_name queue;
+	enum arbitrate arb_style;
+	unsigned int wire_latency;
+
+	//crossbar
+	struct crossbar_t *crossbar;
+
+
+	//for switches with 4 ports
+	struct list_t *north_queue;
+	struct list_t *Tx_north_queue;
+	//struct list_t *north_queue_lane1;
+	//struct list_t *north_queue_lane2;
+	struct list_t *east_queue;
+	struct list_t *Tx_east_queue;
+	//struct list_t *east_queue_lane1;
+	//struct list_t *east_queue_lane2;
+	struct list_t *south_queue;
+	struct list_t *Tx_south_queue;
+	//struct list_t *south_queue_lane1;
+	//struct list_t *south_queue_lane2;
+	struct list_t *west_queue;
+	struct list_t *Tx_west_queue;
+	//struct list_t *west_queue_lane1;
+	//struct list_t *west_queue_lane2;
+
+	//io ctrl
+	eventcount volatile *switches_north_io_ec;
+	task *switches_north_io_tasks;
+
+	eventcount volatile *switches_east_io_ec;
+	task *switches_east_io_tasks;
+
+	eventcount volatile *switches_south_io_ec;
+	task *switches_south_io_tasks;
+
+	eventcount volatile *switches_west_io_ec;
+	task *switches_west_io_tasks;
+
+	//for switches with 6 ports
+	//struct list_t *forward_queue_lane1;
+	//struct list_t *forward_queue_lane2;
+	//struct list_t *back_queue_lane1;
+	//struct list_t *back_queue_lane2;
+
+	//pointers to neighbors
+	//for ring busses you just need an east/west queue ptr
+	//struct list_t *next_north;
+	struct list_t *next_east;
+	//struct list_t *next_south;
+	struct list_t *next_west;
+
+	struct list_t *current_queue;
+	//struct list_t *next_forward;
+	//struct list_t *next_back;
+
+	int next_east_id;
+	int next_west_id;
+
+	/*switch stats*/
+	long long switch_occupance;
+	long long switch_total_links;
+	int switch_max_links;
+
+	long long switch_north_io_occupance;
+	long long switch_north_io_transfers;
+	long long switch_north_io_transfer_cycles;
+	long long switch_north_io_bytes_transfered;
+
+	long long switch_east_io_occupance;
+	long long switch_east_io_transfers;
+	long long switch_east_io_transfer_cycles;
+	long long switch_east_io_bytes_transfered;
+
+	long long switch_south_io_occupance;
+	long long switch_south_io_transfers;
+	long long switch_south_io_transfer_cycles;
+	long long switch_south_io_bytes_transfered;
+
+	long long switch_west_io_occupance;
+	long long switch_west_io_transfers;
+	long long switch_west_io_transfer_cycles;
+	long long switch_west_io_bytes_transfered;
+
+	long long north_txqueue_max_depth;
+	double north_txqueue_ave_depth;
+	long long east_txqueue_max_depth;
+	double east_txqueue_ave_depth;
+	long long south_txqueue_max_depth;
+	double south_txqueue_ave_depth;
+	long long west_txqueue_max_depth;
+	double west_txqueue_ave_depth;
+
+	long long north_tx_inserts;
+	long long east_tx_inserts;
+	long long south_tx_inserts;
+	long long west_tx_inserts;
+
+	long long north_rxqueue_max_depth;
+	double north_rxqueue_ave_depth;
+	long long east_rxqueue_max_depth;
+	double east_rxqueue_ave_depth;
+	long long south_rxqueue_max_depth;
+	double south_rxqueue_ave_depth;
+	long long west_rxqueue_max_depth;
+	double west_rxqueue_ave_depth;
+
+	long long north_rx_inserts;
+	long long east_rx_inserts;
+	long long south_rx_inserts;
+	long long west_rx_inserts;
 
 };
 

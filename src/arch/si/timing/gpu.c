@@ -1124,7 +1124,7 @@ int SIGpuRun(Timing *self)
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
 
-	/* Allocate work-groups to compute units */
+	/*Allocate work-groups to compute units */
 	while (list_count(gpu->available_compute_units) && list_count(si_emu->waiting_work_groups))
 	{
 		work_group_id = (long) list_dequeue(si_emu->waiting_work_groups);
@@ -1139,6 +1139,9 @@ int SIGpuRun(Timing *self)
 	/* One more cycle */
 	asTiming(si_gpu)->cycle++;
 
+	//stats collect the number of GPU cycles...
+	cpu_gpu_stats->gpu_total_cycles += (1 * (x86_cpu_frequency/si_gpu_frequency));
+
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (si_emu_max_cycles && asTiming(si_gpu)->cycle >= si_emu_max_cycles)
 	{
@@ -1152,15 +1155,11 @@ int SIGpuRun(Timing *self)
 	}
 
 	/* Stop if there was a simulation stall */
-
 	if ((asTiming(si_gpu)->cycle-gpu->last_complete_cycle) > 1000000)
 	{
-
 		warning("Southern Islands GPU simulation stalled.\n%s", si_err_stall);
 		esim_finish = esim_finish_stall;
-
 		cgm_dump_system();
-
 	}
 
 	/* Stop if any reason met */

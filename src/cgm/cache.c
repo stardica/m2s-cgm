@@ -2816,6 +2816,9 @@ void l1_d_cache_ctrl(void){
 		//star todo this can be refined a lot.
 		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
 		{
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", l1_d_caches[my_pid].name);
+
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
 
@@ -2963,6 +2966,11 @@ void l2_cache_ctrl(void){
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
+
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", l2_caches[my_pid].name);
+
+
 			l2_caches[my_pid].Stalls++;
 
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
@@ -3247,6 +3255,9 @@ void l3_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", l3_caches[my_pid].name);
+
 
 			l3_caches[my_pid].Stalls++;
 
@@ -3524,6 +3535,9 @@ void gpu_v_cache_ctrl(void){
 			/*printf("%s stalling tx_b %d rx_b %d cycle %llu\n",
 					gpu_v_caches[my_pid].name, list_count(gpu_v_caches[my_pid].Tx_queue_bottom), list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);*/
 
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", gpu_v_caches[my_pid].name);
+
 			P_PAUSE(1);
 		}
 		else
@@ -3648,6 +3662,8 @@ void gpu_l2_cache_ctrl(void){
 
 			getchar();*/
 
+			if(P_TIME > 106034981)
+				printf("%s stalling\n", gpu_l2_cache[my_pid].name);
 
 			gpu_l2_caches[my_pid].Stalls++;
 
@@ -3659,8 +3675,8 @@ void gpu_l2_cache_ctrl(void){
 
 			step++;
 
-			if(message_packet->access_id == 27511114)
-				printf("packet is here\n");
+			/*if(message_packet->access_id == 27511114)
+				printf("packet is here\n");*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;

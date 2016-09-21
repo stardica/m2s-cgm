@@ -4,7 +4,7 @@ from optparse import OptionParser
 
 num_cores = 8
 cache_levels = 3
-gpu_stats = 0
+gpu_stats = 1
 
 def get_stats(options):
 
@@ -888,6 +888,64 @@ def print_mem_system_stats(options):
 	return
 
 
+def print_gpu_stats(options):
+
+	gpu_stats = get_stats(options)
+
+	var = ""
+	stats = [
+		"GPUTime"
+		]
+
+	stat_table = [[0 for x in range(2)] for y in range(len(stats))]
+	
+	for i in range (0,len(stats)):
+		stat_table[i][0] = stats[i]
+		for j in range (0, 1):
+			var = "GPU_" + stats[i]
+			stat_table[i][(j+1)] = gpu_stats[var]
+
+	
+
+
+	#stats_table_combined = [[0 for x in range(2)] for y in range(len(stats))]
+
+	#need to account for ave stats here...
+	#for i in range (0,len(stats)):
+	#	stats_table_combined[i][0] = stats[i]
+	#	for j in range (1, (num_cores + 1)):
+	#		stats_table_combined[i][1] += stat_table[i][j]
+	#	#stats_table_combined[i][1] = float(stats_table_combined[i][1])/float(num_cores)
+	#	stats_table_combined[i][1] = stats_table_combined[i][1]/num_cores
+
+	f = open(options.OutFileName, 'a')
+
+	f.write("//GPU Stats////////////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+
+
+	max_title_length, max_element_length = get_margins(stat_table, "GPU stats", "GPU")
+
+	
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format('GPU stats', "GPU", title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in stat_table:
+			if isinstance(tup[1], int):
+				f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+			else:
+				f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write('\n')
+
+	return
+
+
 
 def print_cpu_stats(options):
 
@@ -1087,6 +1145,7 @@ if not options.InFileName:
 
 print_general_stats(options)
 print_cpu_stats(options)
+print_gpu_stats(options)
 print_cache_stats(options)
 print_cache_io_stats(options)
 #print_mem_system_stats(options)

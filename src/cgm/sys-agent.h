@@ -22,6 +22,7 @@
 #include <cgm/tasking.h>
 /*#include <cgm/cache.h>*/
 #include <cgm/switch.h>
+#include <cgm/cgm-struct.h>
 /*#include <cgm/protocol.h>*/
 
 
@@ -31,58 +32,6 @@ enum cgm_io_kind_t {
 	cgm_io_dma,
 	cgm_io_pcie,
 	cgm_io_retry
-};
-
-struct system_agent_t{
-
-	char *name;
-	int switch_id;
-	unsigned int wire_latency;
-	unsigned int num_ports;
-	int latency;
-
-	//queues
-	struct list_t *Rx_queue_top;
-	struct list_t *Rx_queue_bottom;
-	struct list_t *Tx_queue_top;
-	struct list_t *Tx_queue_bottom;
-
-	struct list_t *next_queue;
-	struct list_t *last_queue;
-
-	//ptr to switch
-	struct list_t *switch_queue;
-
-	//bus
-	int up_bus_width;
-	int down_bus_width;
-
-	/*IO ctrl stats*/
-	long long up_io_occupance;
-	long long down_io_occupance;
-
-	/*stats*/
-	long long occupance;
-	long long busy_cycles;
-	long long north_io_busy_cycles;
-	long long south_io_busy_cycles;
-	long long mc_loads;
-	long long mc_stores;
-	long long mc_returns;
-	int max_north_rxqueue_depth;
-	double ave_north_rxqueue_depth;
-	int max_south_rxqueue_depth;
-	double ave_south_rxqueue_depth;
-	int max_north_txqueue_depth;
-	double ave_north_txqueue_depth;
-	int max_south_txqueue_depth;
-	double ave_south_txqueue_depth;
-	long long north_gets;
-	long long south_gets;
-	long long north_puts;
-	long long south_puts;
-
-
 };
 
 extern struct system_agent_t *system_agent;

@@ -53,6 +53,8 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 	int num_nodes;
 	int i;
 	
+
+
 	/* Initialize */
 	self->emu = emu;
 	self->pid = emu->current_pid++;
@@ -71,8 +73,15 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 	/* Thread affinity mask, used only for timing simulation. It is initialized to all 1's. */
 	num_nodes = x86_cpu_num_cores * x86_cpu_num_threads;
 	self->affinity = bit_map_create(num_nodes);
+
 	for (i = 0; i < num_nodes; i++)
-		bit_map_set(self->affinity, i, 1, 1);
+	{
+		if(i == 0)
+			bit_map_set(self->affinity, i, 1, 1);
+		else
+			bit_map_set(self->affinity, i, 1, 0);
+	}
+
 
 	/* Virtual functions */
 	asObject(self)->Dump = X86ContextDump;
@@ -103,36 +112,36 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 }
 
 
-void X86ContextCreateAndClone(X86Context *self, X86Context *cloned)
+void X86ContextCreateAndClone(X86Context *self, X86Context *cloned_ctx)
 {
 
 	/* Baseline initialization */
-	X86ContextDoCreate(self, cloned->emu);
+	X86ContextDoCreate(self, cloned_ctx->emu);
 
 	/* Register file contexts are copied from parent. */
-	x86_regs_copy(self->regs, cloned->regs);
+	x86_regs_copy(self->regs, cloned_ctx->regs);
 
 	/* The memory image of the cloned context if the same.
 	 * The memory structure must be only freed by the parent
 	 * when all its children have been killed.
 	 * The set of signal handlers is the same, too. */
-	self->address_space_index = cloned->address_space_index;
-	self->mem = mem_link(cloned->mem);
+	self->address_space_index = cloned_ctx->address_space_index;
+	self->mem = mem_link(cloned_ctx->mem);
 	self->spec_mem = spec_mem_create(self->mem);
 
 	/* Loader */
-	self->loader = x86_loader_link(cloned->loader);
+	self->loader = x86_loader_link(cloned_ctx->loader);
 
 	/* Signal handlers and file descriptor table */
-	self->signal_handler_table = x86_signal_handler_table_link(cloned->signal_handler_table);
-	self->file_desc_table = x86_file_desc_table_link(cloned->file_desc_table);
+	self->signal_handler_table = x86_signal_handler_table_link(cloned_ctx->signal_handler_table);
+	self->file_desc_table = x86_file_desc_table_link(cloned_ctx->file_desc_table);
 
 	/* Libc segment */
-	self->glibc_segment_base = cloned->glibc_segment_base;
-	self->glibc_segment_limit = cloned->glibc_segment_limit;
+	self->glibc_segment_base = cloned_ctx->glibc_segment_base;
+	self->glibc_segment_limit = cloned_ctx->glibc_segment_limit;
 
 	/* Update other fields. */
-	self->parent = cloned;
+	self->parent = cloned_ctx;
 }
 
 
