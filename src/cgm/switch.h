@@ -211,6 +211,20 @@ enum gpu_l2_map{
 	gpu_l2_number
 };
 
+enum switch_crossbar_lane_map{
+	crossbar_request,
+	crossbar_reply,
+	crossbar_coherenece,
+	crossbar_num_lanes
+};
+
+enum switch_io_lane_map{
+	io_request,
+	io_reply,
+	io_coherenece,
+	io_num_lanes
+};
+
 extern struct str_map_t node_strn_map;
 extern struct str_map_t l1_strn_map;
 extern struct str_map_t l2_strn_map;

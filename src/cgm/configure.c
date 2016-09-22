@@ -3212,7 +3212,127 @@ int switch_finish_create(void){
 			switches[i].Tx_west_queue->name = strdup(buff);
 
 
+			//new switch virtual queues
+			switches[i].north_rx_request_queue = list_create();
+			switches[i].north_rx_reply_queue = list_create();
+			switches[i].north_rx_coherence_queue = list_create();
+			switches[i].north_tx_request_queue = list_create();
+			switches[i].north_tx_reply_queue = list_create();
+			switches[i].north_tx_coherence_queue = list_create();
+			switches[i].east_rx_request_queue = list_create();
+			switches[i].east_rx_reply_queue = list_create();
+			switches[i].east_rx_coherence_queue = list_create();
+			switches[i].east_tx_request_queue = list_create();
+			switches[i].east_tx_reply_queue = list_create();
+			switches[i].east_tx_coherence_queue = list_create();
+			switches[i].south_rx_request_queue = list_create();
+			switches[i].south_rx_reply_queue = list_create();
+			switches[i].south_rx_coherence_queue = list_create();
+			switches[i].south_tx_request_queue = list_create();
+			switches[i].south_tx_reply_queue = list_create();
+			switches[i].south_tx_coherence_queue = list_create();
+			switches[i].west_rx_request_queue = list_create();
+			switches[i].west_rx_reply_queue = list_create();
+			switches[i].west_rx_coherence_queue = list_create();
+			switches[i].west_tx_request_queue = list_create();
+			switches[i].west_tx_reply_queue = list_create();
+			switches[i].west_tx_coherence_queue = list_create();
 
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_rx_request_queue", i);
+			switches[i].north_rx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_rx_reply_queue", i);
+			switches[i].north_rx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_rx_coherence_queue", i);
+			switches[i].north_rx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_tx_request_queue", i);
+			switches[i].north_tx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_tx_reply_queue", i);
+			switches[i].north_tx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].north_tx_coherence_queue", i);
+			switches[i].north_tx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_rx_request_queue", i);
+			switches[i].east_rx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_rx_reply_queue", i);
+			switches[i].east_rx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_rx_coherence_queue", i);
+			switches[i].east_rx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_tx_request_queue", i);
+			switches[i].east_tx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_tx_reply_queue", i);
+			switches[i].east_tx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].east_tx_coherence_queue", i);
+			switches[i].east_tx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_rx_request_queue", i);
+			switches[i].south_rx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_rx_reply_queue", i);
+			switches[i].south_rx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_rx_coherence_queue", i);
+			switches[i].south_rx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_tx_request_queue", i);
+			switches[i].south_rx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_tx_reply_queue", i);
+			switches[i].south_tx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].south_tx_coherence_queue", i);
+			switches[i].south_tx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_rx_request_queue", i);
+			switches[i].west_rx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_rx_reply_queue", i);
+			switches[i].west_rx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_rx_coherence_queue", i);
+			switches[i].west_rx_coherence_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_tx_request_queue", i);
+			switches[i].west_tx_request_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_tx_reply_queue", i);
+			switches[i].west_tx_reply_queue->name = strdup(buff);
+
+			memset (buff,'\0' , 100);
+			snprintf(buff, 100, "switch[%d].west_tx_coherence_queue", i);
+			switches[i].west_tx_coherence_queue->name = strdup(buff);
 
 
 			//init the queue pointer
