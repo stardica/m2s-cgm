@@ -299,22 +299,165 @@ void switch_crossbar_clear_state(struct switch_t *switches){
 	return;
 }
 
-void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
+void switch_set_link(struct switch_t *switches, enum port_name tx_port){
 
 	/*we have the in queue with switches->queue and the tx_queue
 	try to link them...*/
 
 	//don't exceed QueueSizes...
-	int tx_north_queue_size = list_count(switches->Tx_north_queue);
-	int tx_east_queue_size = list_count(switches->Tx_east_queue);
-	int tx_south_queue_size = list_count(switches->Tx_south_queue);
-	int tx_west_queue_size = list_count(switches->Tx_west_queue);
+	//int tx_north_queue_size = list_count(switches->Tx_north_queue);
+	//int tx_east_queue_size = list_count(switches->Tx_east_queue);
+	//int tx_south_queue_size = list_count(switches->Tx_south_queue);
+	//int tx_west_queue_size = list_count(switches->Tx_west_queue);
+
+
+	switch(tx_port)
+	{
+		//North queues
+		case north_queue:
+			assert(switches->queue != north_queue); //this is saying that your output queue can't be your input queue
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					if((list_count(switches->north_tx_request_queue) < QueueSize) && (switches->crossbar->north_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->north_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_reply:
+					if((list_count(switches->north_tx_reply_queue) < QueueSize) && (switches->crossbar->north_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->north_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_coherenece:
+					if((list_count(switches->north_tx_coherence_queue) < QueueSize) && (switches->crossbar->north_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->north_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//East queues
+		case east_queue:
+			assert(switches->queue != east_queue); //this is saying that your output queue can't be your input queue
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					if((list_count(switches->east_tx_request_queue) < QueueSize) && (switches->crossbar->east_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->east_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_reply:
+					if((list_count(switches->east_tx_reply_queue) < QueueSize) && (switches->crossbar->east_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->east_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_coherenece:
+					if((list_count(switches->east_tx_coherence_queue) < QueueSize) && (switches->crossbar->east_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->east_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//South queues
+		case south_queue:
+			assert(switches->queue != south_queue); //this is saying that your output queue can't be your input queue
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					if((list_count(switches->south_tx_request_queue) < QueueSize) && (switches->crossbar->south_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->south_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_reply:
+					if((list_count(switches->south_tx_reply_queue) < QueueSize) && (switches->crossbar->south_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->south_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_coherenece:
+					if((list_count(switches->south_tx_coherence_queue) < QueueSize) && (switches->crossbar->south_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->south_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//West queues
+		case west_queue:
+			assert(switches->queue != west_queue); //this is saying that your output queue can't be your input queue
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					if((list_count(switches->west_tx_request_queue) < QueueSize) && (switches->crossbar->west_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->west_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_reply:
+					if((list_count(switches->west_tx_reply_queue) < QueueSize) && (switches->crossbar->west_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->west_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_coherenece:
+					if((list_count(switches->west_tx_coherence_queue) < QueueSize) && (switches->crossbar->west_in_out_linked_queue == invalid_queue))
+					{
+							switches->crossbar->west_in_out_linked_queue = switches->queue;
+							switches->crossbar->num_pairs++;
+					}
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//Error checking
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
 
 	//check if the out on the cross bar is busy. If not assign the link.
-	if(tx_queue == north_queue && (tx_north_queue_size < QueueSize))
+	/*if(tx_port == north_queue && (tx_north_queue_size < QueueSize))
 	{
-		/*if(switches->queue == north_queue)
-			printf("error here cycle %llu\n", P_TIME);*/
+		if(switches->queue == north_queue)
+			printf("error here cycle %llu\n", P_TIME);
 
 		assert(switches->queue != north_queue);
 		if(switches->crossbar->north_in_out_linked_queue == invalid_queue)
@@ -322,9 +465,9 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->north_in_out_linked_queue = switches->queue;
 			switches->crossbar->num_pairs++;
 		}
-	}
+	}*/
 
-	if(tx_queue == east_queue && (tx_east_queue_size < QueueSize))
+	/*if(tx_port == east_queue && (tx_east_queue_size < QueueSize))
 	{
 		assert(switches->queue != east_queue);
 		if(switches->crossbar->east_in_out_linked_queue == invalid_queue)
@@ -332,9 +475,9 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->east_in_out_linked_queue = switches->queue;
 			switches->crossbar->num_pairs++;
 		}
-	}
+	}*/
 
-	if(tx_queue == south_queue && (tx_south_queue_size < QueueSize))
+	/*if(tx_port == south_queue && (tx_south_queue_size < QueueSize))
 	{
 		assert(switches->queue != south_queue);
 		if(switches->crossbar->south_in_out_linked_queue == invalid_queue)
@@ -342,9 +485,9 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->south_in_out_linked_queue = switches->queue;
 			switches->crossbar->num_pairs++;
 		}
-	}
+	}*/
 
-	if(tx_queue == west_queue && (tx_west_queue_size < QueueSize))
+	/*if(tx_port == west_queue && (tx_west_queue_size < QueueSize))
 	{
 		assert(switches->queue != west_queue);
 		if(switches->crossbar->west_in_out_linked_queue == invalid_queue)
@@ -352,7 +495,7 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 			switches->crossbar->west_in_out_linked_queue = switches->queue;
 			switches->crossbar->num_pairs++;
 		}
-	}
+	}*/
 
 	/*if(tx_north_queue_size > QueueSize)
 		warning("switch_set_link(): tx_north_queue full size %d cycle %llu\n", tx_north_queue_size, P_TIME);
@@ -365,7 +508,6 @@ void switch_set_link(struct switch_t *switches, enum port_name tx_queue){
 
 	if(tx_west_queue_size > QueueSize)
 		warning("switch_set_link(): tx_west_queue full size %d cycle %llu\n", tx_west_queue_size, P_TIME);*/
-
 
 	return;
 }
@@ -469,7 +611,8 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 void switch_crossbar_link(struct switch_t *switches){
 
 	struct cgm_packet_t *packet = NULL;
-	enum port_name tx_queue = invalid_queue;
+	//struct list_t *switch_rx_queue = NULL;
+	enum port_name tx_port = invalid_queue;
 	int i = 0;
 
 	if(switches->arb_style == round_robin)
@@ -478,27 +621,22 @@ void switch_crossbar_link(struct switch_t *switches){
 
 		for(i = 0; i < switches->crossbar->num_ports; i++)
 		{
-			/*printf("\tChecking queue %d\n", switches->queue);*/
+			//see if there is a packet waiting...
 
-			//try to form link pairs
-			if(switches->queue == north_queue)
+			packet = switch_get_rx_packet(switches);
+
+			//found a new packet, try to link it...
+			if(packet)
 			{
-				//see if there is a packet waiting...
-				packet = list_get(switches->north_queue, 0);
 
-				//found a new packet, try to link it...
-				if(packet)
-				{
-					/*printf("\tnorth hit\n");*/
+				tx_port = switch_get_route(switches, packet);
 
-					tx_queue = switch_get_route(switches, packet);
-
-					//try to assign the link
-					switch_set_link(switches, tx_queue);
-				}
+				//try to assign the link
+				switch_set_link(switches, tx_port);
 			}
 
-			if(switches->queue == east_queue)
+
+			/*if(switches->queue == east_queue)
 			{
 				//see if there is a packet waiting...
 				packet = list_get(switches->east_queue, 0);
@@ -506,7 +644,7 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
-					/*printf("\teast hit\n");*/
+					printf("\teast hit\n");
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
@@ -522,18 +660,11 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
-					/*printf("\tsouth hit\n");*/
+					printf("\tsouth hit\n");
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
-
-					/*if(packet->access_id == 4446145 || packet->access_id == 4446155)
-					{
-
-						printf("\%s cross bar linking to %d id %llu to switch north tx queue cross bar\n", switches->name, tx_queue, packet->access_id);
-						cache_dump_request_queue(switches->south_queue);
-					}*/
 				}
 			}
 
@@ -545,40 +676,26 @@ void switch_crossbar_link(struct switch_t *switches){
 				//found a new packet, try to link it...
 				if(packet)
 				{
-					/*printf("\twest hit\n");*/
+					printf("\twest hit\n");
 
 					tx_queue = switch_get_route(switches, packet);
 
 					//try to assign the link
 					switch_set_link(switches, tx_queue);
 				}
-			}
-			/*else
-			{
-				fatal("switch_crossbar_link(): Invalid queue\n");
 			}*/
 
 			assert(switches->queue >= 1 && switches->queue <= switches->crossbar->num_ports);
 
 			//advance the queue pointer.
 			switches->queue = get_next_queue_rb(switches->queue);
+
 		}
 	}
 	else
 	{
 		fatal("switch_crossbar_link(): Invalid ARB set\n");
 	}
-
-	/*if(switches->crossbar->num_pairs > 1)
-		printf("switches->crossbar->num_pairs %d\n", switches->crossbar->num_pairs);*/
-
-	//advance the queue ptr to prevent starvation and or deadlocks.
-
-	/*printf("next_1 queue %d\n", switches->queue);*/
-
-	switches->queue = get_next_queue_rb(switches->queue);
-
-	/*printf("next_2 queue %d\n", switches->queue);*/
 
 	//we should have at least one pair, but no more than the number of ports on the switch.
 	assert(switches->crossbar->num_pairs >= 0 && switches->crossbar->num_pairs <= switches->crossbar->num_ports);
@@ -597,6 +714,62 @@ int switch_can_access(struct list_t *queue){
 	return 1;
 }
 
+enum port_name crossbar_get_port_link_status(struct switch_t *switches){
+
+	enum port_name port_status = invalid_queue;
+
+	//North queues
+	switch(switches->crossbar->current_port)
+	{
+		case north_queue:
+			port_status = switches->crossbar->north_in_out_linked_queue;
+			break;
+		case east_queue:
+			port_status = switches->crossbar->east_in_out_linked_queue;
+			break;
+		case south_queue:
+			port_status = switches->crossbar->south_in_out_linked_queue;
+			break;
+		case west_queue:
+			port_status = switches->crossbar->west_in_out_linked_queue;
+			break;
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
+	return port_status;
+}
+
+
+eventcount volatile *switch_get_io_ec_counter(struct switch_t *switches){
+
+	eventcount volatile * switch_io_ec = NULL;
+
+	switch(switches->crossbar->current_port)
+	{
+		case north_queue:
+			switch_io_ec = switches->switches_north_io_ec;
+			break;
+		case east_queue:
+			switch_io_ec = switches->switches_east_io_ec;
+			break;
+		case south_queue:
+			switch_io_ec = switches->switches_south_io_ec;
+			break;
+		case west_queue:
+			switch_io_ec = switches->switches_west_io_ec;
+			break;
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
+	return switch_io_ec;
+}
+
 
 void switch_ctrl(void){
 
@@ -604,11 +777,11 @@ void switch_ctrl(void){
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 	struct cgm_packet_t *message_packet = NULL;
+	struct list_t *out_queue = NULL;
 	long long step = 1;
+	int i = 0;
 
-	enum port_name next_queue = west_queue;
-
-	long long queue_depth;
+	/*long long queue_depth;*/
 
 	long long occ_start = 0;
 
@@ -626,17 +799,78 @@ void switch_ctrl(void){
 
 		SYSTEM_PAUSE(switches[my_pid].latency);
 
-		assert(next_queue == switches[my_pid].queue);
+		//assert(next_queue == switches[my_pid].queue);
 
-		/*switches models a cross bar.
+		/*models a cross bar.
 		link as many inputs to outputs as possible*/
 		switch_crossbar_link(&switches[my_pid]);
 
-		/*crossbar state is set. now run through and move each packet as required.*/
-		if(switches[my_pid].crossbar->north_in_out_linked_queue != invalid_queue)
+
+		//printf("made it here sw id %d cycle %llu\n", system_agent->switch_id, P_TIME);
+			//cache_dump_queue(switches[system_agent->switch_id].south_rx_reply_queue);
+			//printf("\n\n");
+
+
+
+		for(i = 0; i < switches[my_pid].crossbar->num_ports; i++)
 		{
-			/*the north out queue is linked to an input queue
-			move the packet from the input queue to the correct output queue*/
+
+			if(crossbar_get_port_link_status(&switches[my_pid]) != invalid_queue)
+			{
+				/*the out queue is linked to an input queue and the output queue isn't full
+				move the packet from the input queue to the correct output queue*/
+
+				//careful, the next line is for the INPUT queue...
+				message_packet = list_remove_at(switch_get_rx_queue(&switches[my_pid], crossbar_get_port_link_status(&switches[my_pid])), 0);
+				assert(message_packet);
+
+				DEBUGSYS(SYSTEM == 1, "block 0x%08x %s routing %d access id %llu type %d cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, switches[my_pid].crossbar->current_port, message_packet->access_id, message_packet->access_type, P_TIME);
+
+				out_queue = switch_get_tx_queue(&switches[my_pid], switches[my_pid].crossbar->current_port);
+
+
+
+				if(message_packet->access_id == 1)
+					warning("%s Sending id %llu src %s dest %s out queue %s cycle %llu\n",
+						switches[my_pid].name, message_packet->access_id, message_packet->src_name, message_packet->dest_name, out_queue->name, P_TIME);
+
+				if(list_count(out_queue) > QueueSize)
+					warning("%s size = %d\n", out_queue->name, list_count(out_queue));
+
+				list_enqueue(out_queue, message_packet);
+				advance(switch_get_io_ec_counter(&switches[my_pid]));
+
+				if(switches[my_pid].switch_id == 8)
+					cache_dump_queue(out_queue);
+
+				/*stats*/
+				//switches[my_pid].north_tx_inserts++;
+				//queue_depth = list_count(switches[my_pid].Tx_north_queue);
+				/*max depth*/
+				//if(queue_depth > switches[my_pid].north_txqueue_max_depth)
+				//		switches[my_pid].north_txqueue_max_depth = queue_depth;
+
+				/*ave depth = ((old count * old data) + next data) / next count*/
+				//switches[my_pid].north_txqueue_ave_depth =
+				//		((((double) switches[my_pid].north_tx_inserts - 1) * switches[my_pid].north_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_tx_inserts;
+
+				message_packet = NULL;
+
+			}
+
+			switches[my_pid].crossbar->current_port = get_next_queue_rb(switches[my_pid].crossbar->current_port);
+		}
+
+
+
+		//-------------------------------
+
+		/*crossbar state is set. now run through and move each packet as required.*/
+		/*if(switches[my_pid].crossbar->north_in_out_linked_queue != invalid_queue)
+		{
+			the north out queue is linked to an input queue and the output queue isn't full
+			move the packet from the input queue to the correct output queue
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->north_in_out_linked_queue), 0);
 			assert(message_packet);
 
@@ -649,21 +883,21 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_north_queue, message_packet);
 			advance(switches[my_pid].switches_north_io_ec);
 
-			/*stats*/
+			stats
 			switches[my_pid].north_tx_inserts++;
 			queue_depth = list_count(switches[my_pid].Tx_north_queue);
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[my_pid].north_txqueue_max_depth)
 					switches[my_pid].north_txqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[my_pid].north_txqueue_ave_depth =
 					((((double) switches[my_pid].north_tx_inserts - 1) * switches[my_pid].north_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].north_tx_inserts;
 
 			message_packet = NULL;
-		}
+		}*/
 
-		if(switches[my_pid].crossbar->east_in_out_linked_queue != invalid_queue)
+		/*if(switches[my_pid].crossbar->east_in_out_linked_queue != invalid_queue)
 		{
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->east_in_out_linked_queue), 0);
 			assert(message_packet);
@@ -677,21 +911,21 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_east_queue, message_packet);
 			advance(switches[my_pid].switches_east_io_ec);
 
-			/*stats*/
+			stats
 			switches[my_pid].east_tx_inserts++;
 			queue_depth = list_count(switches[my_pid].Tx_east_queue);
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[my_pid].east_txqueue_max_depth)
 					switches[my_pid].east_txqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[my_pid].east_txqueue_ave_depth =
 					((((double) switches[my_pid].east_tx_inserts - 1) * switches[my_pid].east_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].east_tx_inserts;
 
 			message_packet = NULL;
-		}
+		}*/
 
-		if(switches[my_pid].crossbar->south_in_out_linked_queue != invalid_queue)
+		/*if(switches[my_pid].crossbar->south_in_out_linked_queue != invalid_queue)
 		{
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->south_in_out_linked_queue), 0);
 			assert(message_packet);
@@ -705,21 +939,21 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_south_queue, message_packet);
 			advance(switches[my_pid].switches_south_io_ec);
 
-			/*stats*/
+			stats
 			switches[my_pid].south_tx_inserts++;
 			queue_depth = list_count(switches[my_pid].Tx_south_queue);
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[my_pid].south_txqueue_max_depth)
 					switches[my_pid].south_txqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[my_pid].south_txqueue_ave_depth =
 					((((double) switches[my_pid].south_tx_inserts - 1) * switches[my_pid].south_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].south_tx_inserts;
 
 			message_packet = NULL;
-		}
+		}*/
 
-		if(switches[my_pid].crossbar->west_in_out_linked_queue != invalid_queue)
+		/*if(switches[my_pid].crossbar->west_in_out_linked_queue != invalid_queue)
 		{
 			message_packet = list_remove_at(switch_get_in_queue(&switches[my_pid], switches[my_pid].crossbar->west_in_out_linked_queue), 0);
 			assert(message_packet);
@@ -733,19 +967,19 @@ void switch_ctrl(void){
 			list_enqueue(switches[my_pid].Tx_west_queue, message_packet);
 			advance(switches[my_pid].switches_west_io_ec);
 
-			/*stats*/
+			stats
 			switches[my_pid].west_tx_inserts++;
 			queue_depth = list_count(switches[my_pid].Tx_west_queue);
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[my_pid].west_txqueue_max_depth)
 					switches[my_pid].west_txqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[my_pid].west_txqueue_ave_depth =
 					((((double) switches[my_pid].west_tx_inserts - 1) * switches[my_pid].west_txqueue_ave_depth) + (double) queue_depth) / (double) switches[my_pid].west_tx_inserts;
 
 			message_packet = NULL;
-		}
+		}*/
 
 		/*stats*/
 		if(switches[my_pid].switch_max_links < switches[my_pid].crossbar->num_pairs)
@@ -760,10 +994,14 @@ void switch_ctrl(void){
 		//clear the current cross bar state
 		switch_crossbar_clear_state(&switches[my_pid]);
 
+		//set the next direction and lane to process
+		switches[my_pid].next_crossbar_lane = switch_get_next_crossbar_lane(switches[my_pid].next_crossbar_lane);
+		switches[my_pid].crossbar->current_port = get_next_queue_rb(switches[my_pid].crossbar->current_port);
+		switches[my_pid].queue = get_next_queue_rb(switches[my_pid].queue);
+
 		//set message_paket null
 		message_packet = NULL;
 
-		next_queue = switches[my_pid].queue;
 
 		/*stats occupancy*/
 		switches[my_pid].switch_occupance += (P_TIME - occ_start);
@@ -772,6 +1010,156 @@ void switch_ctrl(void){
 	fatal("switch_ctrl() quit\n");
 	return;
 }
+
+
+enum switch_crossbar_lane_map switch_get_next_crossbar_lane(enum switch_crossbar_lane_map current_crossbar_lane){
+
+	enum switch_crossbar_lane_map next_lane = crossbar_invalid_lane;
+
+	switch(current_crossbar_lane)
+	{
+		case crossbar_request:
+			next_lane = crossbar_reply;
+			break;
+		case crossbar_reply:
+			next_lane = crossbar_coherenece;
+			break;
+		case crossbar_coherenece:
+			next_lane = crossbar_request;
+			break;
+		case crossbar_invalid_lane:
+		default:
+			fatal("get_next_io_lane_rb() Invalid port name\n");
+			break;
+	}
+
+	assert(next_lane != crossbar_invalid_lane);
+	return next_lane;
+}
+
+
+struct cgm_packet_t *switch_get_rx_packet(struct switch_t *switches){
+
+	struct cgm_packet_t *packet = NULL;
+
+	switch(switches->queue)
+	{
+		//North queues
+		case north_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					packet = list_get(switches->north_rx_request_queue, 0);
+					break;
+				case crossbar_reply:
+					packet = list_get(switches->north_rx_reply_queue, 0);
+					break;
+				case crossbar_coherenece:
+					packet = list_get(switches->north_rx_coherence_queue, 0);
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//East queues
+		case east_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					packet = list_get(switches->east_rx_request_queue, 0);
+					break;
+				case crossbar_reply:
+					packet = list_get(switches->east_rx_reply_queue, 0);
+					break;
+				case crossbar_coherenece:
+					packet = list_get(switches->east_rx_coherence_queue, 0);
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//South queues
+		case south_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					packet = list_get(switches->south_rx_request_queue, 0);
+					break;
+				case crossbar_reply:
+					packet = list_get(switches->south_rx_reply_queue, 0);
+					break;
+				case crossbar_coherenece:
+					packet = list_get(switches->south_rx_coherence_queue, 0);
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//West queues
+		case west_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					packet = list_get(switches->west_rx_request_queue, 0);
+					break;
+				case crossbar_reply:
+					packet = list_get(switches->west_rx_reply_queue, 0);
+					break;
+				case crossbar_coherenece:
+					packet = list_get(switches->west_rx_coherence_queue, 0);
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//Error checking
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
+	return packet;
+}
+
+enum switch_io_lane_map get_next_io_lane_rb(enum switch_io_lane_map current_io_lane){
+
+	enum switch_io_lane_map next_lane = io_invalid_lane;
+
+	switch(current_io_lane)
+	{
+		case io_request:
+			next_lane = io_reply;
+			break;
+		case io_reply:
+			next_lane = io_coherenece;
+			break;
+		case io_coherenece:
+			next_lane = io_request;
+			break;
+		case io_invalid_lane:
+		default:
+			fatal("get_next_io_lane_rb() Invalid port name\n");
+			break;
+	}
+
+
+	assert(next_lane != io_invalid_lane);
+	return next_lane;
+}
+
 
 
 float switch_get_distance(int dest_node, int src_node){
@@ -835,8 +1223,32 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 			//set switches->queue to the next queue.
 			switches->queue = get_next_queue_rb(switches->queue);
 
+			switch(switches->queue)
+			{
+				case north_queue:
+					new_packet = list_get(switches->north_queue, 0);
+					switches->current_queue = switches->north_queue;
+					break;
+				case east_queue:
+					new_packet = list_get(switches->east_queue, 0);
+					switches->current_queue = switches->east_queue;
+					break;
+				case south_queue:
+					new_packet = list_get(switches->south_queue, 0);
+					switches->current_queue = switches->south_queue;
+					break;
+				case west_queue:
+					new_packet = list_get(switches->west_queue, 0);
+					switches->current_queue = switches->west_queue;
+					break;
+				case invalid_queue:
+				default:
+					fatal("get_next_queue() Invalid port name\n");
+					break;
+			}
+
 			//if we don't have a message go on to the next.
-			if(switches->queue == north_queue)
+			/*if(switches->queue == north_queue)
 			{
 				new_packet = list_get(switches->north_queue, 0);
 				switches->current_queue = switches->north_queue;
@@ -855,7 +1267,7 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 			{
 				new_packet = list_get(switches->west_queue, 0);
 				switches->current_queue = switches->west_queue;
-			}
+			}*/
 
 			//when we have a packet break out.
 			//next advance start with the next queue
@@ -878,12 +1290,219 @@ struct cgm_packet_t *get_from_queue(struct switch_t *switches){
 	return new_packet;
 }
 
+struct list_t *switch_get_tx_queue(struct switch_t *switches, enum port_name queue){
 
-struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue){
+	struct list_t *switch_queue = NULL;
 
-	struct list_t *in_queue = NULL;
+	switch(queue)
+	{
+		//North queues
+		case north_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->north_tx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->north_tx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->north_tx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
 
-	if(queue == north_queue)
+		//East queues
+		case east_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->east_tx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->east_tx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->east_tx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//South queues
+		case south_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->south_tx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->south_tx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->south_tx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//West queues
+		case west_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->west_tx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->west_tx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->west_tx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//Error checking
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
+	assert(switch_queue != NULL);
+	return switch_queue;
+}
+
+
+struct list_t *switch_get_rx_queue(struct switch_t *switches, enum port_name queue){
+
+	struct list_t *switch_queue = NULL;
+
+	switch(queue)
+	{
+		//North queues
+		case north_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->north_rx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->north_rx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->north_rx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//East queues
+		case east_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->east_rx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->east_rx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->east_rx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//South queues
+		case south_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->south_rx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->south_rx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->south_rx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//West queues
+		case west_queue:
+			switch(switches->next_crossbar_lane)
+			{
+				case crossbar_request:
+					switch_queue = switches->west_rx_request_queue;
+					break;
+				case crossbar_reply:
+					switch_queue = switches->west_rx_reply_queue;
+					break;
+				case crossbar_coherenece:
+					switch_queue = switches->west_rx_coherence_queue;
+					break;
+				case crossbar_invalid_lane:
+				default:
+					fatal("switch_get_rx_packet() Invalid port name\n");
+					break;
+			}
+			break;
+
+		//Error checking
+		case invalid_queue:
+		default:
+			fatal("switch_get_rx_packet() Invalid port name\n");
+			break;
+	}
+
+
+	/*switch(queue)
+	{
+		case north_queue:
+			in_queue = switches->north_queue;
+			break;
+		case east_queue:
+			in_queue = switches->east_queue;
+			break;
+		case south_queue:
+			in_queue = switches->south_queue;
+			break;
+		case west_queue:
+			in_queue = switches->west_queue;
+			break;
+		case invalid_queue:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}*/
+
+	/*if(queue == north_queue)
 	{
 		in_queue = switches->north_queue;
 	}
@@ -902,16 +1521,37 @@ struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name que
 	else
 	{
 		fatal("switche_get_out_queue() invalid port name\n");
-	}
+	}*/
 
-	assert(in_queue != NULL);
-	return in_queue;
+	assert(switch_queue != NULL);
+	return switch_queue;
 }
 
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet){
 
 
-	if(switches->queue == north_queue)
+	switch(switches->queue)
+	{
+		case north_queue:
+			list_remove(switches->north_queue, message_packet);
+			break;
+		case east_queue:
+			list_remove(switches->east_queue, message_packet);
+			break;
+		case south_queue:
+			list_remove(switches->south_queue, message_packet);
+			break;
+		case west_queue:
+			list_remove(switches->west_queue, message_packet);
+			break;
+		case invalid_queue:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+
+	/*if(switches->queue == north_queue)
 	{
 		list_remove(switches->north_queue, message_packet);
 	}
@@ -930,7 +1570,7 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 	else
 	{
 		fatal("remove_from_queue() invalid port name\n");
-	}
+	}*/
 
 	CGM_DEBUG(switch_debug_file, "%s access_id %llu cycle %llu removed from %s with size %d\n",
 			switches->name, message_packet->access_id, P_TIME, (char *)str_map_value(&port_name_map, switches->queue), list_count(switches->current_queue));
@@ -938,11 +1578,62 @@ void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_p
 	return;
 }
 
+enum port_name get_next_lane_queue(enum port_name queue){
+
+	enum port_name next_queue = invalid_queue;
+
+	switch(queue)
+	{
+		case west_queue:
+			next_queue = north_queue;
+			break;
+		case north_queue:
+			next_queue = east_queue;
+			break;
+		case east_queue:
+			next_queue = south_queue;
+			break;
+		case south_queue:
+			next_queue = west_queue;
+			break;
+		case invalid_queue:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+	assert(next_queue != invalid_queue);
+	return next_queue;
+}
+
+
+
 enum port_name get_next_queue_rb(enum port_name queue){
 
 	enum port_name next_queue = invalid_queue;
 
-	if(queue == west_queue)
+	switch(queue)
+	{
+		case west_queue:
+			next_queue = north_queue;
+			break;
+		case north_queue:
+			next_queue = east_queue;
+			break;
+		case east_queue:
+			next_queue = south_queue;
+			break;
+		case south_queue:
+			next_queue = west_queue;
+			break;
+		case invalid_queue:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+
+	/*if(queue == west_queue)
 	{
 		next_queue = north_queue;
 	}
@@ -961,10 +1652,34 @@ enum port_name get_next_queue_rb(enum port_name queue){
 	else
 	{
 		fatal("get_next_queue() Invalid port name\n");
-	}
+	}*/
 
 	assert(next_queue != invalid_queue);
 	return next_queue;
+}
+
+struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
+
+	struct cgm_packet_t *message_packet = NULL;
+
+	switch(current_io_lane)
+	{
+		case io_request:
+			message_packet = list_get(switches->north_tx_request_queue, 0);
+			break;
+		case io_reply:
+			message_packet = list_get(switches->north_tx_reply_queue, 0);
+			break;
+		case io_coherenece:
+			message_packet = list_get(switches->north_tx_coherence_queue, 0);
+			break;
+		case io_invalid_lane:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+	return message_packet;
 }
 
 void switch_north_io_ctrl(void){
@@ -974,6 +1689,8 @@ void switch_north_io_ctrl(void){
 	int num_cores = x86_cpu_num_cores;
 	struct cgm_packet_t *message_packet;
 	int transfer_time = 0;
+
+	enum switch_io_lane_map current_lane = io_request;
 
 	long long occ_start = 0;
 
@@ -986,27 +1703,31 @@ void switch_north_io_ctrl(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		message_packet = list_get(switches[my_pid].Tx_north_queue, 0);
+
+		message_packet = switch_io_ctrl_get_packet(&switches[my_pid], current_lane);
+
+		if(!message_packet) //try the next lane...
+		{
+			current_lane = get_next_io_lane_rb(current_lane);
+			continue;
+		}
+
 		assert(message_packet);
 
-		/*access_id = message_packet->access_id;*/
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
 
 		if(transfer_time == 0)
 			transfer_time = 1;
 
+		//shoudln't have a request going up!
+		assert(current_lane != io_request);
+
 		//try to send
 		//L2 switches
 		if(my_pid < num_cores)
 		{
-
-			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
-					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
-					|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
-					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
-					|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush_fwd)
+			if(current_lane == io_reply)
 			{
-
 				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
@@ -1020,7 +1741,7 @@ void switch_north_io_ctrl(void){
 					if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
 						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
 
-					message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
+					message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
 					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
 					advance(&l2_cache[my_pid]);
 
@@ -1031,12 +1752,8 @@ void switch_north_io_ctrl(void){
 					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 				}
 			}
-			else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
-					|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
-					|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack
-					|| message_packet->access_type == cgm_access_getx_fwd_nack)
+			else if (current_lane == io_coherenece)
 			{
-
 				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 				{
 					SYSTEM_PAUSE(1);
@@ -1050,7 +1767,7 @@ void switch_north_io_ctrl(void){
 					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
 						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
 
-					message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
+					message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
 					list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
 					advance(&l2_cache[my_pid]);
 
@@ -1063,14 +1780,13 @@ void switch_north_io_ctrl(void){
 			}
 			else
 			{
-				fatal("switch_north_io_ctrl(): bad access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
+				fatal("switch_north_io_ctrl(): bad lane type\n");
 			}
 
 		}
 		//hub-iommu
 		else if(my_pid >= num_cores)
 		{
-
 			if(list_count(hub_iommu->Rx_queue_bottom) >= QueueSize)
 			{
 				SYSTEM_PAUSE(1);
@@ -1085,9 +1801,22 @@ void switch_north_io_ctrl(void){
 					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
 							hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
 
-				message_packet = list_remove(switches[my_pid].Tx_north_queue, message_packet);
-				list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
-				advance(hub_iommu_ec);
+				if(current_lane == io_reply)
+				{
+					message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
+					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+					advance(hub_iommu_ec);
+				}
+				else if(current_lane == io_coherenece)
+				{
+					message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
+					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+					advance(hub_iommu_ec);
+				}
+				else
+				{
+					fatal("switch_north_io_ctrl(): bad lane type\n");
+				}
 
 				/*stats*/
 				switches[my_pid].switch_north_io_transfers++;
@@ -1136,7 +1865,8 @@ void switch_east_io_ctrl(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		message_packet = list_get(switches[my_pid].Tx_east_queue, 0);
+		//message_packet = list_get(switches[my_pid].Tx_east_queue, 0);
+		message_packet = list_get(switches[my_pid].east_tx_request_queue, 0);
 		assert(message_packet);
 
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
@@ -1158,7 +1888,7 @@ void switch_east_io_ctrl(void){
 				warning("switch_east_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_east->name, list_count(switches[my_pid].next_east));
 
 			//drop into next east queue.
-			message_packet = list_remove(switches[my_pid].Tx_east_queue, message_packet);
+			message_packet = list_remove(switches[my_pid].east_tx_request_queue, message_packet);
 			list_enqueue(switches[my_pid].next_east, message_packet);
 			advance(&switches_ec[switches[my_pid].next_east_id]);
 
@@ -1215,7 +1945,12 @@ void switch_west_io_ctrl(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		message_packet = list_get(switches[my_pid].Tx_west_queue, 0);
+		//message_packet = list_get(switches[my_pid].Tx_west_queue, 0);
+		message_packet = list_get(switches[my_pid].west_tx_request_queue, 0);
+
+		if(!message_packet)
+			printf("%s error cycle %llu\n", switches[my_pid].name, P_TIME);
+
 		assert(message_packet);
 
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
@@ -1238,7 +1973,7 @@ void switch_west_io_ctrl(void){
 				warning("switch_west_io_ctrl(): %s %s size exceeded %d\n", switches[my_pid].name, switches[my_pid].next_west->name, list_count(switches[my_pid].next_west));
 
 			//drop into next east queue.
-			message_packet = list_remove(switches[my_pid].Tx_west_queue, message_packet);
+			message_packet = list_remove(switches[my_pid].west_tx_request_queue, message_packet);
 			list_enqueue(switches[my_pid].next_west, message_packet);
 			advance(&switches_ec[switches[my_pid].next_west_id]);
 
@@ -1316,7 +2051,8 @@ void switch_south_io_ctrl(void){
 		/*find out what queue the packet needs to go into if the queue is full stall
 		if not process and get ready for the next queue*/
 
-		message_packet = list_get(switches[my_pid].Tx_south_queue, 0);
+		//message_packet = list_get(switches[my_pid].Tx_south_queue, 0);
+		message_packet = list_get(switches[my_pid].south_tx_request_queue, 0);
 		assert(message_packet);
 
 		//get the transfer time
@@ -1351,7 +2087,7 @@ void switch_south_io_ctrl(void){
 					if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
 					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
 
-					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
 					advance(&l3_cache[my_pid]);
 
@@ -1376,7 +2112,7 @@ void switch_south_io_ctrl(void){
 					if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
 						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
 
-					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
 					advance(&l3_cache[my_pid]);
 
@@ -1409,7 +2145,7 @@ void switch_south_io_ctrl(void){
 								l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
 					}
 
-					message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
 					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
 					advance(&l3_cache[my_pid]);
 
@@ -1445,7 +2181,7 @@ void switch_south_io_ctrl(void){
 				if(list_count(system_agent->Rx_queue_top) > QueueSize)
 					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", system_agent->name, system_agent->Rx_queue_top->name, list_count(system_agent->Rx_queue_top));
 
-				message_packet = list_remove(switches[my_pid].Tx_south_queue, message_packet);
+				message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
 				list_enqueue(system_agent->Rx_queue_top, message_packet);
 				advance(system_agent_ec);
 

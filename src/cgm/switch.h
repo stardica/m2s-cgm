@@ -211,19 +211,7 @@ enum gpu_l2_map{
 	gpu_l2_number
 };
 
-enum switch_crossbar_lane_map{
-	crossbar_request,
-	crossbar_reply,
-	crossbar_coherenece,
-	crossbar_num_lanes
-};
 
-enum switch_io_lane_map{
-	io_request,
-	io_reply,
-	io_coherenece,
-	io_num_lanes
-};
 
 extern struct str_map_t node_strn_map;
 extern struct str_map_t l1_strn_map;
@@ -251,22 +239,33 @@ extern int switch_io_pid;*/
 void switch_init(void);
 void switch_create(void);
 void switch_create_tasks(void);
+
 void switch_ctrl(void);
+
 void switch_north_io_ctrl(void);
 void switch_east_io_ctrl(void);
 void switch_south_io_ctrl(void);
 void switch_west_io_ctrl(void);
 
+struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+eventcount volatile *switch_get_io_ec_counter(struct switch_t *switches);
+struct list_t *switch_get_rx_queue(struct switch_t *switches, enum port_name queue);
+struct list_t *switch_get_tx_queue(struct switch_t *switches, enum port_name queue);
+struct cgm_packet_t *switch_get_rx_packet(struct switch_t *switches);
+enum port_name crossbar_get_port_link_status(struct switch_t *switches);
+struct list_t *crossbar_get_output_queue(struct switch_t *switches);
+enum switch_crossbar_lane_map switch_get_next_crossbar_lane(enum switch_crossbar_lane_map current_crossbar_lane);
+enum switch_io_lane_map get_next_io_lane_rb(enum switch_io_lane_map current_io_lane);
 float switch_get_distance(int dest_node, int src_node);
 int switch_can_access(struct list_t *queue);
 struct crossbar_t *switch_crossbar_create(void);
 void switch_crossbar_clear_state(struct switch_t *switches);
 void switch_crossbar_link(struct switch_t *switches);
 enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *message_packet);
-void switch_set_link(struct switch_t *switches, enum port_name tx_queue);
+void switch_set_link(struct switch_t *switches, enum port_name tx_port);
 enum port_name get_next_queue_rb(enum port_name queue);
 struct cgm_packet_t *get_from_queue(struct switch_t *switches);
-struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue);
+//struct list_t *switch_get_in_queue(struct switch_t *switches, enum port_name queue);
 void remove_from_queue(struct switch_t *switches, struct cgm_packet_t *message_packet);
 
 void switch_check_access_type(struct cgm_packet_t *message_packet);

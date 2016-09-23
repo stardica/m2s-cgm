@@ -3219,18 +3219,21 @@ int switch_finish_create(void){
 			switches[i].north_tx_request_queue = list_create();
 			switches[i].north_tx_reply_queue = list_create();
 			switches[i].north_tx_coherence_queue = list_create();
+
 			switches[i].east_rx_request_queue = list_create();
 			switches[i].east_rx_reply_queue = list_create();
 			switches[i].east_rx_coherence_queue = list_create();
 			switches[i].east_tx_request_queue = list_create();
 			switches[i].east_tx_reply_queue = list_create();
 			switches[i].east_tx_coherence_queue = list_create();
+
 			switches[i].south_rx_request_queue = list_create();
 			switches[i].south_rx_reply_queue = list_create();
 			switches[i].south_rx_coherence_queue = list_create();
 			switches[i].south_tx_request_queue = list_create();
 			switches[i].south_tx_reply_queue = list_create();
 			switches[i].south_tx_coherence_queue = list_create();
+
 			switches[i].west_rx_request_queue = list_create();
 			switches[i].west_rx_reply_queue = list_create();
 			switches[i].west_rx_coherence_queue = list_create();
@@ -3300,7 +3303,7 @@ int switch_finish_create(void){
 
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "switch[%d].south_tx_request_queue", i);
-			switches[i].south_rx_request_queue->name = strdup(buff);
+			switches[i].south_tx_request_queue->name = strdup(buff);
 
 			memset (buff,'\0' , 100);
 			snprintf(buff, 100, "switch[%d].south_tx_reply_queue", i);
@@ -3335,8 +3338,15 @@ int switch_finish_create(void){
 			switches[i].west_tx_coherence_queue->name = strdup(buff);
 
 
-			//init the queue pointer
+			//init the queue pointers
 			switches[i].queue = west_queue;
+			switches[i].next_crossbar_lane = crossbar_request;
+			switches[i].north_next_io_lane = io_request;
+			switches[i].east_next_io_lane = io_request;
+			switches[i].south_next_io_lane = io_request;
+			switches[i].west_next_io_lane = io_request;
+			switches[i].crossbar->current_port = west_queue;
+
 
 			//init the switche's network node number
 			//star todo fix this (we shouldn't need to specify this).
@@ -3420,24 +3430,24 @@ int switch_finish_create(void){
 		{
 			if(i == 0)
 			{
-				switches[i].next_west = switches[num_cores + extras - 1].east_queue;
+				switches[i].next_west = switches[num_cores + extras - 1].east_rx_request_queue;
 				switches[i].next_west_id = num_cores + extras - 1;
-				switches[i].next_east = switches[i+1].west_queue;
+				switches[i].next_east = switches[i+1].west_rx_request_queue;
 				switches[i].next_east_id = i+1;
 
 			}
 			else if( i > 0 && i < (num_cores + extras - 1))
 			{
-				switches[i].next_west = switches[i-1].east_queue;
+				switches[i].next_west = switches[i-1].east_rx_request_queue;
 				switches[i].next_west_id = i-1;
-				switches[i].next_east = switches[i+1].west_queue;
+				switches[i].next_east = switches[i+1].west_rx_request_queue;
 				switches[i].next_east_id = i+1;
 			}
 			else if(i == (num_cores + extras - 1))
 			{
-				switches[i].next_west = switches[i-1].east_queue;
+				switches[i].next_west = switches[i-1].east_rx_request_queue;
 				switches[i].next_west_id = i-1;
-				switches[i].next_east = switches[0].west_queue;
+				switches[i].next_east = switches[0].west_rx_request_queue;
 				switches[i].next_east_id = 0;
 			}
 		}

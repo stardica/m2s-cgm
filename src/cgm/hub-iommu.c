@@ -799,29 +799,79 @@ void hub_iommu_io_down_ctrl(void){
 
 		await(hub_iommu->hub_iommu_io_down_ec, step);
 
-		if(list_count(hub_iommu->switch_queue) >= QueueSize)
+		//if(list_count(switches[hub_iommu->switch_id].north_rx_request_queue) >= QueueSize)
+		//{
+		//	P_PAUSE(1);
+		//}
+		//else
+		//{
+		//	step++;
+
+		message_packet = list_get(hub_iommu->Tx_queue_bottom, 0);
+		assert(message_packet);
+
+		/*access_id = message_packet->access_id;*/
+		transfer_time = (message_packet->size/hub_iommu->bus_width);
+
+		if(transfer_time == 0)
+			transfer_time = 1;
+
+
+		//SYSTEM_PAUSE(transfer_time);
+
+
+		//drop into the next correct virtual lane/queue.
+		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
+				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
+				|| message_packet->access_type == cgm_access_gpu_flush)
 		{
-			P_PAUSE(1);
+
+			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
+			if(list_count(switches[hub_iommu->switch_id].north_rx_request_queue) >= (QueueSize - 1))
+			{
+				GPU_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				//drop in to the switch queue
+				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
+				list_enqueue(switches[hub_iommu->switch_id].north_rx_request_queue, message_packet);
+				advance(&switches_ec[hub_iommu->switch_id]);
+			}
+		}
+		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		{
+
+			if(list_count(switches[hub_iommu->switch_id].north_rx_reply_queue) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
+				list_enqueue(switches[hub_iommu->switch_id].north_rx_reply_queue, message_packet);
+				advance(&switches_ec[hub_iommu->switch_id]);
+
+			}
 		}
 		else
 		{
-			step++;
-
-			message_packet = list_dequeue(hub_iommu->Tx_queue_bottom);
-			assert(message_packet);
-
-			/*access_id = message_packet->access_id;*/
-			transfer_time = (message_packet->size/hub_iommu->bus_width);
-
-			if(transfer_time == 0)
-				transfer_time = 1;
-
-
-			SYSTEM_PAUSE(transfer_time);
-
-			list_enqueue(hub_iommu->switch_queue, message_packet);
-			advance(&switches_ec[hub_iommu->switch_id]);
+			fatal("hub_iommu_io_down_ctrl(): invalid access type\n");
 		}
+
+			//list_enqueue(hub_iommu->switch_queue, message_packet);
+			//advance(&switches_ec[hub_iommu->switch_id]);
+		//	list_enqueue(switches[hub_iommu->switch_id].north_rx_request_queue, message_packet);
+		//	advance(&switches_ec[hub_iommu->switch_id]);
 
 	}
 

@@ -224,6 +224,8 @@ void memctrl_ctrl(void){
 			message_packet = list_get(mem_ctrl->Rx_queue_top, 0);
 			assert(message_packet);
 
+
+
 			/*stats*/
 			if(mem_ctrl->rx_max < list_count(mem_ctrl->Rx_queue_top))
 				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);

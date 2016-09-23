@@ -234,6 +234,10 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	}
 	else if(access_type == cgm_access_mc_put)
 	{
+
+
+
+
 		//set the dest and sources
 		//message_packet->access_type = cgm_access_put;
 		message_packet->dest_id = message_packet->src_id;
@@ -315,7 +319,10 @@ void sys_agent_ctrl_io_up(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		if(list_count(system_agent->switch_queue) > QueueSize)
+		message_packet = list_get(system_agent->Tx_queue_top, 0);
+		assert(message_packet);
+
+		if(list_count(switches[system_agent->switch_id].south_rx_reply_queue) > QueueSize)
 		{
 			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
 			SYSTEM_PAUSE(1);
@@ -325,27 +332,29 @@ void sys_agent_ctrl_io_up(void){
 
 			step++;
 
-
-			message_packet = list_dequeue(system_agent->Tx_queue_top);
-			assert(message_packet);
-
 			/*access_id = message_packet->access_id;*/
 			transfer_time = (message_packet->size/system_agent->up_bus_width);
 
 			if(transfer_time == 0)
-			{
 				transfer_time = 1;
-			}
 
 			SYSTEM_PAUSE(transfer_time);
 
-			if(list_count(system_agent->switch_queue) > QueueSize)
-				warning("%s size %d\n", system_agent->switch_queue->name, list_count(mem_ctrl->Rx_queue_top));
+			if(list_count(switches[system_agent->switch_id].south_rx_reply_queue) > QueueSize)
+				warning("%s size %d\n", switches[system_agent->switch_id].south_rx_reply_queue->name, list_count(mem_ctrl->Rx_queue_top));
 
 			system_agent->north_io_busy_cycles += (transfer_time + 1);
 
-			list_enqueue(system_agent->switch_queue, message_packet);
+			//list_enqueue(system_agent->switch_queue, message_packet);
+			//advance(&switches_ec[system_agent->switch_id]);
+			message_packet = list_remove(system_agent->Tx_queue_top, message_packet);
+			list_enqueue(switches[system_agent->switch_id].south_rx_reply_queue, message_packet);
 			advance(&switches_ec[system_agent->switch_id]);
+
+			//printf("made it here sw id %d cycle %llu\n", system_agent->switch_id, P_TIME);
+			//cache_dump_queue(switches[system_agent->switch_id].south_rx_reply_queue);
+			//printf("\n\n");
+
 		}
 
 		/*stats occupancy*/

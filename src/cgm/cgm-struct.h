@@ -1125,11 +1125,31 @@ enum arbitrate{
 
 };
 
+enum switch_crossbar_lane_map{
+
+	crossbar_invalid_lane,
+	crossbar_request,
+	crossbar_reply,
+	crossbar_coherenece,
+	crossbar_num_lanes
+};
+
+enum switch_io_lane_map{
+
+	io_invalid_lane,
+	io_request,
+	io_reply,
+	io_coherenece,
+	io_num_lanes
+};
+
 //star todo this is currently only programmed for a 4 port switch
 struct crossbar_t{
 
 	int num_ports;
 	int num_pairs;
+
+	enum port_name current_port;
 
 	//in queues
 	enum port_name north_in_out_linked_queue;
@@ -1157,7 +1177,11 @@ struct switch_t{
 
 	//crossbar
 	struct crossbar_t *crossbar;
-
+	enum switch_crossbar_lane_map next_crossbar_lane;
+	enum switch_io_lane_map north_next_io_lane;
+	enum switch_io_lane_map east_next_io_lane;
+	enum switch_io_lane_map south_next_io_lane;
+	enum switch_io_lane_map west_next_io_lane;
 
 	//for switches with 4 ports
 	struct list_t *north_queue;

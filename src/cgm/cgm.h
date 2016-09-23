@@ -48,7 +48,9 @@
 #define P_TIME (etime.count >> 1)
 #define P_PAUSE(p_delay)	epause((p_delay)<<1)
 #define SYSTEM_LATENCY_FACTOR 2
+#define GPU_LATENCY_FACTOR (x86_cpu_frequency/si_gpu_frequency)
 #define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
+#define GPU_PAUSE(p_delay) P_PAUSE(p_delay * GPU_LATENCY_FACTOR)
 
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
