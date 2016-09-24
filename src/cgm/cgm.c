@@ -17,6 +17,9 @@
 #include <libgen.h>
 #include <stddef.h>
 
+#include <arch/x86/emu/context.h>
+
+
 #include <cgm/cgm.h>
 #include <cgm/configure.h>
 /*#include <cgm/dram.h>*/
@@ -956,6 +959,13 @@ void cgm_init(int argc, char **argv){
 	cpu_gpu_stats = (void *) calloc(1, sizeof(struct cpu_gpu_stats_t));
 
 	cgm_stat_finish_create(argc, argv);
+
+
+	if(SINGLE_CORE == 1)
+		warning("All threads allocated to a single core check SINGLE_CORE\n");
+
+
+
 
 	//set up internal structures
 	cgm_access_record = list_create();

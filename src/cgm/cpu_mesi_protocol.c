@@ -7733,7 +7733,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	}
 	else
 	{
-		fatal("cgm_mesi_l3_write_back(): Invalid queue cycle %llu\n", P_TIME);
+		fatal("cgm_mesi_l3_write_back(): id %llu Invalid queue as %s cycle %llu\n", message_packet->write_back_id, cache->last_queue->name, P_TIME);
 	}
 
 	return 1;

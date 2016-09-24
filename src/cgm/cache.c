@@ -2816,8 +2816,8 @@ void l1_d_cache_ctrl(void){
 		//star todo this can be refined a lot.
 		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
 		{
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", l1_d_caches[my_pid].name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", l1_d_caches[my_pid].name);*/
 
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
@@ -2967,8 +2967,8 @@ void l2_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l2_cache_ctrl(): %s stalling \n", l2_caches[my_pid].name);
 
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", l2_caches[my_pid].name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", l2_caches[my_pid].name);*/
 
 
 			l2_caches[my_pid].Stalls++;
@@ -2989,6 +2989,7 @@ void l2_cache_ctrl(void){
 
 			wd_current_set = message_packet->set;
 			wd_current_tag = message_packet->tag;
+
 
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l2_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
@@ -3255,8 +3256,8 @@ void l3_cache_ctrl(void){
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", l3_caches[my_pid].name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", l3_caches[my_pid].name);*/
 
 
 			l3_caches[my_pid].Stalls++;
@@ -3272,6 +3273,10 @@ void l3_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			/*if(message_packet->write_back_id == 12)
+				printf("l3 has WB last queue %s\n", l3_caches[my_pid].last_queue->name);
+			fflush(stdout);*/
 
 
 			if(message_packet->access_type == cgm_access_gets)
@@ -3535,8 +3540,8 @@ void gpu_v_cache_ctrl(void){
 			/*printf("%s stalling tx_b %d rx_b %d cycle %llu\n",
 					gpu_v_caches[my_pid].name, list_count(gpu_v_caches[my_pid].Tx_queue_bottom), list_count(gpu_v_caches[my_pid].Rx_queue_bottom), P_TIME);*/
 
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", gpu_v_caches[my_pid].name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", gpu_v_caches[my_pid].name);*/
 
 			P_PAUSE(1);
 		}
@@ -3662,8 +3667,8 @@ void gpu_l2_cache_ctrl(void){
 
 			getchar();*/
 
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", gpu_l2_cache[my_pid].name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", gpu_l2_cache[my_pid].name);*/
 
 			gpu_l2_caches[my_pid].Stalls++;
 
@@ -4042,9 +4047,9 @@ void l2_cache_down_io_ctrl(void){
 			transfer_time = 1;
 
 		//drop into the next correct virtual lane/queue.
-		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
-				|| message_packet->access_type == cgm_access_gpu_flush || message_packet->access_type == cgm_access_gets)
+		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get
+				|| message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade
+				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -4064,8 +4069,8 @@ void l2_cache_down_io_ctrl(void){
 				advance(&switches_ec[my_pid]);
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		else if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+				|| message_packet->access_type == cgm_access_upgrade_putx_n)
 		{
 
 			if(list_count(switches[my_pid].north_rx_reply_queue) >= QueueSize)
@@ -4080,6 +4085,30 @@ void l2_cache_down_io_ctrl(void){
 
 				message_packet = list_remove(l2_caches[my_pid].Tx_queue_bottom, message_packet);
 				list_enqueue(switches[my_pid].north_rx_reply_queue, message_packet);
+				advance(&switches_ec[my_pid]);
+
+			}
+		}
+		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_getx_fwd_ack
+				|| message_packet->access_type == cgm_access_downgrade_nack || message_packet->access_type == cgm_access_getx_fwd_nack
+				|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
+				/*|| message_packet->access_type == cgm_access_gpu_flush_ack*/)
+		{
+
+			if(list_count(switches[my_pid].north_rx_coherence_queue) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(l2_caches[my_pid].Tx_queue_bottom, message_packet);
+				list_enqueue(switches[my_pid].north_rx_coherence_queue, message_packet);
 				advance(&switches_ec[my_pid]);
 
 			}
@@ -4167,7 +4196,7 @@ void l3_cache_up_io_ctrl(void){
 			transfer_time = 1;
 
 		//try to place on switches
-		if(message_packet->access_type == cgm_access_mc_put || message_packet->access_type == cgm_access_mc_load)
+		if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 		{
 			if(list_count(switches[my_pid].south_rx_request_queue) >= QueueSize)
 			{
@@ -4221,9 +4250,9 @@ void l3_cache_up_io_ctrl(void){
 		else if (message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 				|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
 				|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack
-				|| message_packet->access_type == cgm_access_getx_fwd_nack)
+				|| message_packet->access_type == cgm_access_getx_fwd_nack || message_packet->access_type == cgm_access_gpu_flush_ack
+				|| message_packet->access_type == cgm_access_cpu_flush_ack)
 		{
-
 			if(list_count(switches[my_pid].south_rx_coherence_queue) >= QueueSize)
 			{
 				P_PAUSE(1);

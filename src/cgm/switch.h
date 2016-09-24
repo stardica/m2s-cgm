@@ -247,7 +247,11 @@ void switch_east_io_ctrl(void);
 void switch_south_io_ctrl(void);
 void switch_west_io_ctrl(void);
 
-struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+struct cgm_packet_t *switch_north_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+struct cgm_packet_t *switch_east_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+struct cgm_packet_t *switch_south_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+struct cgm_packet_t *switch_west_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane);
+
 eventcount volatile *switch_get_io_ec_counter(struct switch_t *switches);
 struct list_t *switch_get_rx_queue(struct switch_t *switches, enum port_name queue);
 struct list_t *switch_get_tx_queue(struct switch_t *switches, enum port_name queue);
@@ -281,3 +285,4 @@ void switch_dump_queue(struct list_t *queue);
 //void get_path(void);
 
 #endif /* SWITCH_H_ */
+

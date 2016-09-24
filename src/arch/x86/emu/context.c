@@ -76,10 +76,19 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 
 	for (i = 0; i < num_nodes; i++)
 	{
-		if(i == 0)
-			bit_map_set(self->affinity, i, 1, 1);
+		//bit_map_set(self->affinity, i, 1, 1);
+		if(SINGLE_CORE == 1)
+		{
+			if(i == 0)
+				bit_map_set(self->affinity, i, 1, 1);
+			else
+				bit_map_set(self->affinity, i, 1, 0);
+		}
 		else
-			bit_map_set(self->affinity, i, 1, 0);
+		{
+			assert(SINGLE_CORE == 0);
+			bit_map_set(self->affinity, i, 1, 1);
+		}
 	}
 
 

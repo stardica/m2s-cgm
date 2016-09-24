@@ -30,7 +30,7 @@
 /* Forward declarations */
 struct bit_map_t;
 
-
+#define SINGLE_CORE 0
 
 /*
  * Class 'X86Context'

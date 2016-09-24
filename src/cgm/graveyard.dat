@@ -1,5 +1,170 @@
 
+//L3 caches
+		/*if(my_pid < num_cores)
+		{
 
+			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
+					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade
+					|| message_packet->access_type == cgm_access_cpu_flush)
+			{
+
+				if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
+				{
+					//queue is full so stall
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					//will never happen
+					if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
+					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
+
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					stats
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
+			}
+			else if(message_packet->access_type == cgm_access_mc_put)
+			{
+				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
+
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					stats
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
+			}
+			else if (
+					   message_packet->access_type == cgm_access_downgrade_ack *
+					|| message_packet->access_type == cgm_access_downgrade_nack
+					|| message_packet->access_type == cgm_access_getx_fwd_ack *
+					|| message_packet->access_type == cgm_access_getx_fwd_nack
+					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack
+					|| message_packet->access_type == cgm_access_get_fwd_upgrade_nack
+					|| message_packet->access_type == cgm_access_flush_block_ack
+					|| message_packet->access_type == cgm_access_write_back
+					|| message_packet->access_type == cgm_access_upgrade_ack
+					|| message_packet->access_type == cgm_access_gpu_flush_ack)
+			{
+
+				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+					{
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name,
+								l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+					}
+
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
+					advance(&l3_cache[my_pid]);
+
+					stats
+					switches[my_pid].switch_south_io_transfers++;
+					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+				}
+			}
+			else
+			{
+				step++;
+
+				fatal("switch_south_io_ctrl(): bad access_type as %s access_id %llu cycle %llu\n",
+						str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id, P_TIME);
+			}
+
+		}*/
+
+
+
+			/*if(current_lane == io_reply)
+			{
+				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+
+					message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
+					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+					advance(&l2_cache[my_pid]);
+
+					stats
+					switches[my_pid].switch_north_io_transfers++;
+					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+				}
+			}*/
+			/*else if (current_lane == io_coherence)
+			{
+				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
+
+					message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
+					list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+					advance(&l2_cache[my_pid]);
+
+					stats
+					switches[my_pid].switch_north_io_transfers++;
+					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
+				}
+			}
+			else
+			{
+				fatal("switch_north_io_ctrl(): bad lane type\n");
+			}*/
 
 /*take all the various stat sections and build a single stat container for the entire run*/
 

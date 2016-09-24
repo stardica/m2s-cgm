@@ -831,9 +831,9 @@ void switch_ctrl(void){
 
 
 
-				if(message_packet->access_id == 1)
+				/*if(message_packet->access_id == 1)
 					warning("%s Sending id %llu src %s dest %s out queue %s cycle %llu\n",
-						switches[my_pid].name, message_packet->access_id, message_packet->src_name, message_packet->dest_name, out_queue->name, P_TIME);
+						switches[my_pid].name, message_packet->access_id, message_packet->src_name, message_packet->dest_name, out_queue->name, P_TIME);*/
 
 				if(list_count(out_queue) > QueueSize)
 					warning("%s size = %d\n", out_queue->name, list_count(out_queue));
@@ -841,8 +841,8 @@ void switch_ctrl(void){
 				list_enqueue(out_queue, message_packet);
 				advance(switch_get_io_ec_counter(&switches[my_pid]));
 
-				if(switches[my_pid].switch_id == 8)
-					cache_dump_queue(out_queue);
+				/*if(switches[my_pid].switch_id == 8)
+					cache_dump_queue(out_queue);*/
 
 				/*stats*/
 				//switches[my_pid].north_tx_inserts++;
@@ -1144,9 +1144,9 @@ enum switch_io_lane_map get_next_io_lane_rb(enum switch_io_lane_map current_io_l
 			next_lane = io_reply;
 			break;
 		case io_reply:
-			next_lane = io_coherenece;
+			next_lane = io_coherence;
 			break;
-		case io_coherenece:
+		case io_coherence:
 			next_lane = io_request;
 			break;
 		case io_invalid_lane:
@@ -1658,7 +1658,7 @@ enum port_name get_next_queue_rb(enum port_name queue){
 	return next_queue;
 }
 
-struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
+struct cgm_packet_t *switch_north_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
 
 	struct cgm_packet_t *message_packet = NULL;
 
@@ -1670,7 +1670,7 @@ struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum s
 		case io_reply:
 			message_packet = list_get(switches->north_tx_reply_queue, 0);
 			break;
-		case io_coherenece:
+		case io_coherence:
 			message_packet = list_get(switches->north_tx_coherence_queue, 0);
 			break;
 		case io_invalid_lane:
@@ -1681,6 +1681,80 @@ struct cgm_packet_t *switch_io_ctrl_get_packet(struct switch_t *switches, enum s
 
 	return message_packet;
 }
+
+struct cgm_packet_t *switch_east_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
+
+	struct cgm_packet_t *message_packet = NULL;
+
+	switch(current_io_lane)
+	{
+		case io_request:
+			message_packet = list_get(switches->east_tx_request_queue, 0);
+			break;
+		case io_reply:
+			message_packet = list_get(switches->east_tx_reply_queue, 0);
+			break;
+		case io_coherence:
+			message_packet = list_get(switches->east_tx_coherence_queue, 0);
+			break;
+		case io_invalid_lane:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+	return message_packet;
+}
+
+struct cgm_packet_t *switch_south_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
+
+	struct cgm_packet_t *message_packet = NULL;
+
+	switch(current_io_lane)
+	{
+		case io_request:
+			message_packet = list_get(switches->south_tx_request_queue, 0);
+			break;
+		case io_reply:
+			message_packet = list_get(switches->south_tx_reply_queue, 0);
+			break;
+		case io_coherence:
+			message_packet = list_get(switches->south_tx_coherence_queue, 0);
+			break;
+		case io_invalid_lane:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+	return message_packet;
+}
+
+
+struct cgm_packet_t *switch_west_io_ctrl_get_packet(struct switch_t *switches, enum switch_io_lane_map current_io_lane){
+
+	struct cgm_packet_t *message_packet = NULL;
+
+	switch(current_io_lane)
+	{
+		case io_request:
+			message_packet = list_get(switches->west_tx_request_queue, 0);
+			break;
+		case io_reply:
+			message_packet = list_get(switches->west_tx_reply_queue, 0);
+			break;
+		case io_coherence:
+			message_packet = list_get(switches->west_tx_coherence_queue, 0);
+			break;
+		case io_invalid_lane:
+		default:
+			fatal("get_next_queue() Invalid port name\n");
+			break;
+	}
+
+	return message_packet;
+}
+
 
 void switch_north_io_ctrl(void){
 
@@ -1703,8 +1777,7 @@ void switch_north_io_ctrl(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-
-		message_packet = switch_io_ctrl_get_packet(&switches[my_pid], current_lane);
+		message_packet = switch_north_io_ctrl_get_packet(&switches[my_pid], current_lane);
 
 		if(!message_packet) //try the next lane...
 		{
@@ -1719,70 +1792,71 @@ void switch_north_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
-		//shoudln't have a request going up!
-		assert(current_lane != io_request);
-
 		//try to send
 		//L2 switches
 		if(my_pid < num_cores)
 		{
-			if(current_lane == io_reply)
+
+			switch (current_lane)
 			{
-				if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
-				{
-					SYSTEM_PAUSE(1);
-				}
-				else
-				{
-					step++;
 
-					SYSTEM_PAUSE(transfer_time);
+				case io_reply:
 
-					if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
-						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+					if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+					{
+						SYSTEM_PAUSE(1);
+					}
+					else
+					{
+						step++;
 
-					message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
-					list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
-					advance(&l2_cache[my_pid]);
+						SYSTEM_PAUSE(transfer_time);
 
-					/*stats*/
-					switches[my_pid].switch_north_io_transfers++;
-					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
-					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
-				}
+						if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+							warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
+									l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+
+						message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
+						list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+						advance(&l2_cache[my_pid]);
+
+					}
+					break;
+
+				case io_coherence:
+
+					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+					{
+						SYSTEM_PAUSE(1);
+					}
+					else
+					{
+						step++;
+
+						SYSTEM_PAUSE(transfer_time);
+
+						if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+							warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
+									l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
+
+						message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
+						list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
+						advance(&l2_cache[my_pid]);
+					}
+					break;
+
+				case io_request:
+				case io_invalid_lane:
+				default:
+					fatal("switch_north_io_ctrl(): bad lane\n");
+					break;
+
+				/*stats*/
+				switches[my_pid].switch_north_io_transfers++;
+				switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
+				switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
+				//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
 			}
-			else if (current_lane == io_coherenece)
-			{
-				if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
-				{
-					SYSTEM_PAUSE(1);
-				}
-				else
-				{
-					step++;
-
-					SYSTEM_PAUSE(transfer_time);
-
-					if(list_count(l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
-						warning("switch_north_io_ctrl(): %s %s size exceeded %d\n", l2_caches[my_pid].name, l2_caches[my_pid].Coherance_Rx_queue->name, list_count(l2_caches[my_pid].Coherance_Rx_queue));
-
-					message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
-					list_enqueue(l2_caches[my_pid].Coherance_Rx_queue, message_packet);
-					advance(&l2_cache[my_pid]);
-
-					/*stats*/
-					switches[my_pid].switch_north_io_transfers++;
-					switches[my_pid].switch_north_io_transfer_cycles += transfer_time;
-					switches[my_pid].switch_north_io_bytes_transfered += message_packet->size;
-					//store_stat_bandwidth(bytes_rx, my_pid, transfer_time, switches[my_pid].bus_width);
-				}
-			}
-			else
-			{
-				fatal("switch_north_io_ctrl(): bad lane type\n");
-			}
-
 		}
 		//hub-iommu
 		else if(my_pid >= num_cores)
@@ -1801,13 +1875,19 @@ void switch_north_io_ctrl(void){
 					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
 							hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
 
-				if(current_lane == io_reply)
+				if(current_lane == io_request)
+				{
+					message_packet = list_remove(switches[my_pid].north_tx_request_queue, message_packet);
+					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+					advance(hub_iommu_ec);
+				}
+				else if(current_lane == io_reply)
 				{
 					message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
 					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
 					advance(hub_iommu_ec);
 				}
-				else if(current_lane == io_coherenece)
+				else if(current_lane == io_coherence)
 				{
 					message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
 					list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
@@ -1831,6 +1911,8 @@ void switch_north_io_ctrl(void){
 		}
 
 
+		current_lane = get_next_io_lane_rb(current_lane);
+
 		/*stats occupancy*/
 		switches[my_pid].switch_north_io_occupance += (P_TIME - occ_start);
 
@@ -1852,7 +1934,9 @@ void switch_east_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
-	long long queue_depth = 0;
+	//long long queue_depth = 0;
+
+	enum switch_io_lane_map current_lane = io_request;
 
 	long long occ_start = 0;
 
@@ -1866,7 +1950,17 @@ void switch_east_io_ctrl(void){
 		occ_start = P_TIME;
 
 		//message_packet = list_get(switches[my_pid].Tx_east_queue, 0);
-		message_packet = list_get(switches[my_pid].east_tx_request_queue, 0);
+		//message_packet = list_get(switches[my_pid].east_tx_request_queue, 0);
+		//assert(message_packet);
+
+		message_packet = switch_east_io_ctrl_get_packet(&switches[my_pid], current_lane);
+
+		if(!message_packet) //try the next lane...
+		{
+			current_lane = get_next_io_lane_rb(current_lane);
+			continue;
+		}
+
 		assert(message_packet);
 
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
@@ -1874,7 +1968,133 @@ void switch_east_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
-		if(list_count(switches[my_pid].next_east) >= QueueSize)
+
+		switch(current_lane)
+		{
+
+			case io_request:
+
+				if(list_count(switches[my_pid].next_east_rx_request_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].east_tx_request_queue, message_packet);
+					list_enqueue(switches[my_pid].next_east_rx_request_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_east_id]);
+				}
+				break;
+
+			case io_reply:
+
+				if(list_count(switches[my_pid].next_east_rx_reply_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].east_tx_reply_queue, message_packet);
+					list_enqueue(switches[my_pid].next_east_rx_reply_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_east_id]);
+				}
+				break;
+
+			case io_coherence:
+
+				if(list_count(switches[my_pid].next_east_rx_coherence_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].east_tx_coherence_queue, message_packet);
+					list_enqueue(switches[my_pid].next_east_rx_coherence_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_east_id]);
+				}
+				break;
+
+			case io_invalid_lane:
+			default:
+				fatal("switch_east_io_ctrl() Invalid lane\n");
+				break;
+
+
+		}
+
+
+		/*if(current_lane == io_request)
+		{
+			if(list_count(switches[my_pid].next_east_rx_request_queue) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				message_packet = list_remove(switches[my_pid].east_tx_request_queue, message_packet);
+				list_enqueue(switches[my_pid].next_east_rx_request_queue, message_packet);
+				advance(&switches_ec[switches[my_pid].next_east_id]);
+			}
+		}
+		else if(current_lane == io_reply)
+		{
+			if(list_count(switches[my_pid].next_east_rx_reply_queue) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				message_packet = list_remove(switches[my_pid].east_tx_reply_queue, message_packet);
+				list_enqueue(switches[my_pid].next_east_rx_reply_queue, message_packet);
+				advance(&switches_ec[switches[my_pid].next_east_id]);
+			}
+
+		}
+		else if(current_lane == io_coherenece)
+		{
+			if(list_count(switches[my_pid].next_east_rx_reply_queue) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				message_packet = list_remove(switches[my_pid].east_tx_reply_queue, message_packet);
+				list_enqueue(switches[my_pid].next_east_rx_reply_queue, message_packet);
+				advance(&switches_ec[switches[my_pid].next_east_id]);
+			}
+
+		}
+		else
+		{
+			fatal("switch_north_io_ctrl(): bad lane type\n");
+		}*/
+
+
+		/*if(list_count(switches[my_pid].next_east) >= QueueSize)
 		{
 			SYSTEM_PAUSE(1);
 		}
@@ -1892,7 +2112,7 @@ void switch_east_io_ctrl(void){
 			list_enqueue(switches[my_pid].next_east, message_packet);
 			advance(&switches_ec[switches[my_pid].next_east_id]);
 
-			/*stats*/
+			stats
 			switches[my_pid].switch_east_io_transfers++;
 			switches[my_pid].switch_east_io_transfer_cycles += transfer_time;
 			switches[my_pid].switch_east_io_bytes_transfered += message_packet->size;
@@ -1900,19 +2120,20 @@ void switch_east_io_ctrl(void){
 			//note these stats are for the adjacent switch to the east which puts packets in the west rx_queue
 			switches[switches[my_pid].next_east_id].west_rx_inserts++;
 			queue_depth = list_count(switches[my_pid].next_east); //tricky
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[switches[my_pid].next_east_id].west_rxqueue_max_depth)
 				switches[switches[my_pid].next_east_id].west_rxqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth =
 				((((double) switches[switches[my_pid].next_east_id].west_rx_inserts - 1) * switches[switches[my_pid].next_east_id].west_rxqueue_ave_depth)
 						+ (double) queue_depth) / (double) switches[switches[my_pid].next_east_id].west_rx_inserts;
-		}
+		}*/
+
+		current_lane = get_next_io_lane_rb(current_lane);
 
 		/*stats occupancy*/
 		switches[my_pid].switch_east_io_occupance += (P_TIME - occ_start);
-
 
 	}
 
@@ -1932,9 +2153,10 @@ void switch_west_io_ctrl(void){
 	struct cgm_packet_t *message_packet;
 	/*long long access_id = 0;*/
 	int transfer_time = 0;
-	long long queue_depth = 0;
-
+	//long long queue_depth = 0;
 	long long occ_start = 0;
+
+	enum switch_io_lane_map current_lane = io_request;
 
 	set_id((unsigned int)my_pid);
 
@@ -1946,10 +2168,19 @@ void switch_west_io_ctrl(void){
 		occ_start = P_TIME;
 
 		//message_packet = list_get(switches[my_pid].Tx_west_queue, 0);
-		message_packet = list_get(switches[my_pid].west_tx_request_queue, 0);
+		//message_packet = list_get(switches[my_pid].west_tx_request_queue, 0);
+
+		message_packet = switch_west_io_ctrl_get_packet(&switches[my_pid], current_lane);
+
+		if(!message_packet) //try the next lane...
+		{
+			current_lane = get_next_io_lane_rb(current_lane);
+			continue;
+		}
+
 
 		if(!message_packet)
-			printf("%s error cycle %llu\n", switches[my_pid].name, P_TIME);
+			printf("switch_west_io_ctrl(): %s io error cycle %llu\n", switches[my_pid].name, P_TIME);
 
 		assert(message_packet);
 
@@ -1959,7 +2190,113 @@ void switch_west_io_ctrl(void){
 			transfer_time = 1;
 
 
-		if(list_count(switches[my_pid].next_west) >= QueueSize)
+		switch(current_lane)
+		{
+
+			case io_request:
+
+				if(list_count(switches[my_pid].next_west_rx_request_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].west_tx_request_queue, message_packet);
+					list_enqueue(switches[my_pid].next_west_rx_request_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_west_id]);
+				}
+				break;
+
+			case io_reply:
+
+				if(list_count(switches[my_pid].next_west_rx_reply_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].west_tx_reply_queue, message_packet);
+					list_enqueue(switches[my_pid].next_west_rx_reply_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_west_id]);
+				}
+				break;
+
+			case io_coherence:
+
+				if(list_count(switches[my_pid].next_west_rx_coherence_queue) >= QueueSize)
+				{
+					SYSTEM_PAUSE(1);
+				}
+				else
+				{
+					step++;
+
+					SYSTEM_PAUSE(transfer_time);
+
+					message_packet = list_remove(switches[my_pid].west_tx_coherence_queue, message_packet);
+					list_enqueue(switches[my_pid].next_west_rx_coherence_queue, message_packet);
+					advance(&switches_ec[switches[my_pid].next_west_id]);
+				}
+				break;
+
+			case io_invalid_lane:
+			default:
+				fatal("switch_east_io_ctrl() Invalid lane\n");
+				break;
+
+		}
+
+		/*if(current_lane == io_request)
+		{
+
+			if(list_count(hub_iommu->Rx_queue_bottom) >= QueueSize)
+			{
+				SYSTEM_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				SYSTEM_PAUSE(transfer_time);
+
+				if(list_count(hub_iommu->Rx_queue_bottom) > QueueSize)
+					warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
+							hub_iommu->name, hub_iommu->Rx_queue_bottom->name, list_count(hub_iommu->Rx_queue_bottom));
+			}
+
+
+		}
+		else if(current_lane == io_reply)
+		{
+			message_packet = list_remove(switches[my_pid].north_tx_reply_queue, message_packet);
+			list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+			advance(hub_iommu_ec);
+		}
+		else if(current_lane == io_coherence)
+		{
+			message_packet = list_remove(switches[my_pid].north_tx_coherence_queue, message_packet);
+			list_enqueue(hub_iommu->Rx_queue_bottom, message_packet);
+			advance(hub_iommu_ec);
+		}
+		else
+		{
+			fatal("switch_north_io_ctrl(): bad lane type\n");
+		}*/
+
+
+
+
+
+
+		/*if(list_count(switches[my_pid].next_west) >= QueueSize)
 		{
 			SYSTEM_PAUSE(1);
 		}
@@ -1977,7 +2314,7 @@ void switch_west_io_ctrl(void){
 			list_enqueue(switches[my_pid].next_west, message_packet);
 			advance(&switches_ec[switches[my_pid].next_west_id]);
 
-			/*stats*/
+			stats
 			switches[my_pid].switch_west_io_transfers++;
 			switches[my_pid].switch_west_io_transfer_cycles += transfer_time;
 			switches[my_pid].switch_west_io_bytes_transfered += message_packet->size;
@@ -1986,15 +2323,17 @@ void switch_west_io_ctrl(void){
 			switches[switches[my_pid].next_west_id].east_rx_inserts++;
 			queue_depth = list_count(switches[my_pid].next_west); //tricky
 
-			/*max depth*/
+			max depth
 			if(queue_depth > switches[switches[my_pid].next_west_id].east_rxqueue_max_depth)
 				switches[switches[my_pid].next_west_id].east_rxqueue_max_depth = queue_depth;
 
-			/*ave depth = ((old count * old data) + next data) / next count*/
+			ave depth = ((old count * old data) + next data) / next count
 			switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth =
 				((((double) switches[switches[my_pid].next_west_id].east_rx_inserts - 1) * switches[switches[my_pid].next_west_id].east_rxqueue_ave_depth)
 						+ (double) queue_depth) / (double) switches[switches[my_pid].next_west_id].east_rx_inserts;
-		}
+		}*/
+
+		current_lane = get_next_io_lane_rb(current_lane);
 
 		/*stats occupancy*/
 		switches[my_pid].switch_west_io_occupance += (P_TIME - occ_start);
@@ -2039,6 +2378,8 @@ void switch_south_io_ctrl(void){
 
 	long long occ_start = 0;
 
+	enum switch_io_lane_map current_lane = io_request;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
@@ -2052,8 +2393,16 @@ void switch_south_io_ctrl(void){
 		if not process and get ready for the next queue*/
 
 		//message_packet = list_get(switches[my_pid].Tx_south_queue, 0);
-		message_packet = list_get(switches[my_pid].south_tx_request_queue, 0);
-		assert(message_packet);
+		//message_packet = list_get(switches[my_pid].south_tx_request_queue, 0);
+		//assert(message_packet);
+
+		message_packet = switch_south_io_ctrl_get_packet(&switches[my_pid], current_lane);
+
+		if(!message_packet) //try the next lane...
+		{
+			current_lane = get_next_io_lane_rb(current_lane);
+			continue;
+		}
 
 		//get the transfer time
 		transfer_time = (message_packet->size/switches[my_pid].bus_width);
@@ -2062,105 +2411,103 @@ void switch_south_io_ctrl(void){
 			transfer_time = 1;
 
 		//try to send
-
 		//L3 caches
 		if(my_pid < num_cores)
 		{
 
-			if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_getx
-					|| message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_upgrade
-					|| message_packet->access_type == cgm_access_cpu_flush)
+			switch(current_lane)
 			{
 
-				if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
-				{
-					//queue is full so stall
-					SYSTEM_PAUSE(1);
-				}
-				else
-				{
-					step++;
+				case io_request:
 
-					SYSTEM_PAUSE(transfer_time);
-
-					//will never happen
-					if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
-					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
-
-					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
-					list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
-					advance(&l3_cache[my_pid]);
-
-					/*stats*/
-					switches[my_pid].switch_south_io_transfers++;
-					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
-					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
-				}
-			}
-			else if(message_packet->access_type == cgm_access_mc_put)
-			{
-				if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
-				{
-					SYSTEM_PAUSE(1);
-				}
-				else
-				{
-					step++;
-
-					SYSTEM_PAUSE(transfer_time);
-
-					if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
-						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
-
-					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
-					list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
-					advance(&l3_cache[my_pid]);
-
-					/*stats*/
-					switches[my_pid].switch_south_io_transfers++;
-					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
-					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
-				}
-			}
-			else if (message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
-					|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_getx_fwd_nack
-					|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
-					|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_write_back
-					|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
-			{
-
-				if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
-				{
-					SYSTEM_PAUSE(1);
-				}
-				else
-				{
-					step++;
-
-					SYSTEM_PAUSE(transfer_time);
-
-					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+					if(list_count(l3_caches[my_pid].Rx_queue_top) >= QueueSize)
 					{
-						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name,
-								l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+						//queue is full so stall
+						SYSTEM_PAUSE(1);
 					}
+					else
+					{
+						step++;
 
-					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
-					list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
-					advance(&l3_cache[my_pid]);
+						SYSTEM_PAUSE(transfer_time);
 
-					/*stats*/
-					switches[my_pid].switch_south_io_transfers++;
-					switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
-					switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
-				}
-			}
-			else
-			{
-				step++;
+						//should never happen
+						if(list_count(l3_caches[my_pid].Rx_queue_top) > QueueSize)
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_top->name, list_count(l3_caches[my_pid].Rx_queue_top));
 
-				fatal("switch_south_io_ctrl(): bad access_type as %s access_id %llu cycle %llu\n",
-						str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id, P_TIME);
+						message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+						list_enqueue(l3_caches[my_pid].Rx_queue_top, message_packet);
+						advance(&l3_cache[my_pid]);
+
+						/*stats*/
+						switches[my_pid].switch_south_io_transfers++;
+						switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+						switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+					}
+					break;
+
+				case io_reply:
+
+					if(list_count(l3_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+					{
+						//queue is full so stall
+						SYSTEM_PAUSE(1);
+					}
+					else
+					{
+						step++;
+
+						SYSTEM_PAUSE(transfer_time);
+
+						//should never happen
+						if(list_count(l3_caches[my_pid].Rx_queue_bottom) > QueueSize)
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n",
+								l3_caches[my_pid].name, l3_caches[my_pid].Rx_queue_bottom->name, list_count(l3_caches[my_pid].Rx_queue_bottom));
+
+						message_packet = list_remove(switches[my_pid].south_tx_reply_queue, message_packet);
+						list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+						advance(&l3_cache[my_pid]);
+
+						/*stats*/
+						switches[my_pid].switch_south_io_transfers++;
+						switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+						switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+					}
+					break;
+
+				case io_coherence:
+
+					if(list_count(l3_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+					{
+						//queue is full so stall
+						SYSTEM_PAUSE(1);
+					}
+					else
+					{
+						step++;
+
+						SYSTEM_PAUSE(transfer_time);
+
+						//should never happen
+						if(list_count(l3_caches[my_pid].Coherance_Rx_queue) > QueueSize)
+						warning("switch_south_io_ctrl(): %s %s size exceeded %d\n",
+								l3_caches[my_pid].name, l3_caches[my_pid].Coherance_Rx_queue->name, list_count(l3_caches[my_pid].Coherance_Rx_queue));
+
+						message_packet = list_remove(switches[my_pid].south_tx_coherence_queue, message_packet);
+						list_enqueue(l3_caches[my_pid].Coherance_Rx_queue, message_packet);
+						advance(&l3_cache[my_pid]);
+
+						/*stats*/
+						switches[my_pid].switch_south_io_transfers++;
+						switches[my_pid].switch_south_io_transfer_cycles += transfer_time;
+						switches[my_pid].switch_south_io_bytes_transfered += message_packet->size;
+					}
+					break;
+
+				case io_invalid_lane:
+				default:
+					fatal("switch_south_io_ctrl() Invalid lane\n");
+					break;
 			}
 
 		}
@@ -2181,9 +2528,32 @@ void switch_south_io_ctrl(void){
 				if(list_count(system_agent->Rx_queue_top) > QueueSize)
 					warning("switch_south_io_ctrl(): %s %s size exceeded %d\n", system_agent->name, system_agent->Rx_queue_top->name, list_count(system_agent->Rx_queue_top));
 
-				message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
-				list_enqueue(system_agent->Rx_queue_top, message_packet);
-				advance(system_agent_ec);
+				if(current_lane == io_request)
+				{
+					message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+					list_enqueue(system_agent->Rx_queue_top, message_packet);
+					advance(system_agent_ec);
+				}
+				else if(current_lane == io_reply)
+				{
+					message_packet = list_remove(switches[my_pid].south_tx_reply_queue, message_packet);
+					list_enqueue(system_agent->Rx_queue_top, message_packet);
+					advance(system_agent_ec);
+				}
+				else if(current_lane == io_coherence)
+				{
+					message_packet = list_remove(switches[my_pid].south_tx_coherence_queue, message_packet);
+					list_enqueue(system_agent->Rx_queue_top, message_packet);
+					advance(system_agent_ec);
+				}
+				else
+				{
+					fatal("switch_north_io_ctrl(): bad lane type\n");
+				}
+
+				//message_packet = list_remove(switches[my_pid].south_tx_request_queue, message_packet);
+				//list_enqueue(system_agent->Rx_queue_top, message_packet);
+				//advance(system_agent_ec);
 
 				/*stats*/
 				if(system_agent->max_north_rxqueue_depth < list_count(system_agent->Rx_queue_top))
@@ -2203,7 +2573,7 @@ void switch_south_io_ctrl(void){
 			fatal("switch_south_io_ctrl(): my_pid is out of bounds %d\n", my_pid);
 		}
 
-
+		current_lane = get_next_io_lane_rb(current_lane);
 
 		/*stats occupancy*/
 		switches[my_pid].switch_south_io_occupance += (P_TIME - occ_start);

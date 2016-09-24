@@ -478,8 +478,8 @@ void hub_iommu_ctrl_func(void){
 		else
 		{
 
-			if(P_TIME > 106034981)
-				printf("%s stalling\n", hub_iommu->name);
+			/*if(P_TIME > 106034981)
+				printf("%s stalling\n", hub_iommu->name);*/
 
 
 			SYSTEM_PAUSE(1);
@@ -799,14 +799,6 @@ void hub_iommu_io_down_ctrl(void){
 
 		await(hub_iommu->hub_iommu_io_down_ec, step);
 
-		//if(list_count(switches[hub_iommu->switch_id].north_rx_request_queue) >= QueueSize)
-		//{
-		//	P_PAUSE(1);
-		//}
-		//else
-		//{
-		//	step++;
-
 		message_packet = list_get(hub_iommu->Tx_queue_bottom, 0);
 		assert(message_packet);
 
@@ -822,8 +814,8 @@ void hub_iommu_io_down_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
-				|| message_packet->access_type == cgm_access_gpu_flush)
+				/*|| message_packet->access_type == cgm_access_upgrade*/ /*|| message_packet->access_type == cgm_access_cpu_flush*/
+				/*|| message_packet->access_type == cgm_access_gpu_flush*/)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -843,8 +835,7 @@ void hub_iommu_io_down_ctrl(void){
 				advance(&switches_ec[hub_iommu->switch_id]);
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		else if(message_packet->access_type == cgm_access_gpu_flush_ack)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_reply_queue) >= QueueSize)
@@ -863,9 +854,29 @@ void hub_iommu_io_down_ctrl(void){
 
 			}
 		}
+		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		{
+
+			if(list_count(switches[hub_iommu->switch_id].north_rx_coherence_queue) >= QueueSize)
+			{
+				P_PAUSE(1);
+			}
+			else
+			{
+				step++;
+
+				P_PAUSE(transfer_time);
+
+				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
+				list_enqueue(switches[hub_iommu->switch_id].north_rx_coherence_queue, message_packet);
+				advance(&switches_ec[hub_iommu->switch_id]);
+
+			}
+		}
 		else
 		{
-			fatal("hub_iommu_io_down_ctrl(): invalid access type\n");
+			fatal("hub_iommu_io_down_ctrl(): invalid access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
 
 			//list_enqueue(hub_iommu->switch_queue, message_packet);

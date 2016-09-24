@@ -3430,26 +3430,48 @@ int switch_finish_create(void){
 		{
 			if(i == 0)
 			{
-				switches[i].next_west = switches[num_cores + extras - 1].east_rx_request_queue;
+				//west queues
 				switches[i].next_west_id = num_cores + extras - 1;
-				switches[i].next_east = switches[i+1].west_rx_request_queue;
+				/*switches[i].next_west_rx_request_queue = switches[switches[i].next_west_id].east_rx_request_queue;
+				switches[i].next_west_rx_reply_queue = switches[switches[i].next_west_id].east_rx_reply_queue;
+				switches[i].next_west_rx_coherence_queue = switches[switches[i].next_west_id].east_rx_coherence_queue;*/
+
+				//switches[i].next_east = switches[i+1].west_rx_request_queue;
 				switches[i].next_east_id = i+1;
+				/*switches[i].next_east_rx_request_queue = switches[switches[i].next_east_id].west_rx_request_queue;
+				switches[i].next_east_rx_reply_queue = switches[switches[i].next_east_id].west_rx_reply_queue;
+				switches[i].next_east_rx_coherence_queue = switches[switches[i].next_east_id].west_rx_coherence_queue;*/
 
 			}
 			else if( i > 0 && i < (num_cores + extras - 1))
 			{
-				switches[i].next_west = switches[i-1].east_rx_request_queue;
 				switches[i].next_west_id = i-1;
-				switches[i].next_east = switches[i+1].west_rx_request_queue;
+				/*switches[i].next_west_rx_request_queue = switches[switches[i].next_west_id].east_rx_request_queue;
+				switches[i].next_west_rx_reply_queue = switches[switches[i].next_west_id].east_rx_reply_queue;
+				switches[i].next_west_rx_coherence_queue = switches[switches[i].next_west_id].east_rx_coherence_queue;*/
+
 				switches[i].next_east_id = i+1;
+				/*switches[i].next_east_rx_request_queue = switches[switches[i].next_east_id].west_rx_request_queue;
+				switches[i].next_east_rx_reply_queue = switches[switches[i].next_east_id].west_rx_reply_queue;
+				switches[i].next_east_rx_coherence_queue = switches[switches[i].next_east_id].west_rx_coherence_queue;*/
+
 			}
 			else if(i == (num_cores + extras - 1))
 			{
-				switches[i].next_west = switches[i-1].east_rx_request_queue;
+				//switches[i].next_west = switches[i-1].east_rx_request_queue;
 				switches[i].next_west_id = i-1;
-				switches[i].next_east = switches[0].west_rx_request_queue;
+				//switches[i].next_east = switches[0].west_rx_request_queue;
 				switches[i].next_east_id = 0;
 			}
+
+			switches[i].next_west_rx_request_queue = switches[switches[i].next_west_id].east_rx_request_queue;
+			switches[i].next_west_rx_reply_queue = switches[switches[i].next_west_id].east_rx_reply_queue;
+			switches[i].next_west_rx_coherence_queue = switches[switches[i].next_west_id].east_rx_coherence_queue;
+
+			switches[i].next_east_rx_request_queue = switches[switches[i].next_east_id].west_rx_request_queue;
+			switches[i].next_east_rx_reply_queue = switches[switches[i].next_east_id].west_rx_reply_queue;
+			switches[i].next_east_rx_coherence_queue = switches[switches[i].next_east_id].west_rx_coherence_queue;
+
 		}
 	}
 	else if(switches[0].port_num == 6)
@@ -3460,6 +3482,7 @@ int switch_finish_create(void){
 	{
 		fatal("switch_finish_create() port_num error\n");
 	}
+
 
 	////////////
 	//GPU hub-iommu

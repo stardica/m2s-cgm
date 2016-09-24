@@ -1139,7 +1139,7 @@ enum switch_io_lane_map{
 	io_invalid_lane,
 	io_request,
 	io_reply,
-	io_coherenece,
+	io_coherence,
 	io_num_lanes
 };
 
@@ -1241,21 +1241,16 @@ struct switch_t{
 	task *switches_west_io_tasks;
 
 	//for switches with 6 ports
-	//struct list_t *forward_queue_lane1;
-	//struct list_t *forward_queue_lane2;
-	//struct list_t *back_queue_lane1;
-	//struct list_t *back_queue_lane2;
 
 	//pointers to neighbors
 	//for ring busses you just need an east/west queue ptr
-	//struct list_t *next_north;
-	struct list_t *next_east;
-	//struct list_t *next_south;
-	struct list_t *next_west;
-
+	struct list_t *next_east_rx_request_queue;
+	struct list_t *next_east_rx_reply_queue;
+	struct list_t *next_east_rx_coherence_queue;
+	struct list_t *next_west_rx_request_queue;
+	struct list_t *next_west_rx_reply_queue;
+	struct list_t *next_west_rx_coherence_queue;
 	struct list_t *current_queue;
-	//struct list_t *next_forward;
-	//struct list_t *next_back;
 
 	int next_east_id;
 	int next_west_id;
