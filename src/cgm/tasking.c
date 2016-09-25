@@ -81,7 +81,7 @@ void epause (count_t count){
 }
 
 /* save current task on ec, return next task to run */
-inline void find_next_task (eventcount *ec, count_t value){
+static inline void find_next_task (eventcount *ec, count_t value){
 
 	task *pptr = ec->tasklist;
 

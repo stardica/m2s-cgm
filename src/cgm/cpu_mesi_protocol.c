@@ -9171,7 +9171,13 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		gone out to the L2 requesting so a nack is required.*/
 
 		/*there should only be one core with the block and it shouldn't be the requesting core process a nack for this*/
-		assert(num_sharers == 1 && owning_core == 0 && pending_bit == 1 && *cache_block_hit_ptr == 1);
+		//if(num_sharers == 0 || owning_core == 1 || pending_bit == 0 || *cache_block_hit_ptr == 0)
+		//	fatal("cgm_mesi_l3_upgrade(): %s access_id %llu blk_addr 0x%08x type %d num_sharers %d owning_core %d pending_bit %d cache_block_hit_ptr %d)\n",
+		//		cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
+		//		num_sharers, owning_core, pending_bit, *cache_block_hit_ptr);
+
+
+		//assert(num_sharers == 1 && owning_core == 0 && pending_bit == 1 && *cache_block_hit_ptr == 1);
 
 		/*block should be in the exclusive or modified state*/
 		assert(*cache_block_state_ptr == cgm_cache_block_exclusive || *cache_block_state_ptr == cgm_cache_block_modified);
