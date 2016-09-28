@@ -205,6 +205,8 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
+
+
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -215,10 +217,8 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 /*void cgm_mesi_l3_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);

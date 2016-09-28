@@ -3045,10 +3045,8 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_puts || access_type == cgm_access_putx || access_type == cgm_access_put_clnx)//
 			{
 				//Call back function (cgm_mesi_l2_put)
-				l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet);
-
-				//run again
-				step--;
+				if(!l2_caches[my_pid].l2_write_block(&(l2_caches[my_pid]), message_packet))
+					step--;
 
 				/*stats*/
 				l2_caches[my_pid].l2_write_block_++;

@@ -961,11 +961,13 @@ void cgm_init(int argc, char **argv){
 	cgm_stat_finish_create(argc, argv);
 
 
+	fflush(stdout);
+	fflush(stderr);
+
 	if(SINGLE_CORE == 1)
 		warning("All threads allocated to a single core check SINGLE_CORE\n");
 
-
-
+	fflush(stderr);
 
 	//set up internal structures
 	cgm_access_record = list_create();

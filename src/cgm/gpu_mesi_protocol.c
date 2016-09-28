@@ -19,7 +19,7 @@ void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_pac
 	/*GPU S$ contains read only data that is established prior to kernel execution (during OS/driver configuration)
 	it should be sufficient to charge a small latency and continue on for simulator purposes.*/
 
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 	message_packet = list_remove(cache->last_queue, message_packet);
 	(*message_packet->witness_ptr)++;
 	packet_destroy(message_packet);
@@ -54,7 +54,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 	}
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -114,8 +114,6 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 				//check for retries on successful cache read...
 				if(message_packet->access_type == cgm_access_load_retry || message_packet->coalesced == 1)
 				{
-					P_PAUSE(cache->latency);
-
 					cache->MergeRetries++;
 
 					//enter retry state.
@@ -254,7 +252,7 @@ void cgm_mesi_gpu_l1_v_load_nack(struct cache_t *cache, struct cgm_packet_t *mes
 	unsigned int *offset_ptr = &offset;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
@@ -296,7 +294,7 @@ void cgm_mesi_gpu_l1_v_store_nack(struct cache_t *cache, struct cgm_packet_t *me
 	unsigned int *offset_ptr = &offset;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//probe the address for set, tag, and offset.
 	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
@@ -360,7 +358,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 	}
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -854,7 +852,7 @@ void cgm_mesi_gpu_l1_v_write_back(struct cache_t *cache, struct cgm_packet_t *me
 	//int error = 0;
 
 	//charge the delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//we should only receive modified lines from L1 D cache
 	assert(message_packet->cache_block_state == cgm_cache_block_modified);
@@ -904,7 +902,7 @@ void cgm_mesi_gpu_l1_v_get_getx_fwd_inval(struct cache_t *cache, struct cgm_pack
 	int ort_status = -1;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1043,7 +1041,7 @@ void cgm_mesi_gpu_l1_v_gpu_flush(struct cache_t *cache, struct cgm_packet_t *mes
 	//enum cgm_cache_block_state_t victim_trainsient_state;
 
 	//charge the delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1169,7 +1167,7 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 	//enum cgm_cache_block_state_t victim_trainsient_state;
 
 	//charge the delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1437,7 +1435,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 	struct cgm_packet_t *flush_packet = NULL;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -1990,7 +1988,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 	struct cgm_packet_t *flush_packet = NULL;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the status of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -3362,7 +3360,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 	int error = 0;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//L1 D cache has been flushed
 
@@ -3681,7 +3679,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 	//int l3_map;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -4009,7 +4007,7 @@ void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *m
 	//unsigned long long bit_vector;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -4185,7 +4183,7 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 	unsigned long long bit_vector;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -4379,7 +4377,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 	struct cache_t *l3_cache_ptr = NULL;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -4637,7 +4635,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	int pending_bit = 0;
 
 	//charge delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//flush block ack from L1 D cache...
 
@@ -6069,7 +6067,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 	struct cache_t *l3_cache_ptr = NULL;
 
 	//charge the delay
-	P_PAUSE(cache->latency);
+	GPU_PAUSE(cache->latency);
 
 	//we should only receive modified lines from L1 cache
 	assert(message_packet->cache_block_state == cgm_cache_block_modified);

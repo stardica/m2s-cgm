@@ -41,6 +41,8 @@
 #include <arch/x86/emu/signal.h>
 #include <arch/x86/emu/syscall.h>
 
+#include <cgm/cgm.h>
+
 
 /*
  * Class 'X86Context'

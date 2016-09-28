@@ -301,7 +301,7 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 		if(list_count(hub_iommu->Tx_queue_bottom) <= QueueSize)
 		{
-			P_PAUSE(hub_iommu->latency);
+			GPU_PAUSE(hub_iommu->latency);
 
 			//save the gpu l2 cache id
 			message_packet->gpu_cache_id = message_packet->l2_cache_id;
@@ -375,7 +375,7 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 		if(list_count(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)]) <= QueueSize)
 		{
 
-			P_PAUSE(hub_iommu->latency);
+			GPU_PAUSE(hub_iommu->latency);
 
 			/*account for coherence and connection type*/
 			if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
@@ -482,7 +482,7 @@ void hub_iommu_ctrl_func(void){
 				printf("%s stalling\n", hub_iommu->name);*/
 
 
-			SYSTEM_PAUSE(1);
+			GPU_PAUSE(1);
 		}
 
 	}
@@ -724,13 +724,13 @@ void hub_iommu_io_up_ctrl(void){
 
 			if(list_count(gpu_l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
 			{
-				SYSTEM_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				SYSTEM_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				if(list_count(gpu_l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
 					warning("hub_iommu_io_up_ctrl(): %s %s size exceeded %d\n",
@@ -750,13 +750,13 @@ void hub_iommu_io_up_ctrl(void){
 
 			if(list_count(gpu_l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 			{
-				SYSTEM_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				SYSTEM_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				if(list_count(gpu_l2_caches[my_pid].Coherance_Rx_queue) > QueueSize)
 					warning("hub_iommu_io_up_ctrl(): %s %s size exceeded %d\n",
@@ -814,8 +814,7 @@ void hub_iommu_io_down_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				/*|| message_packet->access_type == cgm_access_upgrade*/ /*|| message_packet->access_type == cgm_access_cpu_flush*/
-				/*|| message_packet->access_type == cgm_access_gpu_flush*/)
+				|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_load)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -827,7 +826,7 @@ void hub_iommu_io_down_ctrl(void){
 			{
 				step++;
 
-				SYSTEM_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				//drop in to the switch queue
 				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
@@ -835,18 +834,18 @@ void hub_iommu_io_down_ctrl(void){
 				advance(&switches_ec[hub_iommu->switch_id]);
 			}
 		}
-		else if(message_packet->access_type == cgm_access_gpu_flush_ack)
+		else if(message_packet->access_type == cgm_access_gpu_flush_ack || message_packet->access_type == cgm_access_putx)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_reply_queue) >= QueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				P_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
 				list_enqueue(switches[hub_iommu->switch_id].north_rx_reply_queue, message_packet);
@@ -855,18 +854,19 @@ void hub_iommu_io_down_ctrl(void){
 			}
 		}
 		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_getx_fwd_ack)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_coherence_queue) >= QueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				P_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(hub_iommu->Tx_queue_bottom, message_packet);
 				list_enqueue(switches[hub_iommu->switch_id].north_rx_coherence_queue, message_packet);

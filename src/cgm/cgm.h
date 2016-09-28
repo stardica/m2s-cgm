@@ -55,14 +55,17 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0017be00
+#define WATCHBLOCK (unsigned int) 0x002b7300
 #define WATCHLINE 0
-//Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 L1-L3,
+//Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 = L1-L3,
 #define LEVEL 2
 //dumps the system trace 0 off 1 on
 #define SYSTEM 0
 //dumps EVERYTHING! 0 off 1 on
 #define DUMP 0
+
+//if 1 allocates all threads on a single core...
+#define SINGLE_CORE 1
 
 #define DEBUG(level, message, ...)\
 if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
@@ -77,6 +80,8 @@ if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLI
 #define CPUTICK 1
 
 #define SKIP 1000000
+
+#define PRINT_TYPE str_map_value(&cgm_mem_access_strn_map, message_packet->access_type)
 
 //config file
 extern char *cgm_config_file_name_and_path;

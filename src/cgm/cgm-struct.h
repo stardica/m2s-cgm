@@ -137,7 +137,7 @@ enum cgm_access_kind_t {
 			cgm_access_write_back,
 			cgm_access_retry_i,//not used
 			cgm_access_cpu_flush,
-			cgm_access_cpu_flush_ack,
+	/*60*/	cgm_access_cpu_flush_ack,
 			cgm_access_cpu_flush_fwd,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
@@ -162,6 +162,7 @@ struct cgm_packet_t{
 	int gpu_cache_id;
 	char *gpu_cache_name;
 	int flush_core;
+	int l3_pending;
 
 	//access data
 	long long access_id;
