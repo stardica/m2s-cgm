@@ -569,7 +569,6 @@ struct cgm_stats_t{
 	char *date_time_pretty;
 	char *check_point_file_name;
 
-
 	/*benchmark related*/
 	char *benchmark_name;
 	char *args;
@@ -586,6 +585,9 @@ struct cgm_stats_t{
 	long long end_wrapup_section_cycle;
 	long long total_wrapup_section_cycles;
 
+
+
+
 	enum parallel_section_t{
 		not_present = 0,
 		present
@@ -597,11 +599,26 @@ struct cgm_stats_t{
 	}state;
 
 	/*redundant stats, this so we can save away our stats at a certain point in the benchmark's run.*/
+	//lsq stalls
+
+	long long *core_total_stalls;
+
+	long long *core_lsq_stalls;
+	long long *core_lsq_stall_load;
+	long long *core_lsq_stall_store;
+
+	//iq stalls
+	long long *core_iq_stalls;
+
+	//system stalls
+	long long *core_rename_stalls;
+
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;
 	long long *core_rob_stall_load;
 	long long *core_rob_stall_store;
+	long long *core_rob_stall_syscall;
 	long long *core_rob_stall_other;
 	long long *core_first_fetch_cycle;
 	long long *core_fetch_stalls;
@@ -610,6 +627,10 @@ struct cgm_stats_t{
 	long long *core_commited_memory_insts;
 	long long *core_bytes_rx;
 	long long *core_bytes_tx;
+
+	long long systemcall_total_cycles;
+	long long systemcall_total_rob_stalls;
+	long long gpu_total_cycles;
 
 	//memory system at large
 	int first_mem_access_lat;

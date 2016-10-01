@@ -1,4 +1,16 @@
 
+{
+						LINKED_LIST_FOR_EACH(self->sq)
+						{
+							stall_uop = linked_list_get(self->sq);
+
+							printf("stall_uop %llu\n", stall_uop->id);
+
+						}
+
+						getchar();
+					}
+
 //L3 caches
 		/*if(my_pid < num_cores)
 		{

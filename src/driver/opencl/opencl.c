@@ -335,6 +335,9 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 	mem_write(mem, host_ptr, size, buf);
 	free(buf);
 
+	cpu_gpu_stats->systemcall_start_cycle = P_TIME;
+	cpu_gpu_stats->systemcall_start_rob_stalls = cpu_gpu_stats->core_rob_stalls[0];
+
 	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 		uop_factory_nc_read(ctx, host_ptr, device_ptr, size);
@@ -413,6 +416,9 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	mem_read(mem, host_ptr, size, buf);
 	mem_write(si_emu->video_mem, device_ptr, size, buf);
 	free(buf);
+
+	cpu_gpu_stats->systemcall_start_cycle = P_TIME;
+	cpu_gpu_stats->systemcall_start_rob_stalls = cpu_gpu_stats->core_rob_stalls[0];
 
 	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)

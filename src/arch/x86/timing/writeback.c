@@ -41,12 +41,13 @@ void X86CoreWriteback(X86Core *self)
 	X86Cpu *cpu = self->cpu;
 	X86Thread *thread;
 
+	int i = 0;
+	struct x86_uop_t *uop_test;
+
 	struct x86_uop_t *uop;
 	//struct x86_uop_t *rob_uop;
 
 	int recover = 0;
-
-	int i = 0;
 
 	for (;;)
 	{
@@ -66,11 +67,49 @@ void X86CoreWriteback(X86Core *self)
 
 		if (uop->when > asTiming(cpu)->cycle)
 		{
+
+			if(P_TIME > 7058 && P_TIME < 907058)
+			{
+				int i = 0;
+				LIST_FOR_EACH(self->rob, i)
+				{
+					//get pointer to access in queue and check it's status.
+					uop_test = list_get(self->rob, i);
+
+					if(uop_test)
+					{
+						printf("\tslot %d packet id %llu\n", i, uop_test->id);
+					}
+				}
+
+				printf("breaking alot! uop id %llu cycle %llu\n", uop->id, P_TIME);
+				getchar();
+			}
+
 			break;
 		}
 
+		assert(asTiming(cpu)->cycle = P_TIME);
+
+
+		if (uop->id == 788)
+		{
+			warning("id 788 when %llu\n", uop->when);
+			getchar();
+		}
+
+
+
 		if (uop->uinst->opcode == x86_uinst_syscall)
 		{
+			assert(uop->interrupt == 1);
+
+			warning("uop id %llu write back done cycle %llu curr cycle %llu\n", uop->id, uop->when, P_TIME);
+
+			printf("syscall stalls.. %llu\n", cpu_gpu_stats->core_rob_stall_syscall[0]);
+
+			getchar();
+
 			cpu_gpu_stats->core_syscall_stalls[self->id]+= uop->interrupt_lat;
 		}
 
@@ -114,6 +153,8 @@ void X86CoreWriteback(X86Core *self)
 		/* Writeback */
 		uop->completed = 1;
 		X86ThreadWriteUop(thread, uop);
+
+
 
 		//star >> statistics
 		self->reg_file_int_writes += uop->ph_int_odep_count;

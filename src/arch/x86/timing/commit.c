@@ -138,7 +138,7 @@ int X86ThreadCanCommit(X86Thread *self)
 			uop->ready = 1;
 		return uop->ready;
 	}
-	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush || uop->interrupt == 1)
 	{
 		uop->ready = 1;
 		return uop->ready;

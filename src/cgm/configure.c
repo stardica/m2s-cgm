@@ -586,6 +586,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	////////////////////////
 	//Protocol
 	////////////////////////
+
+	if(MATCH("Protocol", "Single_Core"))
+	{
+		SINGLE_CORE = atoi(value);
+	}
+
 	if(MATCH("Protocol", "CPU_Protocol_type"))
 	{
 		temp_strn = strdup(value);

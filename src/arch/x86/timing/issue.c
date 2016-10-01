@@ -89,6 +89,9 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
 		//client_info->prefetcher_eip = store->eip;
 
+		if(store->id == 788)
+			fatal("store\n");
+
 		//set access type
 		if(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
 		{
@@ -213,6 +216,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		{
 			load->protection_fault = 1;
 		}*/
+
+
 
 		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
@@ -416,6 +421,8 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		 * returns 1 cycle latency. If there is no functional unit available,
 		 * 'X86CoreReserveFunctionalUnit' returns 0. */
 
+
+
 		lat = X86CoreReserveFunctionalUnit(core, uop);
 		if (!lat)
 		{
@@ -423,7 +430,6 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 			continue;
 		}
 		
-
 
 		/* Instruction was issued to the corresponding fu.
 		 * Remove it from IQ */
@@ -435,6 +441,40 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->issued = 1;
 		uop->issue_when = asTiming(cpu)->cycle;
 		uop->when = asTiming(cpu)->cycle + lat;
+
+		if(uop->interrupt > 0)
+		{
+			uop->when = asTiming(cpu)->cycle + 900000;
+		}
+
+
+
+		if (uop->id == 796)
+		{
+			assert(uop->interrupt == 1);
+			warning("uop id %llu start cycle %llu done %llu\n", uop->id, P_TIME, uop->when);
+
+			int i = 0;
+			struct x86_uop_t *uop_test;
+			LIST_FOR_EACH(self->core->rob, i)
+			{
+				//get pointer to access in queue and check it's status.
+				uop_test = list_get(self->core->rob, i);
+
+				if(uop_test)
+				{
+					printf("\tslot %d packet id %llu\n", i, uop_test->id);
+				}
+			}
+
+		}
+
+
+
+		/*if(uop->interrupt == 1)
+			fatal("dropping uop %llu into rob cycle %llu\n", uop->id, P_TIME);*/
+
+
 		X86CoreInsertInEventQueue(core, uop);
 		
 		//star run the interrupt
@@ -442,7 +482,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		{
 			assert(uop->uinst->opcode == x86_uinst_syscall);
 			cpu_gpu_stats->core_num_syscalls[self->core->id]++;
-			cgm_interrupt(self, uop);
+			//cgm_interrupt(self, uop);
 		}
 
 

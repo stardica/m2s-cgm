@@ -24,7 +24,7 @@
 #include <lib/util/debug.h>
 
 
-#define BASELAT 6000
+#define BASELAT 900000
 #define OCLLAT 1000
 #define SYSLAT 1000
 

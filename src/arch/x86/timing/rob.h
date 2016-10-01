@@ -44,6 +44,8 @@ void X86CoreInitROB(X86Core *self);
 void X86CoreFreeROB(X86Core *self);
 
 void X86CoreDumpROB(X86Core *self, FILE *f);
+void X86CoreDumpROB2(X86Core *self);
+
 int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop);
 void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop);
 

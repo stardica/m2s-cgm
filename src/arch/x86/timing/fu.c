@@ -68,6 +68,7 @@ void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f)
 	fprintf(f, "\n");
 }
 
+#include <cgm/cgm.h>
 
 /* Reserve the functional unit required by the uop.
  * The return value is the f.u. latency, or 0 if it could not
@@ -96,7 +97,7 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 		{
 			//this needs to be a number greater than the cycles of the syscall.
 			//when finished with the interrupt CGM will overwrite with the correct number of cycles
-			return 1000000000;
+			return 1;
 		}
 		else //all the other non-interrupt related stuff
 		{
@@ -124,6 +125,8 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 			return x86_fu_res_pool[fu_class].oplat;
 		}
 	}
+
+
 
 	/* No free f.u. was found */
 	fu->denied[fu_class]++;

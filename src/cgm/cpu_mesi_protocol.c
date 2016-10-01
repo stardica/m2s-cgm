@@ -178,12 +178,25 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	//warning(" CPU fence\n");
-
 	//if the flush counter is 0 retire the fence
 	if(cache->flush_counter == 0)
 	{
 		cache_l1_d_return(cache, message_packet);
+
+		/*stats*/
+		//calculate the system time that has past.
+		assert(cpu_gpu_stats->systemcall_start_cycle < P_TIME);
+		cpu_gpu_stats->systemcall_total_cycles += (P_TIME - cpu_gpu_stats->systemcall_start_cycle);
+
+		assert(cpu_gpu_stats->core_rob_stalls[1] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[2] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[3] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[4] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[5] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[6] == 0);
+		assert(cpu_gpu_stats->core_rob_stalls[7] == 0);
+
+		cpu_gpu_stats->systemcall_total_rob_stalls += (cpu_gpu_stats->core_rob_stalls[0] - cpu_gpu_stats->systemcall_start_rob_stalls);
 		return 1;
 	}
 

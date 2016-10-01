@@ -397,10 +397,10 @@ void X86CpuReadConfig(void)
 	x86_rob_size = config_read_int(config, section, "RobSize", 64);
 
 	x86_iq_kind = config_read_enum(config, section, "IqKind", x86_iq_kind_private, x86_iq_kind_map, 2);
-	x86_iq_size = config_read_int(config, section, "IqSize", 40);
+	x86_iq_size = config_read_int(config, section, "IqSize", 128);
 
 	x86_lsq_kind = config_read_enum(config, section, "LsqKind", x86_lsq_kind_private, x86_lsq_kind_map, 2);
-	x86_lsq_size = config_read_int(config, section, "LsqSize", 20);
+	x86_lsq_size = config_read_int(config, section, "LsqSize", 32);
 
 	/* Register file */
 	X86ReadRegFileConfig(config);
@@ -1027,6 +1027,8 @@ int X86CpuRun(Timing *self){
 
 	P_PAUSE(1);
 	self->cycle = P_TIME;
+
+
 
 	//star added a watch dog thread and can watch things of interest cycle by cycle
 	if(CPUTICK == 1)

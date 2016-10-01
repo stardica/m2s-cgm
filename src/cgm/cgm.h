@@ -65,7 +65,7 @@
 #define DUMP 0
 
 //if 1 allocates all threads on a single core...
-#define SINGLE_CORE 1
+extern int SINGLE_CORE;
 
 #define DEBUG(level, message, ...)\
 if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
@@ -129,6 +129,7 @@ extern char *cgm_debug_output_path;
 extern char *cgm_stats_output_path;
 extern char *cgm_stats_file_name;
 
+
 //memctrl_debug || sysagent_debug switch_debug )
 
 //debugging macros
@@ -180,16 +181,38 @@ extern struct cgm_stats_t *cgm_wrapup_stats;
 struct cpu_gpu_stats_t{
 
 	/*cpu stats*/
-	long long *core_num_syscalls;
-	long long *core_syscall_stalls;
+	long long *core_first_fetch_cycle;
+	long long *core_last_commit_cycle;
+	long long *core_fetch_stalls;
+
+	//core stalls
+	long long *core_total_stalls;
+
+	//rob stalls
 	long long *core_rob_stalls;
 	long long *core_rob_stall_load;
 	long long *core_rob_stall_store;
 	long long *core_rob_stall_other;
 	long long *core_rob_stall_syscall;
-	long long *core_first_fetch_cycle;
-	long long *core_last_commit_cycle;
-	long long *core_fetch_stalls;
+
+	//lsq stalls
+	long long *core_lsq_stalls;
+	long long *core_lsq_stall_load;
+	long long *core_lsq_stall_store;
+
+	//iq stalls
+	long long *core_iq_stalls;
+
+	//system stalls
+	long long *core_num_syscalls;
+	long long *core_syscall_stalls;
+	long long systemcall_start_cycle;
+	long long systemcall_total_cycles;
+	long long systemcall_start_rob_stalls;
+	long long systemcall_total_rob_stalls;
+
+	long long *core_rename_stalls;
+
 	long long *core_issued_memory_insts;
 	long long *core_commited_memory_insts;
 	long long *core_bytes_rx;
@@ -201,6 +224,8 @@ struct cpu_gpu_stats_t{
 
 	/*gpu stats*/
 };
+
+extern int gpu_running;
 
 extern struct cpu_gpu_stats_t *cpu_gpu_stats;
 

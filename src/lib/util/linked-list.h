@@ -65,9 +65,7 @@ struct linked_list_t
  * @param list
  */
 #define LINKED_LIST_FOR_EACH(list) \
-	for (linked_list_head(list); \
-		!linked_list_is_end(list); \
-		linked_list_next(list))
+	for (linked_list_head(list); !linked_list_is_end(list); linked_list_next(list))
 
 
 /** Create a linked list.

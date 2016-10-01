@@ -80,73 +80,113 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 	X86Cpu *cpu = self->cpu;
 
 	struct x86_uop_t *uop;
-	struct x86_uop_t *rob_uop = NULL;
+	struct x86_uop_t *stall_uop = NULL;
 	enum x86_dispatch_stall_t stall;
 
 	while (quantum)
 	{
+
 		/* Check if we can decode */
 		stall = X86ThreadCanDispatch(self);
 
 		if (stall != x86_dispatch_stall_used)
 		{
-			//star added this taking some stats here
-			if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
-			{
-				if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
-				{
-					cpu_gpu_stats->core_fetch_stalls[core->id]++;
-					cpu_gpu_stats->core_rob_stalls[core->id]++;
-				}
-			}
-			else if(stall == x86_dispatch_stall_rob)
-			{
-				/*ROB is full (CPU is stalled) collect stats for each of the different cores*/
-				assert(self->rob_count == 64);
-				rob_uop = list_get(self->core->rob, self->rob_head);
+			/*star added this taking some stats here.
+			If the quantum is less than 4 then some progress was made
+			and a stall here does not count as a core stall*/
 
-				if(rob_uop->uinst->opcode == x86_uinst_load)
+			if(quantum == x86_cpu_dispatch_width)
+			{
+				if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 				{
-					cpu_gpu_stats->core_rob_stall_load[core->id]++;
-					cpu_gpu_stats->core_rob_stalls[core->id]++;
+					//core fetch stall, uop queue is empty and ROB is empty...
+					if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
+					{
+						cpu_gpu_stats->core_total_stalls[core->id]++;
+						cpu_gpu_stats->core_fetch_stalls[core->id]++;
+					}
 				}
-				else if(rob_uop->uinst->opcode == x86_uinst_store)
+				else if(stall == x86_dispatch_stall_rob)
 				{
-					cpu_gpu_stats->core_rob_stall_store[core->id]++;
+					/*ROB is full (CPU is stalled) collect stats for each of the different cores*/
+					assert(self->rob_count == 64);
+					stall_uop = list_get(self->core->rob, self->rob_head);
+
+					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_rob_stalls[core->id]++;
+
+					//this is just for a test ok to delete!
+					assert(stall_uop->interrupt == 0);
+
+					if(stall_uop->uinst->opcode == x86_uinst_load)
+					{
+						cpu_gpu_stats->core_rob_stall_load[core->id]++;
+					}
+					else if(stall_uop->uinst->opcode == x86_uinst_store)
+					{
+						cpu_gpu_stats->core_rob_stall_store[core->id]++;
+					}
+					else if (stall_uop->uinst->opcode == x86_uinst_syscall)
+					{
+						cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
+					}
+					else
+					{
+						cpu_gpu_stats->core_rob_stall_other[core->id]++;
+					}
 				}
-				else if (rob_uop->uinst->opcode == x86_uinst_syscall)
+				else if(stall == x86_dispatch_stall_lsq)
 				{
-					cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
+					assert(self->rob_count < 64);
+					assert(self->lsq_count == x86_lsq_size);
+					//stall_uop
+
+					cpu_gpu_stats->core_total_stalls[core->id]++;
+					cpu_gpu_stats->core_lsq_stalls[core->id]++;
+
+					if(self->sq->count == x86_lsq_size)
+					{
+						cpu_gpu_stats->core_lsq_stall_store[core->id]++;
+					}
+					else if(self->lq->count == x86_lsq_size)
+					{
+						cpu_gpu_stats->core_lsq_stall_load[core->id]++;
+					}
+					else
+					{
+						fatal("X86ThreadDispatch(): check this, shouldn't be here lq %d sq %d??\n", self->lq->count, self->sq->count);
+					}
+
+				}
+				else if (stall == x86_dispatch_stall_iq)
+				{
+					assert(self->rob_count < 64);
+					assert(self->iq_count == x86_iq_size);
+
+					fatal("iq\n");
+
+					cpu_gpu_stats->core_total_stalls[core->id]++;
+					cpu_gpu_stats->core_iq_stalls[core->id]++;
+
+				}
+				else if (stall == x86_dispatch_stall_rename)
+				{
+					assert(self->rob_count < 64);
+
+					cpu_gpu_stats->core_total_stalls[core->id]++;
+					cpu_gpu_stats->core_rename_stalls[core->id]++;
 				}
 				else
 				{
-					//cpu_gpu_stats->core_rob_stall_other[core->id]++;
-					//cpu_gpu_stats->core_rob_stalls[core->id]++;
+					fatal("X86ThreadDispatch(): invalid stall type\n");
 				}
-			}
-			else if(stall == x86_dispatch_stall_lsq)
-			{
-				assert(self->rob_count < 64);
-			}
-			else if (stall == x86_dispatch_stall_iq)
-			{
-				assert(self->rob_count < 64);
-			}
-			else if (stall == x86_dispatch_stall_rename)
-			{
-				assert(self->rob_count < 64);
-			}
-			else
-			{
-				fatal("X86ThreadDispatch(): invalid stall type\n");
 			}
 
 			core->dispatch_stall[stall] += quantum;
+
 			break;
 		}
 
-	
 		/* Get entry from uop queue */
 		uop = list_remove_at(self->uop_queue, 0);
 		assert(x86_uop_exists(uop));
@@ -168,6 +208,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			self->iq_writes++;
 		}
 		
+
 		/* Memory instructions into the LSQ */
 		if (uop->flags & X86_UINST_MEM)
 		{
@@ -177,6 +218,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			//LSQWrites++;
 		}
 		
+
 		/* Statistics */
 		core->dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
 		self->num_dispatched_uinst_array[uop->uinst->opcode]++;

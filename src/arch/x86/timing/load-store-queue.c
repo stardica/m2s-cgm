@@ -27,6 +27,7 @@
 #include <arch/x86/timing/thread.h>
 //#include <instrumentation/stats.h>
 
+#include <lib/util/debug.h>
 
 char *x86_lsq_kind_map[] = { "Shared", "Private" };
 enum x86_lsq_kind_t x86_lsq_kind;

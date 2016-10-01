@@ -58,6 +58,8 @@ static int eventq_compare(const void *item1, const void *item2)
 	return uop1->when != uop2->when ? uop1->when - uop2->when : uop1->id - uop2->id;
 }
 
+//#include <lib/util/debug.h>
+//#include <cgm/cgm.h>
 
 void X86CoreInsertInEventQueue(X86Core *self, struct x86_uop_t *uop)
 {

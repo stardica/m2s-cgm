@@ -131,6 +131,34 @@ static void X86CoreTrimROB(X86Core *self)
 }
 
 
+
+/*void X86CoreDumpROB2(X86Core *self){
+
+	struct x86_uop_t *uop;
+	int j = 0;
+
+	X86CoreTrimROB(self);
+	for (j = 0; j < x86_rob_total_size; j++)
+	{
+		uop = list_get(self->rob, j);
+		printf(" %c%c ",
+			j == self->rob_head ? 'H' : ' ',
+			j == self->rob_tail ? 'T' : ' ');
+		if (uop)
+		{
+			x86_uinst_dump(uop->uinst, f);
+			printf(f, "\n");
+		}
+		else
+		{
+			printf(f, "-\n");
+		}
+	}
+
+	return;
+}*/
+
+
 void X86CoreDumpROB(X86Core *self, FILE *f)
 {
 	X86Thread *thread;
@@ -473,6 +501,7 @@ int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 	return 0;
 }
 
+#include <cgm/cgm.h>
 
 void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 {

@@ -26,6 +26,8 @@
 #include <arch/x86/timing/uop-queue.h>
 #include <arch/x86/timing/thread.h>
 
+#include <lib/util/debug.h>
+
 
 int x86_uop_queue_size;
 

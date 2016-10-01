@@ -1119,7 +1119,9 @@ int SIGpuRun(Timing *self)
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->waiting_work_groups) && !list_count(si_emu->running_work_groups))
+	{
 		return FALSE;
+	}
 
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
