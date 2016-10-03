@@ -1,4 +1,74 @@
+	
+	/*fatal("here\n");
+				int i = 0;
+				LIST_FOR_EACH(self->rob, i)
+				{
+					//get pointer to access in queue and check it's status.
+					uop_test = list_get(self->rob, i);
 
+					if(uop_test)
+					{
+						printf("\tslot %d packet id %llu\n", i, uop_test->id);
+					}
+				}*/
+
+
+		/*if (uop->id >= 787 && uop->id <= 795)
+		{
+			warning("id %llu when %llu curr cycle %llu\n", uop->id, uop->when, P_TIME);
+			getchar();
+		}
+
+		if (uop->id == 796)
+		{
+			int i = 0;
+			LIST_FOR_EACH(self->rob, i)
+			{
+				//get pointer to access in queue and check it's status.
+				uop_test = list_get(self->rob, i);
+
+				if(uop_test)
+				{
+					printf("\tslot %d packet id %llu\n", i, uop_test->id);
+				}
+			}
+
+			getchar();
+		}*/
+
+		/*if (uop->uinst->opcode == x86_uinst_syscall)
+		{
+			assert(uop->interrupt == 1);
+
+			warning("uop id %llu write back done cycle %llu curr cycle %llu\n", uop->id, uop->when, P_TIME);
+
+			printf("syscall stalls.. %llu\n", cpu_gpu_stats->core_rob_stall_syscall[0]);
+
+			getchar();
+
+			cpu_gpu_stats->core_syscall_stalls[self->id]+= uop->interrupt_lat;
+		}*/
+	
+	
+	/*Pick element from the head of the event queue*/
+		linked_list_head(self->event_queue);
+		uop = linked_list_get(self->event_queue);
+		if (!uop)
+			break;
+
+
+		LINKED_LIST_FOR_EACH(self->event_queue)
+		{
+			uop = linked_list_get(self->event_queue);
+
+
+		}
+
+
+
+		i++;
+		
+		
 {
 						LINKED_LIST_FOR_EACH(self->sq)
 						{

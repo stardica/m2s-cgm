@@ -88,16 +88,18 @@ void X86CoreSetName(X86Core *self, char *name)
 void core_dump_event_queue(X86Core *core){
 
 	struct x86_uop_t *event_queue_uop;
-	struct linked_list_iter_t *iter = linked_list_iter_create(core->event_queue);
+	//struct linked_list_iter_t *iter = linked_list_iter_create(core->event_queue);
 
-	LINKED_LIST_ITER_FOR_EACH(iter)
+	//printf("event queue size %d\n", list_count(core->event_queue->count));
+
+	LINKED_LIST_FOR_EACH(core->event_queue)
 	{
 		//get pointer to access in queue and check it's status.
 		event_queue_uop = linked_list_get(core->event_queue);
 		if(event_queue_uop)
 		{
-			printf("\t Core id %d event_queue_uop id %llu op_code %d cycle %llu\n",
-				core->id, event_queue_uop->id, event_queue_uop->uinst->opcode, P_TIME);
+			printf("\t Core id %d event_queue_uop id %llu op_code %d\n",
+				core->id, event_queue_uop->id, event_queue_uop->uinst->opcode);
 		}
 	}
 	return;

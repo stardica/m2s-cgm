@@ -4587,7 +4587,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			//OMG! At this point I want to jump out of a window!
 			/*ok so, sigh..., its possible that a request can get to L3 before an
 			ack or nack for a get/getx_fwd. L3 will put_clnx/putx back to the requesting
-			and owning core. if the ORT conflict bit isn't set, put the L3_pending bit
+			owning core. if the ORT conflict bit isn't set, but the L3_pending bit
 			is set in the packet we need to kill the access and retry.*/
 
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write block failed on conflict retrying access ID %llu type %d state %d cycle %llu\n",

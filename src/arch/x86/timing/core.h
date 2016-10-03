@@ -41,6 +41,7 @@ enum x86_dispatch_stall_t
 	x86_dispatch_stall_lsq,  /* No space in the lsq */
 	x86_dispatch_stall_rename,  /* No free physical register */
 	x86_dispatch_stall_ctx,  /* No running ctx */
+	/*8*/ x86_dispatch_stall_syscall,
 	x86_dispatch_stall_max
 };
 

@@ -2039,8 +2039,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
-	if(uop_id == 788)
-		warning("its load access id %llu start %llu\n", new_packet->access_id, new_packet->start_cycle);
+	/*if(uop_id == 788)
+		warning("its load access id %llu start %llu\n", new_packet->access_id, new_packet->start_cycle);*/
 
 
 	if(gpu_running == 1)

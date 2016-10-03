@@ -31,33 +31,119 @@
 
 
 
-
 /*
  * Class 'X86Core'
  */
+
+
+int is_rob_head(X86Core *self, int uop_id){
+
+	struct x86_uop_t *rob_uop;
+	int i = 0;
+
+	LIST_FOR_EACH(self->rob, i)
+	{
+		//get pointer to access in queue and check it's status.
+		rob_uop = list_get(self->rob, i);
+		if(rob_uop)
+		{
+			if(rob_uop->id == uop_id && rob_uop->thread->rob_head == i)
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+long long last_sys_call_id = 0;
 
 void X86CoreWriteback(X86Core *self)
 {
 	X86Cpu *cpu = self->cpu;
 	X86Thread *thread;
 
-	int i = 0;
-	struct x86_uop_t *uop_test;
+	//int i = 0;
+	//struct x86_uop_t *uop_test;
 
 	struct x86_uop_t *uop;
+	struct x86_uop_t *uop_next;
+
+
 	//struct x86_uop_t *rob_uop;
 
 	int recover = 0;
 
 	for (;;)
 	{
-		/* Pick element from the head of the event queue */
+
+		/*Old m2s code commented out, we need to pick the oldest element from the event queue
+		which maybe behind an element at the top of the event queue.*/
+
+		/*Pick element from the head of the event queue*/
 		linked_list_head(self->event_queue);
 		uop = linked_list_get(self->event_queue);
 		if (!uop)
 			break;
 
-		i++;
+		LINKED_LIST_FOR_EACH(self->event_queue)
+		{
+			uop_next = linked_list_get(self->event_queue);
+			assert(uop_next);
+
+			if(uop_next)
+			{
+				if(uop->id > uop_next->id)
+					uop = uop_next;
+			}
+		}
+
+
+		//bring syscalls to the head of the event queue and rob. then assess a latency...
+		if(uop->uinst->opcode == x86_uinst_syscall)
+		{
+			assert(uop->interrupt > 0);
+
+			if(is_rob_head(self, uop->id) && uop->syscall_ready == 0)
+			{
+				assert(uop->syscall_ready == 0);
+				uop->when = (P_TIME + 6000);
+				uop->syscall_ready = 1;
+
+				/*stats*/
+				cpu_gpu_stats->core_num_syscalls[self->id]++;
+				warning("wb syscall id %llu writeback syscall %llu cycle %llu\n", uop->id, cpu_gpu_stats->core_num_syscalls[self->id], P_TIME);
+
+				if(uop->id == 50649573)
+				{
+					printf("event queue size %d\n", self->event_queue->count);
+					core_dump_event_queue(self);
+
+					printf("rob size %d\n", uop->thread->rob_count);
+					core_dump_rob(self);
+
+					getchar();
+				}
+
+			}
+			else if(uop->syscall_ready == 0) //fails to catch uops that are already at the head of the rob.
+			{
+				assert(uop->syscall_ready == 0);
+				uop->when = (P_TIME + 1);
+			}
+		}
+
+		/*printf("rob head %d\n", is_rob_head(self, uop->id));
+
+		printf("event queue size %d\n", self->event_queue->count);
+		core_dump_event_queue(self);
+
+		printf("rob size %d\n", uop->thread->rob_count);
+		core_dump_rob(self);
+
+		getchar();*/
+
+
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equal to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
@@ -67,74 +153,57 @@ void X86CoreWriteback(X86Core *self)
 
 		if (uop->when > asTiming(cpu)->cycle)
 		{
-
-			if(P_TIME > 7058 && P_TIME < 907058)
-			{
-				int i = 0;
-				LIST_FOR_EACH(self->rob, i)
-				{
-					//get pointer to access in queue and check it's status.
-					uop_test = list_get(self->rob, i);
-
-					if(uop_test)
-					{
-						printf("\tslot %d packet id %llu\n", i, uop_test->id);
-					}
-				}
-
-				printf("breaking alot! uop id %llu cycle %llu\n", uop->id, P_TIME);
-				getchar();
-			}
-
 			break;
 		}
 
-		assert(asTiming(cpu)->cycle = P_TIME);
-
-
-		if (uop->id == 788)
+		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			warning("id 788 when %llu\n", uop->when);
-			getchar();
-		}
+			assert(uop->syscall_ready == 1);
+
+			printf("rob head %d cycle %llu\n", is_rob_head(self, uop->id), P_TIME);
+
+		printf("event queue size %d\n", self->event_queue->count);
+		core_dump_event_queue(self);
+
+		printf("rob size %d\n", uop->thread->rob_count);
+		core_dump_rob(self);
+
+		getchar();
+		}*/
 
 
-
-		if (uop->uinst->opcode == x86_uinst_syscall)
+		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			assert(uop->interrupt == 1);
+			assert(uop->interrupt > 0);
 
-			warning("uop id %llu write back done cycle %llu curr cycle %llu\n", uop->id, uop->when, P_TIME);
+			if(uop->id > last_sys_call_id)
+			{
+				uop->when = (P_TIME + 6000);
+				last_sys_call_id = uop->id;
+			}
 
-			printf("syscall stalls.. %llu\n", cpu_gpu_stats->core_rob_stall_syscall[0]);
+			printf("rob head %d\n", is_rob_head(self, uop->id));
+
+			printf("event queue size %d\n", self->event_queue->count);
+			core_dump_event_queue(self);
+
+			printf("rob size %d\n", uop->thread->rob_count);
+			core_dump_rob(self);
 
 			getchar();
 
-			cpu_gpu_stats->core_syscall_stalls[self->id]+= uop->interrupt_lat;
-		}
-
-		//core_dump_event_queue(self);
-		//getchar();
-
-		/*printf("core_id %d found syscall %llu at head of writeback ROB size is %d iq size %d lsq size %d uop size %d\n",
-			self->id, uop->id, uop->thread->rob_count, uop->thread->iq_count, uop->thread->lsq_count, list_count(uop->thread->uop_queue));
-
-		printf(" iq queue size %d\n", linked_list_count(uop->thread->iq));
-
-		if(uop->id > 1986)
-			getchar();*/
-		
-		/*if(uop->uinst->opcode == x86_uinst_load)*/
-		//printf("finishing id %llu op %d when %llu cycle %llu cpu cycle %llu\n", uop->id, uop->uinst->opcode, uop->when, P_TIME, asTiming(cpu)->cycle);
+		}*/
 
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
 		//assert(uop->when == asTiming(cpu)->cycle);
+		assert(asTiming(cpu)->cycle = P_TIME);
 		assert(uop->thread->core == self);
 		assert(uop->ready);
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
+		linked_list_find(self->event_queue, uop);
 		linked_list_remove(self->event_queue);
 		uop->in_event_queue = 0;
 		thread = uop->thread;
@@ -142,7 +211,13 @@ void X86CoreWriteback(X86Core *self)
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
 		if (x86_cpu_recover_kind == x86_cpu_recover_kind_writeback && (uop->flags & X86_UINST_CTRL) && !uop->specmode && uop->neip != uop->pred_neip)
+		{
+			warning("recover...\n");
+			getchar();
+
 			recover = 1;
+
+		}
 
 		/* Trace. Prevent instructions that are not in the ROB from tracing.
 		 * These can be either loads that were squashed, or stored that
@@ -153,8 +228,6 @@ void X86CoreWriteback(X86Core *self)
 		/* Writeback */
 		uop->completed = 1;
 		X86ThreadWriteUop(thread, uop);
-
-
 
 		//star >> statistics
 		self->reg_file_int_writes += uop->ph_int_odep_count;
@@ -170,9 +243,6 @@ void X86CoreWriteback(X86Core *self)
 		if (recover)
 			X86ThreadRecover(thread);
 	}
-
-	//getchar();
-
 }
 
 

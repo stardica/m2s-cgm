@@ -474,6 +474,34 @@ void X86ThreadRemoveROBTail(X86Thread *self)
  * Public
  */
 
+int X86CoreSysCall(X86Core *self, struct x86_uop_t *uop)
+{
+	X86Thread *thread;
+
+	switch (x86_rob_kind)
+	{
+
+	case x86_rob_kind_private:
+
+		thread = uop->thread;
+		if (thread->rob_count < x86_rob_size)
+			return 1;
+		break;
+
+	//star >> commented out for clarity
+	case x86_rob_kind_shared:
+
+		/*X86CoreTrimROB(self);
+		if (self->rob_count < x86_rob_total_size)
+			return 1;*/
+		fatal("X86CoreSysCall(): \"x86_rob_kind_shared\" add this back in\n");
+		break;
+	}
+
+	return 0;
+}
+
+
 int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 {
 	X86Thread *thread;

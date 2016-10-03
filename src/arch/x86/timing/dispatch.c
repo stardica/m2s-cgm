@@ -33,6 +33,25 @@
 
 #include <cgm/cgm.h>
 
+int is_head_syscall(X86Core *self){
+
+	struct x86_uop_t *rob_uop;
+	int i = 0;
+
+	LIST_FOR_EACH(self->rob, i)
+	{
+		//get pointer to access in queue and check it's status.
+		rob_uop = list_get(self->rob, i);
+		if(rob_uop)
+		{
+			if(rob_uop->thread->rob_head == i && rob_uop->uinst->opcode == x86_uinst_syscall)
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return x86_dispatch_stall_used. */
@@ -41,6 +60,13 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 	X86Core *core = self->core;
 	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
+
+	/*is a syscall at the head of the rob?*/
+	/* If iq/lq/sq/rob full, done */
+	if (is_head_syscall(core))
+	{
+		return x86_dispatch_stall_syscall;
+	}
 
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
@@ -73,6 +99,8 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 	return x86_dispatch_stall_used;
 }
 
+long long last_id = 0;
+long long total_syscalls = 1;
 
 static int X86ThreadDispatch(X86Thread *self, int quantum)
 {
@@ -95,7 +123,29 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			If the quantum is less than 4 then some progress was made
 			and a stall here does not count as a core stall*/
 
-			if(quantum == x86_cpu_dispatch_width)
+			if(stall == x86_dispatch_stall_syscall)
+			{
+				//printf("rob head %d\n", is_rob_head(self, uop->id));
+
+				//printf("event queue size %d\n", self->core->event_queue->count);
+				//core_dump_event_queue(core);
+				stall_uop = list_get(self->core->rob, self->rob_head);
+				assert(stall_uop->uinst->opcode == x86_uinst_syscall);
+
+				cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
+				cpu_gpu_stats->core_total_stalls[core->id]++;
+
+				if(last_id < stall_uop->id)
+				{
+					warning("syscall id %llu total %llu stall when %llu now %llu delta %llu cycle %llu\n",
+							stall_uop->id, total_syscalls, stall_uop->when, P_TIME, (stall_uop->when - P_TIME), P_TIME);
+					last_id = stall_uop->id;
+					total_syscalls++;
+					//getchar();
+				}
+
+			}
+			else if(quantum == x86_cpu_dispatch_width)
 			{
 				if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 				{
@@ -115,8 +165,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_rob_stalls[core->id]++;
 
-					//this is just for a test ok to delete!
-					assert(stall_uop->interrupt == 0);
+					//this is just for a test and should be deleted!
+					//assert(stall_uop->interrupt == 0);
 
 					if(stall_uop->uinst->opcode == x86_uinst_load)
 					{
@@ -128,7 +178,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					}
 					else if (stall_uop->uinst->opcode == x86_uinst_syscall)
 					{
-						cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
+						fatal("dispatch stall on syscall\n");
+						//cpu_gpu_stats->core_rob_stall_syscall[core->id]++;
 					}
 					else
 					{
@@ -140,6 +191,11 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					assert(self->rob_count < 64);
 					assert(self->lsq_count == x86_lsq_size);
 					//stall_uop
+
+					//fix me, find out what uop we are trying to insert and and then
+					uop = list_get(self->uop_queue, 0);
+
+					assert(uop->flags & X86_UINST_MEM && (uop->uinst->opcode == 52 || uop->uinst->opcode == 53));
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_lsq_stalls[core->id]++;
@@ -154,7 +210,17 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					}
 					else
 					{
-						fatal("X86ThreadDispatch(): check this, shouldn't be here lq %d sq %d??\n", self->lq->count, self->sq->count);
+						if(uop->uinst->opcode == 52)
+						{
+							cpu_gpu_stats->core_lsq_stall_load[core->id]++;
+						}
+						else
+						{
+							assert(uop->uinst->opcode == 53);
+							cpu_gpu_stats->core_lsq_stall_store[core->id]++;
+						}
+
+						//fatal("X86ThreadDispatch(): check this, shouldn't be here lq %d sq %d??\n", self->lq->count, self->sq->count);
 					}
 
 				}
@@ -178,7 +244,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				}
 				else
 				{
-					fatal("X86ThreadDispatch(): invalid stall type\n");
+					fatal("X86ThreadDispatch(): invalid stall type as %d\n", stall);
 				}
 			}
 

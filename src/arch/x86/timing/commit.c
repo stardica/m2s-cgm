@@ -138,7 +138,7 @@ int X86ThreadCanCommit(X86Thread *self)
 			uop->ready = 1;
 		return uop->ready;
 	}
-	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush || uop->interrupt == 1)
+	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
 		uop->ready = 1;
 		return uop->ready;
@@ -197,6 +197,9 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		cpu_gpu_stats->core_last_commit_cycle[self->core->id] = P_TIME;
 		if (uop->flags == X86_UINST_MEM)
 			cpu_gpu_stats->core_commited_memory_insts[self->core->id]++;
+
+		if(uop->uinst->opcode == x86_uinst_syscall)
+			warning("Commit syscall id %llu cycle %llu\n", uop->id, P_TIME);
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;

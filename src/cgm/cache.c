@@ -4943,8 +4943,8 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 				cache->name, mem_lat, message_packet->access_id, message_packet->address & cache->block_address_mask, message_packet->access_type,
 				message_packet->start_cycle, message_packet->end_cycle, mem_lat);*/
 
-	if(message_packet->access_id == 252)
-		warning("finishing load access id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+	/*if(message_packet->access_id == 252)
+		warning("finishing load access id %llu cycle %llu\n", message_packet->access_id, P_TIME);*/
 
 
 	if(message_packet->cpu_access_type == cgm_access_load)

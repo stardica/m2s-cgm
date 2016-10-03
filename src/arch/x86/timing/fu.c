@@ -93,7 +93,12 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 	if (!fu_class)
 	{
 		//catch the interrupt
-		if(uop->interrupt > 0)
+
+
+		return 1;
+
+
+		/*if(uop->interrupt > 0)
 		{
 			//this needs to be a number greater than the cycles of the syscall.
 			//when finished with the interrupt CGM will overwrite with the correct number of cycles
@@ -101,8 +106,8 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 		}
 		else //all the other non-interrupt related stuff
 		{
-			return 1;
-		}
+
+		}*/
 
 	}
 

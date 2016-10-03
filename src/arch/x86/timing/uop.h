@@ -88,6 +88,7 @@ struct x86_uop_t
 
 	//star added interrupt status
 	/* Instruction status */
+	int syscall_ready;
 	int ready;
 	int issued;
 	int completed;

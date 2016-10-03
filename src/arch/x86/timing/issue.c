@@ -442,17 +442,17 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->issue_when = asTiming(cpu)->cycle;
 		uop->when = asTiming(cpu)->cycle + lat;
 
-		if(uop->interrupt > 0)
+		/*if(uop->interrupt > 0)
 		{
-			uop->when = asTiming(cpu)->cycle + 900000;
-		}
+			uop->when = asTiming(cpu)->cycle + 10000;
+		}*/
 
 
 
-		if (uop->id == 796)
+		/*if (uop->id == 796)
 		{
 			assert(uop->interrupt == 1);
-			warning("uop id %llu start cycle %llu done %llu\n", uop->id, P_TIME, uop->when);
+			warning("uop id %llu issued cycle %llu done %llu\n", uop->id, P_TIME, uop->when);
 
 			int i = 0;
 			struct x86_uop_t *uop_test;
@@ -467,9 +467,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 				}
 			}
 
-		}
-
-
+		}*/
 
 		/*if(uop->interrupt == 1)
 			fatal("dropping uop %llu into rob cycle %llu\n", uop->id, P_TIME);*/
@@ -478,12 +476,12 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		X86CoreInsertInEventQueue(core, uop);
 		
 		//star run the interrupt
-		if(uop->interrupt > 0)
+		/*if(uop->interrupt > 0)
 		{
 			assert(uop->uinst->opcode == x86_uinst_syscall);
 			cpu_gpu_stats->core_num_syscalls[self->core->id]++;
 			//cgm_interrupt(self, uop);
-		}
+		}*/
 
 
 		/* Statistics */
