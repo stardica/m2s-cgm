@@ -27,6 +27,8 @@
  * Class 'X86Cpu'
  */
 
+/*extern long long ghost_stall;*/
+
 void X86CpuDispatch(X86Cpu *self);
 
 #endif

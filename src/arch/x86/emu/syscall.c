@@ -5656,6 +5656,7 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
  * System call 'cgm_stats_start_parallel_section' (code 325)
  */
 
+#include <arch/x86/timing/dispatch.h>
 
 
 static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
@@ -5680,6 +5681,8 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
+
+	/*ghost_stall = 0;*/
 
 	return 0;
 }
@@ -5707,6 +5710,9 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	cgm_wrapup_stats->start_wrapup_section_cycle = P_TIME;
 
 	cgm_reset_stats();
+
+	/*warning("stopping here ghost stall %llu\n", ghost_stall);
+	getchar();*/
 
 	return 0;
 }

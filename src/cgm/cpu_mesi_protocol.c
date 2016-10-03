@@ -4702,7 +4702,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		if(!pending_get_getx_fwd)
 		{
 
-			fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx\n");
+			fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx blk 0x%08x cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), P_TIME);
 
 			/*printf("\n");
 

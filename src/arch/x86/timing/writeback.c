@@ -112,9 +112,9 @@ void X86CoreWriteback(X86Core *self)
 
 				/*stats*/
 				cpu_gpu_stats->core_num_syscalls[self->id]++;
-				warning("wb syscall id %llu writeback syscall %llu cycle %llu\n", uop->id, cpu_gpu_stats->core_num_syscalls[self->id], P_TIME);
+				/*warning("wb syscall id %llu writeback syscall %llu cycle %llu\n", uop->id, cpu_gpu_stats->core_num_syscalls[self->id], P_TIME);*/
 
-				if(uop->id == 50649573)
+				/*if(uop->id == 50649573)
 				{
 					printf("event queue size %d\n", self->event_queue->count);
 					core_dump_event_queue(self);
@@ -123,7 +123,7 @@ void X86CoreWriteback(X86Core *self)
 					core_dump_rob(self);
 
 					getchar();
-				}
+				}*/
 
 			}
 			else if(uop->syscall_ready == 0) //fails to catch uops that are already at the head of the rob.

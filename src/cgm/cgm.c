@@ -179,6 +179,9 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 	cgm_stat_container->state = not_consolidated;
 
+	cgm_stat_container->core_total_busy = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->core_drain_time  = (long long *)calloc(num_cores, sizeof(long long));
+
 	cgm_stat_container->core_total_stalls = (long long *)calloc(num_cores, sizeof(long long));
 
 	cgm_stat_container->core_lsq_stalls = (long long *)calloc(num_cores, sizeof(long long));
@@ -193,7 +196,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
-	cgm_stat_container->core_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->core_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_first_fetch_cycle = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_fetch_stalls = (long long *)calloc(num_cores, sizeof(long long));
@@ -454,20 +457,19 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->core_fetch_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
 
+	cpu_gpu_stats->core_total_busy = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_drain_time = (long long *)calloc(num_cores, sizeof(long long));
 
 	cpu_gpu_stats->core_total_stalls = (long long *)calloc(num_cores, sizeof(long long));
 
 	cpu_gpu_stats->core_rob_stalls = (long long *)calloc(num_cores, sizeof(long long));
-	cpu_gpu_stats->core_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stall_load = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stall_store = (long long *)calloc(num_cores, sizeof(long long));
-	cpu_gpu_stats->core_rob_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_rob_stall_other = (long long *)calloc(num_cores, sizeof(long long));
 
 
 	cpu_gpu_stats->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
-	cpu_gpu_stats->core_syscall_stalls = (long long *)calloc(num_cores, sizeof(long long));
-
+	cpu_gpu_stats->core_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 
 	cpu_gpu_stats->core_lsq_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_lsq_stall_load = (long long *)calloc(num_cores, sizeof(long long));
@@ -913,9 +915,12 @@ void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 	//store cgm_stat_container
 	for(i = 0; i < num_cores; i++)
 	{
+		cgm_stat_container->core_total_busy[i] = cpu_gpu_stats->core_total_busy[i];
+		cgm_stat_container->core_drain_time[i] = cpu_gpu_stats->core_drain_time[i];
+
 		cgm_stat_container->core_num_syscalls[i] = cpu_gpu_stats->core_num_syscalls[i];
 		//cgm_stat_container->core_syscall_stalls[i] = cpu_gpu_stats->core_syscall_stalls[i];
-		cgm_stat_container->core_rob_stall_syscall[i] = cpu_gpu_stats->core_rob_stall_syscall[i];
+		cgm_stat_container->core_stall_syscall[i] = cpu_gpu_stats->core_stall_syscall[i];
 		cgm_stat_container->core_rob_stalls[i] = cpu_gpu_stats->core_rob_stalls[i];
 		cgm_stat_container->core_rob_stall_load[i] = cpu_gpu_stats->core_rob_stall_load[i];
 		cgm_stat_container->core_rob_stall_store[i] = cpu_gpu_stats->core_rob_stall_store[i];
@@ -970,12 +975,14 @@ void cpu_gpu_reset_stats(void){
 	//reset cgm_stat
 	for(i = 0; i < num_cores; i++)
 	{
+		cpu_gpu_stats->core_total_busy[i] = 0;
+		cpu_gpu_stats->core_drain_time[i] = 0;
+
 		cpu_gpu_stats->core_num_syscalls[i] = 0;
-		cpu_gpu_stats->core_syscall_stalls[i] = 0;
+		cpu_gpu_stats->core_stall_syscall[i] = 0;
 		cpu_gpu_stats->core_rob_stalls[i] = 0;
 		cpu_gpu_stats->core_rob_stall_load[i] = 0;
 		cpu_gpu_stats->core_rob_stall_store[i] = 0;
-		cpu_gpu_stats->core_rob_stall_syscall[i] = 0;
 		cpu_gpu_stats->core_rob_stall_other[i] = 0;
 		cpu_gpu_stats->core_first_fetch_cycle[i] = 0;
 		cpu_gpu_stats->core_fetch_stalls[i] = 0;
@@ -1322,23 +1329,28 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	{
 		/*CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);*/
 
+		CGM_STATS(cgm_stats_file, "core_%d_TotalBusy = %llu\n", i, cgm_stat_container->core_total_busy[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_DrainTime = %llu\n", i, cgm_stat_container->core_drain_time[i]);
+
 		CGM_STATS(cgm_stats_file, "core_%d_TotalStalls = %llu\n", i, cgm_stat_container->core_total_stalls[i]);
 
+		CGM_STATS(cgm_stats_file, "core_%d_StallFetch = %llu\n", i, cgm_stat_container->core_fetch_stalls[i]);
+
 		CGM_STATS(cgm_stats_file, "core_%d_ROBStalls = %llu\n", i, cgm_stat_container->core_rob_stalls[i]);
-		CGM_STATS(cgm_stats_file, "core_%d_ROBStallFetch = %llu\n", i, cgm_stat_container->core_fetch_stalls[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_ROBStallLoad = %llu\n", i, cgm_stat_container->core_rob_stall_load[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_ROBStallStore = %llu\n", i, cgm_stat_container->core_rob_stall_store[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_ROBStallOther = %llu\n", i, cgm_stat_container->core_rob_stall_other[i]);
-		CGM_STATS(cgm_stats_file, "core_%d_ROBStallSyscall = %llu\n", i, cgm_stat_container->core_rob_stall_syscall[i]);
 
 		CGM_STATS(cgm_stats_file, "core_%d_LSQStalls = %llu\n", i, cgm_stat_container->core_lsq_stalls[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_LSQStallLoad = %llu\n", i, cgm_stat_container->core_lsq_stall_load[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_LSQStallStore = %llu\n", i, cgm_stat_container->core_lsq_stall_store[i]);
 
 		CGM_STATS(cgm_stats_file, "core_%d_IQStalls = %llu\n", i, cgm_stat_container->core_iq_stalls[i]);
+
 		CGM_STATS(cgm_stats_file, "core_%d_RenameStalls = %llu\n", i, cgm_stat_container->core_rename_stalls[i]);
 
 		CGM_STATS(cgm_stats_file, "core_%d_NumSyscalls = %llu\n", i, cgm_stat_container->core_num_syscalls[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_StallSyscall = %llu\n", i, cgm_stat_container->core_stall_syscall[i]);
 
 		if(cgm_stat_container->stats_type == systemStats)
 		{
@@ -1381,13 +1393,13 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 			//idle_time = 0;
 			//CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, idle_time);
 
-			system_time = cgm_stat_container->core_rob_stall_syscall[i];
+			system_time = cgm_stat_container->core_stall_syscall[i];
 			CGM_STATS(cgm_stats_file, "core_%d_SystemTime = %llu\n", i, system_time);
 
-			stall_time = cgm_stat_container->core_rob_stalls[i];
+			stall_time = cgm_stat_container->core_total_stalls[i] - cgm_stat_container->core_stall_syscall[i];
 			CGM_STATS(cgm_stats_file, "core_%d_StallTime = %llu\n", i, stall_time);
 
-			busy_time = run_time - (stall_time);
+			busy_time = run_time - cgm_stat_container->core_total_stalls[i];
 			CGM_STATS(cgm_stats_file, "core_%d_BusyTime = %llu\n", i, busy_time);
 
 			CGM_STATS(cgm_stats_file, "core_%d_IdlePct = %0.6f\n", i, (double)idle_time/(double)run_time);

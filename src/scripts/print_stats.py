@@ -2,7 +2,7 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 8
+num_cores = 2
 cache_levels = 3
 gpu_stats = 1
 
@@ -955,23 +955,27 @@ def print_cpu_stats(options):
 
 	var = ""
 	stats = [
+		"TotalBusy",
+		"DrainTime",
+
 		"TotalStalls",
+		"StallFetch",
 		
 		"ROBStalls",
-		"ROBStallFetch",
 		"ROBStallLoad",
 		"ROBStallStore",
 		"ROBStallOther",
-		"ROBStallSyscall",
-
+		
 		"LSQStalls",
 		"LSQStallLoad",
 		"LSQStallStore",
 
 		"IQStalls",
+
 		"RenameStalls",
 	
 		"NumSyscalls",
+		"StallSyscall",
 		#"FirstFetchCycle",
 		#"LastCommitCycle",
 		#"RunTime",

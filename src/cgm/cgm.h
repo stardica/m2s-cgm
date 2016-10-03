@@ -183,17 +183,20 @@ struct cpu_gpu_stats_t{
 	/*cpu stats*/
 	long long *core_first_fetch_cycle;
 	long long *core_last_commit_cycle;
-	long long *core_fetch_stalls;
+
 
 	//core stalls
+	long long *core_total_busy;
+	long long *core_drain_time;
+
 	long long *core_total_stalls;
 
 	//rob stalls
 	long long *core_rob_stalls;
+	long long *core_fetch_stalls;
 	long long *core_rob_stall_load;
 	long long *core_rob_stall_store;
 	long long *core_rob_stall_other;
-	long long *core_rob_stall_syscall;
 
 	//lsq stalls
 	long long *core_lsq_stalls;
@@ -205,7 +208,7 @@ struct cpu_gpu_stats_t{
 
 	//system stalls
 	long long *core_num_syscalls;
-	long long *core_syscall_stalls;
+	long long *core_stall_syscall;
 	long long systemcall_start_cycle;
 	long long systemcall_total_cycles;
 	long long systemcall_start_rob_stalls;

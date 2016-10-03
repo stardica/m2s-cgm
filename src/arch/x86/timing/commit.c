@@ -198,8 +198,8 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (uop->flags == X86_UINST_MEM)
 			cpu_gpu_stats->core_commited_memory_insts[self->core->id]++;
 
-		if(uop->uinst->opcode == x86_uinst_syscall)
-			warning("Commit syscall id %llu cycle %llu\n", uop->id, P_TIME);
+		/*if(uop->uinst->opcode == x86_uinst_syscall)
+			warning("Commit syscall id %llu cycle %llu\n", uop->id, P_TIME);*/
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;
