@@ -102,7 +102,7 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 long long last_id = 0;
 long long total_syscalls = 1;
 
-/*long long ghost_stall = 0;*/
+long long idle_stall = 0;
 
 static int X86ThreadDispatch(X86Thread *self, int quantum)
 {
@@ -150,16 +150,22 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 				{
 
+					//cpu idle time...
+					if(stall == x86_dispatch_stall_ctx)
+					{
+						cpu_gpu_stats->core_idle_time[core->id]++;
+					}
 					//core fetch stall, uop queue is empty and ROB is empty...
 					if(self->rob_count == 0 && stall == x86_dispatch_stall_uop_queue)
 					{
 						cpu_gpu_stats->core_total_stalls[core->id]++;
 						cpu_gpu_stats->core_fetch_stalls[core->id]++;
 					}
+					/*CPU drain time. i.e. something is ending (ctx, processes, etc), so no new instructions are coming to dispatch,
+						but the ROB still has some uops init. This is CPU busy time.*/
 					if(self->rob_count >= 1 && stall == x86_dispatch_stall_uop_queue)
 					{
-						/*CPU drain time. i.e. something is ending (ctx, processes, etc), so no new instructions are coming to dispatch,
-						but the ROB still has some uops init. This is CPU busy time.*/
+
 						cpu_gpu_stats->core_total_busy[core->id]++;
 						cpu_gpu_stats->core_drain_time[core->id]++;
 					}
@@ -173,9 +179,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_rob_stalls[core->id]++;
-
-					//this is just for a test and should be deleted!
-					//assert(stall_uop->interrupt == 0);
 
 					if(stall_uop->uinst->opcode == x86_uinst_load)
 					{
@@ -265,8 +268,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		}
 
 
-		if(core->id == 1)
-			fatal("core 1 first cycle %llu\n", P_TIME);
+		/*if(core->id == 1)
+			fatal("core 1 first cycle %llu\n", P_TIME);*/
 
 
 		assert(quantum >= 1 && quantum <= x86_cpu_dispatch_width);

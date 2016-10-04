@@ -601,6 +601,8 @@ struct cgm_stats_t{
 	/*redundant stats, this so we can save away our stats at a certain point in the benchmark's run.*/
 	//lsq stalls
 
+	long long *core_idle_time;
+
 	long long *core_total_busy;
 	long long *core_drain_time;
 

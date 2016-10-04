@@ -186,6 +186,8 @@ struct cpu_gpu_stats_t{
 
 
 	//core stalls
+	long long *core_idle_time;
+
 	long long *core_total_busy;
 	long long *core_drain_time;
 

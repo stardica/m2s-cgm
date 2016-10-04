@@ -5682,7 +5682,7 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
 
-	/*ghost_stall = 0;*/
+	//idle_stall = 0;
 
 	return 0;
 }
@@ -5711,7 +5711,7 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 
 	cgm_reset_stats();
 
-	/*warning("stopping here ghost stall %llu\n", ghost_stall);
+	/*warning("stopping here ghost stall %llu\n", idle_stall);
 	getchar();*/
 
 	return 0;

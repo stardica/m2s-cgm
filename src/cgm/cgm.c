@@ -179,6 +179,8 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 	cgm_stat_container->state = not_consolidated;
 
+	cgm_stat_container->core_idle_time = (long long *)calloc(num_cores, sizeof(long long));
+
 	cgm_stat_container->core_total_busy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_drain_time  = (long long *)calloc(num_cores, sizeof(long long));
 
@@ -453,6 +455,9 @@ void init_cpu_gpu_stats(void){
 	int i = 0;
 
 	/*configure data structures*/
+
+	cpu_gpu_stats->core_idle_time = (long long *)calloc(num_cores, sizeof(long long));
+
 	cpu_gpu_stats->core_first_fetch_cycle = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_fetch_stalls = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_last_commit_cycle = (long long *)calloc(num_cores, sizeof(long long));
@@ -915,6 +920,8 @@ void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 	//store cgm_stat_container
 	for(i = 0; i < num_cores; i++)
 	{
+		cgm_stat_container->core_idle_time[i] = cpu_gpu_stats->core_idle_time[i];
+
 		cgm_stat_container->core_total_busy[i] = cpu_gpu_stats->core_total_busy[i];
 		cgm_stat_container->core_drain_time[i] = cpu_gpu_stats->core_drain_time[i];
 
@@ -975,6 +982,9 @@ void cpu_gpu_reset_stats(void){
 	//reset cgm_stat
 	for(i = 0; i < num_cores; i++)
 	{
+
+		cpu_gpu_stats->core_idle_time[i] = 0;
+
 		cpu_gpu_stats->core_total_busy[i] = 0;
 		cpu_gpu_stats->core_drain_time[i] = 0;
 
@@ -1013,8 +1023,8 @@ void cpu_gpu_reset_stats(void){
 	return;
 }
 
-void cgm_init(int argc, char **argv){
 
+void cgm_init(int argc, char **argv){
 	//Consolidated stat containers
 	cgm_stat = (void *) calloc(1, sizeof(struct cgm_stats_t));
 	cgm_startup_stats = (void *) calloc(1, sizeof(struct cgm_stats_t));
@@ -1323,14 +1333,20 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	long long busy_time = 0;
 	long long stall_time = 0;
 	long long system_time = 0;
+	long long exe_time = 0;
 
 	/*core stats*/
 	for(i = 0; i < num_cores; i++)
 	{
 		/*CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);*/
 
+		exe_time = cgm_stat_container->core_total_busy[i] + cgm_stat_container->core_idle_time[i] + cgm_stat_container->core_total_stalls[i];
+		CGM_STATS(cgm_stats_file, "core_%d_ExeTime = %llu\n", i, exe_time);
+
 		CGM_STATS(cgm_stats_file, "core_%d_TotalBusy = %llu\n", i, cgm_stat_container->core_total_busy[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_DrainTime = %llu\n", i, cgm_stat_container->core_drain_time[i]);
+
+		CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, cgm_stat_container->core_idle_time[i]);
 
 		CGM_STATS(cgm_stats_file, "core_%d_TotalStalls = %llu\n", i, cgm_stat_container->core_total_stalls[i]);
 

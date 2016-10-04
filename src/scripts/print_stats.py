@@ -2,7 +2,7 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 2
+num_cores = 8
 cache_levels = 3
 gpu_stats = 1
 
@@ -957,6 +957,8 @@ def print_cpu_stats(options):
 	stats = [
 		"TotalBusy",
 		"DrainTime",
+
+		"IdleTime",
 
 		"TotalStalls",
 		"StallFetch",
