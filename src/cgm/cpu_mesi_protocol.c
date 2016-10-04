@@ -4699,31 +4699,6 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
-		if(!pending_get_getx_fwd)
-		{
-
-			fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx blk 0x%08x cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), P_TIME);
-
-			/*printf("\n");
-
-			ort_dump(cache);
-
-			printf("\n");
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			printf("\n");
-			cache_dump_queue(cache->pending_request_buffer);*/
-
-			/*printf("\n");*/
-			/*warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
-			message_packet->access_type, message_packet->cache_block_state,
-			message_packet->set, message_packet->tag, message_packet->way,
-			pending_join_bit, pending_upgrade_bit, P_TIME);*/
-
-		}
-
 		if(pending_get_getx_fwd)
 		{
 			assert(pending_get_getx_fwd->access_type == cgm_access_get_fwd || pending_get_getx_fwd->access_type == cgm_access_getx_fwd);
@@ -4735,8 +4710,72 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		}
 		else
 		{
+			assert(!pending_get_getx_fwd);
+			assert(message_packet->l3_pending == 0);
+
+			/*L3 has evicted the block while a request for the block is outstanding, access should be killed and retried.*/
 			assert(message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_putx
 					|| message_packet->access_type == cgm_access_puts);
+
+			warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
+			message_packet->access_type, message_packet->cache_block_state,
+			message_packet->set, message_packet->tag, message_packet->way,
+			pending_join_bit, pending_upgrade_bit, P_TIME);
+
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write block failed on conflict (L3 evict) retrying access ID %llu type %d state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+				message_packet->access_type, message_packet->cache_block_state, P_TIME);
+
+			/*ORT entry is already set do just send down as a get/getx*/
+			assert(row < cache->mshr_size);
+			assert(pending_join_bit == 0);
+			assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 0);
+
+			//clear the ort pending join bit
+			ort_clear_pending_join_bit(cache, row, message_packet->tag, message_packet->set);
+
+			//add some routing/status data to the packet
+			if(message_packet->l1_access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
+			{
+				message_packet->access_type = cgm_access_getx;
+			}
+			else
+			{
+				message_packet->access_type = cgm_access_get;
+			}
+
+			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+			message_packet->l2_cache_id = cache->id;
+			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+			SETROUTE(message_packet, cache, l3_cache_ptr)
+
+			//transmit to L3
+			cache_put_io_down_queue(cache, message_packet);
+
+			return 1;
+
+			/*printf("\n");
+
+			ort_dump(cache);
+
+			printf("\n");
+			cgm_cache_dump_set(cache, message_packet->set);
+
+			printf("\n");
+			cache_dump_queue(cache->pending_request_buffer);*/
+
+			/*printf("\n");
+			warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
+			message_packet->access_type, message_packet->cache_block_state,
+			message_packet->set, message_packet->tag, message_packet->way,
+			pending_join_bit, pending_upgrade_bit, P_TIME);*/
+
+			/*fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx l3_pending_join %d blk 0x%08x cycle %llu\n",
+					message_packet->l3_pending, (message_packet->address & cache->block_address_mask), P_TIME);*/
+
 		}
 
 		//clear the conflict bit in the packet

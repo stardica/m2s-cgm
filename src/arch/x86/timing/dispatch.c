@@ -130,7 +130,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				//this if for busy time...
 				stall_uop = list_get(self->core->rob, self->rob_head);
 				assert(stall_uop->uinst->opcode == x86_uinst_syscall);
-				assert(quantum == x86_cpu_dispatch_width);
+				//assert(quantum == x86_cpu_dispatch_width);
 
 				cpu_gpu_stats->core_total_stalls[core->id]++;
 				cpu_gpu_stats->core_stall_syscall[core->id]++;

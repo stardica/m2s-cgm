@@ -955,6 +955,8 @@ def print_cpu_stats(options):
 
 	var = ""
 	stats = [
+		"ExeTime",
+
 		"TotalBusy",
 		"DrainTime",
 
