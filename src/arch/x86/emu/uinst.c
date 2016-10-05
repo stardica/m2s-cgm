@@ -36,6 +36,7 @@
 struct list_t *x86_uinst_list;
 int x86_uinst_active;
 
+int uinst_id = 0;
 
 /* Direct look-up table for regular dependences */
 char *x86_uinst_dep_name[] =
@@ -553,6 +554,7 @@ struct x86_uinst_t *x86_uinst_create(void)
 	struct x86_uinst_t *uinst;
 
 	uinst = xcalloc(1, sizeof(struct x86_uinst_t));
+	uinst->id = ++uinst_id;
 	uinst->idep = uinst->dep;
 	uinst->odep = &uinst->dep[X86_UINST_MAX_IDEPS];
 	return uinst;

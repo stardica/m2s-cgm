@@ -266,8 +266,12 @@ extern struct x86_uinst_info_t
 #define X86_UINST_MAX_ODEPS 4
 #define X86_UINST_MAX_DEPS  (X86_UINST_MAX_IDEPS + X86_UINST_MAX_ODEPS)
 
+extern int uinst_id;
+
 struct x86_uinst_t
 {
+	long long id;
+
 	/* Operation */
 	enum x86_uinst_opcode_t opcode;
 

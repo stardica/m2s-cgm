@@ -223,12 +223,13 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		//star added this to catch interrupts at issue.
 		//all of the interrupt related data is known by now.
 		//this is kind of Frankensteiny, but it works
-		if(syscall_flag)
+		if(uop->uinst->opcode == x86_uinst_syscall)
 		{
 			//if both flags are set its an OpenCL syscall
 			if(opencl_syscall_flag)
 			{
-				if(opencl_syscall_flag == 4) //memcpy
+
+				/*if(opencl_syscall_flag == 4) //memcpy
 				{
 					uop->interrupt = opencl_syscall_flag;
 					uop->interrupt_type = opencl_interrupt;
@@ -237,10 +238,10 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 					uop->int_size = int_size;
 				}
 				else //all others
-				{
+				{*/
 					uop->interrupt = opencl_syscall_flag;
 					uop->interrupt_type = opencl_interrupt;
-				}
+				/*}*/
 			}
 			else
 			{
@@ -248,12 +249,12 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 				uop->interrupt_type = system_interrupt;
 			}
 
-			//rest all of the flags for the next round
+			//reset all of the flags for the next round
 			syscall_flag = 0;
 			opencl_syscall_flag = 0;
-			int_src_ptr = 0;
+			/*int_src_ptr = 0;
 			int_dest_ptr=0;
-			int_size=0;
+			int_size=0;*/
 		}
 		else
 		{
@@ -313,7 +314,6 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			if(uop->uinst->opcode == 56)
 			{
 				fatal("caught a prefetch in fetch\n");
-
 			}
 		}
 

@@ -135,14 +135,13 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				cpu_gpu_stats->core_total_stalls[core->id]++;
 				cpu_gpu_stats->core_stall_syscall[core->id]++;
 
-				/*if(last_id < stall_uop->id)
+				if(last_id < stall_uop->id)
 				{
-					warning("syscall id %llu total %llu stall when %llu now %llu delta %llu cycle %llu\n",
-							stall_uop->id, total_syscalls, stall_uop->when, P_TIME, (stall_uop->when - P_TIME), P_TIME);
+					warning("Dispatch: syscall id %llu type %u total %llu stall when %llu now %llu delta %llu cycle %llu\n",
+							stall_uop->id, stall_uop->interrupt_type, total_syscalls, stall_uop->when, P_TIME, (stall_uop->when - P_TIME), P_TIME);
 					last_id = stall_uop->id;
 					total_syscalls++;
-					//getchar();
-				}*/
+				}
 			}
 			//stalls only count if dispatch makes no progress in a given cycle
 			else if(quantum == x86_cpu_dispatch_width)
@@ -207,7 +206,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					//fix me, find out what uop we are trying to insert and and then
 					uop = list_get(self->uop_queue, 0);
 
-					assert(uop->flags & X86_UINST_MEM && (uop->uinst->opcode == 52 || uop->uinst->opcode == 53));
+					assert(uop->flags & X86_UINST_MEM && (uop->uinst->opcode >= x86_uinst_load || uop->uinst->opcode <= x86_uinst_cpu_load_fence));
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_lsq_stalls[core->id]++;
@@ -222,13 +221,16 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					}
 					else
 					{
-						if(uop->uinst->opcode == x86_uinst_load)
+						if(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_load_ex
+								|| uop->uinst->opcode == x86_uinst_cpu_load_fence)
 						{
 							cpu_gpu_stats->core_lsq_stall_load[core->id]++;
 						}
 						else
 						{
-							assert(uop->uinst->opcode == x86_uinst_store);
+							assert(uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
+									|| uop->uinst->opcode == x86_uinst_gpu_flush || uop->uinst->opcode == x86_uinst_cpu_fence
+									|| uop->uinst->opcode == x86_uinst_cpu_flush);
 							cpu_gpu_stats->core_lsq_stall_store[core->id]++;
 						}
 						//fatal("X86ThreadDispatch(): check this, shouldn't be here lq %d sq %d??\n", self->lq->count, self->sq->count);
@@ -267,11 +269,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			break;
 		}
 
-
-		/*if(core->id == 1)
-			fatal("core 1 first cycle %llu\n", P_TIME);*/
-
-
 		assert(quantum >= 1 && quantum <= x86_cpu_dispatch_width);
 
 		/* Get entry from uop queue */
@@ -279,6 +276,22 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
+
+		if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			warning("Dispatch: id %llu FENCE cycle %llu\n", uop->id, P_TIME);
+
+			printf("event queue size %d\n", core->event_queue->count);
+			core_dump_event_queue(core);
+
+			printf("rob size %d\n", self->rob_count);
+			core_dump_rob(core);
+
+			getchar();
+
+		}
+
+
 		/* Rename */
 		X86ThreadRenameUop(self, uop);
 		

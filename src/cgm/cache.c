@@ -2914,7 +2914,6 @@ void l1_d_cache_ctrl(void){
 			}
 			else if (access_type == cgm_access_cpu_fence || access_type == cgm_access_cpu_load_fence)
 			{
-				//Call back function (cgm_mesi_l1_d_downgrade)
 				if(!l1_d_caches[my_pid].l1_d_cpu_fence(&(l1_d_caches[my_pid]), message_packet))
 						step--;
 			}

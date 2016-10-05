@@ -322,7 +322,7 @@ struct cache_t{
 	int log_set_size;
 
 	//cntrl elements
-	unsigned int flush_counter;
+	long long flush_counter;
 
 	//mshr control links
 	int mshr_size;

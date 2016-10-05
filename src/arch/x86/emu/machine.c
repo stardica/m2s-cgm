@@ -1108,10 +1108,42 @@ void x86_isa_int_3_impl(X86Context *ctx)
 }
 
 
+	/*x86_uinst_load,			//52
+	x86_uinst_store,		//53
+	x86_uinst_load_ex,		//54
+	x86_uinst_store_ex,		//55
+	x86_uinst_prefetch,		//56
+	x86_uinst_cpu_flush,	//57star added this
+	x86_uinst_gpu_flush,	//58star added this
+	x86_uinst_cpu_fence,	//59star added this
+	x86_uinst_cpu_load_fence,//60star added this*/
+
+void dump_unist_queue(struct list_t *queue){
+
+	int i = 0;
+	struct x86_uinst_t *uinst = NULL;
+
+	printf("Unist queue size %d\n", list_count(queue));
+
+	LIST_FOR_EACH(queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		uinst = list_get(queue, i);
+		printf("\t uinst_id %llu opcode %u\n", uinst->id, uinst->opcode);
+
+		if(uinst->opcode == x86_uinst_cpu_fence)
+			getchar();
+	}
+
+	return;
+}
+
 void x86_isa_int_imm8_impl(X86Context *ctx)
 {
 	int spec_mode;
 	unsigned int num;
+
+	//struct x86_uinst_t *uinst;
 
 	/* Interrupt code */
 	num = (unsigned char) ctx->inst.imm.b;
@@ -1119,6 +1151,7 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 		X86ContextError(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
 	/*syscall*/
+	warning("EMU new syscall eax %u ebx %u cycle %llu\n", ctx->regs->eax, ctx->regs->ebx, P_TIME);
 
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
@@ -1126,6 +1159,13 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 		X86ContextSyscall(ctx);
 
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
+
+	//uinst = list_tail(x86_uinst_list);
+
+	//warning("uinst opcodde %u id %llu\n", uinst->opcode, uinst->id);
+
+	//dump_unist_queue(x86_uinst_list);
+
 }
 
 

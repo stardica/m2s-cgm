@@ -178,10 +178,14 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//charge delay
 	P_PAUSE(cache->latency);
 
+	printf("cpu fence! flush counter %llu\n", cache->flush_counter);
+
 	//if the flush counter is 0 retire the fence
 	if(cache->flush_counter == 0)
 	{
 		cache_l1_d_return(cache, message_packet);
+
+		printf("cpu fence finished!\n");
 
 		/*stats*/
 		//calculate the system time that has past.
@@ -197,10 +201,10 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 		assert(cpu_gpu_stats->core_rob_stalls[7] == 0);
 
 		cpu_gpu_stats->systemcall_total_rob_stalls += (cpu_gpu_stats->core_rob_stalls[0] - cpu_gpu_stats->systemcall_start_rob_stalls);
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 

@@ -129,6 +129,9 @@ int X86ThreadCanCommit(X86Thread *self)
 	assert(x86_uop_exists(uop));
 	assert(uop->thread == self);
 
+	if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		printf("wainting on fence cycle %llu\n", P_TIME);
+
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
 	if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
@@ -198,8 +201,8 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (uop->flags == X86_UINST_MEM)
 			cpu_gpu_stats->core_commited_memory_insts[self->core->id]++;
 
-		/*if(uop->uinst->opcode == x86_uinst_syscall)
-			warning("Commit syscall id %llu cycle %llu\n", uop->id, P_TIME);*/
+		if(uop->uinst->opcode == x86_uinst_syscall)
+			warning("Commit: syscall id %llu cycle %llu\n", uop->id, P_TIME);
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;

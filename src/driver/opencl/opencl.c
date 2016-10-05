@@ -391,9 +391,9 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 	size = regs->esi;
 
 	//star added this to get this data later.
-	int_src_ptr = host_ptr;
-	int_dest_ptr = device_ptr;
-	int_size = size;
+	//int_src_ptr = host_ptr;
+	//int_dest_ptr = device_ptr;
+	//int_size = size;
 
 	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n", device_ptr, host_ptr, size);
 

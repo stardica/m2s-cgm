@@ -547,8 +547,8 @@ void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop)
 		list_set(self->rob, thread->rob_tail, uop);
 		thread->rob_tail = thread->rob_tail == thread->rob_right_bound ? thread->rob_left_bound : thread->rob_tail + 1;
 
-
 		thread->rob_count++;
+
 		break;
 
 		//star >> commented out for clarity

@@ -98,12 +98,15 @@ void X86CoreWriteback(X86Core *self)
 			}
 		}
 
+		if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			warning("writeback: fence id %llu cycle %llu\n", uop->id, P_TIME);
+			getchar();
+		}
 
 		//bring syscalls to the head of the event queue and rob. then assess a latency...
 		if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			assert(uop->interrupt > 0);
-
 			if(is_rob_head(self, uop->id) && uop->syscall_ready == 0)
 			{
 				assert(uop->syscall_ready == 0);
@@ -112,9 +115,12 @@ void X86CoreWriteback(X86Core *self)
 
 				/*stats*/
 				cpu_gpu_stats->core_num_syscalls[self->id]++;
-				/*warning("wb syscall id %llu writeback syscall %llu cycle %llu\n", uop->id, cpu_gpu_stats->core_num_syscalls[self->id], P_TIME);*/
 
-				/*if(uop->id == 50649573)
+				warning("writeback: syscall id %llu type %u code %u cycle %llu\n",
+					uop->id, uop->interrupt_type, uop->interrupt, P_TIME);
+
+
+				if(uop->interrupt == 4)
 				{
 					printf("event queue size %d\n", self->event_queue->count);
 					core_dump_event_queue(self);
@@ -123,13 +129,19 @@ void X86CoreWriteback(X86Core *self)
 					core_dump_rob(self);
 
 					getchar();
-				}*/
+				}
+
+				assert(uop->interrupt > 0);
 
 			}
-			else if(uop->syscall_ready == 0) //fails to catch uops that are already at the head of the rob.
+			else if(uop->syscall_ready == 0) //failed to catch uops that are already at the head of the rob.
 			{
+
+				if(uop->id == 29618165)
+					fatal("syscall here\n");
+
 				assert(uop->syscall_ready == 0);
-				uop->when = (P_TIME + 1);
+				uop->when = (P_TIME + 100000);
 			}
 		}
 
@@ -155,6 +167,8 @@ void X86CoreWriteback(X86Core *self)
 		{
 			break;
 		}
+
+
 
 		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{

@@ -1919,6 +1919,8 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 	unsigned int blk_mask = 0x3F;
 	unsigned int blk = 0x40;
 
+	warning("upp factory nc write cycle %llu\n", P_TIME);
+
 	//copy memory from one to the other (load & store)
 	for(i = 0; i < size; i++)
 	{
