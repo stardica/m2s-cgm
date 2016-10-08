@@ -2816,8 +2816,8 @@ void l1_d_cache_ctrl(void){
 		//star todo this can be refined a lot.
 		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l1_d_caches[my_pid])))
 		{
-			/*if(P_TIME > 106034981)
-				printf("%s stalling\n", l1_d_caches[my_pid].name);*/
+			/*if(P_TIME > 106034981)*/
+			//printf("%s stalling\n", l1_d_caches[my_pid].name);
 
 			//the cache state is preventing the cache from working this cycle stall.
 			l1_d_caches[my_pid].Stalls++;
@@ -2831,6 +2831,8 @@ void l1_d_cache_ctrl(void){
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
+
+			//warning("tx_count %llu rx_count %llu cycle %llu\n", l1_d_caches[my_pid].flush_tx_counter, l1_d_caches[my_pid].flush_rx_counter, P_TIME);
 
 			if (access_type == cgm_access_load || access_type == cgm_access_load_retry)
 			{
@@ -2915,7 +2917,7 @@ void l1_d_cache_ctrl(void){
 			else if (access_type == cgm_access_cpu_fence || access_type == cgm_access_cpu_load_fence)
 			{
 				if(!l1_d_caches[my_pid].l1_d_cpu_fence(&(l1_d_caches[my_pid]), message_packet))
-						step--;
+					step--;
 			}
 			else
 			{

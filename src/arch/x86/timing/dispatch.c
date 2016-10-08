@@ -279,7 +279,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		if(uop->uinst->opcode == x86_uinst_cpu_fence)
 		{
-			warning("Dispatch: id %llu FENCE cycle %llu\n", uop->id, P_TIME);
+			warning("Dispatch: core %d id %llu FENCE cycle %llu\n", core->id, uop->id, P_TIME);
 
 			printf("event queue size %d\n", core->event_queue->count);
 			core_dump_event_queue(core);
@@ -288,8 +288,12 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			core_dump_rob(core);
 
 			getchar();
-
 		}
+
+
+		/*set up some parameters for the pipeline*/
+		if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+			uop->ready = 1;
 
 
 		/* Rename */
@@ -317,6 +321,14 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			//LSQWrites++;
 		}
 		
+		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			printf("rob size %d\n", self->rob_count);
+			core_dump_rob(core);
+
+			getchar();
+		}*/
+
 		/* Statistics */
 		core->dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
 		self->num_dispatched_uinst_array[uop->uinst->opcode]++;

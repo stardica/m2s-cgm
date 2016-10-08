@@ -67,14 +67,22 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_gpu_flush
 				|| store->uinst->opcode == x86_uinst_cpu_fence);
 
+		/*if(store->uinst->opcode == x86_uinst_cpu_fence)
+			fatal("issue fence\n");*/
+
 		/* Only committed stores issue */
-		if (store->in_rob)
+		if (store->in_rob && store->uinst->opcode != x86_uinst_cpu_fence)
+		{
+			assert(store->uinst->opcode != x86_uinst_cpu_fence);
 			break;
+		}
+
 
 		/* Check that memory system entry is ready */
 #if CGM
 		if (!cgm_can_issue_access(self, store->phy_addr))
 			break;
+
 #else
 		if (!mod_can_access(self->data_mod, store->phy_addr))
 			break;
@@ -89,9 +97,6 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
 		//client_info->prefetcher_eip = store->eip;
 
-		if(store->id == 788)
-			fatal("store\n");
-
 		//set access type
 		if(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
 		{
@@ -99,14 +104,20 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		}
 		else if (store->uinst->opcode == x86_uinst_cpu_flush)
 		{
+			store->ready = 1;
+
 			cgm_issue_lspq_access(self, cgm_access_cpu_flush, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else if (store->uinst->opcode == x86_uinst_gpu_flush)
 		{
+			store->ready = 1;
+
 			cgm_issue_lspq_access(self, cgm_access_gpu_flush, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else if (store->uinst->opcode == x86_uinst_cpu_fence)
 		{
+			store->ready = 1;
+
 			cgm_issue_lspq_access(self, cgm_access_cpu_fence, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else

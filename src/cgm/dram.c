@@ -212,7 +212,14 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 	if(message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
 	{
 		//Decrement the cores flush counter
-		l1_d_caches[message_packet->flush_core].flush_counter--;
+		//l1_d_caches[message_packet->flush_core].flush_rx_counter++;
+		l1_d_caches[message_packet->flush_core].flush_tx_counter--;
+
+		/*if(message_packet->flush_core != 0)
+			fatal("here 2\n");*/
+
+		warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
+						l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
 	}
 
 

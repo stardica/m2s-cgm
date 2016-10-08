@@ -129,23 +129,35 @@ int X86ThreadCanCommit(X86Thread *self)
 	assert(x86_uop_exists(uop));
 	assert(uop->thread == self);
 
-	if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		printf("wainting on fence cycle %llu\n", P_TIME);
+	/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		printf("wainting on fence cycle %llu\n", P_TIME);*/
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
-	if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
-			|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
+	if(uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex)
 	{
 		if (!uop->ready && X86ThreadIsUopReady(self, uop))
 			uop->ready = 1;
+
 		return uop->ready;
 	}
 	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
+		/*clear these out of commit these will not be put in the event queue for write back to process*/
+		assert(uop->ready == 1);
+
+		/*fatal("commit: working flush opcode %d cycle %llu\n", uop->uinst->opcode, P_TIME);*/
+
 		uop->ready = 1;
 		return uop->ready;
 	}
+	/*else if (uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
+	{
+		if(!uop->ready && uop->thread->d_cache_ptr[uop->thread->core->id].flush_counter == 0)
+			uop->ready = 1;
+
+		return uop->ready;
+	}*/
 	/*else
 	{
 		fatal("X86ThreadCanCommit(): bad access type %d\n", uop->uinst->opcode);
@@ -203,6 +215,15 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		if(uop->uinst->opcode == x86_uinst_syscall)
 			warning("Commit: syscall id %llu cycle %llu\n", uop->id, P_TIME);
+
+		if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			warning("commit: committing fence id %llu cycle %llu\n", uop->id, P_TIME);
+			/*getchar();*/
+		}
+
+		/*if(uop->id == 29618165)
+			fatal("syscall here cycle %llu\n", P_TIME);*/
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;

@@ -30,6 +30,8 @@ extern int mem_ctrl_io_pid;
 
 extern struct mem_ctrl_t *mem_ctrl;
 
+extern long long flushes_rx;
+
 //function prototypes
 void memctrl_init(void);
 void memctrl_create(void);

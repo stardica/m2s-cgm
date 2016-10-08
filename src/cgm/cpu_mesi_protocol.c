@@ -173,19 +173,33 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	return;
 }
 
+long long flushes_sent = 0;
+
 int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//charge delay
-	P_PAUSE(cache->latency);
-
-	printf("cpu fence! flush counter %llu\n", cache->flush_counter);
+	P_PAUSE(1);
 
 	//if the flush counter is 0 retire the fence
-	if(cache->flush_counter == 0)
+	//if((cache->flush_tx_counter - cache->flush_rx_counter) == 0)
+	if(cache->flush_tx_counter == 0)
 	{
+		assert(message_packet->access_type == cgm_access_cpu_fence
+				|| message_packet->access_type == cgm_access_cpu_load_fence);
+
+		if(message_packet->access_type == cgm_access_cpu_load_fence)
+		{
+			warning("cpu_load_fence id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			getchar();
+		}
+
+
 		cache_l1_d_return(cache, message_packet);
 
-		printf("cpu fence finished!\n");
+		//cache->flush_tx_counter = 0;
+		//cache->flush_rx_counter = 0;
+
+		/*fatal("fence completed\n");*/
 
 		/*stats*/
 		//calculate the system time that has past.
@@ -201,10 +215,12 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 		assert(cpu_gpu_stats->core_rob_stalls[7] == 0);
 
 		cpu_gpu_stats->systemcall_total_rob_stalls += (cpu_gpu_stats->core_rob_stalls[0] - cpu_gpu_stats->systemcall_start_rob_stalls);
-		return 0;
+
+
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 
@@ -221,7 +237,7 @@ void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 	linked_list_add(message_packet->event_queue, message_packet->data);
 
 	//increment the cache flush counter
-	cache->flush_counter++;
+	cache->flush_tx_counter++;
 
 	//set the flush core
 	message_packet->flush_core = cache->id;
@@ -230,6 +246,8 @@ void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	return;
 }
+
+
 
 int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -265,7 +283,6 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		return 0;
 	}
 
-
 	//set the flush core only on a cpu flush coming from this CORE (i.e. dont set if flush was forwarded
 	if(message_packet->access_type == cgm_access_cpu_flush)
 	{
@@ -275,7 +292,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		linked_list_add(message_packet->event_queue, message_packet->data);
 
 		//increment the cache flush counter
-		cache->flush_counter++;
+		cache->flush_tx_counter++;
 	}
 	else
 	{
@@ -286,6 +303,8 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 		message_packet->access_type = cgm_access_cpu_flush;
 	}
+
+	//printf("flushes tx %llu cycle %llu\n", cache->flush_tx_counter, P_TIME);
 
 
 	//remove the block from the cache....

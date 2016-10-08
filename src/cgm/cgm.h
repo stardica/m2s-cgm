@@ -211,6 +211,7 @@ struct cpu_gpu_stats_t{
 	//system stalls
 	long long *core_num_syscalls;
 	long long *core_stall_syscall;
+	long long systemcall_num_fences;
 	long long systemcall_start_cycle;
 	long long systemcall_total_cycles;
 	long long systemcall_start_rob_stalls;

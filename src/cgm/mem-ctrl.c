@@ -155,6 +155,8 @@ void memctrl_ctrl_io(void){
 	return;
 }
 
+long long flushes_rx = 0;
+
 //do some work.
 void memctrl_ctrl(void){
 
@@ -224,25 +226,30 @@ void memctrl_ctrl(void){
 			message_packet = list_get(mem_ctrl->Rx_queue_top, 0);
 			assert(message_packet);
 
-
-
 			/*stats*/
 			if(mem_ctrl->rx_max < list_count(mem_ctrl->Rx_queue_top))
 				mem_ctrl->rx_max = list_count(mem_ctrl->Rx_queue_top);
 
+			/*if (message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
+					printf("flushes rx %llu\n", ++flushes_rx);*/
 
 			if ((message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
 					&& message_packet->cache_block_state == cgm_cache_block_invalid)
 			{
 				//Decrement the cores flush counter
-				l1_d_caches[message_packet->flush_core].flush_counter--;
+				//l1_d_caches[message_packet->flush_core].flush_rx_counter++;
+				l1_d_caches[message_packet->flush_core].flush_tx_counter--;
+
+				/*if(message_packet->flush_core != 0)
+					fatal("here 1\n");*/
+
+				warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
+						l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
 
 				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 				packet_destroy(message_packet);
 				continue;
 			}
-
-
 
 			if(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush_ack
 					|| message_packet->access_type == cgm_access_gpu_flush_ack)

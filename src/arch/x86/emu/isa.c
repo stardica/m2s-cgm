@@ -870,7 +870,7 @@ void X86ContextExecuteInst(X86Context *self)
 			//the value of the flag is the OpenCL ABI code.
 			opencl_syscall_flag = regs->ebx;
 
-			printf(" setup opencl_syscall_flag %u\n", opencl_syscall_flag);
+			/*printf(" setup opencl_syscall_flag %u\n", opencl_syscall_flag);*/
 		}
 	}
 
