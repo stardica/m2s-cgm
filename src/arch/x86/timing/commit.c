@@ -129,28 +129,30 @@ int X86ThreadCanCommit(X86Thread *self)
 	assert(x86_uop_exists(uop));
 	assert(uop->thread == self);
 
-	/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		printf("wainting on fence cycle %llu\n", P_TIME);*/
-
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
-	if(uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex)
+	/*if(uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex)
 	{
+
+		assert(uop->ready == 1);
+		//assert(uop->completed == 1);
+
+		//old M2S code
 		if (!uop->ready && X86ThreadIsUopReady(self, uop))
 			uop->ready = 1;
 
 		return uop->ready;
-	}
-	else if (uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
+	}*/
+	/*if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
-		/*clear these out of commit these will not be put in the event queue for write back to process*/
+		clear these out of commit these will not be put in the event queue for write back to process
 		assert(uop->ready == 1);
 
-		/*fatal("commit: working flush opcode %d cycle %llu\n", uop->uinst->opcode, P_TIME);*/
-
+		fatal("commit: working flush opcode %d cycle %llu\n", uop->uinst->opcode, P_TIME);
+		uop->completed = 1;
 		uop->ready = 1;
 		return uop->ready;
-	}
+	}*/
 	/*else if (uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
 	{
 		if(!uop->ready && uop->thread->d_cache_ptr[uop->thread->core->id].flush_counter == 0)
@@ -202,6 +204,12 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			X86ThreadUpdateBranchPred(self, uop);
 			X86ThreadUpdateBTB(self, uop);
 			self->btb_writes++;
+		}
+
+		//clear flagsf or stats collection...
+		if (uop->uinst->opcode == x86_uinst_cpu_fence)
+		{
+			cpu_gpu_stats->core_num_fences[self->core->id]--;
 		}
 
 		/* Trace cache */

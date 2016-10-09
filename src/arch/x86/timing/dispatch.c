@@ -101,8 +101,8 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 
 long long last_id = 0;
 long long total_syscalls = 1;
-
 long long idle_stall = 0;
+int test = 0;
 
 static int X86ThreadDispatch(X86Thread *self, int quantum)
 {
@@ -118,6 +118,19 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		/* Check if we can decode */
 		stall = X86ThreadCanDispatch(self);
+
+
+		if(self->core->id == 0 && cpu_gpu_stats->core_num_fences[self->core->id] == 1)
+		{
+			warning("got ya cycle %llu\n", P_TIME);
+			test = 1;
+		}
+		else if (self->core->id == 0 && test == 1 && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
+		{
+			warning("done... cycle %llu\n", P_TIME);
+			getchar();
+		}
+
 
 		if (stall != x86_dispatch_stall_used)
 		{
@@ -141,6 +154,9 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 							stall_uop->id, stall_uop->interrupt_type, total_syscalls, stall_uop->when, P_TIME, (stall_uop->when - P_TIME), P_TIME);
 					last_id = stall_uop->id;
 					total_syscalls++;
+
+					//makes sure trap time gets charged correctly.
+					//assert((stall_uop->when - P_TIME) >= 5000);
 				}
 			}
 			//stalls only count if dispatch makes no progress in a given cycle
@@ -206,7 +222,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					//fix me, find out what uop we are trying to insert and and then
 					uop = list_get(self->uop_queue, 0);
 
-					assert(uop->flags & X86_UINST_MEM && (uop->uinst->opcode >= x86_uinst_load || uop->uinst->opcode <= x86_uinst_cpu_load_fence));
+					assert((uop->flags & X86_UINST_MEM) && (uop->uinst->opcode >= x86_uinst_load || uop->uinst->opcode <= x86_uinst_cpu_load_fence));
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_lsq_stalls[core->id]++;
@@ -277,6 +293,13 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		uop->in_uop_queue = 0;
 		
 
+		/*if(uop->id == 57923139)
+		{
+			warning("dispatched syscall id %llu cycle %llu\n", uop->id, P_TIME);
+
+			getchar();
+		}*/
+
 		if(uop->uinst->opcode == x86_uinst_cpu_fence)
 		{
 			warning("Dispatch: core %d id %llu FENCE cycle %llu\n", core->id, uop->id, P_TIME);
@@ -287,7 +310,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			printf("rob size %d\n", self->rob_count);
 			core_dump_rob(core);
 
-			getchar();
+			/*getchar();*/
 		}
 
 
@@ -321,14 +344,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			//LSQWrites++;
 		}
 		
-		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		{
-			printf("rob size %d\n", self->rob_count);
-			core_dump_rob(core);
-
-			getchar();
-		}*/
-
 		/* Statistics */
 		core->dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
 		self->num_dispatched_uinst_array[uop->uinst->opcode]++;

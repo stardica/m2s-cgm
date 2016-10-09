@@ -98,6 +98,8 @@ unsigned int last_committed_fetch_access_blk = 0x0;
 
 enum stats_dump_config_t stats_dump_config;
 
+enum time_type_t current_time_type = cpu_time;
+
 struct cgm_stats_t *cgm_stat;
 struct cgm_stats_t *cgm_startup_stats;
 struct cgm_stats_t *cgm_parallel_stats;
@@ -474,6 +476,7 @@ void init_cpu_gpu_stats(void){
 
 
 	cpu_gpu_stats->core_num_syscalls = (long long *)calloc(num_cores, sizeof(long long));
+	cpu_gpu_stats->core_num_fences = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_stall_syscall = (long long *)calloc(num_cores, sizeof(long long));
 
 	cpu_gpu_stats->core_lsq_stalls = (long long *)calloc(num_cores, sizeof(long long));
@@ -1950,6 +1953,11 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	//pause stats while these go by...
+
+	cpu_gpu_stats->core_num_fences[ctx->core_index] = 1;
+
 
 	return;
 }

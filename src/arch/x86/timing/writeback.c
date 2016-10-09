@@ -104,19 +104,20 @@ void X86CoreWriteback(X86Core *self)
 			getchar();
 		}*/
 
-		//bring syscalls to the head of the event queue and rob. then assess a latency...
+		//wait until syscalls are at the head of the event queue and rob. then assess a latency...
 		if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			if(is_rob_head(self, uop->id) && uop->syscall_ready == 0)
+			if(is_rob_head(self, uop->id) && uop->syscall_ready == 0)//syscall is at head of ROB, charge latency and stall core.
+				//dispatch will stall until this syscall is committed...
 			{
 				assert(uop->syscall_ready == 0);
-				uop->when = (P_TIME + 6000);
+				uop->when = (P_TIME + 6000); //charge trap time...
 				uop->syscall_ready = 1;
 
 				/*stats*/
 				cpu_gpu_stats->core_num_syscalls[self->id]++;
 
-				warning("writeback: syscall id %llu type %u code %u cycle %llu\n",
+				warning("write back: syscall id %llu type %u code %u cycle %llu\n",
 					uop->id, uop->interrupt_type, uop->interrupt, P_TIME);
 
 				/*if(uop->interrupt == 4)
@@ -133,16 +134,17 @@ void X86CoreWriteback(X86Core *self)
 				assert(uop->interrupt > 0);
 
 			}
-			else if(uop->syscall_ready == 0) //failed to catch uops that are already at the head of the rob.
+			else if(uop->syscall_ready == 0) //wait until this syscall is at the head of the ROB.
 			{
 
-				/*if(uop->id == 29618165)
-					fatal("syscall here\n");*/
-
 				assert(uop->syscall_ready == 0);
-				uop->when = (P_TIME + 1);
+				uop->when = (P_TIME + 1); //punt 1 cycle until the syscall is at the head of the ROB...
 			}
 		}
+
+
+		/*if(uop->uinst->opcode == x86_uinst_store)
+			fatal("WB store finished id %llu cycle %llu\n", uop->id, P_TIME);*/
 
 		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
 			fatal("fence in WB\n");*/
@@ -178,21 +180,21 @@ void X86CoreWriteback(X86Core *self)
 		}
 
 
-		/*if(uop->uinst->opcode == x86_uinst_syscall)
+		/*if(uop->id == 57923139)
 		{
-			assert(uop->syscall_ready == 1);
+			//assert(uop->syscall_ready == 1);
 
 			printf("rob head %d cycle %llu\n", is_rob_head(self, uop->id), P_TIME);
 
-		printf("event queue size %d\n", self->event_queue->count);
-		core_dump_event_queue(self);
+			printf("event queue size %d\n", self->event_queue->count);
+			core_dump_event_queue(self);
 
-		printf("rob size %d\n", uop->thread->rob_count);
-		core_dump_rob(self);
+			printf("rob size %d\n", uop->thread->rob_count);
+			core_dump_rob(self);
 
-		getchar();
-		}*/
-
+			getchar();
+		}
+*/
 
 		/*if(uop->uinst->opcode == x86_uinst_syscall)
 		{
@@ -219,9 +221,15 @@ void X86CoreWriteback(X86Core *self)
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
 		//assert(uop->when == asTiming(cpu)->cycle);
-		assert(asTiming(cpu)->cycle = P_TIME);
+		assert(asTiming(cpu)->cycle == P_TIME);
 		assert(uop->thread->core == self);
 		assert(uop->ready);
+
+		if(uop->completed == 1)
+		{
+			fatal("writback uop already completed id %llu opcode %d cycle %llu\n", uop->id, uop->uinst->opcode, P_TIME);
+		}
+
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */

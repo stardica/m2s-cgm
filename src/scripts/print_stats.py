@@ -2,7 +2,7 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 8
+num_cores = 1
 cache_levels = 3
 gpu_stats = 1
 
@@ -18,7 +18,7 @@ def get_stats(options):
 	elif options.PrintSection == 'ParallelStats':
 		stats_dict = dict(stats.items('ParallelStats'))
 	else:
-		print "print_switch_io_stats(): invalid section"
+		print "get_stats(): invalid section"
 		exit(0)
 
 	for key, value in stats_dict.items(): # get the (key, value) tuples one at a time
@@ -1147,9 +1147,8 @@ def print_general_stats(options):
 	return
 
 
-
 parser = OptionParser()
-parser.usage = "%prog -s section -i inputfile -o outputfile"
+parser.usage = "%prog -s section (ParallelStats) -i inputfile -o outputfile"
 parser.add_option("-s", "--section", dest="PrintSection", default="", help="Specifiy the stats section to parse.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
 parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")

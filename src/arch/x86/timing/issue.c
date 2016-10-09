@@ -70,12 +70,31 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/*if(store->uinst->opcode == x86_uinst_cpu_fence)
 			fatal("issue fence\n");*/
 
-		/* Only committed stores issue */
+		//star changed this...
+		//Only ready stores issue
+		if (store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
+		{
+
+			/*if(store->id == 1880)
+			{
+				printf("issued store break %llu cycle %llu\n", store->id, P_TIME);
+
+				getchar();
+			}*/
+
+			assert(store->in_rob);
+
+			if (!X86ThreadIsUopReady(self, store))
+				break;
+		}
+
+		/*old M2S code...
+		//Only committed stores issue
 		if (store->in_rob && store->uinst->opcode != x86_uinst_cpu_fence)
 		{
 			assert(store->uinst->opcode != x86_uinst_cpu_fence);
 			break;
-		}
+		}*/
 
 
 		/* Check that memory system entry is ready */
@@ -100,23 +119,39 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		//set access type
 		if(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
 		{
+			//store should only issue when its ready and should be in the ROB still.
+
+			/*if(store->id == 1880)
+			{
+				printf("issued store %llu cycle %llu\n", store->id, P_TIME);
+
+				getchar();
+			}*/
+
+			store->ready = 1;
+			assert(store->in_rob);
+
 			cgm_issue_lspq_access(self, cgm_access_store, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else if (store->uinst->opcode == x86_uinst_cpu_flush)
 		{
-			store->ready = 1;
+			//should already be ready from dispatch
+			assert(store->ready == 1);
 
 			cgm_issue_lspq_access(self, cgm_access_cpu_flush, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else if (store->uinst->opcode == x86_uinst_gpu_flush)
 		{
-			store->ready = 1;
+			//should already be ready from dispatch
+			assert(store->ready == 1);
 
 			cgm_issue_lspq_access(self, cgm_access_gpu_flush, store->id, store->phy_addr, core->event_queue, store);
 		}
 		else if (store->uinst->opcode == x86_uinst_cpu_fence)
 		{
+			//fence should stall the core until all prior flushes complete....
 			store->ready = 1;
+			assert(store->in_rob);
 
 			cgm_issue_lspq_access(self, cgm_access_cpu_fence, store->id, store->phy_addr, core->event_queue, store);
 		}
@@ -458,12 +493,11 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 			uop->when = asTiming(cpu)->cycle + 10000;
 		}*/
 
-
-
-		/*if (uop->id == 796)
+		/*if (uop->id == 57923139)
 		{
 			assert(uop->interrupt == 1);
-			warning("uop id %llu issued cycle %llu done %llu\n", uop->id, P_TIME, uop->when);
+			warning("syscall %llu issued cycle %llu done %llu\n", uop->id, P_TIME, uop->when);
+			getchar();
 
 			int i = 0;
 			struct x86_uop_t *uop_test;

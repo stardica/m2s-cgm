@@ -178,6 +178,14 @@ extern struct cgm_stats_t *cgm_startup_stats;
 extern struct cgm_stats_t *cgm_parallel_stats;
 extern struct cgm_stats_t *cgm_wrapup_stats;
 
+enum time_type_t{
+	cpu_time = 0,
+	system_time,
+	num_time_types
+};
+
+extern enum time_type_t current_time_type;
+
 struct cpu_gpu_stats_t{
 
 	/*cpu stats*/
@@ -209,6 +217,7 @@ struct cpu_gpu_stats_t{
 	long long *core_iq_stalls;
 
 	//system stalls
+	long long *core_num_fences;
 	long long *core_num_syscalls;
 	long long *core_stall_syscall;
 	long long systemcall_num_fences;
