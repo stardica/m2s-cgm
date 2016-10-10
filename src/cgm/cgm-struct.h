@@ -638,6 +638,7 @@ struct cgm_stats_t{
 	long long systemcall_total_cycles;
 	long long systemcall_total_rob_stalls;
 	long long gpu_total_cycles;
+	long long gpu_idle_cycles;
 
 	//memory system at large
 	int first_mem_access_lat;

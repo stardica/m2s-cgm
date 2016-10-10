@@ -218,8 +218,8 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 		/*if(message_packet->flush_core != 0)
 			fatal("here 2\n");*/
 
-		warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
-						l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
+		//warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
+		//				l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
 	}
 
 

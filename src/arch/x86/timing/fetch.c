@@ -74,6 +74,13 @@ static int X86ThreadCanFetch(X86Thread *self){
 	if (self->fetchq_occ >= x86_fetch_queue_size)
 		return 0;
 	
+	/*star added this; fetch must stall when the system is processing a system call
+	so that it will not process a 2nd syscall while it it still working on the current syscall*/
+	if (cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+		return 0;
+
+
+
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
 

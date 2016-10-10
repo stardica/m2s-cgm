@@ -894,7 +894,9 @@ def print_gpu_stats(options):
 
 	var = ""
 	stats = [
-		"GPUTime",
+		"ExeTime",
+		"GPURunTime",
+		"GPUIdleTime",
 		"SCTime",
 		"SCROBStalls"
 		]

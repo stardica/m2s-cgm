@@ -233,7 +233,10 @@ struct cpu_gpu_stats_t{
 	long long *core_bytes_rx;
 	long long *core_bytes_tx;
 
+
+	long long gpu_idle_cycles;
 	long long gpu_total_cycles;
+
 
 	struct list_t **bandwidth;
 

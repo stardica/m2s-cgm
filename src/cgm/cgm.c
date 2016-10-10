@@ -959,6 +959,8 @@ void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->systemcall_total_rob_stalls = cpu_gpu_stats->systemcall_total_rob_stalls;
 	cgm_stat_container->gpu_total_cycles = cpu_gpu_stats->gpu_total_cycles;
 
+	cgm_stat_container->gpu_idle_cycles = cpu_gpu_stats->gpu_idle_cycles;
+
 
 	return;
 }
@@ -1019,6 +1021,7 @@ void cpu_gpu_reset_stats(void){
 
 	}
 
+	cpu_gpu_stats->gpu_idle_cycles = 0;
 	cpu_gpu_stats->gpu_total_cycles = 0;
 	cpu_gpu_stats->systemcall_total_cycles = 0;
 	cpu_gpu_stats->systemcall_total_rob_stalls = 0;
@@ -1337,13 +1340,15 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	long long stall_time = 0;
 	long long system_time = 0;
 	long long exe_time = 0;
+	long long gpu_exe_time = 0;
 
 	/*core stats*/
 	for(i = 0; i < num_cores; i++)
 	{
 		/*CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);*/
 
-		exe_time = cgm_stat_container->core_total_busy[i] + cgm_stat_container->core_idle_time[i] + cgm_stat_container->core_total_stalls[i];
+		exe_time = cgm_stat_container->core_total_busy[i] + cgm_stat_container->core_idle_time[i] \
+				+ cgm_stat_container->core_total_stalls[i]; // + cgm_stat_container->gpu_total_cycles;
 		CGM_STATS(cgm_stats_file, "core_%d_ExeTime = %llu\n", i, exe_time);
 
 		CGM_STATS(cgm_stats_file, "core_%d_TotalBusy = %llu\n", i, cgm_stat_container->core_total_busy[i]);
@@ -1442,9 +1447,15 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		/*CGM_STATS(cgm_stats_file, "\n");*/
 	}
 
+
+	gpu_exe_time = cgm_stat_container->gpu_idle_cycles + cgm_stat_container->gpu_total_cycles;
+	CGM_STATS(cgm_stats_file, "GPU_ExeTime = %lld\n", gpu_exe_time);
+	CGM_STATS(cgm_stats_file, "GPU_GPURunTime = %lld\n", cgm_stat_container->gpu_total_cycles);
+	CGM_STATS(cgm_stats_file, "GPU_GPUIdleTime = %lld\n", cgm_stat_container->gpu_idle_cycles);
+
+
 	CGM_STATS(cgm_stats_file, "GPU_SCTime = %lld\n", cgm_stat_container->systemcall_total_cycles);
 	CGM_STATS(cgm_stats_file, "GPU_SCROBStalls = %lld\n", cgm_stat_container->systemcall_total_rob_stalls);
-	CGM_STATS(cgm_stats_file, "GPU_GPUTime = %lld\n", cgm_stat_container->gpu_total_cycles);
 
 	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat_container->cpu_fetch_stalls);
 	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat_container->cpu_ls_stalls);
@@ -1955,7 +1966,7 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	//pause stats while these go by...
-
+	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
 	cpu_gpu_stats->core_num_fences[ctx->core_index] = 1;
 
 
@@ -2046,6 +2057,10 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	//pause stats while these go by...
+	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
+	cpu_gpu_stats->core_num_fences[ctx->core_index] = 2;
 
 	return;
 }

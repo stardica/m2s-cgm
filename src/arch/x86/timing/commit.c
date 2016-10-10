@@ -206,11 +206,15 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			self->btb_writes++;
 		}
 
-		//clear flagsf or stats collection...
-		if (uop->uinst->opcode == x86_uinst_cpu_fence)
+
+
+		//clear flags used for stats collection...
+		if (uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
 			cpu_gpu_stats->core_num_fences[self->core->id]--;
 		}
+
+
 
 		/* Trace cache */
 		if (x86_trace_cache_present)
@@ -221,17 +225,14 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (uop->flags == X86_UINST_MEM)
 			cpu_gpu_stats->core_commited_memory_insts[self->core->id]++;
 
+
 		if(uop->uinst->opcode == x86_uinst_syscall)
 			warning("Commit: syscall id %llu cycle %llu\n", uop->id, P_TIME);
 
 		if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		{
 			warning("commit: committing fence id %llu cycle %llu\n", uop->id, P_TIME);
-			/*getchar();*/
-		}
 
-		/*if(uop->id == 29618165)
-			fatal("syscall here cycle %llu\n", P_TIME);*/
+
 
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;

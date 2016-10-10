@@ -189,8 +189,8 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 		if(message_packet->access_type == cgm_access_cpu_load_fence)
 		{
-			warning("cpu_load_fence id %llu cycle %llu\n", message_packet->access_id, P_TIME);
-			getchar();
+			warning("cpu_load_fence complete id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			//getchar();
 		}
 
 

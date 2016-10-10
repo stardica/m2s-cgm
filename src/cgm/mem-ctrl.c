@@ -243,8 +243,8 @@ void memctrl_ctrl(void){
 				/*if(message_packet->flush_core != 0)
 					fatal("here 1\n");*/
 
-				warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
-						l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
+				//warning("MC: flushes tx %llu flushes rx %llu core %d cycle %llu\n",
+					//	l1_d_caches[message_packet->flush_core].flush_tx_counter, l1_d_caches[message_packet->flush_core].flush_rx_counter, message_packet->flush_core, P_TIME);
 
 				message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 				packet_destroy(message_packet);

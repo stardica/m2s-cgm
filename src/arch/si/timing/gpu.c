@@ -1103,6 +1103,7 @@ void SIGpuDumpSummary(Timing *self, FILE *f)
 	TimingDumpSummary(self, f);
 }
 
+long long old_time = 0;
 
 int SIGpuRun(Timing *self)
 {
@@ -1120,11 +1121,20 @@ int SIGpuRun(Timing *self)
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->waiting_work_groups) && !list_count(si_emu->running_work_groups))
 	{
+		cpu_gpu_stats->gpu_idle_cycles++;
+
+		/*printf("gpu idle time %llu ptime %llu\n", cpu_gpu_stats->gpu_idle_cycles, P_TIME);
+		getchar();*/
+
 		return FALSE;
 	}
 
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
+
+	//sync up the GPU with the CPU...
+	//if((P_TIME % (x86_cpu_frequency/si_gpu_frequency)) != 0 )
+	//	return FALSE;
 
 	/*Allocate work-groups to compute units */
 	while (list_count(gpu->available_compute_units) && list_count(si_emu->waiting_work_groups))
@@ -1141,8 +1151,24 @@ int SIGpuRun(Timing *self)
 	/* One more cycle */
 	asTiming(si_gpu)->cycle++;
 
+
+	/*warning("GPU start time %llu\n", P_TIME);
+	getchar();*/
+
 	//stats collect the number of GPU cycles...
+	//cpu_gpu_stats->gpu_total_cycles++;
 	cpu_gpu_stats->gpu_total_cycles += (1 * (x86_cpu_frequency/si_gpu_frequency));
+
+	//if(old_time)
+	//	cpu_gpu_stats->gpu_total_cycles += (P_TIME - old_time);
+	//else
+	//	cpu_gpu_stats->gpu_total_cycles += 2;
+
+	//old_time = P_TIME;
+
+
+	/*printf("GPU running ptime %llu gputime %llu\n", P_TIME, cpu_gpu_stats->gpu_total_cycles);
+	getchar();*/
 
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (si_emu_max_cycles && asTiming(si_gpu)->cycle >= si_emu_max_cycles)

@@ -119,26 +119,26 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		/* Check if we can decode */
 		stall = X86ThreadCanDispatch(self);
 
-
-		if(self->core->id == 0 && cpu_gpu_stats->core_num_fences[self->core->id] == 1)
+		/*if(self->core->id == 0 && test != 1 && cpu_gpu_stats->core_num_fences[self->core->id] > 0)
 		{
-			warning("got ya cycle %llu\n", P_TIME);
+			warning("waiting on fences %llu cycle %llu\n", cpu_gpu_stats->core_num_fences[self->core->id], P_TIME);
 			test = 1;
-		}
-		else if (self->core->id == 0 && test == 1 && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
-		{
-			warning("done... cycle %llu\n", P_TIME);
-			getchar();
-		}
-
+		}*/
 
 		if (stall != x86_dispatch_stall_used)
 		{
+
+			if(cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+			{
+				cpu_gpu_stats->core_total_stalls[core->id]++;
+				cpu_gpu_stats->core_stall_syscall[core->id]++;
+			}
+
 			/*star added this taking some stats here.
 			If the quantum is less than 4 then some progress was made
 			and a stall here does not count as a core stall*/
 
-			if(stall == x86_dispatch_stall_syscall)
+			if(stall == x86_dispatch_stall_syscall && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
 			{
 				//this if for busy time...
 				stall_uop = list_get(self->core->rob, self->rob_head);
@@ -158,9 +158,16 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					//makes sure trap time gets charged correctly.
 					//assert((stall_uop->when - P_TIME) >= 5000);
 				}
+
+				/*if (self->core->id == 0 && test == 1 && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
+				{
+					warning("fence complete... cycle %llu\n", P_TIME);
+					//getchar();
+					test = 0;
+				}*/
 			}
 			//stalls only count if dispatch makes no progress in a given cycle
-			else if(quantum == x86_cpu_dispatch_width)
+			else if(quantum == x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
 			{
 				if(stall == x86_dispatch_stall_ctx || stall == x86_dispatch_stall_uop_queue)
 				{
@@ -177,7 +184,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 						cpu_gpu_stats->core_fetch_stalls[core->id]++;
 					}
 					/*CPU drain time. i.e. something is ending (ctx, processes, etc), so no new instructions are coming to dispatch,
-						but the ROB still has some uops init. This is CPU busy time.*/
+						but the ROB still has some uops init. This coutns as CPU busy time.*/
 					if(self->rob_count >= 1 && stall == x86_dispatch_stall_uop_queue)
 					{
 
@@ -188,7 +195,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				}
 				else if(stall == x86_dispatch_stall_rob)
 				{
-					/*ROB is full (CPU is stalled) collect stats for each of the different cores*/
+					/*ROB is full (CPU is now stalled) collect stats for each of the different cores*/
 					assert(self->rob_count == x86_rob_size); //64
 					stall_uop = list_get(self->core->rob, self->rob_head);
 
@@ -217,9 +224,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				{
 					assert(self->rob_count < x86_rob_size);
 					assert(self->lsq_count == x86_lsq_size);
-					//stall_uop
 
-					//fix me, find out what uop we are trying to insert and and then
+					//stall_uop
 					uop = list_get(self->uop_queue, 0);
 
 					assert((uop->flags & X86_UINST_MEM) && (uop->uinst->opcode >= x86_uinst_load || uop->uinst->opcode <= x86_uinst_cpu_load_fence));
@@ -257,7 +263,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 					assert(self->rob_count < x86_rob_size);
 					assert(self->iq_count == x86_iq_size);
 
-					fatal("iq\n");
+					fatal("stalled on iq, shouldn't happen with large iq size...\n");
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_iq_stalls[core->id]++;
@@ -277,8 +283,10 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			else
 			{
 				//some progress should have been made...
-				assert(quantum < x86_cpu_dispatch_width);
+				if(cpu_gpu_stats->core_num_fences[self->core->id] == 0)
+					assert(quantum < x86_cpu_dispatch_width);
 			}
+
 
 			core->dispatch_stall[stall] += quantum;
 
@@ -292,7 +300,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
-
 		/*if(uop->id == 57923139)
 		{
 			warning("dispatched syscall id %llu cycle %llu\n", uop->id, P_TIME);
@@ -300,7 +307,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			getchar();
 		}*/
 
-		if(uop->uinst->opcode == x86_uinst_cpu_fence)
+		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
 		{
 			warning("Dispatch: core %d id %llu FENCE cycle %llu\n", core->id, uop->id, P_TIME);
 
@@ -310,8 +317,8 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			printf("rob size %d\n", self->rob_count);
 			core_dump_rob(core);
 
-			/*getchar();*/
-		}
+			getchar();
+		}*/
 
 
 		/*set up some parameters for the pipeline*/
@@ -360,7 +367,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 	}
 
 	//stats busy time...
-	if(quantum < x86_cpu_dispatch_width)
+	if(quantum < x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
 		cpu_gpu_stats->core_total_busy[core->id]++;
 
 	return quantum;

@@ -454,8 +454,6 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			//printf("Run = %d\n", run);
 			//fflush(stdout);
 
-
-
 			/* Timing simulation iteration */
 			if (run)
 			{
