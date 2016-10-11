@@ -897,8 +897,8 @@ def print_gpu_stats(options):
 		"ExeTime",
 		"GPURunTime",
 		"GPUIdleTime",
-		"SCTime",
-		"SCROBStalls"
+		#"SCTime",
+		#"SCROBStalls"
 		]
 
 	stat_table = [[0 for x in range(2)] for y in range(len(stats))]
@@ -985,13 +985,12 @@ def print_cpu_stats(options):
 		#"FirstFetchCycle",
 		#"LastCommitCycle",
 		#"RunTime",
-		#"IdleTime",
-		"SystemTime",
-		"StallTime",
-		"BusyTime",
-		"SystemTimePct",
-		"StallTimePct",
-		"BusyTimePct"
+		#"SystemTime",
+		#"StallTime",
+		#"BusyTime",
+		#"SystemTimePct",
+		#"StallTimePct",
+		#"BusyTimePct"
 		#"IdlePct",
 		#"RunPct",
 		#"StallfetchPct",

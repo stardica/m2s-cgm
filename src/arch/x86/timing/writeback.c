@@ -117,8 +117,8 @@ void X86CoreWriteback(X86Core *self)
 				/*stats*/
 				cpu_gpu_stats->core_num_syscalls[self->id]++;
 
-				warning("write back: syscall id %llu type %u code %u cycle %llu\n",
-					uop->id, uop->interrupt_type, uop->interrupt, P_TIME);
+				/*warning("write back: syscall id %llu type %u code %u cycle %llu\n",
+					uop->id, uop->interrupt_type, uop->interrupt, P_TIME);*/
 
 				/*if(uop->interrupt == 4)
 				{

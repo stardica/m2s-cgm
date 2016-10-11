@@ -1336,7 +1336,7 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	//int num_cus = si_gpu_num_compute_units;
 	int i = 0;
 	long long run_time = 0;
-	long long idle_time = 0;
+	//long long idle_time = 0;
 	long long busy_time = 0;
 	long long stall_time = 0;
 	long long system_time = 0;

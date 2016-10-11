@@ -1151,7 +1151,7 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 		X86ContextError(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
 	/*syscall*/
-	warning("EMU new syscall eax %u ebx %u cycle %llu\n", ctx->regs->eax, ctx->regs->ebx, P_TIME);
+	/*warning("EMU new syscall eax %u ebx %u cycle %llu\n", ctx->regs->eax, ctx->regs->ebx, P_TIME);*/
 
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);

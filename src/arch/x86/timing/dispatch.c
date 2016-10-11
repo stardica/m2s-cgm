@@ -160,7 +160,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				cpu_gpu_stats->core_total_stalls[core->id]++;
 				cpu_gpu_stats->core_stall_syscall[core->id]++;
 
-				if(last_id < stall_uop->id)
+				/*if(last_id < stall_uop->id)
 				{
 					warning("Dispatch: syscall id %llu type %u total %llu stall when %llu now %llu delta %llu cycle %llu\n",
 							stall_uop->id, stall_uop->interrupt_type, total_syscalls, stall_uop->when, P_TIME, (stall_uop->when - P_TIME), P_TIME);
@@ -169,7 +169,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 					//makes sure trap time gets charged correctly.
 					//assert((stall_uop->when - P_TIME) >= 5000);
-				}
+				}*/
 
 				/*if (self->core->id == 0 && test == 1 && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
 				{
