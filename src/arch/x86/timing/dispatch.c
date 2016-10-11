@@ -104,6 +104,10 @@ long long total_syscalls = 1;
 long long idle_stall = 0;
 int test = 0;
 
+long long total_dispatches = 0;
+long long total_syscalls_fence = 0;
+
+
 static int X86ThreadDispatch(X86Thread *self, int quantum)
 {
 	X86Core *core = self->core;
@@ -112,6 +116,21 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 	struct x86_uop_t *uop;
 	struct x86_uop_t *stall_uop = NULL;
 	enum x86_dispatch_stall_t stall;
+
+
+	/*if(self->core->id == 0)
+		total_dispatches++;*/
+
+	/*if(cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+	{
+		assert(self->core->id == 0);
+
+		total_syscalls_fence++;
+
+		//cpu_gpu_stats->core_total_stalls[core->id]++;
+		//cpu_gpu_stats->core_stall_syscall[core->id]++;
+	}*/
+
 
 	while (quantum)
 	{
@@ -127,13 +146,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		if (stall != x86_dispatch_stall_used)
 		{
-
-			if(cpu_gpu_stats->core_num_fences[self->core->id] > 0)
-			{
-				cpu_gpu_stats->core_total_stalls[core->id]++;
-				cpu_gpu_stats->core_stall_syscall[core->id]++;
-			}
-
 			/*star added this taking some stats here.
 			If the quantum is less than 4 then some progress was made
 			and a stall here does not count as a core stall*/
@@ -285,6 +297,19 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				//some progress should have been made...
 				if(cpu_gpu_stats->core_num_fences[self->core->id] == 0)
 					assert(quantum < x86_cpu_dispatch_width);
+
+				//if(cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+				//	assert(quantum < x86_cpu_dispatch_width);
+
+				//catch syscall time...
+				if(quantum == x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+				{
+					assert(self->core->id == 0);
+
+					cpu_gpu_stats->core_total_stalls[core->id]++;
+					cpu_gpu_stats->core_stall_syscall[core->id]++;
+				}
+
 			}
 
 
@@ -366,9 +391,19 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n", uop->id_in_core, core->id);
 	}
 
-	//stats busy time...
+	//for work performed during normal cpu time stats busy time...
 	if(quantum < x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] == 0)
+	{
 		cpu_gpu_stats->core_total_busy[core->id]++;
+	}
+
+	//for work performed during a syscall
+	if(quantum < x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+	{
+		cpu_gpu_stats->core_total_stalls[core->id]++;
+		cpu_gpu_stats->core_stall_syscall[core->id]++;
+	}
+
 
 	return quantum;
 }

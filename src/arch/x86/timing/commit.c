@@ -206,15 +206,11 @@ void X86ThreadCommit(X86Thread *self, int quant)
 			self->btb_writes++;
 		}
 
-
-
 		//clear flags used for stats collection...
 		if (uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
 			cpu_gpu_stats->core_num_fences[self->core->id]--;
 		}
-
-
 
 		/* Trace cache */
 		if (x86_trace_cache_present)

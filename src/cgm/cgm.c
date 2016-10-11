@@ -1327,6 +1327,7 @@ void cgm_dump_parallel_section_stats(struct cgm_stats_t *cgm_stat_container){
 	return;
 }
 
+#include <arch/x86/timing/dispatch.h>
 
 void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 
@@ -1346,6 +1347,9 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	for(i = 0; i < num_cores; i++)
 	{
 		/*CGM_STATS(cgm_stats_file, "[Core_%d]\n", i);*/
+
+
+		//printf("total cpu dispatches %llu\n", total_dispatches);
 
 		exe_time = cgm_stat_container->core_total_busy[i] + cgm_stat_container->core_idle_time[i] \
 				+ cgm_stat_container->core_total_stalls[i]; // + cgm_stat_container->gpu_total_cycles;
@@ -1411,23 +1415,23 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 			//CGM_STATS(cgm_stats_file, "core_%d_FirstFetchCycle = %llu\n", i, (long long) 0);
 			//CGM_STATS(cgm_stats_file, "core_%d_LastCommitCycle = %llu\n", i, (long long) 0);
 
-			run_time = cgm_stat_container->total_parallel_section_cycles;
+			//run_time = cgm_stat_container->total_parallel_section_cycles;
 			//CGM_STATS(cgm_stats_file, "core_%d_RunTime = %llu\n", i, run_time);
 
 			//idle_time = 0;
 			//CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, idle_time);
 
-			system_time = cgm_stat_container->core_stall_syscall[i];
-			CGM_STATS(cgm_stats_file, "core_%d_SystemTime = %llu\n", i, system_time);
+			//system_time = cgm_stat_container->core_stall_syscall[i];
+			//CGM_STATS(cgm_stats_file, "core_%d_SystemTime = %llu\n", i, system_time);
 
-			stall_time = cgm_stat_container->core_total_stalls[i] - cgm_stat_container->core_stall_syscall[i];
-			CGM_STATS(cgm_stats_file, "core_%d_StallTime = %llu\n", i, stall_time);
+			//stall_time = cgm_stat_container->core_total_stalls[i] - cgm_stat_container->core_stall_syscall[i];
+			//CGM_STATS(cgm_stats_file, "core_%d_StallTime = %llu\n", i, stall_time);
 
-			busy_time = run_time - cgm_stat_container->core_total_stalls[i];
-			CGM_STATS(cgm_stats_file, "core_%d_BusyTime = %llu\n", i, busy_time);
+			//busy_time = run_time - cgm_stat_container->core_total_stalls[i];
+			//CGM_STATS(cgm_stats_file, "core_%d_BusyTime = %llu\n", i, busy_time);
 
-			CGM_STATS(cgm_stats_file, "core_%d_IdlePct = %0.6f\n", i, (double)idle_time/(double)run_time);
-			CGM_STATS(cgm_stats_file, "core_%d_RunPct = %0.6f\n", i, (double)run_time/(double)run_time);
+			//CGM_STATS(cgm_stats_file, "core_%d_IdlePct = %0.6f\n", i, (double)idle_time/(double)run_time);
+			//CGM_STATS(cgm_stats_file, "core_%d_RunPct = %0.6f\n", i, (double)run_time/(double)run_time);
 		}
 		else
 		{
@@ -1454,8 +1458,8 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	CGM_STATS(cgm_stats_file, "GPU_GPUIdleTime = %lld\n", cgm_stat_container->gpu_idle_cycles);
 
 
-	CGM_STATS(cgm_stats_file, "GPU_SCTime = %lld\n", cgm_stat_container->systemcall_total_cycles);
-	CGM_STATS(cgm_stats_file, "GPU_SCROBStalls = %lld\n", cgm_stat_container->systemcall_total_rob_stalls);
+	//CGM_STATS(cgm_stats_file, "GPU_SCTime = %lld\n", cgm_stat_container->systemcall_total_cycles);
+	//CGM_STATS(cgm_stats_file, "GPU_SCROBStalls = %lld\n", cgm_stat_container->systemcall_total_rob_stalls);
 
 	//CGM_STATS(cgm_stats_file, "FetchStalls = %llu\n", cgm_stat_container->cpu_fetch_stalls);
 	//CGM_STATS(cgm_stats_file, "LoadStoreStalls = %llu\n", cgm_stat_container->cpu_ls_stalls);
@@ -1923,6 +1927,10 @@ void uop_factory_c_write(X86Context *ctx, unsigned int host_addr, unsigned int g
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
+	//pause stats while these go by...
+	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
+	cpu_gpu_stats->core_num_fences[ctx->core_index] = 1;
+
 	return;
 }
 
@@ -2011,6 +2019,10 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	//pause stats while these go by...
+	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
+	cpu_gpu_stats->core_num_fences[ctx->core_index] = 1;
 
 	return;
 }

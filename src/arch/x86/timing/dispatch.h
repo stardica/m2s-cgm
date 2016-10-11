@@ -29,6 +29,10 @@
 
 extern long long idle_stall;
 
+extern long long total_dispatches;
+
+extern long long total_syscalls_fence;
+
 void X86CpuDispatch(X86Cpu *self);
 
 #endif
