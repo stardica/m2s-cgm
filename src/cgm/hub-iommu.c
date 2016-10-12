@@ -814,7 +814,7 @@ void hub_iommu_io_down_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_load)
+				|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...

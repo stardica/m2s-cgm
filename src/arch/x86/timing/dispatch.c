@@ -325,6 +325,9 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
+
+		assert(core->id == 0);
+
 		/*if(uop->id == 57923139)
 		{
 			warning("dispatched syscall id %llu cycle %llu\n", uop->id, P_TIME);
