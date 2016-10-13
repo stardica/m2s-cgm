@@ -169,6 +169,8 @@ void X86EmuProcessEvents(X86Emu *self)
 	 */
 	for (ctx = self->suspended_list_head; ctx; ctx = next)
 	{
+		/*if(ctx->pid == 102)
+			fatal("here in emu\n");*/
 		//printf("x86EmuProcessEvents Loop 1\n");
 		//fflush(stdout);
 

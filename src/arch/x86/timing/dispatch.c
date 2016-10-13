@@ -326,7 +326,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		uop->in_uop_queue = 0;
 		
 
-		assert(core->id == 0);
+		//assert(core->id == 0);
 
 		/*if(uop->id == 57923139)
 		{

@@ -1283,7 +1283,10 @@ void cgm_dump_general_stats(void){
 	CGM_STATS(cgm_stats_file, "CPU_FreqGHz = %u\n", (cpu_freq_hz)/(GHZ));
 	CGM_STATS(cgm_stats_file, "GPU_NumCUs = %u\n", num_cus);
 	CGM_STATS(cgm_stats_file, "GPU_FreqGHz = %u\n", (gpu_freq_hz)/(GHZ));
+	CGM_STATS(cgm_stats_file, "GPU_CycleFactor = %u\n", (1 * (x86_cpu_frequency/si_gpu_frequency)));
+	CGM_STATS(cgm_stats_file, "Mem_FreqGHz = %u\n", ((cpu_freq_hz)/(SYSTEM_LATENCY_FACTOR))/(GHZ));
 	CGM_STATS(cgm_stats_file, "Mem_LatFactor = %u\n", SYSTEM_LATENCY_FACTOR);
+	CGM_STATS(cgm_stats_file, "Config_Single_Core = %d\n", SINGLE_CORE);
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -1335,11 +1338,11 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 	//int num_threads = x86_cpu_num_threads;
 	//int num_cus = si_gpu_num_compute_units;
 	int i = 0;
-	long long run_time = 0;
+	//long long run_time = 0;
 	//long long idle_time = 0;
-	long long busy_time = 0;
-	long long stall_time = 0;
-	long long system_time = 0;
+	//long long busy_time = 0;
+	//long long stall_time = 0;
+	//long long system_time = 0;
 	long long exe_time = 0;
 	long long gpu_exe_time = 0;
 
@@ -1379,6 +1382,11 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 
 		CGM_STATS(cgm_stats_file, "core_%d_NumSyscalls = %llu\n", i, cgm_stat_container->core_num_syscalls[i]);
 		CGM_STATS(cgm_stats_file, "core_%d_StallSyscall = %llu\n", i, cgm_stat_container->core_stall_syscall[i]);
+
+		CGM_STATS(cgm_stats_file, "core_%d_SystemTimePct = %0.6f\n", i, (double)exe_time/(double)cgm_stat_container->core_stall_syscall[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_StallTimePct = %0.6f\n", i, (double)exe_time/(double)cgm_stat_container->core_total_stalls[i]);
+		CGM_STATS(cgm_stats_file, "core_%d_BusyTimePct = %0.6f\n", i, (double)exe_time/(double)cgm_stat_container->core_total_busy[i]);
+
 
 		if(cgm_stat_container->stats_type == systemStats)
 		{
@@ -1437,11 +1445,6 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		{
 			fatal("cgm_dump_cpu_gpu_stats(): not set up for these stats yet\n");
 		}
-
-		CGM_STATS(cgm_stats_file, "core_%d_SystemTimePct = %0.6f\n", i, (double)system_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "core_%d_StallTimePct = %0.6f\n", i, (double)stall_time/(double)run_time);
-		CGM_STATS(cgm_stats_file, "core_%d_BusyTimePct = %0.6f\n", i, (double)busy_time/(double)run_time);
-
 
 		//CGM_STATS(cgm_stats_file, "core_%d_StallfetchPct = %0.2f\n", i, (double)cgm_stat_container->core_fetch_stalls[i]/(double)stall_time);
 		//CGM_STATS(cgm_stats_file, "core_%d_StallLoadPct = %0.2f\n", i, (double)cgm_stat_container->core_rob_stall_load[i]/(double)stall_time);

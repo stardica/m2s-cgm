@@ -242,6 +242,8 @@ void X86ContextSyscall(X86Context *self)
 
 	if(regs->eax == 329)
 		warning("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
+	//else
+	//	warning("CTX syscall code %d abi code %d\n", regs->eax, regs->ebx);
 
 	/* Check for special system call codes outside of the standard range
 	 * defined in 'syscall.dat'. */
@@ -5126,8 +5128,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 	pid = regs->ebx;
 	size = regs->ecx;
 	mask_ptr = regs->edx;
-	x86_sys_debug("  pid=%d, size=%d, mask_ptr=0x%x\n",
-			pid, size, mask_ptr);
+	x86_sys_debug("  pid=%d, size=%d, mask_ptr=0x%x\n", pid, size, mask_ptr);
 
 	/* Check valid size (assume reasonable maximum of 1KB) */
 	if (!IN_RANGE(size, 0, 1 << 10))
@@ -5177,7 +5178,21 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 	node = 0;
 	for (i = 0; i < size && node < num_nodes; i++)
 		for (j = 0; j < 8 && node < num_nodes; j++)
-			bit_map_set(target_ctx->affinity, node++, 1, mask[i] & (1 << j) ? 1 : 0);
+		{
+			if(SINGLE_CORE == 1)
+			{
+				//schedule all threads on a single core despite number of available cores...
+				if(i == 0)
+					bit_map_set(target_ctx->affinity, i, 1, 1);
+				else
+					bit_map_set(target_ctx->affinity, i, 1, 0);
+			}
+			else
+			{
+				//old m2s code...
+				bit_map_set(target_ctx->affinity, node++, 1, mask[i] & (1 << j) ? 1 : 0);
+			}
+		}
 
 	/* Changing the context affinity might force it to be evicted and unmapped
 	 * from the current node where it is running (timing simulation only). We

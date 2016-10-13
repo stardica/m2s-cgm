@@ -56,7 +56,6 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 	int i;
 	
 
-
 	/* Initialize */
 	self->emu = emu;
 	self->pid = emu->current_pid++;
@@ -267,6 +266,15 @@ void X86ContextExecute(X86Context *self){
 	unsigned char *buffer_ptr;
 
 	//int i = 0;
+
+	if(SINGLE_CORE == 1 && self->core_index > 0)
+		fatal("X86ContextExecute(): SINGLE_CORE set 1, but context is running on more than one core_id %d pid %d cycle %llu\n", self->core_index, self->pid, P_TIME);
+
+	/*if(self->pid == 102)
+	{
+		warning("X86ContextExecute(): running ctx pid %d core %d cycle %llu\n", self->pid, self->core_index, P_TIME);
+		getchar();
+	}*/
 
 	int spec_mode;
 
