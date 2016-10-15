@@ -1637,25 +1637,42 @@ int main(int argc, char **argv)
 	/* Network and memory system */
 	cgm_init(argc, argv);
 
+	fflush(stdout);
+	fflush(stderr);
+
 	/*struct mem_t *new_mem = */
 	//x86_emu->context_list_head->mem->num_links = (x86_cpu_num_cores + 1);
 
 	//passing point to the memory image so I can link it with the memory controller.
 	cgm_configure();
 
+	fflush(stdout);
+	fflush(stderr);
 
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
-	//Commented these out for testing purposes.
 	if (x86_load_checkpoint_file_name[0])
+	{
 		X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
+
+		printf("here waiting\n");
+		getchar();
+	}
+
+	fflush(stdout);
+	fflush(stderr);
 
 	/* Load programs */
 	//star >> loads the ELF parsing work.
 	m2s_load_programs(argc, argv);
 
+	fflush(stdout);
+	fflush(stderr);
+
 	//CGM is the replacement memory system.
 #if CGM
+
+
 
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/

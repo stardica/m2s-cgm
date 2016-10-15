@@ -142,6 +142,7 @@ static int cfg_unique_num;
 
 void X86EmuLoadCheckpoint(X86Emu *self, char *file_name)
 {
+
 	ckp = bin_config_create(file_name);
 	bin_config_load(ckp);
 	check();
@@ -221,9 +222,7 @@ static void load_process(X86Emu *emu)
 	ctx = new(X86Context, emu);
 	ctx->glibc_segment_base = load_int32("glibc_base");
 	ctx->glibc_segment_limit = load_int32("glibc_limit");
-
 	ld = ctx->loader;
-
 	ld->interp = load_str_or_dflt("interpreter", 0);
 	ld->exe = load_str_or_dflt("executable", 0);
 	ld->cwd = load_str("cwd");
@@ -241,6 +240,8 @@ static void load_process(X86Emu *emu)
 	load_memory(ctx->mem);
 	load_fds(ctx->file_desc_table);
 	load_threads(ctx);
+
+
 }
 
 static void save_process(X86Context *ctx)
@@ -276,8 +277,6 @@ static void save_process_misc(X86Context *ctx)
 	save_str("cwd", ld->cwd);
 	save_str("stdin_file" , ld->stdin_file);
 	save_str("stdout_file", ld->stdout_file);
-
-	/*printf("here\n");*/
 
 	save_str_list("args", ld->args);
 	save_str_list("env", ld->env);
@@ -845,8 +844,7 @@ static void load_threads(X86Context *process_ctx)
 		}
 		else
 		{
-			thread_ctx = new_ctor(X86Context, CreateAndClone,
-					process_ctx);
+			thread_ctx = new_ctor(X86Context, CreateAndClone, process_ctx);
 		}
 
 		load_regs(thread_ctx->regs);

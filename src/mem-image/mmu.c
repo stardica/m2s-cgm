@@ -692,7 +692,13 @@ unsigned int mmu_forward_link_guest_address(int guest_pid, unsigned int guest_vt
 		}
 	}
 
-	/*printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);*/
+	if(hit != 1)
+		fatal("mmu_forward_link_guest_address(): failed guest id %d guest_vtl_addr 0x%08x cycle %llu\n", guest_pid, guest_vtl_addr, P_TIME);
+
+
+	//printf("page %d guest %d tag 0x%08x\n", page->id, guest->guest_pid, guest->guest_vtl_tag);
+
+
 	assert(hit == 1);
 	return host_vtl_addr;
 }

@@ -481,7 +481,7 @@ int bin_config_load(struct bin_config_t *bin_config)
 		return 0;
 	}
 
-	/* Clear configuration file */
+	/*Clear configuration file*/
 	bin_config_clear(bin_config);
 	if (bin_config->elem_list)
 	{

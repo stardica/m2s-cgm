@@ -340,7 +340,7 @@ static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 
 	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		uop_factory_nc_read(ctx, host_ptr, device_ptr, size);
+		//uop_factory_nc_read(ctx, host_ptr, device_ptr, size);
 
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi && hub_iommu_connection_type == hub_to_mc)
 		uop_factory_c_read(ctx, host_ptr, device_ptr, size);
@@ -422,7 +422,7 @@ static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 
 	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-		uop_factory_nc_write(ctx, host_ptr, device_ptr, size);
+		//uop_factory_nc_write(ctx, host_ptr, device_ptr, size);
 
 	//m2s-cgm simulate the copy for timing purposes.
 	if(cgm_gpu_cache_protocol == cgm_protocol_mesi && hub_iommu_connection_type == hub_to_mc)

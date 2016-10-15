@@ -101,6 +101,8 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 void X86ContextCreate(X86Context *self, X86Emu *emu)
 {
 
+	/*warning("X86ContextCreate()\n");*/
+
 	/* Baseline initialization */
 	X86ContextDoCreate(self, emu);
 
@@ -108,7 +110,8 @@ void X86ContextCreate(X86Context *self, X86Emu *emu)
 	self->loader = x86_loader_create();
 
 	/* Memory */
-	self->address_space_index = mmu_address_space_new();
+	//self->address_space_index = mmu_address_space_new();
+	self->address_space_index = 0;
 	self->mem = mem_create();
 	self->spec_mem = spec_mem_create(self->mem);
 
@@ -135,7 +138,10 @@ void X86ContextCreateAndClone(X86Context *self, X86Context *cloned_ctx)
 	 * The memory structure must be only freed by the parent
 	 * when all its children have been killed.
 	 * The set of signal handlers is the same, too. */
+
+	//self->address_space_index = 0;
 	self->address_space_index = cloned_ctx->address_space_index;
+
 	self->mem = mem_link(cloned_ctx->mem);
 	self->spec_mem = spec_mem_create(self->mem);
 

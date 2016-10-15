@@ -5671,7 +5671,7 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
  * System call 'cgm_stats_start_parallel_section' (code 325)
  */
 
-#include <arch/x86/timing/dispatch.h>
+//#include <arch/x86/timing/dispatch.h>
 
 
 static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
@@ -5686,13 +5686,6 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	assert(cgm_startup_stats->start_startup_section_cycle == 0);
 	cgm_startup_stats->total_startup_section_cycles = cgm_startup_stats->end_startup_section_cycle - cgm_startup_stats->start_startup_section_cycle;
 	cgm_store_stats(cgm_startup_stats);
-
-	if(x86_save_checkpoint_file_name[0])
-	{
-		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
-		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
-		printf("---Checkpoint Saved cycle %llu---\n", P_TIME);
-	}
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
@@ -5731,7 +5724,30 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	//warning("stopping here total dispatches %llu syscall_fences %llu core_stalls %llu\n", total_dispatches, total_syscalls_fence, cgm_parallel_stats->core_stall_syscall[0]);
 	//getchar();
 
+	return 0;
+}
 
+
+/*
+ * System call 'check_point' (code 327)
+ */
+
+static int x86_sys_check_point_impl(X86Context *ctx)
+{
+	/*this syscall represents the beginning of the parallel section of the benchmark
+	we need to save away the current stats which contains the start up section stats.
+	Then reset all stats and commence taking stats for the parallel section*/
+
+	if(x86_save_checkpoint_file_name[0])
+	{
+		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+		printf("---Checkpoint Saved, exiting... cycle %llu---\n", P_TIME);
+	}
+	else
+	{
+		printf("---Checkpoint skipped cycle %llu---\n", P_TIME);
+	}
 
 	return 0;
 }

@@ -501,6 +501,10 @@ static void X86ThreadFetch(X86Thread *self)
 		/*printf("fetch neip vtrl_addr 0x%08x, phy_addr 0x%08x page_id %d\n",
 				self->fetch_neip, mmu_get_phyaddr(0, self->fetch_neip), mmu_get_page_id(0, self->fetch_neip, mmu_access_fetch));*/
 
+		if(self->ctx->address_space_index != 0)
+			fatal("X86ThreadFetch(): bad address space index as %d\n", self->ctx->address_space_index);
+
+
 		assert(self->ctx->address_space_index == 0);
 
 		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);

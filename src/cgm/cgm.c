@@ -1286,7 +1286,10 @@ void cgm_dump_general_stats(void){
 	CGM_STATS(cgm_stats_file, "GPU_CycleFactor = %u\n", (1 * (x86_cpu_frequency/si_gpu_frequency)));
 	CGM_STATS(cgm_stats_file, "Mem_FreqGHz = %u\n", ((cpu_freq_hz)/(SYSTEM_LATENCY_FACTOR))/(GHZ));
 	CGM_STATS(cgm_stats_file, "Mem_LatFactor = %u\n", SYSTEM_LATENCY_FACTOR);
-	CGM_STATS(cgm_stats_file, "Config_Single_Core = %d\n", SINGLE_CORE);
+	CGM_STATS(cgm_stats_file, "Config_Single_Core = %s\n", (SINGLE_CORE == 0) ? "No" : "Yes");
+	CGM_STATS(cgm_stats_file, "Config_CPUProtocoltype = %s\n", (cgm_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NonCoherent");
+	CGM_STATS(cgm_stats_file, "Config_GPUProtocoltype = %s\n", (cgm_gpu_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NonCoherent");
+	CGM_STATS(cgm_stats_file, "Config_GPUConnectType = %s\n", (hub_iommu_connection_type == hub_to_mc) ? "MC" : "L3");
 	CGM_STATS(cgm_stats_file, "\n");
 
 	return;
@@ -1979,7 +1982,6 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 	//pause stats while these go by...
 	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
 	cpu_gpu_stats->core_num_fences[ctx->core_index] = 1;
-
 
 	return;
 }

@@ -192,7 +192,11 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 			warning("cpu_load_fence complete id %llu cycle %llu\n", message_packet->access_id, P_TIME);
 			//getchar();
 		}
-
+		if(message_packet->access_type == cgm_access_cpu_fence)
+		{
+			warning("cpu_fence complete id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			//getchar();
+		}
 
 		cache_l1_d_return(cache, message_packet);
 
@@ -206,13 +210,13 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 		//assert(cpu_gpu_stats->systemcall_start_cycle < P_TIME);
 		//cpu_gpu_stats->systemcall_total_cycles += (P_TIME - cpu_gpu_stats->systemcall_start_cycle);
 
-		assert(cpu_gpu_stats->core_total_stalls[1] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[2] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[3] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[4] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[5] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[6] == 0);
-		assert(cpu_gpu_stats->core_total_stalls[7] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[1] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[2] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[3] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[4] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[5] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[6] == 0);
+		//assert(cpu_gpu_stats->core_total_stalls[7] == 0);
 
 		//cpu_gpu_stats->systemcall_total_rob_stalls += (cpu_gpu_stats->core_rob_stalls[0] - cpu_gpu_stats->systemcall_start_rob_stalls);
 
@@ -5784,7 +5788,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(owning_core == 8) //going to hub_iommu
 				{
 					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-						fatal("%s starting get_fwd to GPU blk addr0x%08x\n",
+						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x\n",
 								cache->name, message_packet->address & cache->block_address_mask);
 
 
@@ -6273,11 +6277,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 				assert(xowning_core >= 0 && xowning_core <= num_cores);
 
-				if(xowning_core == num_cores) //forwarding to GPU
-					fatal("TO GPU starting get_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
+				/*if(xowning_core == num_cores) //forwarding to GPU
+					fatal("TO GPU starting getx_fwd blk addr 0x%08x hit %d sharers %d owning_core %d pending %d cache id %d xowning_core id %d src_$ name %s mpid %d mpn %s\n"
 							,message_packet->address & cache->block_address_mask, *cache_block_hit_ptr,
 							sharers, owning_core, pending_bit, message_packet->l2_cache_id, xowning_core, l2_cache_ptr->name,
-							message_packet->src_id, message_packet->src_name);
+							message_packet->src_id, message_packet->src_name);*/
 
 
 				/*if(message_packet->src_id == 24)
@@ -6293,7 +6297,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				if(xowning_core == 8) //hub_iommu
 				{
 					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-						fatal("%s starting getx_fwd to GPU blk addr0x%08x\n",
+						warning("%s processing getx_fwd to GPU in non coherent mode blk addr0x%08x\n",
 								cache->name, message_packet->address & cache->block_address_mask);
 
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);

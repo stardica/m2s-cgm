@@ -304,7 +304,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 				//catch syscall time...
 				if(quantum == x86_cpu_dispatch_width && cpu_gpu_stats->core_num_fences[self->core->id] > 0)
 				{
-					assert(self->core->id == 0);
+					//assert(self->core->id == 0);
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_stall_syscall[core->id]++;
