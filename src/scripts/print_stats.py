@@ -1114,7 +1114,12 @@ def print_general_stats(options):
 	["CPUFreqGhz", general_stats['CPU_FreqGHz']],
 	["GPUNumCUs", general_stats['GPU_NumCUs']],
 	["GPUFreqGhz", general_stats['GPU_FreqGHz']],
-	["MemLatFactor", general_stats['Mem_LatFactor']]
+	["GPUCycFactor", general_stats['GPU_CycleFactor']],
+	["MemLatFactor", general_stats['Mem_LatFactor']],
+	["ConfigSingleCore", general_stats['Config_Single_Core']],
+	["ConfigCPUProtocol", general_stats['Config_CPUProtocoltype']],
+	["ConfigGPUProtocol", general_stats['Config_GPUProtocoltype']],
+	["ConfigGPUConnectType", general_stats['Config_GPUConnectType']]
 	]
 
 	#for other stats...

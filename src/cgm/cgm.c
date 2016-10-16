@@ -1287,8 +1287,8 @@ void cgm_dump_general_stats(void){
 	CGM_STATS(cgm_stats_file, "Mem_FreqGHz = %u\n", ((cpu_freq_hz)/(SYSTEM_LATENCY_FACTOR))/(GHZ));
 	CGM_STATS(cgm_stats_file, "Mem_LatFactor = %u\n", SYSTEM_LATENCY_FACTOR);
 	CGM_STATS(cgm_stats_file, "Config_Single_Core = %s\n", (SINGLE_CORE == 0) ? "No" : "Yes");
-	CGM_STATS(cgm_stats_file, "Config_CPUProtocoltype = %s\n", (cgm_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NonCoherent");
-	CGM_STATS(cgm_stats_file, "Config_GPUProtocoltype = %s\n", (cgm_gpu_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NonCoherent");
+	CGM_STATS(cgm_stats_file, "Config_CPUProtocoltype = %s\n", (cgm_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NC");
+	CGM_STATS(cgm_stats_file, "Config_GPUProtocoltype = %s\n", (cgm_gpu_cache_protocol == cgm_protocol_mesi) ? "MESI" : "NC");
 	CGM_STATS(cgm_stats_file, "Config_GPUConnectType = %s\n", (hub_iommu_connection_type == hub_to_mc) ? "MC" : "L3");
 	CGM_STATS(cgm_stats_file, "\n");
 
@@ -2040,6 +2040,8 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	unsigned int blk = 0x40;
 
 	//flush the GPU
+
+	warning("upp factory nc read cycle %llu\n", P_TIME);
 
 	//align the address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
