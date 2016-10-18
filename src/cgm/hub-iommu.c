@@ -601,22 +601,31 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 	if(last_queue_num >= 0 && last_queue_num <= (gpu_group_cache_num -1))
 	{
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu C ACCESS vtl address in 0x%08x access type %s id %llu\n",
-					message_packet->address, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+			printf("hub-iommu C ACCESS vtl address in 0x%08x blk addr 0x%08x access type %s id %llu\n",
+					message_packet->address, get_block_address(message_packet->address, ~0x3F),
+					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
+
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu C ACCESS phy address out 0x%08x blk addr is 0x%08x\n",
-					message_packet->address, get_block_address(message_packet->address, ~0x3F));
+			printf("hub-iommu C ACCESS phy address out 0x%08x blk addr 0x%08x access type %s id %llu\n",
+					message_packet->address, get_block_address(message_packet->address, ~0x3F),
+					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
 	}
 	else if(last_queue_num == Rx_queue_bottom)
 	{
 		/*message coming from the system agent or L3.*/
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu C return phy address in 0x%08x blk addr 0x%08x access type %s id %llu\n",
-					message_packet->address, get_block_address(message_packet->address, ~0x3F), str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+			printf("hub-iommu C RETURN phy address in 0x%08x blk addr 0x%08x access type %s id %llu\n",
+					message_packet->address, get_block_address(message_packet->address, ~0x3F),
+					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
 		message_packet->address = mmu_reverse_translate_guest(0, si_emu->pid, message_packet->address);
+
 		if(GPU_HUB_IOMMU == 1)
-			printf("hub-iommu C vtl address out 0x%08x\n", message_packet->address);
+			printf("hub-iommu C RETURN vtl address out 0x%08x blk addr 0x%08x access type %s id %llu\n",
+					message_packet->address, get_block_address(message_packet->address, ~0x3F),
+					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
 	}
 	else
 	{

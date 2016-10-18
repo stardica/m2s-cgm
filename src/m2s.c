@@ -1418,7 +1418,6 @@ void m2s_loop(void){
 		//star >> added this to get some status output while running long benchmarks.
 		PrintCycle();
 
-
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1)) && esim_real_time() > m2s_max_time * 1000000)
 			esim_finish = esim_finish_max_time;
 
@@ -1462,7 +1461,7 @@ void sim_end(void){
 	cgm_stat->execution_success = 1;
 
 	/* Dump statistics summary */
-	cgm_dump_summary();
+	//cgm_dump_summary();
 	//m2s_dump_summary(stdout);
 
 	fflush(stdout);

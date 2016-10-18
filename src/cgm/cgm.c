@@ -1685,6 +1685,7 @@ void cgm_dump_summary(void){
 void cgm_mem_run(void){
 	advance(sim_start);
 	//simulation execution
+
 	await(sim_finish, 1);
 	//dump stats on exit.
 	return;
@@ -2115,8 +2116,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		warning("its load access id %llu start %llu\n", new_packet->access_id, new_packet->start_cycle);*/
 
 
-	if(gpu_running == 1)
-		printf("cpu memory req\n");
+	/*if(gpu_running == 1)
+		printf("cpu memory req\n");*/
 
 
 	/*if(access_kind == cgm_access_cpu_load_fence)
