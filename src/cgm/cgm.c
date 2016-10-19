@@ -74,6 +74,8 @@ char *cgm_debug_output_path = "";
 char *cgm_stats_output_path = "";
 char *cgm_stats_file_name = "";
 
+long long resume_cycle = 0;
+
 //globals for tasking
 eventcount volatile *sim_start;
 eventcount volatile *sim_finish;
@@ -1270,6 +1272,7 @@ void cgm_dump_general_stats(void){
 	/* General statistics */
 	CGM_STATS(cgm_stats_file, "[General]\n");
 	CGM_STATS(cgm_stats_file, "ExecutionSuccessful = %s\n", (cgm_stat->execution_success == true) ? ("Yes") : ("No"));
+	CGM_STATS(cgm_stats_file, "CheckPoint = %s\n", (x86_load_checkpoint_file_name[0]) ? ("Yes") : ("No"));
 	CGM_STATS(cgm_stats_file, "Benchmark = %s\n", cgm_stat->benchmark_name);
 	CGM_STATS(cgm_stats_file, "Args = %s\n", cgm_stat->args);
 	CGM_STATS(cgm_stats_file, "Day&Time = %s\n", cgm_stat->date_time_pretty);

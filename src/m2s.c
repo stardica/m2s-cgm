@@ -89,7 +89,7 @@ static char *x86_call_debug_file_name = "";
 static char *x86_ctx_debug_file_name = "";
 static char *x86_disasm_file_name = "";
 static char *x86_isa_debug_file_name = "";
-static char *x86_load_checkpoint_file_name = "";
+char *x86_load_checkpoint_file_name = "";
 static char *x86_loader_debug_file_name = "";
 char *x86_save_checkpoint_file_name = "";
 static char *x86_sys_debug_file_name = "";
@@ -1461,7 +1461,7 @@ void sim_end(void){
 	cgm_stat->execution_success = 1;
 
 	/* Dump statistics summary */
-	//cgm_dump_summary();
+	cgm_dump_summary();
 	//m2s_dump_summary(stdout);
 
 	fflush(stdout);
@@ -1622,6 +1622,8 @@ int main(int argc, char **argv)
 	 * better once the process finish. But now we need to release 4.2...
 	 */
 
+
+
 	X86CpuInit();
 	arch_set_emu(arch_x86, asEmu(x86_emu));
 
@@ -1648,30 +1650,26 @@ int main(int argc, char **argv)
 	fflush(stdout);
 	fflush(stderr);
 
+
+
 	/* Load architectural state checkpoint */
 	//star >> only runs if you load a checkpoint file.
 	if (x86_load_checkpoint_file_name[0])
 	{
 		X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
-
-		printf("here waiting\n");
-		getchar();
+	}
+	else
+	{
+		//star >> loads the ELF parsing work.
+		m2s_load_programs(argc, argv);
 	}
 
-	fflush(stdout);
-	fflush(stderr);
-
 	/* Load programs */
-	//star >> loads the ELF parsing work.
-	m2s_load_programs(argc, argv);
-
 	fflush(stdout);
 	fflush(stderr);
 
 	//CGM is the replacement memory system.
 #if CGM
-
-
 
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/

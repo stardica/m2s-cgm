@@ -1025,10 +1025,23 @@ int X86CpuRun(Timing *self){
 
 	//star added for thread control.
 
-	P_PAUSE(1);
-	self->cycle = P_TIME;
+	/*if(resume_cycle > 0 && x86_load_checkpoint_file_name[0])
+	{
+		P_PAUSE((resume_cycle/2));
+		self->cycle = P_TIME;
 
 
+		set resume_cycle 0 so we don't enter here again...
+		resume_cycle = 0;
+	}
+	else
+	{*/
+		P_PAUSE(1);
+		self->cycle = P_TIME;
+	/*}
+
+	warning("curr cycle %llu resume %llu\n", P_TIME, resume_cycle);
+	getchar();*/
 
 	//star added a watch dog thread and can watch things of interest cycle by cycle
 	if(CPUTICK == 1)

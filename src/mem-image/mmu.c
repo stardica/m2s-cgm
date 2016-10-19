@@ -698,9 +698,6 @@ unsigned int mmu_forward_link_guest_address(int guest_pid, unsigned int guest_vt
 		getchar();
 	}
 
-
-
-
 	assert(hit == 1);
 	return host_vtl_addr;
 }
@@ -762,7 +759,7 @@ unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_add
 unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid, unsigned int host_phy_addr){
 
 	struct mmu_page_t *page;
-	unsigned int host_vtl_addr;
+	//unsigned int host_vtl_addr;
 	unsigned int guest_vtl_addr;
 	unsigned int offset;
 
@@ -773,11 +770,15 @@ unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid,
 
 	/*build the host_vtl_addr*/
 	offset = (host_phy_addr & mmu_page_mask);
-	host_vtl_addr = page->vtl_addr | offset;
+	//host_vtl_addr = page->vtl_addr | offset;
+
+	guest_vtl_addr = page->vtl_addr | offset;
 
 
 	/*translate to the guest address space*/
-	guest_vtl_addr = mmu_reverse_link_host_address(guest_pid, host_vtl_addr);
+
+	/*before change*/
+	//guest_vtl_addr = mmu_reverse_link_host_address(guest_pid, host_vtl_addr);
 
 	/*fatal("mmu reverse trans page %d guest id %d host_phy_addr 0x%08x offset 0x%08x host_vtl_addr 0x%08x guest_vtl_addr 0x%08x\n",
 			page->id, guest_pid, host_phy_addr, offset, host_vtl_addr, guest_vtl_addr);*/
@@ -788,7 +789,7 @@ unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid,
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr){
 
 	struct mmu_page_t *page;
-	unsigned int host_vtl_addr;
+	//unsigned int host_vtl_addr;
 	unsigned int host_phy_addr;
 	unsigned int offset;
 
@@ -796,21 +797,25 @@ unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid,
 	int phy_index = 0;
 
 	assert(address_space_index == 0);
-
 	/* link the guest and host pages*/
-	host_vtl_addr = mmu_forward_link_guest_address(guest_pid, guest_vtl_addr);
+	//before
+	//host_vtl_addr = mmu_forward_link_guest_address(guest_pid, guest_vtl_addr);
+	//page = mmu_page_access(address_space_index, mmu_addr_vtl, host_vtl_addr, mmu_access_load_store);
 
-	page = mmu_page_access(address_space_index, mmu_addr_vtl, host_vtl_addr, mmu_access_load_store);
+	page = mmu_page_access(address_space_index, mmu_addr_vtl, guest_vtl_addr, mmu_access_load_store);
 	assert(page);
 
 	if(GPU_HUB_IOMMU == 1)
-		printf("mmu trans page %d guest id %d host vtl_addr 0x%08x\n", page->id, guest_pid, host_vtl_addr);
+		printf("mmu trans page %d guest id %d guest_vtl_addr 0x%08x\n", page->id, guest_pid, guest_vtl_addr);
+		//printf("mmu trans page %d guest id %d host vtl_addr 0x%08x\n", page->id, guest_pid, host_vtl_addr);
 
-	offset = host_vtl_addr & mmu_page_mask;
+
+	//offset = host_vtl_addr & mmu_page_mask;
+	offset = guest_vtl_addr & mmu_page_mask;
 	host_phy_addr = page->phy_addr | offset;
 
 	/*for future reverse translations*/
-	vtl_index = ((host_vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+	vtl_index = ((guest_vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	phy_index = ((host_phy_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 
 	hub_iommu->page_hash_table[phy_index] = vtl_index;

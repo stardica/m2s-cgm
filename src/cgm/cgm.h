@@ -249,6 +249,8 @@ extern struct cpu_gpu_stats_t *cpu_gpu_stats;
 
 void init_cgm_stats(int argc, char **argv);
 
+extern long long resume_cycle;
+
 
 //global access record
 extern struct list_t *cgm_access_record;

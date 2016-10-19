@@ -611,6 +611,7 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 			printf("hub-iommu C ACCESS phy address out 0x%08x blk addr 0x%08x access type %s id %llu\n",
 					message_packet->address, get_block_address(message_packet->address, ~0x3F),
 					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
 	}
 	else if(last_queue_num == Rx_queue_bottom)
 	{

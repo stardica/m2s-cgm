@@ -22,12 +22,13 @@
 
 #define INT 0
 
-#define GPU_HUB_IOMMU 1
+#define GPU_HUB_IOMMU 0
 
 //m2s prototypes
 void m2s_loop(void);
 
 extern char *x86_save_checkpoint_file_name;
+extern char *x86_load_checkpoint_file_name;
 
 
 

@@ -142,7 +142,6 @@ static int cfg_unique_num;
 
 void X86EmuLoadCheckpoint(X86Emu *self, char *file_name)
 {
-
 	ckp = bin_config_create(file_name);
 	bin_config_load(ckp);
 	check();
@@ -531,7 +530,6 @@ static void load_current_cycle(void){
 
 	unsigned long long cycle_top = 0;
 	unsigned long long cycle_bottom = 0;
-	unsigned long long cycle = 0;
 
 	cfg_descend("cycle");
 
@@ -539,11 +537,9 @@ static void load_current_cycle(void){
 	cycle_bottom = (unsigned long long) load_int32("cycle_bottom");
 
 	cycle_top = cycle_top << 32;
-	cycle = cycle_top | cycle_bottom;
+	resume_cycle = cycle_top | cycle_bottom;
 
 	cfg_pop();
-
-	P_PAUSE((cycle/2));
 
 	return;
 }
