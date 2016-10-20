@@ -1671,6 +1671,8 @@ int main(int argc, char **argv)
 	//CGM is the replacement memory system.
 #if CGM
 
+	/*fatal("gpu freq %d\n", (1 * (x86_cpu_frequency/si_gpu_frequency)));*/
+
 	/*run ends here if CGM is running.
 	sim_send() contains all of the "done" functions.*/
 	simulate(sim_end);

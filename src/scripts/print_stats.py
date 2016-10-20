@@ -1104,6 +1104,7 @@ def print_general_stats(options):
 	["BenchmarkArgs", general_stats['Args']],
 	["DateTime", general_stats['Day&Time']],
 	["ExeSuccessful", general_stats['ExecutionSuccessful']],
+	["CheckPoint", general_stats['CheckPoint']],
 	["TotalCycles", general_stats['TotalCycles']],
 	["ParallelSectionCycles", general_stats['ParallelSectionCycles']],
 	["CPURunTime(sec)", general_stats['SimulationRunTimeSeconds(cpu)']],
