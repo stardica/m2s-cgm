@@ -1805,7 +1805,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				if(owning_core == 1)
 					assert(sharers == 1);
 
-				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit single shared ID %llu type %d state %d cycle %llu\n",
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit zero or single shared ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				//set the presence bit in the directory for the requesting core.
@@ -1833,9 +1833,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				/*this will send the block and block state up to the higher level cache.*/
 				message_packet->cache_block_state = *cache_block_state_ptr;
 
-				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
+				/*DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load hit ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-						message_packet->access_type, *cache_block_state_ptr, P_TIME);
+						message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
 
 				/*stats*/
 				if(!message_packet->protocol_case)

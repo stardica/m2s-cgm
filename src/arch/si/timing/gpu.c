@@ -1188,6 +1188,8 @@ int SIGpuRun(Timing *self)
 		warning("Southern Islands GPU simulation stalled.\n%s", si_err_stall);
 		esim_finish = esim_finish_stall;
 		cgm_dump_system();
+
+		exit(0);
 	}
 
 	/* Stop if any reason met */

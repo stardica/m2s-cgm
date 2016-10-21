@@ -269,8 +269,12 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	//mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
 
 	if(GPU_HUB_IOMMU == 1)
-		printf("si mem alloc host/guest base address 0x%08x host/quest top address 0x%08x size %u\n",
+	{
+		warning("si mem alloc host/guest base address 0x%08x host/quest top address 0x%08x size %u\n",
 				device_ptr, device_ptr + size, size);
+
+	//	getchar();
+	}
 
 	if(INT == 1)
 	{
