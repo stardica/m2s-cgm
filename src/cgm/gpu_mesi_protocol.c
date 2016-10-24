@@ -882,6 +882,8 @@ void cgm_mesi_gpu_l1_v_write_back(struct cache_t *cache, struct cgm_packet_t *me
 	/*stats*/
 	cache->TotalWriteBackSent++;
 
+	message_packet->size = cache->block_size;
+
 	cache_put_io_down_queue(cache, message_packet);
 
 	return;
@@ -1046,7 +1048,7 @@ void cgm_mesi_gpu_l1_v_gpu_flush(struct cache_t *cache, struct cgm_packet_t *mes
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s CPU flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -1172,7 +1174,7 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -1739,6 +1741,8 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//add some routing/status data to the packet
 				assert(message_packet->access_type == cgm_access_get);
 
+				message_packet->size = 1;
+
 				if(hub_iommu_connection_type == hub_to_mc)
 				{
 					//message is going down to mc so its and mc_load
@@ -2252,6 +2256,8 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				//set access type
 				assert(message_packet->access_type == cgm_access_getx);
+
+				message_packet->size = 1;
 
 				if(hub_iommu_connection_type == hub_to_mc)
 				{
@@ -3571,12 +3577,12 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			//make sure the directory is clear...
 			cgm_cache_clear_dir(cache, pending_get_getx_fwd_request->set, pending_get_getx_fwd_request->way);
 
+			//prepare to forward the block
+			pending_get_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+
 			//set message package size if modified in L2/L1.
 			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				//prepare to forward the block
-				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
-
 				//set access type
 				pending_get_getx_fwd_request->access_type = cgm_access_putx;
 
@@ -3585,9 +3591,6 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			}
 			else
 			{
-				//prepare to forward the block
-				pending_get_getx_fwd_request->size = 1;
-
 				//set access type
 				pending_get_getx_fwd_request->access_type = cgm_access_put_clnx;
 
@@ -3743,7 +3746,6 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 			warning("************cgm_mesi_gpu_l2_get_getx_fwd(): block isn't in the cache id %llu blk addr 0x%08x\n",
 					message_packet->access_id,  message_packet->address & cache->block_address_mask);
-			getchar();
 
 			//check the WB buffer
 			if(write_back_packet)
@@ -3758,6 +3760,8 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 				/*check state of write back for flush*/
 				if(write_back_packet->flush_pending == 0)
 				{
+					//a flush has completed and the WB is still here so it better be modified
+					assert(write_back_packet->cache_block_state == cgm_cache_block_modified);
 
 					/*the flush is complete finish the getx_fwd now*/
 
@@ -3836,6 +3840,10 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 					reply_packet->cache_block_state = cgm_cache_block_modified;
+
+					//fakes src as the requester
+					reply_packet->l2_cache_id = message_packet->l2_cache_id;
+					reply_packet->l2_cache_name = message_packet->src_name;
 
 					//set message package size if modified in L2/L1.
 					/*if(write_back_packet->cache_block_state == cgm_cache_block_modified)
@@ -4064,10 +4072,6 @@ void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *m
 
 	//this is an ack so there better still be a sharer
 	assert(sharers == 1);
-
-
-
-
 
 
 
@@ -4416,7 +4420,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 	//check pending state
 	//pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 
-	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -4475,8 +4479,8 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 				else if(wb_packet->flush_pending == 1)
 				{
 
-					fatal("cgm_mesi_l2_flush_block(): flush pending blk 0x%08x this is probably ok, just need to make sure its working right\n",
-							message_packet->address & cache->block_address_mask);
+					//fatal("cgm_mesi_l2_flush_block(): flush pending blk 0x%08x this is probably ok, just need to make sure its working right\n",
+					//		message_packet->address & cache->block_address_mask);
 
 					//waiting on flush to finish insert into pending request buffer
 					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);

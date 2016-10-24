@@ -257,7 +257,7 @@ void memctrl_ctrl(void){
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
 
-				assert(message_packet->size > 1);
+				assert(message_packet->size == 64);
 
 				if(DRAMSim == 1)
 				{

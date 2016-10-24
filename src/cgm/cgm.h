@@ -55,7 +55,7 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x081b6880
+#define WATCHBLOCK (unsigned int) 0xb7f79bc0
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 = L1-L3,
 #define LEVEL 3

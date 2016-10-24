@@ -3745,7 +3745,7 @@ void gpu_l2_cache_ctrl(void){
 			}
 			else
 			{
-				fatal("gpu_l2_cache_ctrl_0(): access_id %llu bad access type %s at blk address 0x%08x cycle %llu\n",
+				fatal("gpu_l2_cache_ctrl(): access_id %llu bad access type %s at blk address 0x%08x cycle %llu\n",
 					access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->address & gpu_l2_caches[my_pid].block_address_mask, P_TIME);
 			}
 		}
