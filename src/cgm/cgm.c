@@ -1865,6 +1865,14 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		return access_id;
 	}
 
+	/*int i = 0;
+	for(i = 0; i < num_cores; i++)
+	{
+		printf("size id %d\n", l1_d_caches[l2_caches[i].id].block_size );
+	}
+
+	fatal("here\n");*/
+
 	//get the core ID number should be <= number of cores
 	id = thread->core->id;
 	assert(id < num_cores);

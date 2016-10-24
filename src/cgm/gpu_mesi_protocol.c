@@ -1325,6 +1325,8 @@ int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *me
 		fflush(stderr);
 	}
 
+	assert(message_packet->size == 64);
+
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
 
@@ -3426,7 +3428,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 				//set message package size if modified in L2/L1.
 				/*if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{*/
-				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
 				/*}
 				else
 				{
@@ -3464,7 +3466,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 				//set message package size if modified in L2/L1.
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
-					get_getx_fwd_reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+					get_getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
 					get_getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 				}
 				else
@@ -3573,7 +3575,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
 				//prepare to forward the block
-				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
 
 				//set access type
 				pending_get_getx_fwd_request->access_type = cgm_access_putx;
@@ -3623,7 +3625,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			//set message package size if modified in L2/L1.
 			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				get_getx_fwd_reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+				get_getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
 				get_getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
@@ -3777,7 +3779,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//prepare to forward the block
-					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 					//set message package size if modified in L2/L1.
 					/*if(write_back_packet->cache_block_state == cgm_cache_block_modified)
@@ -3832,7 +3834,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 					init_getx_fwd_ack_packet(reply_packet, message_packet->address);
 
-					reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 					reply_packet->cache_block_state = cgm_cache_block_modified;
 
 					//set message package size if modified in L2/L1.
@@ -4683,6 +4685,8 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 
 
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size == 64);
 
 	if(*cache_block_state_ptr == 1 && wb_packet)
 	{
@@ -4751,7 +4755,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 				}
 
 				//set message package size
-				pending_request_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request_packet->l2_cache_name)].block_size;
+				pending_request_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -4800,10 +4804,12 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 				if(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
+					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
 				}
 				else
 				{
 					reply_packet->cache_block_state = cgm_cache_block_shared;
+					reply_packet->size = 1;
 				}
 
 				//fwd reply (downgrade_ack) to L3
@@ -6101,6 +6107,9 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 	//WB from L1 D cache
 	if(cache->last_queue == cache->Coherance_Rx_queue)
 	{
+
+		assert(message_packet->size == 64);
+
 		switch(*cache_block_state_ptr)
 		{
 			case cgm_cache_block_noncoherent:
@@ -6220,6 +6229,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write back sent (to L3) %llu type %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
 
+			message_packet->size = cache->block_size;
 
 			if(hub_iommu_connection_type == hub_to_mc)
 			{

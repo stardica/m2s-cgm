@@ -1013,6 +1013,10 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 					message_packet->size = cache->block_size;
 					message_packet->cache_block_state = cgm_cache_block_modified;
 				}
+				else
+				{
+					message_packet->size = 1;
+				}
 
 				//clear the WB from the buffer
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
@@ -1427,7 +1431,11 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		fflush(stderr);
 	}
 
-	assert(message_packet->size > 1);
+	if(message_packet->size != 64)
+		fatal("l1s_write_block access id %llu size %d type %d cycle %llu\n",
+				message_packet->access_id, message_packet->size, message_packet->access_type, P_TIME);
+
+	assert(message_packet->size == 64);
 
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
@@ -1870,11 +1878,11 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					if (pending_join->downgrade_pending == 0)
 					{
 
-						if(pending_join->access_id == 84000974)
+						/*if(pending_join->access_id == 84000974)
 						{
 							warning("%s pulling get_fwd ID %llu type %d rite block joining with pending_join %d cycle %llu\n",
 									cache->name, message_packet->access_id, message_packet->access_type, pending_join->downgrade_pending, P_TIME);
-						}
+						}*/
 
 						//printf("pending get/getx (load)_fwd request joined id %llu\n", pending_join->access_id);
 						//getchar();
@@ -2449,7 +2457,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				pending_request->cache_block_state = cgm_cache_block_shared;
 
 				//set message package size
-				pending_request->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
+				pending_request->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -2479,6 +2487,8 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				init_downgrade_ack_packet(reply_packet, message_packet->address);
 				reply_packet->access_id = message_packet->access_id;
 
+				/*assert(reply_packet->access_id != 9062943);*/
+
 				//determine if this is a sharing WB
 				/*if(message_packet->cache_block_state != cgm_cache_block_modified || write_back_packet->cache_block_state != cgm_cache_block_modified)
 				{
@@ -2492,7 +2502,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
-					reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
+					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
 				}
 				else
 				{
@@ -2615,7 +2625,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			//end uncomment here
 
 			//set message package size
-			pending_request->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
+			pending_request->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
 
 			//fwd block to requesting core
 			//update routing headers swap dest and src
@@ -2645,13 +2655,14 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			init_downgrade_ack_packet(reply_packet, message_packet->address);
 			reply_packet->access_id = message_packet->access_id;
 
+
 			//determine if this is a sharing WB
 			assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_invalid);
 
 			if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				reply_packet->cache_block_state = cgm_cache_block_modified;
-				reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
+				reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
 			}
 			else
 			{
@@ -2662,7 +2673,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
 			//fakes src as the requester
-			//this is important sot hat L3 will set the right sharers in the directory (should be two now).
+			//this is important so that L3 will set the right sharers in the directory (should be two now).
 			reply_packet->l2_cache_id = pending_request->l2_cache_id;
 			reply_packet->l2_cache_name = pending_request->src_name;
 
@@ -2752,7 +2763,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//set the block state
 				pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
-				pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+				pending_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 
 				//set message package size if modified in L2/L1.
 				/*if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
@@ -2795,7 +2806,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//set message package size if modified in L2/L1.
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
-					getx_fwd_reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+					getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 					getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 				}
 				else
@@ -2903,7 +2914,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//set the block state
 			pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
-			pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+			pending_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 
 			//set message package size if modified in L2/L1.
 			/*if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
@@ -2945,7 +2956,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//set message package size if modified in L2/L1.
 			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				getx_fwd_reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+				getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 				getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
@@ -3322,6 +3333,9 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size == 64);
+
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
 	switch(*cache_block_state_ptr)
@@ -3569,7 +3583,6 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 					pending_request_packet->access_type = cgm_access_puts;
 					//set the block state
 					pending_request_packet->cache_block_state = cgm_cache_block_shared;
-
 				}
 				else
 				{
@@ -3581,7 +3594,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				}
 
 				//set message package size
-				pending_request_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request_packet->l2_cache_name)].block_size;
+				pending_request_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -3616,6 +3629,8 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 					init_getx_fwd_ack_packet(reply_packet, pending_request_packet->address);
 				}
 
+				reply_packet->access_id = pending_request_packet->access_id;
+
 				//determine if we need to send dirty data to L3
 
 				/*if(message_packet->cache_block_state != cgm_cache_block_modified || wb_packet->cache_block_state != cgm_cache_block_modified)
@@ -3630,10 +3645,12 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				if(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
+					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
 				}
 				else
 				{
 					reply_packet->cache_block_state = cgm_cache_block_shared;
+					reply_packet->size = 1;
 				}
 
 				//fwd reply (downgrade_ack) to L3
@@ -3975,7 +3992,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					/////////
 
 					//set message package size
-					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 					//fwd block to requesting core
 					//update routing headers swap dest and src
@@ -4009,19 +4026,20 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					assert(reply_packet);
 
 					init_downgrade_ack_packet(reply_packet, message_packet->address);
-
 					reply_packet->access_id = message_packet->access_id;
+					/*assert(reply_packet->access_id != 9062943);*/
 
 					//determine if this is a sharing WB
 					assert(write_back_packet->cache_block_state == cgm_cache_block_modified);
 					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
 						reply_packet->cache_block_state = cgm_cache_block_modified;
-						reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+						reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 					}
 					else
 					{
 						reply_packet->cache_block_state = cgm_cache_block_shared;
+						reply_packet->size = 1;
 					}
 
 					//fwd reply (downgrade_ack) to L3
@@ -4362,7 +4380,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 					//forward block to requesting core
 					//set message package size
-					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 					//set access type
 					message_packet->access_type = cgm_access_putx;
 
@@ -4409,7 +4427,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//set message package size if modified in L2/L1.
 					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
-						reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+						reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 						reply_packet->cache_block_state = cgm_cache_block_modified;
 					}
 					else
@@ -4616,7 +4634,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	pending_upgrade_bit = cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 	/*if we are writing a block the message packet should have some size*/
-	assert(message_packet->size > 1);
+	assert(message_packet->size == 64);
 
 	/*reply has returned for a previously sent gets/get/getx*/
 	if(pending_join_bit == 1 && pending_upgrade_bit == 0)
@@ -5040,6 +5058,8 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_load;
 
+			message_packet->size = 1;
+
 			//set return cache block state
 			message_packet->cache_block_state = cgm_cache_block_shared;
 
@@ -5075,7 +5095,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//update message packet status
 			l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
-			//message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+			//message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 			message_packet->size = l2_cache_ptr->block_size;
 
@@ -5253,6 +5273,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write back sent (to L3) %llu type %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
 
+			message_packet->size = cache->block_size;
 
 			//block is dirty send the write back down to the L3 cache.
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
@@ -5401,7 +5422,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->cache_block_state = *cache_block_state_ptr;
 
 			//set message package size
-			message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
@@ -5660,6 +5681,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_mc_load;
 
+				message_packet->size = 1;
+
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
 
 				//set dest and src
@@ -5732,7 +5755,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				//set message package size
-				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+				message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 				//update routing headers
 				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -5852,7 +5875,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 			//set message package size
-			message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 			//update routing
 			SETROUTE(message_packet, cache, l2_cache_ptr)
@@ -5956,7 +5979,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
 			// update message packet size
-			message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
@@ -6180,6 +6203,8 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_mc_load;
 
+				message_packet->size = 1;
+
 				//set the returned block state
 				message_packet->cache_block_state = cgm_cache_block_modified;
 
@@ -6235,7 +6260,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->cache_block_state = cgm_cache_block_modified;
 
 				// update message packet size
-				message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+				message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
 				//update directory
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
@@ -6466,8 +6491,13 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s downgrade ack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
-	if(message_packet->cache_block_state == cgm_cache_block_modified)
+	/*if(message_packet->cache_block_state == cgm_cache_block_modified)
+	{
+		printf("block 0x%08x %s downgrade ack ID %llu type %d state %d src %s cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, message_packet->src_name, P_TIME);
+
 		assert(message_packet->size > 1);
+	}*/
 
 
 	switch(*cache_block_state_ptr)
@@ -7147,6 +7177,9 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size == 64);
+
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
 	switch(*cache_block_state_ptr)
@@ -7369,6 +7402,9 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 		}
 
 	}*/
+
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size == 64);
 
 
 	/*//search the WB buffer for the data
@@ -7624,9 +7660,9 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 		}
 		else if(wb_packet->L3_flush_join == 1)
 		{
-			//CPU initiated flush. Join the flush and finish the eviction.
+			//l3 initiated flush. Join the flush and finish the eviction.
 
-			warning("l3 flush join\n");
+			fatal("l3 flush join\n");
 
 			pending_request_packet = cache_search_pending_request_buffer(cache, message_packet->address);
 
@@ -7720,6 +7756,8 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	//WB from L2 cache
 	if(cache->last_queue == cache->Coherance_Rx_queue)
 	{
+		assert(message_packet->size > 1);
+
 		switch(*cache_block_state_ptr)
 		{
 			case cgm_cache_block_noncoherent:
@@ -8715,6 +8753,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 				if(pending_packet->l1_access_type == cgm_access_getx)
 				{
 					pending_packet->access_type = cgm_access_putx;
+					pending_packet->size = l1_d_caches[cache->id].block_size;
 				}
 				else
 				{
@@ -9072,10 +9111,12 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					if(putx_n_coutner->l1_access_type == cgm_access_getx)
 					{
 						putx_n_coutner->access_type = cgm_access_putx;
+						putx_n_coutner->size = l1_d_caches[cache->id].block_size;
 					}
 					else
 					{
 						putx_n_coutner->access_type = cgm_access_upgrade_ack;
+						putx_n_coutner->size = 1;
 					}
 
 					putx_n_coutner->cache_block_state = cgm_cache_block_modified;

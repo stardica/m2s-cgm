@@ -257,6 +257,8 @@ void memctrl_ctrl(void){
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
 
+				assert(message_packet->size > 1);
+
 				if(DRAMSim == 1)
 				{
 					if(dramsim_add_transaction(message_packet->access_type, GET_BLOCK(message_packet->address)))
@@ -286,6 +288,8 @@ void memctrl_ctrl(void){
 			{
 				/*This is a L3 load request (cached memory system miss)
 				charge the latency for the load, then, reply with data*/
+
+				assert(message_packet->size == 1);
 
 				if(DRAMSim == 1)
 				{
