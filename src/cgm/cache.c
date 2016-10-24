@@ -35,6 +35,7 @@ struct str_map_t cgm_cache_policy_map =
 
 
 int QueueSize = 0;
+int GPUQueueSize = 0;
 int l1_i_inf = 0;
 int l1_d_inf = 0;
 int l2_inf = 0;
@@ -376,6 +377,11 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		if(rx_top_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
 	}
+	else if(cache->cache_type == gpu_l2_cache_t)
+	{
+		if(rx_top_queue_size > GPUQueueSize)
+		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+	}
 
 	if(rx_bottom_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
@@ -442,6 +448,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->retry_queue;
 			assert(new_message);
 		}
+		else if (coherence_queue_size > 0)
+		{
+			new_message = list_get(cache->Coherance_Rx_queue, 0);
+			cache->last_queue = cache->Coherance_Rx_queue;
+			assert(new_message);
+		}
 		else if(rx_bottom_queue_size > 0)
 		{
 			/* if no CPU packet pull from the memory system side*/
@@ -449,12 +461,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			//keep pointer to last queue
 			cache->last_queue = cache->Rx_queue_bottom;
-			assert(new_message);
-		}
-		else if (coherence_queue_size > 0)
-		{
-			new_message = list_get(cache->Coherance_Rx_queue, 0);
-			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
 		else if(rx_top_queue_size > 0)
@@ -3454,7 +3460,7 @@ void gpu_s_cache_ctrl(void){
 		{
 			//printf("%s stalling\n", gpu_s_caches[my_pid].name);
 
-			P_PAUSE(1);
+			GPU_PAUSE(1);
 		}
 		else
 		{
@@ -3542,7 +3548,7 @@ void gpu_v_cache_ctrl(void){
 			/*if(P_TIME > 106034981)
 				printf("%s stalling\n", gpu_v_caches[my_pid].name);*/
 
-			P_PAUSE(1);
+			GPU_PAUSE(1);
 		}
 		else
 		{
@@ -3672,7 +3678,7 @@ void gpu_l2_cache_ctrl(void){
 			gpu_l2_caches[my_pid].Stalls++;
 
 
-			P_PAUSE(1);
+			GPU_PAUSE(1);
 		}
 		else
 		{
@@ -4459,7 +4465,7 @@ void gpu_s_cache_down_io_ctrl(void){
 			transfer_time = 1;
 		}
 
-		P_PAUSE(transfer_time);
+		GPU_PAUSE(transfer_time);
 
 		//drop into next east queue.
 		list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_s_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
@@ -4495,9 +4501,9 @@ void gpu_v_cache_down_io_ctrl(void){
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
 				|| message_packet->access_type == cgm_access_upgrade)
 		{
-			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= QueueSize)
+			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= GPUQueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
@@ -4511,7 +4517,7 @@ void gpu_v_cache_down_io_ctrl(void){
 					exit(0);
 				}*/
 
-				P_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
 				list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top, message_packet);
@@ -4534,7 +4540,7 @@ void gpu_v_cache_down_io_ctrl(void){
 
 			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
@@ -4542,14 +4548,14 @@ void gpu_v_cache_down_io_ctrl(void){
 
 				//printf("v cache send co cycle %llu\n", P_TIME);
 
-				P_PAUSE(transfer_time);
-
 				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
 				list_enqueue(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue, message_packet);
 				advance(&gpu_l2_cache[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)]);
 
 				/*stats*/
 				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
+
+				GPU_PAUSE(transfer_time);
 			}
 		}
 		else
@@ -4598,13 +4604,13 @@ void gpu_l2_cache_up_io_ctrl(void){
 
 			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom) >= QueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				P_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
@@ -4618,13 +4624,13 @@ void gpu_l2_cache_up_io_ctrl(void){
 
 			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) > QueueSize)
 			{
-				P_PAUSE(1);
+				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
 
-				P_PAUSE(transfer_time);
+				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue, message_packet);
@@ -4656,7 +4662,7 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 		if(list_count(hub_iommu->Rx_queue_top[my_pid]) >= QueueSize)
 		{
-			P_PAUSE(1);
+			GPU_PAUSE(1);
 		}
 		else
 		{
@@ -6104,4 +6110,46 @@ int cache_validate_block_flushed_from_l1(struct cache_t *caches, int core_id, un
 	return hit;
 }
 
+
+int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned int addr){
+
+	int hit = 0;
+	int i = 0;
+	struct cgm_packet_t *write_back_packet = NULL;
+
+	int num_cus = si_gpu_num_compute_units;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	for(i = 0; i < num_cus; i++)
+	{
+		//probe the address for set, tag, and offset.
+		cgm_cache_probe_address(&caches[i], addr, set_ptr, tag_ptr, offset_ptr);
+
+		//look for the block in the cache
+		*(cache_block_hit_ptr) = cgm_cache_find_block(&caches[i], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
+
+			//search the WB buffer for the data if in WB the block is either in the E or M state so return
+		write_back_packet = cache_search_wb(&caches[i], tag, set);
+
+		if(*cache_block_hit_ptr == 1 || write_back_packet)
+			hit = 1;
+	}
+
+	return hit;
+
+}
 

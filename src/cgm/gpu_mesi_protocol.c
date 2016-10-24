@@ -3424,14 +3424,14 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 				pending_get_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
 				//set message package size if modified in L2/L1.
-				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
-				{
-					pending_get_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
-				}
+				/*if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
+				{*/
+				pending_get_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_get_getx_fwd_request->l2_cache_name)].block_size;
+				/*}
 				else
 				{
-					pending_get_getx_fwd_request->size = 1;
-				}
+				pending_get_getx_fwd_request->size = 1;
+				}*/
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -3566,7 +3566,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			assert(pending_get_getx_fwd_request->set == message_packet->set && pending_get_getx_fwd_request->way == message_packet->way);
 			cgm_cache_set_block_state(cache, pending_get_getx_fwd_request->set, pending_get_getx_fwd_request->way, cgm_cache_block_invalid);
 
-			//make sure te directory is clear...
+			//make sure the directory is clear...
 			cgm_cache_clear_dir(cache, pending_get_getx_fwd_request->set, pending_get_getx_fwd_request->way);
 
 			//set message package size if modified in L2/L1.
@@ -3720,10 +3720,8 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 			assert(*cache_block_state_ptr == cgm_cache_block_shared && *cache_block_hit_ptr == 1);*/
 	}
 
-
 	/*if(message_packet->src_id == 0)
 		fatal("%s getx_fwd blk addr 0x%08x  cache id %d\n", cache->name, message_packet->address & cache->block_address_mask, message_packet->l2_cache_id);*/
-
 
 	switch(*cache_block_state_ptr)
 	{
@@ -3741,7 +3739,9 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 		case cgm_cache_block_invalid:
 
-			fatal("cgm_mesi_gpu_l2_get_getx_fwd(): block isn't in the cache\n");
+			warning("************cgm_mesi_gpu_l2_get_getx_fwd(): block isn't in the cache id %llu blk addr 0x%08x\n",
+					message_packet->access_id,  message_packet->address & cache->block_address_mask);
+			getchar();
 
 			//check the WB buffer
 			if(write_back_packet)
@@ -3757,36 +3757,53 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 				if(write_back_packet->flush_pending == 0)
 				{
 
-					//printf("\tcgm_mesi_l2_getx_fwd(): wb_f = 0 blk addr 0x%08x cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
-
-					/*if the flush is complete finish the getx_fwd now*/
+					/*the flush is complete finish the getx_fwd now*/
 
 					/*flush is complete for this write back so it should not be up in L1 D*/
-					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 					assert(error == 0);
 
 					//////////
 					//GETX_FWD
 					//////////
 
+					/*for now we handle both get and getx fwd in the same function on the GPU*/
+
 					//forward block to requesting core
-					//set message package size
-					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
 					//set access type
 					message_packet->access_type = cgm_access_putx;
 
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
+					//prepare to forward the block
+					message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
 					//set message package size if modified in L2/L1.
-					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+					/*if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
+						//prepare to forward the block
 						message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+
+						//set access type
+						message_packet->access_type = cgm_access_putx;
+
+						//set the block state
+						message_packet->cache_block_state = cgm_cache_block_modified;
 					}
 					else
 					{
+						//prepare to forward the block
 						message_packet->size = 1;
 
-					}
+						//set access type
+						message_packet->access_type = cgm_access_put_clnx;
+
+						//set the block state
+						message_packet->cache_block_state = cgm_cache_block_exclusive;
+					}*/
+
+					//--------------------------------
 
 					//fwd block to requesting core
 					//update routing headers swap dest and src
@@ -3815,8 +3832,11 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 					init_getx_fwd_ack_packet(reply_packet, message_packet->address);
 
+					reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
+					reply_packet->cache_block_state = cgm_cache_block_modified;
+
 					//set message package size if modified in L2/L1.
-					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+					/*if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
 						reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 						reply_packet->cache_block_state = cgm_cache_block_modified;
@@ -3825,29 +3845,29 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					{
 						reply_packet->size = 1;
 						reply_packet->cache_block_state = cgm_cache_block_invalid;
-					}
+					}*/
 
 					//fwd reply (getx_fwd_ack) to L3
-					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+					//l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
 					//fakes src as the requester
-					reply_packet->l2_cache_id = message_packet->l2_cache_id;
-					reply_packet->l2_cache_name = message_packet->src_name;
+					//reply_packet->l2_cache_id = message_packet->l2_cache_id;
+					//reply_packet->l2_cache_name = message_packet->src_name;
 
-					SETROUTE(reply_packet, cache, l3_cache_ptr)
-
-					write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
-					packet_destroy(write_back_packet);
+					//SETROUTE(reply_packet, cache, l3_cache_ptr)
 
 					//transmit getx_fwd_ack to L3 (home)
 					list_enqueue(cache->Tx_queue_bottom, reply_packet);
 					advance(cache->cache_io_down_ec);
 
+					write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
+					packet_destroy(write_back_packet);
+
 				}
 				else
 				{
 
-					fatal("cgm_mesi_gpu_l2_get_getx_fwd(): shouldn't have  pending flush yet\n");
+					fatal("cgm_mesi_gpu_l2_get_getx_fwd(): shouldn't have pending flush yet\n");
 
 					/*if the wb is flush pending we have to wait for the flush to complete and then join there*/
 
@@ -3861,6 +3881,8 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 			}
 			else
 			{
+
+				fatal("cgm_mesi_gpu_l2_get_getx_fwd(): blk miss in l2 shouldn't happen yet??\n");
 
 				//printf("\tcgm_mesi_l2_getx_fwd(): no wb blk addr 0x%08x \n", message_packet->address & cache->block_address_mask);
 				//fatal("Getx_fwd %s access id %llu blk_addr 0x%08x\n", cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask);
@@ -3886,7 +3908,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 				else
 				{
 
-					/* The block was evicted silently and should not be L1 D's cache.
+					/* The block was evicted silently and should not be in the L1 cache.
 					 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
 					 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
 					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
@@ -4299,7 +4321,7 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 				{
 
 					//star todo somehow check and make sure these are modified
-					/*if here the L2 cache has already written back, send down so the flush can complete*/
+					/*if here the L2 cache may have already written back, send down so the flush can complete*/
 					message_packet->size = 1;
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 
@@ -4359,7 +4381,6 @@ void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *messa
 
 void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-
 	//Invalidation/eviction request from L3 cache
 
 	int cache_block_hit;
@@ -4397,6 +4418,9 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
+
+	assert(message_packet->access_type != cgm_access_gpu_flush);
+
 	/*check the ORT table for an outstanding access*/
 	//check the ORT table is there an outstanding access for this block we are trying to evict?
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
@@ -4420,7 +4444,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 
 		case cgm_cache_block_invalid:
 
-			fatal("cgm_mesi_gpu_l2_flush_block(): %s blk not in cache\n", cache->name);
+			//fatal("cgm_mesi_gpu_l2_flush_block(): %s blk not in cache 0x%08x\n", cache->name, (message_packet->address & cache->block_address_mask));
 			/*wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
 
 			//found the block in the WB buffer
@@ -4443,19 +4467,15 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 					//set access type inval_ack
 					message_packet->access_type = cgm_access_flush_block_ack;
 
-					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-					message_packet->l2_cache_id = cache->id;
-					message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
-
-					SETROUTE(message_packet, cache, l3_cache_ptr)
-
-					//reply to the L3 cache
-					/*printf("l2_flush_block_here_2 id %llu dest_id %d\n", message_packet->evict_id, message_packet->dest_id);*/
 					cache_put_io_down_queue(cache, message_packet);
 
 				}
 				else if(wb_packet->flush_pending == 1)
 				{
+
+					fatal("cgm_mesi_l2_flush_block(): flush pending blk 0x%08x this is probably ok, just need to make sure its working right\n",
+							message_packet->address & cache->block_address_mask);
+
 					//waiting on flush to finish insert into pending request buffer
 					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
 
@@ -4481,12 +4501,6 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 
 				//set access type inval_ack
 				message_packet->access_type = cgm_access_flush_block_ack;
-
-				l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-				message_packet->l2_cache_id = cache->id;
-				message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
-
-				SETROUTE(message_packet, cache, l3_cache_ptr)
 
 				//reply to the L3 cache
 				cache_put_io_down_queue(cache, message_packet);
@@ -4524,9 +4538,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 			}
 			else
 			{
-
 				//block is not up in one of the vector caches...
-
 				assert(sharers == 0);
 
 				/*evict block here*/
@@ -4614,7 +4626,6 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 			break;
 	}
 
-
 	return;
 }
 
@@ -4646,8 +4657,6 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 
 	if(*cache_block_hit_ptr == 1)
 		assert(pending_bit == 1);
-
-
 
 
 	error = cache_validate_block_flushed_from_l1(gpu_v_caches, message_packet->l1_cache_id, message_packet->address);

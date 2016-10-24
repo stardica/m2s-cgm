@@ -39,6 +39,7 @@ extern struct str_map_t cgm_cache_block_state_map;
 extern struct str_map_t cgm_mem_access_strn_map;
 
 extern int QueueSize;
+extern int GPUQueueSize;
 extern int l1_i_inf;
 extern int l1_d_inf;
 extern int l2_inf;
@@ -249,5 +250,6 @@ int ort_get_num_coal(struct cache_t *cache, int tag, int set);
 /*error checking*/
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr);
 int cache_validate_block_flushed_from_l1(struct cache_t *cache, int core_id, unsigned int addr);
+int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned int addr);
 
 #endif /*CACHE_H_*/

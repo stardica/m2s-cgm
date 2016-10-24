@@ -152,6 +152,9 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	ort_clear(cache, message_packet);
 
 
+	assert(message_packet->size > 1);
+
+
 	//set the block and retry the access in the cache.
 	/*cache_put_block(cache, message_packet);*/
 
@@ -1424,6 +1427,8 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		fflush(stderr);
 	}
 
+	assert(message_packet->size > 1);
+
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
 
@@ -2487,6 +2492,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
+					reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
 				}
 				else
 				{
@@ -2645,6 +2651,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				reply_packet->cache_block_state = cgm_cache_block_modified;
+				reply_packet->size = l2_caches[str_map_string(&node_strn_map, pending_request->l2_cache_name)].block_size;
 			}
 			else
 			{
@@ -2745,15 +2752,17 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//set the block state
 				pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
+				pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+
 				//set message package size if modified in L2/L1.
-				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
+				/*if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 				}
 				else
 				{
 					pending_getx_fwd_request->size = 1;
-				}
+				}*/
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -2894,15 +2903,17 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//set the block state
 			pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
+			pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+
 			//set message package size if modified in L2/L1.
-			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
+			/*if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
 				pending_getx_fwd_request->size = l2_caches[str_map_string(&node_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
 			}
 			else
 			{
 				pending_getx_fwd_request->size = 1;
-			}
+			}*/
 
 			//fwd block to requesting core
 			//update routing headers swap dest and src
@@ -3941,7 +3952,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			//check the WB buffer
 			if(write_back_packet)
 			{
-
 				/*found the packet in the write back buffer
 				data should not be in the rest of the cache*/
 				assert(*cache_block_hit_ptr == 0);
@@ -4007,6 +4017,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
 						reply_packet->cache_block_state = cgm_cache_block_modified;
+						reply_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 					}
 					else
 					{
@@ -4358,7 +4369,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//set message package size if modified in L2/L1.
-					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
+					/*if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
 						message_packet->size = l2_caches[str_map_string(&node_strn_map, message_packet->l2_cache_name)].block_size;
 					}
@@ -4366,7 +4377,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					{
 						message_packet->size = 1;
 
-					}
+					}*/
 
 					//fwd block to requesting core
 					//update routing headers swap dest and src
@@ -4604,6 +4615,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 	pending_upgrade_bit = cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
+	/*if we are writing a block the message packet should have some size*/
+	assert(message_packet->size > 1);
 
 	/*reply has returned for a previously sent gets/get/getx*/
 	if(pending_join_bit == 1 && pending_upgrade_bit == 0)
@@ -6453,6 +6466,9 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s downgrade ack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size > 1);
+
 
 	switch(*cache_block_state_ptr)
 	{
@@ -6585,6 +6601,8 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
+	assert(message_packet->size == 1);
+
 	//failed to downgrade block in sharing core, the block may not be present
 	//if hit clear directory state and set retry
 	switch(*cache_block_state_ptr)
@@ -6693,6 +6711,10 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
+	if(message_packet->cache_block_state == cgm_cache_block_modified)
+		assert(message_packet->size > 1);
+	else
+		assert(message_packet->size == 1);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -6703,25 +6725,6 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 		fatal("cgm_mesi_l3_getx_fwd_ack(): L3 id %d invalid block state on getx_fwd_ack as %s address %u\n",
 				cache->id, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr), message_packet->address);
 			break;
-
-
-			/*//check WB for line...
-			if(write_back_packet)
-			{
-				found the packet in the write back buffer
-				data should not be in the rest of the cache
-
-				assert((write_back_packet->cache_block_state == cgm_cache_block_modified
-						|| write_back_packet->cache_block_state == cgm_cache_block_exclusive) && *cache_block_state_ptr == 0);
-
-				fatal("l3 getx fwd ack\n");
-			}
-			else
-			{
-				fatal("l3 miss on downgrade ack check this\n");
-			}
-
-			break;*/
 
 		case cgm_cache_block_modified:
 		case cgm_cache_block_exclusive:
@@ -6738,14 +6741,17 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 				assert(message_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_exclusive);
 				assert(message_packet->l2_cache_id >= 0 && message_packet->l2_cache_id < num_cores);
 
-				//if the block coming from the GPU is exclusive set as exclusive.
+				//gpu processes everything in one function if modified set modified
 				if(message_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 				}
 				else
 				{
-					cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);
+					/*if modified, we better not set it exclusive without written it back first...*/
+					assert(*cache_block_state_ptr == cgm_cache_block_exclusive);
+
+					/*cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_exclusive);*/
 				}
 
 			}
@@ -6754,10 +6760,6 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 				//set the local block modified, traffic is all CPU stuff
 				cgm_cache_set_block_state(cache, message_packet->set, message_packet->way, cgm_cache_block_modified);
 			}
-
-
-
-
 
 			//clear the directory
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
@@ -6831,6 +6833,8 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get_fwd_upgrade_nack ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+	assert(message_packet->size == 1);
 
 	/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -6911,6 +6915,7 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_upgrade_nack ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
+	assert(message_packet->size == 1);
 
 	//This is a nack to a GetX_FWD that found the block in in a pending state at the owning L2
 	//the local block should be in the pending state and there should only be one sharer
@@ -6990,6 +6995,8 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);*/
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
+	assert(message_packet->size == 1);
+
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_nack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -7058,6 +7065,9 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
+
+
+	assert(message_packet->size > 1);
 
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
@@ -7203,7 +7213,10 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//check to make sure the block isn't in another core...
 
-			assert(sharers == 1);
+			if(sharers != 1)
+				warning("****************cgm_mesi_l3_gpu_flush_ack(): possible problem here sharers %d blk 0x%08x\n", sharers, message_packet->address & cache->block_address_mask);
+
+			//assert(sharers == 1);
 
 
 			assert(victim_trainsient_state != cgm_cache_block_transient);
@@ -9277,6 +9290,8 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		fflush(stdout);
 
 	}
+
+	assert(message_packet->size == 1);
 
 	/*NOTE: rare protocol case... it is possible for the block to be transient if L3 has evcited AND a new line is being brought in
 	In this case nack the upgrade request back to the requesting L2 so the L2 can clear the sate and request the L2 cache will receive an

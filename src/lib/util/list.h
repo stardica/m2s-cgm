@@ -34,6 +34,7 @@ struct list_t
 {
 	/* Public */
 	char *name; /* star added, Name of the queue */
+	int max_size; /* star added, queue's max size*/
 	int count;  /* Number of elements in the list */
 	int error_code;  /* Error code updated by functions */
 

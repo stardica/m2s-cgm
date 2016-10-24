@@ -184,7 +184,12 @@ struct mmu_page_t *mmu_page_access(int address_space_index, enum mmu_address_typ
 			}
 		}
 
-		fatal("mmu_page_access(): page miss addr 0x%08x\n", addr);
+		/*not found for real, create the page */
+		warning("mmu_page_access(): gpu access missed page addr 0x%08x creating page...\n", addr);
+		page = mmu_create_page(address_space_index, tag, access_type, index, addr);
+		assert(page);
+
+		return page;
 	}
 
 	return page;

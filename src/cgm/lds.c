@@ -45,7 +45,7 @@ void gpu_lds_unit_ctrl(void){
 		{//then the packet is from the L2 cache
 
 			//LDS is close to the CU so delay a couple cycles for now
-			P_PAUSE(gpu_lds_units[my_pid].latency);
+			GPU_PAUSE(gpu_lds_units[my_pid].latency);
 			cache_gpu_lds_return(&(gpu_lds_units[my_pid]), message_packet);
 		}
 		else

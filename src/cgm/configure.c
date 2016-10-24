@@ -523,9 +523,14 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	////////////////////////
 
 	/*get max queue size*/
-	if(MATCH("Queue", "Size"))
+	if(MATCH("Queue", "CPUQueueSize"))
 	{
 		QueueSize = atoi(value);
+	}
+
+	if(MATCH("Queue", "GPUQueueSize"))
+	{
+		GPUQueueSize = atoi(value);
 	}
 
 	if(MATCH("Debug", "MEM_SYSTEM_OFF"))
@@ -2781,6 +2786,7 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "gpu_l2_caches[%d].Rx_queue_top", i);
 		gpu_l2_caches[i].Rx_queue_top->name = strdup(buff);
+		gpu_l2_caches[i].Rx_queue_top->max_size = GPUQueueSize;
 
 		gpu_l2_caches[i].Rx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
