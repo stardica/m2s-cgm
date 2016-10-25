@@ -3660,6 +3660,79 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 	return;
 }
 
+void cgm_mesi_gpu_l2_get_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	warning("%s received get getx_fwd nack cycle %llu\n", cache->name, P_TIME);
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	// *way_ptr = &way;
+
+	//int l3_map = 0;
+	int ort_status = 0;
+	//struct cgm_packet_t *pending_packet;
+	enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode in the packet for now.
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+	message_packet->way = way;
+
+	//charge delay
+	GPU_PAUSE(cache->latency);
+
+	/*our load (getx_fwd) request has been nacked by the owning L2*/
+
+	/*verify status of cache blk*/
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
+	assert(victim_trainsient_state == cgm_cache_block_transient); //there is a transient block
+	if(victim_trainsient_state != cgm_cache_block_transient)
+	{
+		ort_dump(cache);
+		cgm_cache_dump_set(cache, message_packet->set);
+
+		unsigned int temp = message_packet->address;
+		temp = temp & cache->block_address_mask;
+
+		fatal("cgm_mesi_l2_getx_fwd_nack(): %s block not in transient state access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d cycle %llu\n",
+			cache->name, message_packet->access_id, message_packet->address, temp,
+			message_packet->set, message_packet->tag, message_packet->way, P_TIME);
+	}
+
+
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set); // there is an outstanding request.
+	assert(ort_status <= cache->mshr_size);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_nack nack ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+	//change to a get
+	message_packet->access_type = cgm_access_getx;
+	message_packet->cpu_access_type = cgm_access_load;
+	message_packet->cache_block_state = cgm_cache_block_exclusive;
+
+	//L3 should see the entire GPU as a single core.
+	message_packet->l2_cache_id = gpu_core_id;
+	message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
+
+	cache_put_io_down_queue(cache, message_packet);
+
+	return;
+}
+
+
 
 void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -3743,6 +3816,9 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 			break;
 
 		case cgm_cache_block_invalid:
+
+			//if((message_packet->address & cache->block_address_mask) == 0x081c7e40)
+				//fatal("%s blk 0x%08x in in gpu cycle %llu\n", cache->name, (message_packet->address & cache->block_address_mask), P_TIME);
 
 			warning("************cgm_mesi_gpu_l2_get_getx_fwd(): block isn't in the cache id %llu blk addr 0x%08x\n",
 					message_packet->access_id,  message_packet->address & cache->block_address_mask);
@@ -3976,6 +4052,9 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 		case cgm_cache_block_modified:
 
 			//a GET/GETX_FWD means the block is E/M in this core. The block will be E/M in the L1
+
+			/*if((message_packet->address & cache->block_address_mask) == 0x081c7e40)
+				fatal("%s blk 0x%08x in in gpu cycle %llu\n", cache->name, (message_packet->address & cache->block_address_mask), P_TIME);*/
 
 			//store the getx_fwd in the pending request buffer
 			message_packet->inval_pending = 1;

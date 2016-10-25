@@ -4495,9 +4495,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 				else
 				{
 
-					/* The block was evicted silently and should not be L1 D's cache.
-					 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
-					 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
+					/* The block was evicted silently and should not be L1 D's cache.*/
 					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
 					assert(error == 0);
 
@@ -5824,8 +5822,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(owning_core == 8) //going to hub_iommu
 				{
 					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x\n",
-								cache->name, message_packet->address & cache->block_address_mask);
+						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x cycle %llu\n",
+								cache->name, message_packet->address & cache->block_address_mask, P_TIME);
 
 
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);

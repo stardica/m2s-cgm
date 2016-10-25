@@ -3737,11 +3737,19 @@ void gpu_l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
 			{
+
+				if((message_packet->address & gpu_l2_caches[my_pid].block_address_mask) == 0x081c7e40)
+					warning("%s blk 0x%08x get_fwd in gpu cycle %llu\n", gpu_l2_caches[my_pid].name, (message_packet->address & gpu_l2_caches[my_pid].block_address_mask), P_TIME);
+
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_getx_fwd_inval_ack)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_inval_ack(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx_fwd_nack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_nack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
