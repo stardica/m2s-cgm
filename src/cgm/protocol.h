@@ -155,12 +155,12 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_store_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_store_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);

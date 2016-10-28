@@ -448,12 +448,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->retry_queue;
 			assert(new_message);
 		}
-		else if (coherence_queue_size > 0)
-		{
-			new_message = list_get(cache->Coherance_Rx_queue, 0);
-			cache->last_queue = cache->Coherance_Rx_queue;
-			assert(new_message);
-		}
 		else if(rx_bottom_queue_size > 0)
 		{
 			/* if no CPU packet pull from the memory system side*/
@@ -461,6 +455,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 			//keep pointer to last queue
 			cache->last_queue = cache->Rx_queue_bottom;
+			assert(new_message);
+		}
+		else if (coherence_queue_size > 0)
+		{
+			new_message = list_get(cache->Coherance_Rx_queue, 0);
+			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
 		else if(rx_top_queue_size > 0)
@@ -3949,6 +3949,12 @@ void l2_cache_up_io_ctrl(void){
 
 		if(transfer_time == 0)
 			transfer_time = 1;
+
+		/*if(message_packet->access_id == 21187094 || message_packet->access_id == 21187099)
+		{
+			warning("l2 up io id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			getchar();
+		}*/
 
 		//drop into the correct l1 cache queue and lane.
 		if (message_packet->cpu_access_type == cgm_access_fetch)

@@ -4240,7 +4240,7 @@ void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *m
 			//clear the directory entry
 			cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
 
-			if(*cache_block_state_ptr == cgm_cache_block_modified)
+			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
 				message_packet->size = cache->block_size;
 				message_packet->cache_block_state = cgm_cache_block_modified;
@@ -4248,7 +4248,7 @@ void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *m
 			else
 			{
 				message_packet->size = 1;
-				message_packet->cache_block_state = cgm_cache_block_exclusive;
+				message_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 
 				//set access type inval_ack

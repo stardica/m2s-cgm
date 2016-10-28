@@ -257,6 +257,10 @@ void memctrl_ctrl(void){
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
 
+				if(message_packet->size != 64)
+					fatal("here id %llu type %d blk 0x%08x cycle %llu\n",
+							message_packet->access_id, message_packet->access_type, message_packet->address & l3_caches[0].block_address_mask, P_TIME);
+
 				assert(message_packet->size == 64);
 
 				if(DRAMSim == 1)
