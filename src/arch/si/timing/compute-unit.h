@@ -45,6 +45,7 @@ void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit, int phys
 struct si_compute_unit_t
 {
 	/* IDs */
+	char *name;
 	int id;
 	int subdevice_id;
 	long long uop_id_counter;

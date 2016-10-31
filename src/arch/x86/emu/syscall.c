@@ -5715,11 +5715,16 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
 	cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
 
+	fatal("gpu cycles %llu cu_unmapped_cycles %llu cu_mapped_cycles %llu cu stall %llu busy %llu\n",
+			(long long) asTiming(si_gpu)->cycle, cu_unmapped_cycles, cu_mapped_cycles, cpu_gpu_stats->cu_total_stalls[0], cpu_gpu_stats->cu_total_busy[0]);
+
 	cgm_store_stats(cgm_parallel_stats);
 
 	cgm_wrapup_stats->start_wrapup_section_cycle = P_TIME;
 
 	cgm_reset_stats();
+
+
 
 	//warning("stopping here total dispatches %llu syscall_fences %llu core_stalls %llu\n", total_dispatches, total_syscalls_fence, cgm_parallel_stats->core_stall_syscall[0]);
 	//getchar();

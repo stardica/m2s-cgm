@@ -22,6 +22,8 @@
 
 struct si_vector_mem_unit_t
 {
+	int id;
+
 	struct list_t *issue_buffer;  /* Issued instructions */
 	struct list_t *decode_buffer; /* Decoded instructions */
 	struct list_t *read_buffer;   /* Register reads */

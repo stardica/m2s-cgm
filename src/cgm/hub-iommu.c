@@ -138,25 +138,25 @@ struct cgm_packet_t *hub_iommu_get_from_queue(void){
 		//rotate
 		current_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->next_queue->name);
 
-		if(current_queue_num < (gpu_group_cache_num -1))
+		if(current_queue_num < (gpu_group_cache_num - 1))
 		{
 			//go to next queue
 			current_queue_num++;
 			hub_iommu->next_queue = hub_iommu->Rx_queue_top[current_queue_num];
 		}
-		else if(current_queue_num == (gpu_group_cache_num -1))
+		else if(current_queue_num == (gpu_group_cache_num - 1))
 		{
 			//at the last top queue
 			hub_iommu->next_queue = hub_iommu->Rx_queue_bottom;
 		}
-		else if(current_queue_num > gpu_group_cache_num)
+		else if(current_queue_num == gpu_group_cache_num || current_queue_num == (Rx_queue_num - 1))
 		{
 			//start at beginning.
 			hub_iommu->next_queue = hub_iommu->Rx_queue_top[0];
 		}
 		else
 		{
-			fatal("hub_iommu_get_from_queue(): unexpected queuing behavior\n");
+			fatal("hub_iommu_get_from_queue(): unexpected queuing behavior queue num %d \n", current_queue_num);
 		}
 
 	}while(new_message == NULL);

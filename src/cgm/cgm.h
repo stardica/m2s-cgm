@@ -162,7 +162,7 @@ extern char *cgm_stats_file_name;
 					if(mem_trace == 1){fclose (mem_trace_file);}
 
 #define STOP 	CLOSE_FILES;\
-				exit(0);
+				fatal("STOP!\n");
 
 enum stats_dump_config_t{
 
@@ -241,6 +241,11 @@ struct cpu_gpu_stats_t{
 	struct list_t **bandwidth;
 
 	/*gpu stats*/
+
+	long long *cu_total_busy;
+	long long *cu_total_stalls;
+
+
 };
 
 extern int gpu_running;

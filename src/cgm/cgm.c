@@ -176,7 +176,7 @@ void init_cgm_stats(int argc, char **argv){
 void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;
-	//int num_cus = si_gpu_num_compute_units;
+	int num_cus = si_gpu_num_compute_units;
 	//int gpu_group_cache_num = (num_cus/4);
 
 	/*configure data structures that are arrays*/
@@ -211,6 +211,9 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->core_commited_memory_insts = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
+
+	cgm_stat_container->cu_total_busy = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_total_stalls = (long long *)calloc(num_cus, sizeof(long long));
 
 	cgm_stat_container->l1_i_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
@@ -456,6 +459,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 void init_cpu_gpu_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
 	int i = 0;
 
 	/*configure data structures*/
@@ -494,7 +498,10 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->core_bytes_rx = (long long *)calloc(num_cores, sizeof(long long));
 	cpu_gpu_stats->core_bytes_tx = (long long *)calloc(num_cores, sizeof(long long));
 
+	/*GPU*/
 	cpu_gpu_stats->gpu_total_cycles = 0;
+	cpu_gpu_stats->cu_total_busy = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_total_stalls = (long long *)calloc(num_cus, sizeof(long long));
 
 	cpu_gpu_stats->bandwidth = (void *)calloc(num_cores, sizeof(struct list_t *));
 	for(i = 0; i < num_cores; i ++)
@@ -917,7 +924,7 @@ void cgm_store_stats(struct cgm_stats_t *cgm_stat_container){
 void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;
-	/*int num_cus = si_gpu_num_compute_units;*/
+	int num_cus = si_gpu_num_compute_units;
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
@@ -960,9 +967,13 @@ void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->systemcall_total_cycles = cpu_gpu_stats->systemcall_total_cycles;
 	cgm_stat_container->systemcall_total_rob_stalls = cpu_gpu_stats->systemcall_total_rob_stalls;
 	cgm_stat_container->gpu_total_cycles = cpu_gpu_stats->gpu_total_cycles;
-
 	cgm_stat_container->gpu_idle_cycles = cpu_gpu_stats->gpu_idle_cycles;
 
+	for(i = 0; i < num_cus; i++)
+	{
+		cgm_stat_container->cu_total_busy[i] = cpu_gpu_stats->cu_total_busy[i];
+		cgm_stat_container->cu_total_stalls[i] = cpu_gpu_stats->cu_total_stalls[i];
+	}
 
 	return;
 }
@@ -982,7 +993,7 @@ void cgm_reset_stats(void){
 void cpu_gpu_reset_stats(void){
 
 	int num_cores = x86_cpu_num_cores;
-	/*int num_cus = si_gpu_num_compute_units;*/
+	int num_cus = si_gpu_num_compute_units;
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 
@@ -1027,6 +1038,12 @@ void cpu_gpu_reset_stats(void){
 	cpu_gpu_stats->gpu_total_cycles = 0;
 	cpu_gpu_stats->systemcall_total_cycles = 0;
 	cpu_gpu_stats->systemcall_total_rob_stalls = 0;
+
+	for(i = 0; i < num_cus; i++)
+	{
+		cpu_gpu_stats->cu_total_busy[i] = 0;
+		cpu_gpu_stats->cu_total_stalls[i] = 0;
+	}
 
 	return;
 }
@@ -2299,6 +2316,8 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		//get the core ID number should be <= number of cores
 		id = vector_mem->compute_unit->id;
 		assert( id < num_cus);
+
+		//warning("CU %d accesses v $\n", id);
 
 		if(access_kind == cgm_access_nc_store)
 		{

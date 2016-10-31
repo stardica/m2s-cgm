@@ -604,23 +604,16 @@ struct cgm_stats_t{
 	/*redundant stats, this so we can save away our stats at a certain point in the benchmark's run.*/
 	//lsq stalls
 
+	/*CPU*/
 	long long *core_idle_time;
-
 	long long *core_total_busy;
 	long long *core_drain_time;
-
 	long long *core_total_stalls;
-
 	long long *core_lsq_stalls;
 	long long *core_lsq_stall_load;
 	long long *core_lsq_stall_store;
-
-	//iq stalls
 	long long *core_iq_stalls;
-
-	//system stalls
 	long long *core_rename_stalls;
-
 	long long *core_num_syscalls;
 	long long *core_syscall_stalls;
 	long long *core_rob_stalls;
@@ -636,10 +629,17 @@ struct cgm_stats_t{
 	long long *core_bytes_rx;
 	long long *core_bytes_tx;
 
+	/*System*/
 	long long systemcall_total_cycles;
 	long long systemcall_total_rob_stalls;
+
+	/*GPU*/
 	long long gpu_total_cycles;
 	long long gpu_idle_cycles;
+	long long Cu_idle_cycles;
+	long long *cu_total_busy;
+	long long *cu_total_stalls;
+
 
 	//memory system at large
 	int first_mem_access_lat;

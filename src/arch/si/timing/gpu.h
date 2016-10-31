@@ -272,6 +272,16 @@ int SIGpuRun(Timing *self);
 
 extern SIGpu *si_gpu;
 
+extern long long cu_unmapped_cycles;
+extern long long cu_mapped_cycles;
+extern long long old_time;
+extern long long v_mem;
+extern long long mem_buffer;
+extern long long mem_write_stall;
+extern long long mem_write_complete;
+//extern long long mem_write_complete;
+extern long long num_uops;
+extern long long num_uops_out;
 
 #endif
 

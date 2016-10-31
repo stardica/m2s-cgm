@@ -82,6 +82,7 @@ void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
 	{
 		ndrange->global_size3[i] = global_size[i];
 	}
+
 	ndrange->global_size = ndrange->global_size3[0] *
 		ndrange->global_size3[1] * ndrange->global_size3[2];
 

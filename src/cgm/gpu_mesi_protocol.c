@@ -1636,6 +1636,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
+
 				//set the new directory entry
 				cgm_cache_set_dir(cache, write_back_packet->set, write_back_packet->l2_victim_way, message_packet->l1_cache_id);
 

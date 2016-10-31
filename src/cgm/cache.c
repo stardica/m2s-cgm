@@ -441,55 +441,115 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if the state is still "can process" then check queue statuses and schedule a packet*/
 	if(state == schedule_can_process)
 	{
-		if(retry_queue_size > 0)
-		{
-			/*pull from the retry queue if there is a packet in retry*/
-			new_message = list_get(cache->retry_queue, 0);
-			cache->last_queue = cache->retry_queue;
-			assert(new_message);
-		}
-		else if(rx_bottom_queue_size > 0)
-		{
-			/* if no CPU packet pull from the memory system side*/
-			new_message = list_get(cache->Rx_queue_bottom, 0);
 
-			//keep pointer to last queue
-			cache->last_queue = cache->Rx_queue_bottom;
-			assert(new_message);
-		}
-		else if (coherence_queue_size > 0)
+		if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 		{
-			new_message = list_get(cache->Coherance_Rx_queue, 0);
-			cache->last_queue = cache->Coherance_Rx_queue;
-			assert(new_message);
-		}
-		else if(rx_top_queue_size > 0)
-		{
-			/*pull from the cpu side*/
-			new_message = list_get(cache->Rx_queue_top, 0);
-
-			//keep pointer to last queue
-			cache->last_queue = cache->Rx_queue_top;
-			assert(new_message);
-		}
-		else if(write_back_queue_size > 0)
-		{
-			new_message = cache_search_wb_not_pending_flush(cache);
-
-			/*if all write backs are pending we can't do anything with the write backs*/
-			if(!new_message)
+			if(retry_queue_size > 0)
 			{
-				state = schedule_stall;
+				/*pull from the retry queue if there is a packet in retry*/
+				new_message = list_get(cache->retry_queue, 0);
+				cache->last_queue = cache->retry_queue;
+				assert(new_message);
+			}
+			else if(rx_bottom_queue_size > 0)
+			{
+				/* if no CPU packet pull from the memory system side*/
+				new_message = list_get(cache->Rx_queue_bottom, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->Rx_queue_bottom;
+				assert(new_message);
+			}
+			else if (coherence_queue_size > 0)
+			{
+				new_message = list_get(cache->Coherance_Rx_queue, 0);
+				cache->last_queue = cache->Coherance_Rx_queue;
+				assert(new_message);
+			}
+			else if(rx_top_queue_size > 0)
+			{
+				/*pull from the cpu side*/
+				new_message = list_get(cache->Rx_queue_top, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->Rx_queue_top;
+				assert(new_message);
+			}
+			else if(write_back_queue_size > 0)
+			{
+				new_message = cache_search_wb_not_pending_flush(cache);
+
+				/*if all write backs are pending we can't do anything with the write backs*/
+				if(!new_message)
+				{
+					state = schedule_stall;
+				}
+				else
+				{
+					cache->last_queue = cache->write_back_buffer;
+					assert(new_message);
+				}
 			}
 			else
 			{
-				cache->last_queue = cache->write_back_buffer;
-				assert(new_message);
+				fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
 			}
 		}
 		else
 		{
-			fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
+			assert(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t);
+
+			if(retry_queue_size > 0)
+			{
+				/*pull from the retry queue if there is a packet in retry*/
+				new_message = list_get(cache->retry_queue, 0);
+				cache->last_queue = cache->retry_queue;
+				assert(new_message);
+			}
+			else if (coherence_queue_size > 0)
+			{
+				new_message = list_get(cache->Coherance_Rx_queue, 0);
+				cache->last_queue = cache->Coherance_Rx_queue;
+				assert(new_message);
+			}
+			else if(rx_bottom_queue_size > 0)
+			{
+				/* if no CPU packet pull from the memory system side*/
+				new_message = list_get(cache->Rx_queue_bottom, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->Rx_queue_bottom;
+				assert(new_message);
+			}
+			else if(rx_top_queue_size > 0)
+			{
+				/*pull from the cpu side*/
+				new_message = list_get(cache->Rx_queue_top, 0);
+
+				//keep pointer to last queue
+				cache->last_queue = cache->Rx_queue_top;
+				assert(new_message);
+			}
+			else if(write_back_queue_size > 0)
+			{
+				new_message = cache_search_wb_not_pending_flush(cache);
+
+				/*if all write backs are pending we can't do anything with the write backs*/
+				if(!new_message)
+				{
+					state = schedule_stall;
+				}
+				else
+				{
+					cache->last_queue = cache->write_back_buffer;
+					assert(new_message);
+				}
+			}
+			else
+			{
+				fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
+			}
+
 		}
 
 	}
@@ -5429,6 +5489,24 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 	SETDIR(cache_id, 14);
 	SETDIR(cache_id, 15);
 
+	SETDIR(cache_id, 16);
+	SETDIR(cache_id, 17);
+	SETDIR(cache_id, 18);
+	SETDIR(cache_id, 19);
+	SETDIR(cache_id, 20);
+	SETDIR(cache_id, 21);
+	SETDIR(cache_id, 22);
+	SETDIR(cache_id, 23);
+	SETDIR(cache_id, 24);
+	SETDIR(cache_id, 25);
+	SETDIR(cache_id, 26);
+	SETDIR(cache_id, 27);
+	SETDIR(cache_id, 28);
+	SETDIR(cache_id, 29);
+	SETDIR(cache_id, 30);
+	SETDIR(cache_id, 31);
+
+
 	/*if(cache_id == 0)
 	{
 		cache->sets[set].blocks[way].directory_entry.entry_bits.p0 = 1;
@@ -5549,6 +5627,23 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int cache_
 	MATCHCORE(cache_id, 13);
 	MATCHCORE(cache_id, 14);
 	MATCHCORE(cache_id, 15);
+
+	MATCHCORE(cache_id, 16);
+	MATCHCORE(cache_id, 17);
+	MATCHCORE(cache_id, 18);
+	MATCHCORE(cache_id, 19);
+	MATCHCORE(cache_id, 20);
+	MATCHCORE(cache_id, 21);
+	MATCHCORE(cache_id, 22);
+	MATCHCORE(cache_id, 23);
+	MATCHCORE(cache_id, 24);
+	MATCHCORE(cache_id, 25);
+	MATCHCORE(cache_id, 26);
+	MATCHCORE(cache_id, 27);
+	MATCHCORE(cache_id, 28);
+	MATCHCORE(cache_id, 29);
+	MATCHCORE(cache_id, 30);
+	MATCHCORE(cache_id, 31);
 
 	/*if(cache_id == 0 && cache->sets[set].blocks[way].directory_entry.entry_bits.p0 == 1)
 	{
@@ -5739,7 +5834,14 @@ int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t 
 
 	//if j is greater than 1 the block is in more than one core; BAD!!!
 	assert(j == 1);
-	assert(xowner >= 0 && xowner < total_cores);
+	if(processor == gpu)
+	{
+		assert(xowner >= 0 && xowner < num_cus);
+	}
+	else
+	{
+		assert(xowner >= 0 && xowner < total_cores);
+	}
 
 	return xowner;
 

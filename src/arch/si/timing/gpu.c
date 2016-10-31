@@ -389,7 +389,7 @@ int si_gpu_lds_decode_latency = 1;
 int si_gpu_lds_decode_buffer_size = 1;
 int si_gpu_lds_read_latency = 1;
 int si_gpu_lds_read_buffer_size = 1;
-int si_gpu_lds_max_inflight_mem_accesses = 32;
+int si_gpu_lds_max_inflight_mem_accesses = 16;
 int si_gpu_lds_write_latency = 1;
 int si_gpu_lds_write_buffer_size = 1;
 
@@ -1029,6 +1029,8 @@ void SIGpuCreate(SIGpu *self)
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
+	char name[MAX_STRING_SIZE];
+
 	/*printf("cu id %d\n", compute_unit_id);*/
 
 	/* Parent */
@@ -1046,11 +1048,18 @@ void SIGpuCreate(SIGpu *self)
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		compute_unit = si_compute_unit_create();
+
+		snprintf(name, sizeof name, "cu%d", compute_unit_id);
+		compute_unit->name = str_set(compute_unit->name, name);
 		compute_unit->id = compute_unit_id;
+
+
 		self->compute_units[compute_unit_id] = compute_unit;
 		list_add(self->available_compute_units, compute_unit);
-	}
 
+		//star added this
+		printf("---GPU Compute Unit %s id %d created---\n", compute_unit->name, compute_unit->id);
+	}
 
 	/* Virtual functions */
 	asObject(self)->Dump = SIGpuDump;
@@ -1129,6 +1138,8 @@ int SIGpuRun(Timing *self)
 		return FALSE;
 	}
 
+
+
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
 
@@ -1139,6 +1150,9 @@ int SIGpuRun(Timing *self)
 	/*Allocate work-groups to compute units */
 	while (list_count(gpu->available_compute_units) && list_count(si_emu->waiting_work_groups))
 	{
+
+		//printf("here\n");
+
 		work_group_id = (long) list_dequeue(si_emu->waiting_work_groups);
 
 		work_group = si_work_group_create(work_group_id, ndrange);
@@ -1148,9 +1162,9 @@ int SIGpuRun(Timing *self)
 		si_compute_unit_map_work_group(list_dequeue(gpu->available_compute_units), work_group);
 	}
 
+
 	/* One more cycle */
 	asTiming(si_gpu)->cycle++;
-
 
 	/*warning("GPU start time %llu\n", P_TIME);
 	getchar();*/

@@ -202,6 +202,8 @@ void gpu_configure(Timing *self, struct config_t *config){
 		fflush(stdout);
 	}
 
+	if(num_cus <= 0 || num_cus > 32)
+		fatal("number of si_gpu compute_units must be between 1 and 32 set as %d\n", list_count(si_gpu->available_compute_units));
 
 	//star todo pull compute_unit_index automatically.
 	//i think getting the size of the arrays will work?
@@ -230,6 +232,8 @@ void gpu_configure(Timing *self, struct config_t *config){
 		compute_unit->gpu_s_cache_ptr = gpu_s_caches;
 		compute_unit->gpu_lds_unit_ptr = gpu_lds_units;
 	}
+
+
 
 	/*if(MSG==1)
 	{
@@ -3508,7 +3512,9 @@ int switch_finish_create(void){
 
 	hub_iommu->id = 0;
 
+
 	hub_iommu->gpu_l2_num = gpu_group_cache_num;
+
 
 	//create one Rx and Tx queue for each gpu l2 caches
 	hub_iommu->Rx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
@@ -3526,7 +3532,10 @@ int switch_finish_create(void){
 		snprintf(buff, 100, "hub_iommu.Tx_queue_top[%d]", i);
 		hub_iommu->Tx_queue_top[i]->name = strdup(buff);
 
+		//printf("hub_iommu->Rx_queue_top[i]->name %s\n", hub_iommu->Rx_queue_top[i]->name);
 	}
+
+	//printf("Rx_queue_num %d\n", Rx_queue_num);
 
 	//create the bottom Rx and Tx queues
 	hub_iommu->Rx_queue_bottom = list_create();
@@ -3605,14 +3614,10 @@ int switch_finish_create(void){
 	hub_iommu_ctrl = hub_iommu_ctrl_func;
 	hub_iommu_put_next_queue = hub_iommu_put_next_queue_func;
 
-	assert(cgm_gpu_cache_protocol == cgm_protocol_non_coherent
-			|| cgm_gpu_cache_protocol == cgm_protocol_mesi);
+	assert(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi);
 
 
 	hub_iommu_create_tasks(hub_iommu_ctrl);
-
-
-
 
 	/*//configure correct routing function
 	if(hub_iommu_connection_type == hub_to_mc)
