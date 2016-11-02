@@ -639,6 +639,8 @@ struct cgm_stats_t{
 	long long Cu_idle_cycles;
 	long long *cu_total_busy;
 	long long *cu_total_stalls;
+	long long *cu_total_mapped;
+	long long *cu_total_unmapped;
 
 
 	//memory system at large

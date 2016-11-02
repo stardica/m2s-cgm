@@ -388,6 +388,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		 * memory instructions */
 		if (wavefront->wavefront_pool_entry->wait_for_mem)
 		{
+			//printf("waiting id %d cycle %llu\n", wavefront->id, P_TIME);
+
 			if (!wavefront->wavefront_pool_entry->lgkm_cnt && !wavefront->wavefront_pool_entry->vm_cnt)
 			{
 				wavefront->wavefront_pool_entry->wait_for_mem = 0;
@@ -521,6 +523,9 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 	enum gpu_issue_state_t simd_gpu_state = idle;
 	enum gpu_issue_state_t lds_gpu_state = idle;
 
+	/*if(compute_unit->id == 0)
+		printf("start cycle %llu\n", P_TIME);*/
+
 	/* Branch unit */
 	oldest_uop = NULL;
 	list_index = 0;
@@ -529,8 +534,10 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 
 	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type; issued_insts++)
 	{
+
 		for (i = 0; i < list_entries; i++)
 		{
+
 			uop = list_get(compute_unit->fetch_buffers[active_fb], list_index);
 			assert(uop);
 
@@ -565,11 +572,12 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 				oldest_uop = uop;
 			}
 
-			branch_gpu_state = busy;
-
 			/* Issue the oldest branch instruction */
 			if (oldest_uop && list_count(compute_unit->branch_unit.issue_buffer) < si_gpu_branch_unit_issue_buffer_size)
 			{
+
+				branch_gpu_state = busy;
+
 				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->branch_unit.issue_buffer, oldest_uop);
@@ -613,7 +621,6 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 				continue;
 			}
 
-			scalar_gpu_state = stalled;
 
 			if (uop->inst.info->fmt == SI_FMT_SOPP && uop->inst.micro_inst.sopp.op > 1 && uop->inst.micro_inst.sopp.op < 10)
 			{
@@ -629,18 +636,21 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 				continue;
 			}
 
+			scalar_gpu_state = stalled;
+
 			/* Save the oldest uop */
 			if (!oldest_uop || uop->fetch_ready < oldest_uop->fetch_ready)
 			{
 				oldest_uop = uop;
 			}
 
-			scalar_gpu_state = busy;
 
 			/* Issue the oldest scalar instruction */
-			if (oldest_uop &&
-				list_count(compute_unit->scalar_unit.issue_buffer) < si_gpu_scalar_unit_issue_buffer_size)
+			if (oldest_uop && list_count(compute_unit->scalar_unit.issue_buffer) < si_gpu_scalar_unit_issue_buffer_size)
 			{
+
+				scalar_gpu_state = busy;
+
 				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->scalar_unit.issue_buffer, oldest_uop);
@@ -735,16 +745,19 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 	oldest_uop = NULL;
 	list_index = 0;
 
+	int v_issued = 0;
+
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;issued_insts++)
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type; issued_insts++)
 	{
+
+		assert(issued_insts == 0);
+
 		for (i = 0; i < list_entries; i++)
 		{
 
 			uop = list_get(compute_unit->fetch_buffers[active_fb], list_index);
 			assert(uop);
-
-			vector_gpu_state = stalled;
 
 			/* Only evaluate memory instructions */
 			if (uop->inst.info->fmt != SI_FMT_MTBUF)
@@ -761,17 +774,29 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 				continue;
 			}
 
+			if(vector_gpu_state != busy)
+				vector_gpu_state = stalled;
+
 			/* Save the oldest uop */
 			if (!oldest_uop || uop->fetch_ready < oldest_uop->fetch_ready)
 			{
+				/*if(compute_unit->id == 0)
+				{
+					printf("running list_entries %d cycle %llu\n", list_entries, P_TIME);
+					getchar();
+				}*/
+
 				oldest_uop = uop;
 			}
-
-			vector_gpu_state = busy;
 
 			/* Issue the oldest memory instruction */
 			if (oldest_uop && list_count(compute_unit->vector_mem_unit.issue_buffer) < si_gpu_vector_mem_issue_buffer_size)
 			{
+				vector_gpu_state = busy;
+
+				assert(v_issued == 0);
+				v_issued++;
+
 				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->vector_mem_unit.issue_buffer, oldest_uop);
@@ -789,6 +814,9 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 				compute_unit->vector_mem_inst_count++;
 				uop->wavefront_pool_entry->lgkm_cnt++;
 			}
+
+			if(vector_gpu_state == stalled)
+				assert(list_count(compute_unit->vector_mem_unit.issue_buffer) == si_gpu_vector_mem_issue_buffer_size);
 		}
 	}
 
@@ -866,21 +894,18 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", uop->id_in_compute_unit, compute_unit->id, uop->wavefront->id, uop->id_in_wavefront);
 	}
 
-	if(vector_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled)
-	{
-
-	}
-
+	//star delete me later...
+	if(scalar_gpu_state == stalled && branch_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled);
 
 	/*stats*/
 	/*CU stall time*/
-	if(branch_gpu_state == stalled && scalar_gpu_state == stalled)// && vector_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled)
+	if(vector_gpu_state == stalled)// || scalar_gpu_state == stalled)// && scalar_gpu_state == stalled) // && vector_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled)
 	{
-		cpu_gpu_stats->cu_total_stalls[compute_unit->id]++;
+		cpu_gpu_stats->cu_total_stalls[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 	}
 	else
 	{
-		cpu_gpu_stats->cu_total_busy[compute_unit->id]++;
+		cpu_gpu_stats->cu_total_busy[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 	}
 
 
@@ -1331,14 +1356,12 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	/* Return if no work groups are mapped to this compute unit */
 	if (!compute_unit->work_group_count)
 	{
-		if(compute_unit->id == 0)
-			cu_unmapped_cycles++;
+		cpu_gpu_stats->cu_total_unmapped[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 
 		return;
 	}
 
-	if(compute_unit->id == 0)
-		cu_mapped_cycles++;
+	cpu_gpu_stats->cu_total_mapped[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 
 	/* Fetch buffer chosen to issue this cycle */
 	active_fetch_buffer = asTiming(si_gpu)->cycle % compute_unit->num_wavefront_pools;

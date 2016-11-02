@@ -244,6 +244,8 @@ struct cpu_gpu_stats_t{
 
 	long long *cu_total_busy;
 	long long *cu_total_stalls;
+	long long *cu_total_mapped;
+	long long *cu_total_unmapped;
 
 
 };
