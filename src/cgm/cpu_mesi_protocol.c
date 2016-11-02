@@ -4662,6 +4662,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			//clear the conflict bit in the packet
 			message_packet->l3_pending = 0;
 
+			assert(message_packet->cpu_access_type != cgm_access_fetch);
+
 			//add some routing/status data to the packet
 			if(message_packet->l1_access_type == cgm_access_getx || message_packet->l1_access_type == cgm_access_upgrade)
 			{
@@ -4799,16 +4801,35 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			//add some routing/status data to the packet
 			if(message_packet->l1_access_type == cgm_access_getx || message_packet->l1_access_type == cgm_access_upgrade)
 			{
+				assert(message_packet->cpu_access_type == cgm_access_store);
+
 				message_packet->access_type = cgm_access_getx;
+			}
+			else if(message_packet->l1_access_type == cgm_access_get)
+			{
+				assert(message_packet->cpu_access_type == cgm_access_load);
+
+				message_packet->access_type = cgm_access_get;
 			}
 			else
 			{
-				message_packet->access_type = cgm_access_get;
+				if(message_packet->cpu_access_type != cgm_access_fetch)
+					fatal("here type %d\n", message_packet->cpu_access_type);
+
+				assert(message_packet->cpu_access_type == cgm_access_fetch);
+
+				message_packet->access_type = cgm_access_gets;
 			}
 
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 			message_packet->l2_cache_id = cache->id;
 			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
+
+
+			//if(message_packet->access_id == 529938)
+			//		warning(" id %llu coal %d\n", message_packet->access_id, message_packet->coalesced);
 
 			SETROUTE(message_packet, cache, l3_cache_ptr)
 
@@ -5574,7 +5595,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					if(message_packet->coalesced == 1)
 						return;
 					else
-						fatal("cgm_mesi_l3_get(): write failed to coalesce when all ways are transient...\n");
+						fatal("cgm_mesi_l3_get(): write failed to coalesce when all ways are transient id %llu type %d cpu type %d blk_addr 0x%08x\n",
+								message_packet->access_id, message_packet->access_type, message_packet->cpu_access_type, message_packet->address & cache->block_address_mask);
 				}
 
 
@@ -5678,6 +5700,11 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			}
 			else
 			{
+
+				if(message_packet->cpu_access_type != cgm_access_load)
+					fatal("block 0x%08x %s load miss ID %llu type %d cpu access type %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name,
+							message_packet->access_id, message_packet->access_type, message_packet->cpu_access_type, P_TIME);
 
 				assert(message_packet->cpu_access_type == cgm_access_load);
 

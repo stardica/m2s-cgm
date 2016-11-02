@@ -5118,6 +5118,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *num_sets_ptr = &num_sets;
 	int *ort_size_ptr = &ort_size;
 
+	assert(message_packet->coalesced == 0);
+
 	//get the status of the ORT
 	ort_get_row_sets_size(cache, message_packet->tag, message_packet->set, hit_row_ptr, num_sets_ptr, ort_size_ptr);
 
