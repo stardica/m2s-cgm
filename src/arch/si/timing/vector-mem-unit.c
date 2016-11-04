@@ -315,7 +315,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		/* Access global memory */
 		assert(!uop->global_mem_witness);
 
-		int curr_size = (GPUQueueSize - list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top));
+		//int curr_size = (GPUQueueSize - list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top));
 
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
@@ -342,7 +342,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		//printf("abs %d queue %d\n", abs(uop->global_mem_witness),  (GPUQueueSize - list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top)));
-		assert(abs(uop->global_mem_witness) <= curr_size);
+		//assert(abs(uop->global_mem_witness) <= curr_size);
 
 		//fatal("uop->global_mem_witness %d id %llu\n", uop->global_mem_witness, uop->id);
 

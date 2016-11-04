@@ -6576,6 +6576,7 @@ void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+int err_msg_01 = 0;
 
 //star added this here
 //R = DS[ADDR+offset0*4*64], R+1 = DS[ADDR+offset1*4*64].
@@ -6617,8 +6618,11 @@ void si_isa_DS_READ2ST64_B32_impl(struct si_work_item_t *work_item, struct si_in
 	else
 	{
 		/* If offset1 != 1, then the following is incorrect */
-		if(INST.offset0 != 0 || INST.offset1 != 1)
+		if((INST.offset0 != 0 || INST.offset1 != 1) && (err_msg_01 == 0))
+		{
 			warning("si_isa_DS_READ2ST64_B32_impl(): Offset not what it ought to be cycle %llu\n", P_TIME);
+			err_msg_01 = 1;
+		}
 		//assert(INST.offset0 == 0);
 		//assert(INST.offset1 == 1);
 		work_item->lds_access_count = 2;

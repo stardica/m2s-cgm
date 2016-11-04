@@ -429,6 +429,9 @@ void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_pack
 	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_row < cache->mshr_size);
 
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	//add some routing/status data to the packet
 	message_packet->access_type = cgm_access_get;
 
@@ -688,6 +691,9 @@ void cgm_mesi_store_nack(struct cache_t *cache, struct cgm_packet_t *message_pac
 	//check that there is an ORT entry for this address
 	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_row < cache->mshr_size);
+
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//add some routing/status data to the packet
 	message_packet->access_type = cgm_access_getx;
@@ -1992,6 +1998,9 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 	message_packet->l2_cache_id = cache->id;
 	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	SETROUTE(message_packet, cache, l3_cache_ptr)
 
 	//transmit to L3
@@ -2346,6 +2355,9 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 	message_packet->l2_cache_id = cache->id;
 	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	SETROUTE(message_packet, cache, l3_cache_ptr);
 
@@ -3867,6 +3879,9 @@ void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	message_packet->l2_cache_id = cache->id;
 	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	SETROUTE(message_packet, cache, l3_cache_ptr)
 
 	cache_put_io_down_queue(cache, message_packet);
@@ -4252,6 +4267,9 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 	message_packet->l2_cache_id = cache->id;
 	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	SETROUTE(message_packet, cache, l3_cache_ptr)
 
@@ -4677,6 +4695,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 			message_packet->l2_cache_id = cache->id;
 			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
 
 			SETROUTE(message_packet, cache, l3_cache_ptr)
 
@@ -8559,6 +8579,10 @@ void cgm_mesi_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *messag
 	message_packet->access_id = pending_packet->access_id;
 	message_packet->name = strdup(pending_packet->name);
 	message_packet->start_cycle = pending_packet->start_cycle;
+
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	assert(pending_packet->address == message_packet->address);
 	//pending_packet->l2_victim_way = message_packet->way;
 	//assert(pending_packet->set == message_packet->set && pending_packet->tag == message_packet->tag);

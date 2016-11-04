@@ -2031,6 +2031,8 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 	//align the address
 	blk_aligned_addr = host_addr & ~(blk_mask);
 
+	if(host_addr != guest_addr)
+		fatal("uop_factory_c_read(): host and guest addr different host 0x%08x quest 0x%08x\n", host_addr, guest_addr);
 	assert(host_addr == guest_addr);
 
 	for(i = 0; i < size; i++)
