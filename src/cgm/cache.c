@@ -3615,12 +3615,12 @@ void gpu_v_cache_ctrl(void){
 			step++;
 
 			/////////testing
-			if(message_packet->address >= 0x00000000 && message_packet->address <= 0x3F)
+			/*if(message_packet->address >= 0x00000000 && message_packet->address <= 0x3F)
 			{
 				(*message_packet->witness_ptr)++;
 				list_remove(gpu_v_caches[my_pid].Rx_queue_top, message_packet);
 				continue;
-			}
+			}*/
 			/////////testing
 
 			access_type = message_packet->access_type;
@@ -3914,9 +3914,11 @@ void l1_d_cache_down_io_ctrl(void){
 			transfer_time = 1;
 
 		//drop into the next correct virtual lane/queue.
-		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
+		if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_get
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
-				|| message_packet->access_type == cgm_access_gpu_flush)
+				|| message_packet->access_type == cgm_access_gpu_flush || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_getx)
+
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -3944,8 +3946,7 @@ void l1_d_cache_down_io_ctrl(void){
 					l2_caches[my_pid].TotalWrites++;
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back)
+		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack)
 		{
 
 			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
@@ -4128,7 +4129,8 @@ void l2_cache_down_io_ctrl(void){
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get
 				|| message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade
-				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush)
+				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush
+				|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_flush_block_ack)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -4168,8 +4170,7 @@ void l2_cache_down_io_ctrl(void){
 
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+		else if( message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
 				|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_getx_fwd_ack
 				|| message_packet->access_type == cgm_access_downgrade_nack || message_packet->access_type == cgm_access_getx_fwd_nack
 				|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
@@ -4197,14 +4198,7 @@ void l2_cache_down_io_ctrl(void){
 			fatal("l2_cache_down_io_ctrl(): invalid access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
 
-
 			//-----------------------------------------------
-
-
-
-
-
-
 			/*stats
 			//store_stat_bandwidth(bytes_tx, my_pid, transfer_time, l2_caches[my_pid].bus_width);
 
@@ -4273,6 +4267,16 @@ void l3_cache_up_io_ctrl(void){
 
 		if(transfer_time == 0)
 			transfer_time = 1;
+
+		if(message_packet->coalesced != 0)
+			fatal("l3_cache_up_io_ctrl(): %s accesses coaled %d assoc %d access_id %llu address 0x%08x blk_addr 0x%08x cycle %llu\n",
+					l3_caches[my_pid].name, message_packet->coalesced, message_packet->assoc_conflict,
+					message_packet->access_id, message_packet->address, message_packet->address & l3_caches[my_pid].block_address_mask, P_TIME);
+
+
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 
 		//try to place on switches
 		if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
@@ -4573,7 +4577,8 @@ void gpu_v_cache_down_io_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_upgrade)
+				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_write_back
+				|| message_packet->access_type == cgm_access_flush_block_ack)
 		{
 			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= GPUQueueSize)
 			{
@@ -4582,14 +4587,6 @@ void gpu_v_cache_down_io_ctrl(void){
 			else
 			{
 				step++;
-
-				//printf("v cache send rx cycle %llu\n", P_TIME);
-
-				/*if(P_TIME == 17314083)
-				{
-					cgm_dump_system();
-					exit(0);
-				}*/
 
 				GPU_PAUSE(transfer_time);
 
@@ -4607,8 +4604,7 @@ void gpu_v_cache_down_io_ctrl(void){
 					gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalWrites++;
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
 				|| message_packet->access_type == cgm_access_gpu_flush_ack)
 		{
 
@@ -4620,6 +4616,8 @@ void gpu_v_cache_down_io_ctrl(void){
 			{
 				step++;
 
+				GPU_PAUSE(transfer_time);
+
 				//printf("v cache send co cycle %llu\n", P_TIME);
 
 				message_packet = list_remove(gpu_v_caches[my_pid].Tx_queue_bottom, message_packet);
@@ -4629,7 +4627,6 @@ void gpu_v_cache_down_io_ctrl(void){
 				/*stats*/
 				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
 
-				GPU_PAUSE(transfer_time);
 			}
 		}
 		else
@@ -5377,6 +5374,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 			return;
 		}
 	}
+
+
 
 	return;
 }
@@ -6225,6 +6224,8 @@ int cache_validate_block_flushed_from_l1(struct cache_t *caches, int core_id, un
 	if(*cache_block_hit_ptr == 1 || write_back_packet)
 		hit = 1;
 
+
+
 	return hit;
 }
 
@@ -6264,10 +6265,34 @@ int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned in
 		write_back_packet = cache_search_wb(&caches[i], tag, set);
 
 		if(*cache_block_hit_ptr == 1 || write_back_packet)
+		{
 			hit = 1;
+
+			/*fatal("\terror check l1_hit %d l2_hit %d cycle %llu\n", l1_hit, l2_hit, P_TIME);*/
+			printf("\terror check l1_hit_ptr %d l1_state_ptr %d\n"
+				   "\terror L1_wb %s\n",
+				  *cache_block_hit_ptr, *cache_block_state_ptr, write_back_packet ? "1" : "0");
+
+			printf("block 0x%08x searching for set %d tag %d\n", addr, set, tag);
+			cgm_cache_print_set_tag(&caches[i], addr);
+			cgm_cache_dump_set(&caches[i], set);
+			if(write_back_packet)
+			{
+				printf("block 0x%08x l1 wb_addr 0x%08x id %llu wb_set %d wb_tag %d\n",
+					addr, write_back_packet->address, write_back_packet->write_back_id, write_back_packet->set, write_back_packet->tag);
+			}
+		}
 	}
 
+	/*if(hit == 1)
+	{
+
+
+		else
+		{
+			printf("l1 no wb found\n");
+		}
+	}*/
+
 	return hit;
-
 }
-

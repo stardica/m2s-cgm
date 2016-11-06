@@ -3879,6 +3879,12 @@ void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	message_packet->l2_cache_id = cache->id;
 	message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
+	if(message_packet->coalesced != 0)
+		fatal("cgm_mesi_l2_downgrade_nack(): %s accesses coaled %d assoc %d access_id %llu address 0x%08x blk_addr 0x%08x cycle %llu\n",
+			cache->name, message_packet->coalesced, message_packet->assoc_conflict,
+			message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask, P_TIME);
+
+
 	assert(message_packet->coalesced == 0);
 	assert(message_packet->assoc_conflict == 0);
 
@@ -5147,6 +5153,10 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch miss ID %llu type %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
+
 			//transmit to SA/MC
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -5184,6 +5194,10 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch hit ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -5229,7 +5243,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 	if the write back is a surprise the block will be exclusive and old in the L2 cache.*/
 
 	//WB from L1 D cache
-	if(cache->last_queue == cache->Coherance_Rx_queue)
+	if(cache->last_queue == cache->Rx_queue_top)
 	{
 		switch(*cache_block_state_ptr)
 		{
@@ -5645,6 +5659,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					//update routing headers
 					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 					//SETROUTE(message_packet, cache, l2_cache_ptr)
+
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
 
 					//send the reply
 					cache_put_io_up_queue(cache, message_packet);
@@ -7833,7 +7851,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 
 	//WB from L2 cache
-	if(cache->last_queue == cache->Coherance_Rx_queue)
+	if(cache->last_queue == cache->Rx_queue_top)
 	{
 		assert(message_packet->size > 1);
 

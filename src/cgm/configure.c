@@ -656,10 +656,12 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 		if(strcmp(temp_strn, "MC") == 0)
 		{
 			hub_iommu_connection_type = hub_to_mc;
+			printf("---GPU connection type is MC---\n");
 		}
 		else if(strcmp(temp_strn, "L3") == 0)
 		{
 			hub_iommu_connection_type = hub_to_l3;
+			printf("---GPU connection type is L3---\n");
 		}
 		else
 		{

@@ -3406,7 +3406,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			if(write_back_packet)
 			{
 				/*inval is complete for this write back so it should not be up in L1 D*/
-				error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
+				error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 				assert(error == 0);
 
 				assert(write_back_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_exclusive);
@@ -3998,7 +3998,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					/* The block was evicted silently and should not be in the L1 cache.
 					 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
 					 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
-					error = cache_validate_block_flushed_from_l1(l1_d_caches, cache->id, message_packet->address);
+					error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 					assert(error == 0);
 
 					/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
@@ -4745,7 +4745,7 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 		assert(pending_bit == 1);
 
 
-	error = cache_validate_block_flushed_from_l1(gpu_v_caches, message_packet->l1_cache_id, message_packet->address);
+	error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 	if(error != 0)
 	{
 		struct cgm_packet_t *L1_wb_packet = cache_search_wb(&gpu_v_caches[message_packet->l1_cache_id], message_packet->tag, message_packet->set);
@@ -6189,7 +6189,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 	if the write back is a surprise the block will be exclusive and old in the L2 cache.*/
 
 	//WB from L1 D cache
-	if(cache->last_queue == cache->Coherance_Rx_queue)
+	if(cache->last_queue == cache->Rx_queue_top)
 	{
 
 		assert(message_packet->size == 64);
@@ -6266,7 +6266,21 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 				if(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) != 1)
 					cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way);
 
-				error = cache_validate_block_flushed_from_l1(gpu_v_caches, cache->id, message_packet->address);
+				error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
+				if(error != 0)
+				{
+					struct cgm_packet_t *L1_wb_packet = cache_search_wb(&gpu_v_caches[cache->id], message_packet->tag, message_packet->set);
+
+					if(L1_wb_packet)
+						warning("wbp found %llu\n", L1_wb_packet->evict_id);
+
+
+					fatal("cgm_mesi_gpu_l2_write_back(): %s error %d as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+						cache->name, error, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+						message_packet->access_id, message_packet->address, message_packet->address & cache->block_address_mask,
+						message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+
+				}
 				assert(error == 0);
 
 				//destroy the L1 D WB message. L2 will clear its WB at an opportune time.
@@ -6287,7 +6301,7 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 		assert(*cache_block_hit_ptr == 0); //verify block is not in cache.
 
 		//verify that the block is out of L1
-		error = cache_validate_block_flushed_from_l1(gpu_v_caches, cache->id, message_packet->address);
+		error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 		assert(error == 0);
 
 		//verify that there is only one wb in L2 for this block.

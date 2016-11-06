@@ -2035,7 +2035,7 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 		fatal("uop_factory_c_read(): host and guest addr different host 0x%08x quest 0x%08x\n", host_addr, guest_addr);
 	assert(host_addr == guest_addr);
 
-	for(i = 0; i < size; i++)
+	for(i = 0; i < size; i+=4)
 	{
 		if(!(i % blk))
 		{
@@ -2083,7 +2083,7 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	//align the address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
 
-	for(i = 0; i < size; i++)
+	for(i = 0; i < size; i+=4)
 	{
 		if(!(i % blk))
 		{
@@ -2100,7 +2100,7 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	//rewind the quest address
 	//guest_addr = guest_addr - size;
 
-	for(i = 0; i < size; i++)
+	for(i = 0; i < size; i+=4)
 	{
 		x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
 		x86_uinst_new_mem(ctx, x86_uinst_store, host_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);

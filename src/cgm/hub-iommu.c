@@ -824,7 +824,8 @@ void hub_iommu_io_down_ctrl(void){
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
-				|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
+				|| message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store
+				|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_flush_block_ack)
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -863,8 +864,7 @@ void hub_iommu_io_down_ctrl(void){
 
 			}
 		}
-		else if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_downgrade_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack || message_packet->access_type == cgm_access_write_back
+		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
 				|| message_packet->access_type == cgm_access_getx_fwd_ack)
 		{
 
