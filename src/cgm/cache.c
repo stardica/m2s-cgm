@@ -364,99 +364,110 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	//assert(coherence_queue_size <= QueueSize);
 
 	/*printf warnings if a size is exceeded debugging*/
-
-	if(ort_status > cache->mshr_size)
-		warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
-
-	if(ort_coalesce_size > (cache->max_coal + 1))
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->ort_list->name, list_count(cache->ort_list), P_TIME);
-
-	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
+			|| cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t
+			|| cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t)
 	{
 		//assert(rx_top_queue_size <= QueueSize);
-		if(rx_top_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+		//if(rx_top_queue_size > QueueSize)
+		//	warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+
+		if(ort_status > cache->mshr_size)
+			warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
+
+		if(ort_coalesce_size > (cache->max_coal + 1))
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->ort_list->name, list_count(cache->ort_list), P_TIME);
+
+		if(rx_bottom_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
+
+		if(retry_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
+
+		if(pending_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
+
+		if(write_back_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
+
+		if(coherence_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
+
 	}
 	else if(cache->cache_type == gpu_l2_cache_t)
 	{
 		if(rx_top_queue_size > GPUQueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
-	}
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
 
-	if(rx_bottom_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
+		if(ort_status > cache->mshr_size)
+			warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
 
-	//if(tx_bottom_queue_size > QueueSize)
-		//warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Tx_queue_bottom->name, list_count(cache->Tx_queue_bottom), P_TIME);
+		if(ort_coalesce_size > (cache->max_coal + 1))
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->ort_list->name, list_count(cache->ort_list), P_TIME);
 
-	if(retry_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
+		if(rx_bottom_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
 
-	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	{
-		//assert(rx_top_queue_size <= QueueSize);
-		if(pending_queue_size > QueueSize)
-			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
-	}
-	else if(cache->cache_type == gpu_l2_cache_t)
-	{
+		if(retry_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
+
 		if(pending_queue_size > GPUQueueSize)
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+
+		if(write_back_queue_size > GPUQueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
+
+		if(coherence_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
 	}
 
-
-	if(write_back_queue_size > QueueSize)
+	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
+			|| cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t
+			|| cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t)
 	{
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
-
-	}
-
-	if(coherence_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
-
-	/*if(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t)
-	assert(rx_top_queue_size <= 64);*/
-
-	/*check if a cache element is full that would prevent us from processing a request*/
-	if(ort_status >= cache->mshr_size)
-		state = schedule_cant_process;
-
-	if(ort_coalesce_size >= cache->max_coal)
-		state = schedule_cant_process;
-
-	if(write_back_queue_size >= QueueSize)
-		state = schedule_cant_process;
-
-	if(retry_queue_size >= QueueSize)
-		state = schedule_cant_process;
-
-	//star todo change this  if l1 and l2 top queue is full stall, also if l2 and L3 top queue is full stall.
-	/*if(cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	{
-		int tx_top_queue_size = list_count(cache->Tx_queue_top);
-		assert(tx_top_queue_size <= QueueSize);
-
-		if(tx_top_queue_size == QueueSize)
+		if(ort_status >= cache->mshr_size)
 			state = schedule_cant_process;
-	}*/
 
-	if(tx_bottom_queue_size >= QueueSize)
-		state = schedule_cant_process;
+		if(ort_coalesce_size >= cache->max_coal)
+			state = schedule_cant_process;
 
+		if(write_back_queue_size >= QueueSize)
+			state = schedule_cant_process;
 
-	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
-	{
+		if(retry_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
+		if(tx_bottom_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
 		//assert(rx_top_queue_size <= QueueSize);
 		if(pending_queue_size >= QueueSize)
 			state = schedule_cant_process;
 	}
 	else if(cache->cache_type == gpu_l2_cache_t)
 	{
+		if(ort_status >= cache->mshr_size)
+			state = schedule_cant_process;
+
+		if(ort_coalesce_size >= cache->max_coal)
+			state = schedule_cant_process;
+
+		if(write_back_queue_size >= GPUQueueSize)
+			state = schedule_cant_process;
+
+		if(retry_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
+		if(tx_bottom_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
 		if(pending_queue_size >= GPUQueueSize)
 			state = schedule_cant_process;
 	}
-
-
+	else
+	{
+		fatal("what?\n");
+	}
 
 	/*the scheduler needs to determine which queue to pull from or if a stall is needed*/
 	/*if the state is still "can process" then check queue statuses and schedule a packet*/
@@ -798,7 +809,8 @@ void cache_dump_write_back(struct cache_t *cache){
 	{
 		//get pointer to access in queue and check it's status.
 		wb_packet = list_get(cache->write_back_buffer, i);
-		printf("\tslot %d wb id %llu flush bit %d blk addr 0x%08x\n", i, wb_packet->write_back_id, wb_packet->flush_pending, wb_packet->address);
+		printf("\tslot %d wb id %llu flush_bit %d l3_flush_bit %d blk_addr 0x%08x\n",
+				i, wb_packet->write_back_id, wb_packet->flush_pending, wb_packet->L3_flush_join, wb_packet->address);
 	}
 
 	return;

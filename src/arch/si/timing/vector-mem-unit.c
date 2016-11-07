@@ -281,13 +281,15 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
+		assert(uop->wavefront->work_item_count <= 64);
+
 		//star added this...
 		/*Stall if there is no room in the vector cache's input queue*/
-		if (uop->wavefront->work_item_count > (GPUQueueSize - list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top)))
+		if (uop->wavefront->work_item_count > (uop->wavefront->work_item_count - list_count(vector_mem->compute_unit->gpu_v_cache_ptr[vector_mem->compute_unit->id].Rx_queue_top)))
 		{
 			/*check for system arch integrity*/
 			/*if the l1 input queue is not large enough the GPU will never make progress in this implementation...*/
-			assert(uop->wavefront->work_item_count <= GPUQueueSize && uop->wavefront->work_item_count > 0);
+			assert(uop->wavefront->work_item_count <= uop->wavefront->work_item_count && uop->wavefront->work_item_count > 0);
 
 			list_index++;
 			continue;
