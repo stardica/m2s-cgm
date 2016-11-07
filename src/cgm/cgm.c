@@ -1391,6 +1391,7 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "core_%d_ExeTime = %llu\n", i, exe_time);
 
 		CGM_STATS(cgm_stats_file, "core_%d_TotalBusy = %llu\n", i, cgm_stat_container->core_total_busy[i]);
+
 		CGM_STATS(cgm_stats_file, "core_%d_DrainTime = %llu\n", i, cgm_stat_container->core_drain_time[i]);
 
 		CGM_STATS(cgm_stats_file, "core_%d_IdleTime = %llu\n", i, cgm_stat_container->core_idle_time[i]);

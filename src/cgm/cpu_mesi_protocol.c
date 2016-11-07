@@ -5734,6 +5734,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -5788,6 +5792,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//transmit to SA/MC
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = memory;
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
 
 				cache_put_io_up_queue(cache, message_packet);
 
@@ -5862,6 +5870,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				/*stats*/
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
 
 				//send the cache block out
 				cache_put_io_up_queue(cache, message_packet);
@@ -5941,6 +5953,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
 				cache_put_io_up_queue(cache, message_packet);
 
 			}
@@ -5980,6 +5996,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			/*stats*/
 			if(!message_packet->protocol_case)
 				message_packet->protocol_case = L3_hit;
+
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
 
 			cache_put_io_up_queue(cache, message_packet);
 
@@ -6194,6 +6214,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 					//SETROUTE(message_packet, cache, l2_cache_ptr)
 
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
 					//send the reply
 					cache_put_io_up_queue(cache, message_packet);
 
@@ -6262,6 +6286,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 			else
@@ -6311,6 +6339,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				/*stats*/
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = memory;
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
 
 				//transmit to SA
 				cache_put_io_up_queue(cache, message_packet);
@@ -6372,6 +6404,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				/*stats*/
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
 
 				cache_put_io_up_queue(cache, message_packet);
 
@@ -6452,6 +6488,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				if(!message_packet->protocol_case)
 					message_packet->protocol_case = L3_hit;
 
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
 				cache_put_io_up_queue(cache, message_packet);
 			}
 
@@ -6500,6 +6540,10 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
+
 			cache_put_io_up_queue(cache, message_packet);
 
 			//invalidate the other sharers
@@ -6517,6 +6561,9 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 					xowning_cache_ptr = &l2_caches[i];
 					SETROUTE(upgrade_putx_n_inval_request_packet, l2_cache_ptr, xowning_cache_ptr)
+
+					assert(message_packet->coalesced == 0);
+					assert(message_packet->assoc_conflict == 0);
 
 					list_enqueue(cache->Tx_queue_top, upgrade_putx_n_inval_request_packet);
 					advance(cache->cache_io_up_ec);
@@ -6580,6 +6627,10 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 	assert(!write_back_packet);
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//check transient state
 	//block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
@@ -6682,7 +6733,10 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 	P_PAUSE(cache->latency);
 
 	//get the status of the cache block and try to find it in either the cache or wb buffer
-	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);/*reset mp flags*/
+
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//check pending state
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
@@ -6808,6 +6862,10 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 	P_PAUSE(cache->latency);
 
 	//store so provide to one core
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -6941,6 +6999,10 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 	//charge delay
 	P_PAUSE(cache->latency);
 
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -7022,6 +7084,10 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	//charge delay
 	P_PAUSE(cache->latency);
 
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -7096,6 +7162,10 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//charge delay
 	P_PAUSE(cache->latency);
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -7196,6 +7266,10 @@ void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message
 
 	assert(message_packet->size > 1);
 
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	//find the access in the ORT table and clear it.
 	ort_clear(cache, message_packet);
 
@@ -7243,6 +7317,10 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
 	//assert(victim_trainsient_state != cgm_cache_block_transient)
@@ -7444,6 +7522,10 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	//charge delay
 	P_PAUSE(cache->latency);
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
@@ -7710,6 +7792,10 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	//if(((message_packet->address & cache->block_address_mask) == 0x0002f480) && pending_request_packet)
 	//	fatal("%s flush block ack\n", cache->name);
 
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
+
 	/*block should not be in L3 cache either*/
 	if(*cache_block_hit_ptr == 1)
 	{
@@ -7833,6 +7919,10 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 	//get the state of the cache block
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	/*reset mp flags*/
+	assert(message_packet->coalesced == 0);
+	assert(message_packet->assoc_conflict == 0);
 
 	//check for block transient state
 	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
@@ -9519,6 +9609,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 		//SETROUTE(message_packet, cache, l2_cache_ptr)
 
+		/*reset mp flags*/
+		message_packet->coalesced = 0;
+		message_packet->assoc_conflict = 0;
+
 		//send the reply
 		cache_put_io_up_queue(cache, message_packet);
 
@@ -9566,6 +9660,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			//update routing headers
 			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 			//SETROUTE(message_packet, cache, l2_cache_ptr)
+
+			/*reset mp flags*/
+			assert(message_packet->coalesced == 0);
+			assert(message_packet->assoc_conflict == 0);
 
 			//send the reply
 			cache_put_io_up_queue(cache, message_packet);
@@ -9621,6 +9719,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			cgm_cache_set_route(message_packet, l2_cache_ptr, xowning_cache_ptr);
 			//SETROUTE(message_packet, l2_cache_ptr, xowning_cache_ptr)
 
+			/*reset mp flags*/
+			assert(message_packet->coalesced == 0);
+			assert(message_packet->assoc_conflict == 0);
+
 			cache_put_io_up_queue(cache, message_packet);
 
 			break;
@@ -9675,6 +9777,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
 			//SETROUTE(message_packet, cache, l2_cache_ptr)
 
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
+
 			cache_put_io_up_queue(cache, message_packet);
 
 			//invalidate the other sharers
@@ -9693,6 +9799,10 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 					xowning_cache_ptr = &l2_caches[i];
 
 					SETROUTE(upgrade_inval_request_packet, l2_cache_ptr, xowning_cache_ptr)
+
+					/*reset mp flags*/
+					assert(message_packet->coalesced == 0);
+					assert(message_packet->assoc_conflict == 0);
 
 					list_enqueue(cache->Tx_queue_top, upgrade_inval_request_packet);
 					advance(cache->cache_io_up_ec);

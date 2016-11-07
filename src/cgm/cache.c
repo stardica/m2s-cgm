@@ -392,8 +392,18 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(retry_queue_size > QueueSize)
 		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
 
-	if(pending_queue_size > QueueSize)
-		warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
+	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	{
+		//assert(rx_top_queue_size <= QueueSize);
+		if(pending_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
+	}
+	else if(cache->cache_type == gpu_l2_cache_t)
+	{
+		if(pending_queue_size > GPUQueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+	}
+
 
 	if(write_back_queue_size > QueueSize)
 	{
@@ -433,8 +443,19 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(tx_bottom_queue_size >= QueueSize)
 		state = schedule_cant_process;
 
-	if(pending_queue_size >= QueueSize)
-		state = schedule_cant_process;
+
+	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+	{
+		//assert(rx_top_queue_size <= QueueSize);
+		if(pending_queue_size >= QueueSize)
+			state = schedule_cant_process;
+	}
+	else if(cache->cache_type == gpu_l2_cache_t)
+	{
+		if(pending_queue_size >= GPUQueueSize)
+			state = schedule_cant_process;
+	}
+
 
 
 	/*the scheduler needs to determine which queue to pull from or if a stall is needed*/
@@ -850,6 +871,26 @@ void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_p
 	list_enqueue(cache->pending_request_buffer, message_packet);
 
 	return;
+}
+
+int cache_search_pending_request_for_type(struct cache_t *cache, unsigned int address, enum cgm_access_kind_t access_type){
+
+	int i = 0;
+	int hit = 0;
+	struct cgm_packet_t *pending_request;
+
+	LIST_FOR_EACH(cache->pending_request_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		pending_request = list_get(cache->pending_request_buffer, i);
+
+		if((pending_request->address & cache->block_address_mask) == address && (pending_request->access_type == access_type))
+		{
+			hit++;
+		}
+	}
+
+	return hit;
 }
 
 int cache_search_pending_request_get_getx_fwd(struct cache_t *cache, unsigned int address){
@@ -3913,6 +3954,9 @@ void l1_d_cache_down_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_get
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
@@ -4005,11 +4049,16 @@ void l2_cache_up_io_ctrl(void){
 		message_packet = list_get(l2_caches[my_pid].Tx_queue_top, 0);
 		assert(message_packet);
 
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l1_i_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
 			transfer_time = 1;
+
+
 
 		/*if(message_packet->access_id == 21187094 || message_packet->access_id == 21187099)
 		{
@@ -4120,6 +4169,9 @@ void l2_cache_down_io_ctrl(void){
 
 		message_packet = list_get(l2_caches[my_pid].Tx_queue_bottom, 0);
 		assert(message_packet);
+
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
 
 		//star todo fix this we need a top and bottom bus_width
 		transfer_time = (message_packet->size/l2_caches[my_pid].bus_width);
@@ -4263,6 +4315,9 @@ void l3_cache_up_io_ctrl(void){
 		message_packet = list_get(l3_caches[my_pid].Tx_queue_top, 0);
 		assert(message_packet);
 
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 		transfer_time = (message_packet->size/l3_caches[my_pid].bus_width);
 
 		if(transfer_time == 0)
@@ -4274,8 +4329,7 @@ void l3_cache_up_io_ctrl(void){
 					message_packet->access_id, message_packet->address, message_packet->address & l3_caches[my_pid].block_address_mask, P_TIME);
 
 
-		assert(message_packet->coalesced == 0);
-		assert(message_packet->assoc_conflict == 0);
+
 
 
 		//try to place on switches
@@ -4574,6 +4628,9 @@ void gpu_v_cache_down_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
@@ -4667,6 +4724,9 @@ void gpu_l2_cache_up_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
+		assert(message_packet->coalesced == 0);
+		assert(message_packet->assoc_conflict == 0);
+
 		//drop into the correct l1 cache queue and lane.
 		if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 				|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
@@ -4741,6 +4801,9 @@ void gpu_l2_cache_down_io_ctrl(void){
 
 			message_packet = list_dequeue(gpu_l2_caches[my_pid].Tx_queue_bottom);
 			assert(message_packet);
+
+			assert(message_packet->coalesced == 0);
+			assert(message_packet->assoc_conflict == 0);
 
 			transfer_time = (message_packet->size/gpu_l2_caches[my_pid].bus_width);
 

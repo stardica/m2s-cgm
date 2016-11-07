@@ -187,6 +187,7 @@ void cache_dump_write_back(struct cache_t *cache);
 void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
 struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, unsigned int address);
 int cache_search_pending_request_get_getx_fwd(struct cache_t *cache, unsigned int address);
+int cache_search_pending_request_for_type(struct cache_t *cache, unsigned int address, enum cgm_access_kind_t access_type);
 
 //block Manipulations
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
