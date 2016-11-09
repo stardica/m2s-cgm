@@ -2661,7 +2661,6 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 
 	//fatal("cgm_mesi_gpu_l2_get_getx_fwd(): BOOM!\n");
 
-
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -2671,7 +2670,7 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 	struct cgm_packet_t *write_back_packet = NULL;
 	struct cgm_packet_t *nack_packet = NULL;
 	struct cgm_packet_t *reply_packet = NULL;
-	struct cache_t *l3_cache_ptr = NULL;
+	/*struct cache_t *l3_cache_ptr = NULL;*/
 
 	int sharers, pending_bit;//, owning_core;
 
@@ -2897,7 +2896,8 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 			else
 			{
 
-				fatal("cgm_mesi_gpu_l2_get_getx_fwd(): blk miss in l2 shouldn't happen yet??\n");
+				/*fatal("cgm_mesi_gpu_l2_get_getx_fwd(): blk miss in l2 shouldn't happen yet id %llu access type %d blk_addr 0x%08x\n",
+						message_packet->access_id, message_packet->access_type, message_packet->address & cache->block_address_mask);*/
 
 				//printf("\tcgm_mesi_l2_getx_fwd(): no wb blk addr 0x%08x \n", message_packet->address & cache->block_address_mask);
 				//fatal("Getx_fwd %s access id %llu blk_addr 0x%08x\n", cache->name, message_packet->access_id, message_packet->address & cache->block_address_mask);
@@ -2923,15 +2923,26 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 				else
 				{
 
+					warning("cgm_mesi_gpu_l2_get_getx_fwd(): blk miss in l2 shouldn't happen yet id %llu access type %d blk_addr 0x%08x\n",
+						message_packet->access_id, message_packet->access_type, message_packet->address & cache->block_address_mask);
+
 					/* The block was evicted silently and should not be in the L1 cache.
 					 * However, the block may be in L1 D's write back or in the pipe between L1 D and L2.
 					 * We have to send a flush to L1 D to make sure the block is really out of there before proceeding.*/
 					error = cache_validate_block_flushed_from_gpu_l1(gpu_v_caches, message_packet->address);
 					assert(error == 0);
 
+					//assert(cache->sets[message_packet->set].blocks[message_packet->way].directory_entry.entry == 0);
+
+					assert(message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_fwd);
+
 					/*two part reply (1) send nack to L3 and (2) send nack to requesting L2*/
 					//set access type
-					message_packet->access_type = cgm_access_getx_fwd_nack;
+
+					if(message_packet->access_type == cgm_access_getx_fwd)
+						message_packet->access_type = cgm_access_getx_fwd_nack;
+					else
+						message_packet->access_type = cgm_access_downgrade_nack;
 
 					//set the block state
 					message_packet->cache_block_state = cgm_cache_block_invalid;
@@ -2961,12 +2972,14 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					assert(nack_packet);
 
 					init_getx_fwd_nack_packet(nack_packet, message_packet->address);
+
+					if(message_packet->access_type == cgm_access_getx_fwd)
+						nack_packet->access_type = cgm_access_getx_fwd_nack;
+					else
+						nack_packet->access_type = cgm_access_downgrade_nack;
+
 					nack_packet->access_id = message_packet->access_id;
 
-					//fwd reply (downgrade_nack) to L3
-					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
-
-					SETROUTE(nack_packet, cache, l3_cache_ptr)
 
 					//transmit block to L3
 					list_enqueue(cache->Tx_queue_bottom, nack_packet);

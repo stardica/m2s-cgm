@@ -377,7 +377,7 @@ struct cache_t{
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
-	void (*l1_d_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*l1_d_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_cpu_fence)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);

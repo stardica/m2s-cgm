@@ -231,27 +231,56 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 }
 
 
-void cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
+int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	//charge delay
+
+	//CPU is flushing a block, flush and send down to L2 and L3
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	int ort_status = -1;
+
+	//enum cgm_cache_block_state_t victim_trainsient_state;
+
+	//charge the delay
 	P_PAUSE(cache->latency);
+
+	//get the block status
+	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	//check the ORT table is there an outstanding access for this block we are trying to flush?
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
+	if(ort_status != cache->mshr_size)
+	{
+		/*CPU is flushing blocks, but we are still waiting on the memory system to bring the block in
+		the CPU is now trying to flush, stall until the block is brought and the progress is made*/
+		//fatal("not sure about this\n");
+
+		return 0;
+	}
+
+	//increment the cache flush counter
+	cache->flush_tx_counter++;
 
 	//pass the flush on to L2 cache
 	message_packet->size = 1;
 	message_packet->access_type = cgm_access_gpu_flush;
 
-	//clear the CPU's dependences on this access finishing (fence will sort this out)
-	linked_list_add(message_packet->event_queue, message_packet->data);
-
-	//increment the cache flush counter
-	cache->flush_tx_counter++;
-
 	//set the flush core
 	message_packet->flush_core = cache->id;
 
+	//clear the CPU's dependences on this access finishing (fence will sort this out)
+	linked_list_add(message_packet->event_queue, message_packet->data);
+
 	cache_put_io_down_queue(cache, message_packet);
 
-	return;
+	return 1;
 }
 
 
@@ -7312,6 +7341,8 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	struct cgm_packet_t *wb_packet = NULL;
 	//struct cache_t *l2_cache_ptr = NULL;
 
+	int  error_msg = 0;
+
 	//charge delay
 	P_PAUSE(cache->latency);
 
@@ -7421,8 +7452,11 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//check to make sure the block isn't in another core...
 
-			if(sharers != 1)
+			if(sharers != 1 && error_msg == 0)
+			{
 				warning("****************cgm_mesi_l3_gpu_flush_ack(): possible problem here sharers %d blk 0x%08x\n", sharers, message_packet->address & cache->block_address_mask);
+				error_msg++;
+			}
 
 			//assert(sharers == 1);
 
@@ -7489,14 +7523,6 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	return;
 }
-
-/*void cgm_mesi_l3_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
-
-	fatal("l3 gpu flush\n");
-
-
-	return;
-}*/
 
 
 void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){

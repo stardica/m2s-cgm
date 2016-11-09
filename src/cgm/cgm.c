@@ -1985,18 +1985,21 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 
 	warning("upp factory nc write cycle %llu\n", P_TIME);
 
-	//copy memory from one to the other (load & store)
-	for(i = 0; i < size; i++)
-	{
-		x86_uinst_new_mem(ctx, x86_uinst_load, host_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
-		x86_uinst_new_mem(ctx, x86_uinst_store_ex, guest_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+	unsigned int host_load_addr = host_addr;
+	unsigned int guest_store_addr = guest_addr;
 
-		host_addr++;
-		guest_addr++;
+	//copy memory from one to the other (load & store)
+	for(i = 0; i < size; i+=4)
+	{
+		x86_uinst_new_mem(ctx, x86_uinst_load, host_load_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_store_ex, guest_store_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+
+		host_load_addr+=4;
+		guest_store_addr+=4;
 	}
 
 	//rewind the quest address
-	guest_addr = guest_addr - size;
+	//guest_addr = guest_addr - size;
 
 	//align the address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
@@ -2036,7 +2039,7 @@ void uop_factory_c_read(X86Context *ctx, unsigned int host_addr, unsigned int gu
 		fatal("uop_factory_c_read(): host and guest addr different host 0x%08x quest 0x%08x\n", host_addr, guest_addr);
 	assert(host_addr == guest_addr);
 
-	for(i = 0; i < size; i+=4)
+	for(i = 0; i < size; i++)
 	{
 		if(!(i % blk))
 		{
@@ -2077,14 +2080,16 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	unsigned int blk_mask = 0x3F;
 	unsigned int blk = 0x40;
 
-	//flush the GPU
+	unsigned int guest_load_addr = host_addr;
+	unsigned int host_store_addr = guest_addr;
 
+	//flush the GPU
 	warning("upp factory nc read cycle %llu\n", P_TIME);
 
 	//align the address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
 
-	for(i = 0; i < size; i+=4)
+	for(i = 0; i < size; i++)
 	{
 		if(!(i % blk))
 		{
@@ -2093,30 +2098,32 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 		}
 	}
 
+	//reset our blk aligned address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
 
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	//copy the data
+	for(i = 0; i < size; i+=4)
+	{
+		x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_load_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		x86_uinst_new_mem(ctx, x86_uinst_store, host_store_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+
+		guest_load_addr+=4;
+		host_store_addr+=4;
+	}
 
 	//rewind the quest address
 	//guest_addr = guest_addr - size;
 
-	for(i = 0; i < size; i+=4)
-	{
-		x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
-		x86_uinst_new_mem(ctx, x86_uinst_store, host_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
-
-		host_addr++;
-		guest_addr++;
-	}
-
 	blk_aligned_addr = guest_addr & ~(blk_mask);
 
-	//this is a simulated fence...
+	//this is a simulated fence... (actual address doesn't matter).
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	//pause stats while these go by...
-	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always before we change it...
+	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always be zero before we change it...
 	cpu_gpu_stats->core_num_fences[ctx->core_index] = 2;
 
 	return;

@@ -540,6 +540,9 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Debug", "MEM_SYSTEM_OFF"))
 	{
 		mem_system_off = atoi(value);
+
+		if(mem_system_off)
+			warning("---Memory system is off---\n");
 	}
 
 	if(MATCH("Debug", "L1_I_INF"))

@@ -865,7 +865,8 @@ void hub_iommu_io_down_ctrl(void){
 			}
 		}
 		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
-				|| message_packet->access_type == cgm_access_getx_fwd_ack)
+				|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_downgrade_nack
+				|| message_packet->access_type == cgm_access_getx_fwd_nack)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_coherence_queue) >= QueueSize)

@@ -339,6 +339,9 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	struct cgm_packet_t *new_message = NULL;
 	enum scheduler_state_t state = schedule_can_process; //priority goes to processor
 
+	int err_msg_cohere_1 = 0;
+	int err_msg_cohere_2 = 0;
+
 	/*Ok, the scheduler is a little complicated, i'll add notes as I go...*/
 
 	/*first get the status of the cache's various internal elements*/
@@ -390,8 +393,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		if(write_back_queue_size > QueueSize)
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
 
-		if(coherence_queue_size > QueueSize)
+		if(coherence_queue_size > QueueSize && err_msg_cohere_1)
+		{
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
+
+			err_msg_cohere_1++;
+		}
 
 	}
 	else if(cache->cache_type == gpu_l2_cache_t)
@@ -417,8 +424,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		if(write_back_queue_size > GPUQueueSize)
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
 
-		if(coherence_queue_size > QueueSize)
+		if(coherence_queue_size > QueueSize && err_msg_cohere_2)
+		{
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
+
+			err_msg_cohere_2++;
+		}
 	}
 
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
@@ -3031,7 +3042,8 @@ void l1_d_cache_ctrl(void){
 			else if (access_type == cgm_access_gpu_flush)
 			{
 				//Call back function (cgm_mesi_l1_d_downgrade)
-				l1_d_caches[my_pid].l1_d_gpu_flush(&(l1_d_caches[my_pid]), message_packet);
+				if(!l1_d_caches[my_pid].l1_d_gpu_flush(&(l1_d_caches[my_pid]), message_packet))
+					step--;
 			}
 			else if (access_type == cgm_access_cpu_fence || access_type == cgm_access_cpu_load_fence)
 			{
