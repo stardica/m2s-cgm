@@ -66,8 +66,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		store = linked_list_get(sq);
 
 		assert(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex
-				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_gpu_flush
-				|| store->uinst->opcode == x86_uinst_cpu_fence);
+				||store->uinst->opcode == x86_uinst_cpu_flush || store->uinst->opcode == x86_uinst_cpu_fence);
 
 		/*if(store->uinst->opcode == x86_uinst_cpu_fence)
 			fatal("issue fence\n");*/
@@ -144,6 +143,9 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		}
 		else if (store->uinst->opcode == x86_uinst_gpu_flush)
 		{
+
+			fatal("gpu flush in sq\n");
+
 			//should already be ready from dispatch
 			assert(store->ready == 1);
 
@@ -252,7 +254,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load || load->uinst->opcode == x86_uinst_load_ex
-				|| load->uinst->opcode == x86_uinst_cpu_load_fence);
+				|| load->uinst->opcode == x86_uinst_cpu_load_fence || load->uinst->opcode == x86_uinst_gpu_flush);
 		X86ThreadRemoveFromLQ(self);
 
 
@@ -268,6 +270,13 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
 			cgm_issue_lspq_access(self, cgm_access_cpu_load_fence, load->id, load->phy_addr, core->event_queue, load);
+		}
+		else if (load->uinst->opcode == x86_uinst_gpu_flush)
+		{
+			//should already be ready from dispatch
+			assert(load->ready == 1);
+
+			cgm_issue_lspq_access(self, cgm_access_gpu_flush, load->id, load->phy_addr, core->event_queue, load);
 		}
 		else
 		{

@@ -119,7 +119,7 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	assert(uop->uinst->opcode >= x86_uinst_load && uop->uinst->opcode <= x86_uinst_cpu_load_fence);
 
 	if (uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_load_ex
-			|| uop->uinst->opcode == x86_uinst_cpu_load_fence)
+			|| uop->uinst->opcode == x86_uinst_cpu_load_fence || uop->uinst->opcode == x86_uinst_gpu_flush)
 	{
 		//star >> added stat pipe_load++;
 		linked_list_out(lq);
@@ -129,8 +129,7 @@ void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 
 	}
 	else if (uop->uinst->opcode == x86_uinst_store || uop->uinst->opcode == x86_uinst_store_ex
-			|| uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
-			|| uop->uinst->opcode == x86_uinst_cpu_fence)
+			|| uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_cpu_fence)
 	{
 		linked_list_out(sq);
 		linked_list_insert(sq, uop);

@@ -186,7 +186,7 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//if the flush counter is 0 retire the fence
 	//if((cache->flush_tx_counter - cache->flush_rx_counter) == 0)
 
-	printf("current on_fence_counter %llu\n", cache->flush_tx_counter);
+	//printf("current on_fence_counter %llu\n", cache->flush_tx_counter);
 
 	if(cache->flush_tx_counter == 0)
 	{
@@ -271,7 +271,7 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		return 0;
 	}
 
-	printf("current gpu_flush_counter %llu\n", cache->flush_tx_counter);
+	//printf("current gpu_flush_counter %llu\n", cache->flush_tx_counter);
 
 	//increment the cache flush counter
 	cache->flush_tx_counter++;
@@ -351,7 +351,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 	}
 
 
-	printf("current cpu_flush_counter %llu\n", cache->flush_tx_counter);
+	//printf("current cpu_flush_counter %llu\n", cache->flush_tx_counter);
 
 
 	//printf("flushes tx %llu cycle %llu\n", cache->flush_tx_counter, P_TIME);

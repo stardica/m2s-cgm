@@ -3985,7 +3985,8 @@ void l1_d_cache_down_io_ctrl(void){
 		if(message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_get
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush
 				|| message_packet->access_type == cgm_access_gpu_flush || message_packet->access_type == cgm_access_write_back
-				|| message_packet->access_type == cgm_access_getx)
+				|| message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_downgrade_ack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack)
 
 		{
 
@@ -4014,8 +4015,10 @@ void l1_d_cache_down_io_ctrl(void){
 					l2_caches[my_pid].TotalWrites++;
 			}
 		}
-		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack)
+		else// if()
 		{
+
+			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 
 			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
 			{
@@ -4035,11 +4038,10 @@ void l1_d_cache_down_io_ctrl(void){
 				l2_caches[my_pid].TotalAcesses++;
 			}
 		}
-		else
+		/*else
 		{
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
-		}
-
+		}*/
 
 		/*stats occupancy*/
 		l1_d_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
