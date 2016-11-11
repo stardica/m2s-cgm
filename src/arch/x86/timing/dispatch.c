@@ -376,7 +376,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 			X86ThreadInsertInLSQ(self, uop);
 			core->lsq_writes++;
 			self->lsq_writes++;
-			//LSQWrites++;
 		}
 		
 		/* Statistics */

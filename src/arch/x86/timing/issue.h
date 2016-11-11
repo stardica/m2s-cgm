@@ -27,6 +27,8 @@
  * Class 'X86Cpu'
  */
 
+extern int bar_issue;
+
 void X86CpuIssue(X86Cpu *self);
 
 #endif

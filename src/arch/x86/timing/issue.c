@@ -44,6 +44,8 @@
  */
 
 
+int bar_issue = 0;
+
 static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 {
 	X86Cpu *cpu = self->cpu;
@@ -263,14 +265,15 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 			load->protection_fault = 1;
 		}*/
 
-
-
 		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
 			cgm_issue_lspq_access(self, cgm_access_cpu_load_fence, load->id, load->phy_addr, core->event_queue, load);
 		}
 		else
 		{
+			/*if(load->uinst->opcode == x86_uinst_load_ex)
+				printf("loadex id %llu cycle %llu\n", load->uinst->id, P_TIME);*/
+
 			cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
 		}
 

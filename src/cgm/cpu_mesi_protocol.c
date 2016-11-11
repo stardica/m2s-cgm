@@ -185,6 +185,9 @@ int cgm_mesi_cpu_fence(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 	//if the flush counter is 0 retire the fence
 	//if((cache->flush_tx_counter - cache->flush_rx_counter) == 0)
+
+	printf("current on_fence_counter %llu\n", cache->flush_tx_counter);
+
 	if(cache->flush_tx_counter == 0)
 	{
 		assert(message_packet->access_type == cgm_access_cpu_fence
@@ -254,6 +257,9 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
+
+
+
 	//check the ORT table is there an outstanding access for this block we are trying to flush?
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	if(ort_status != cache->mshr_size)
@@ -265,8 +271,12 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		return 0;
 	}
 
+	printf("current gpu_flush_counter %llu\n", cache->flush_tx_counter);
+
 	//increment the cache flush counter
 	cache->flush_tx_counter++;
+
+
 
 	//pass the flush on to L2 cache
 	message_packet->size = 1;
@@ -339,6 +349,10 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 		message_packet->access_type = cgm_access_cpu_flush;
 	}
+
+
+	printf("current cpu_flush_counter %llu\n", cache->flush_tx_counter);
+
 
 	//printf("flushes tx %llu cycle %llu\n", cache->flush_tx_counter, P_TIME);
 

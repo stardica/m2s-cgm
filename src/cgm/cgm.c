@@ -18,10 +18,11 @@
 #include <stddef.h>
 
 #include <arch/x86/emu/context.h>
-
+#include <arch/x86/timing/issue.h>
 
 #include <cgm/cgm.h>
 #include <cgm/configure.h>
+
 /*#include <cgm/dram.h>*/
 
 
@@ -1983,7 +1984,7 @@ void uop_factory_nc_write(X86Context *ctx, unsigned int host_addr, unsigned int 
 	unsigned int blk_mask = 0x3F;
 	unsigned int blk = 0x40;
 
-	warning("upp factory nc write cycle %llu\n", P_TIME);
+	warning("upp factory nc write size %d cycle %llu\n", size, P_TIME);
 
 	unsigned int host_load_addr = host_addr;
 	unsigned int guest_store_addr = guest_addr;
@@ -2083,11 +2084,15 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	unsigned int guest_load_addr = host_addr;
 	unsigned int host_store_addr = guest_addr;
 
+	int num_uops = 0;
+
 	//flush the GPU
-	warning("upp factory nc read cycle %llu\n", P_TIME);
+	warning("upp factory nc read size %d cycle %llu\n", size, P_TIME);
 
 	//align the address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
+
+	//load fence waits for fence to finish...
 
 	for(i = 0; i < size; i++)
 	{
@@ -2095,8 +2100,13 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 		{
 			x86_uinst_new_mem(ctx, x86_uinst_gpu_flush, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 			blk_aligned_addr = blk_aligned_addr + blk;
+
+			num_uops++;
 		}
 	}
+
+	printf("created %d gpu_flush_uops\n", num_uops);
+	num_uops = 0;
 
 	//reset our blk aligned address
 	blk_aligned_addr = guest_addr & ~(blk_mask);
@@ -2104,15 +2114,26 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 	//this is a simulated fence...
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
 
+
+	printf("created %d load_fence\n", num_uops);
+
 	//copy the data
 	for(i = 0; i < size; i+=4)
 	{
+		//x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_load_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+		//x86_uinst_new_mem(ctx, x86_uinst_store, host_store_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
+
 		x86_uinst_new_mem(ctx, x86_uinst_load_ex, guest_load_addr, 1, 0, 0, 0, x86_dep_eax, 0, 0, 0);
 		x86_uinst_new_mem(ctx, x86_uinst_store, host_store_addr, 1, x86_dep_eax, 0, 0, 0, 0, 0, 0);
 
 		guest_load_addr+=4;
 		host_store_addr+=4;
+
+		num_uops+=2;
 	}
+
+	printf("created %d load/stores\n", num_uops);
+
 
 	//rewind the quest address
 	//guest_addr = guest_addr - size;
@@ -2121,6 +2142,9 @@ void uop_factory_nc_read(X86Context *ctx, unsigned int host_addr, unsigned int g
 
 	//this is a simulated fence... (actual address doesn't matter).
 	x86_uinst_new_mem(ctx, x86_uinst_cpu_load_fence, blk_aligned_addr, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	printf("created %d load_fence\n", num_uops);
+	getchar();
 
 	//pause stats while these go by...
 	assert(cpu_gpu_stats->core_num_fences[ctx->core_index] == 0); //flag should always be zero before we change it...

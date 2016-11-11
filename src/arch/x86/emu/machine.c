@@ -1131,8 +1131,8 @@ void dump_unist_queue(struct list_t *queue){
 		uinst = list_get(queue, i);
 		printf("\t uinst_id %llu opcode %u\n", uinst->id, uinst->opcode);
 
-		if(uinst->opcode == x86_uinst_cpu_fence)
-			getchar();
+		/*if(uinst->opcode == x86_uinst_cpu_fence)
+			getchar();*/
 	}
 
 	return;
