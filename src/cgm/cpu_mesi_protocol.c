@@ -4907,26 +4907,6 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 
 			return 1;
 
-			/*printf("\n");
-
-			ort_dump(cache);
-
-			printf("\n");
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			printf("\n");
-			cache_dump_queue(cache->pending_request_buffer);*/
-
-			/*printf("\n");
-			warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
-			message_packet->access_type, message_packet->cache_block_state,
-			message_packet->set, message_packet->tag, message_packet->way,
-			pending_join_bit, pending_upgrade_bit, P_TIME);*/
-
-			/*fatal("cgm_mesi_l2_write_block(): check for evict coming before put/putx l3_pending_join %d blk 0x%08x cycle %llu\n",
-					message_packet->l3_pending, (message_packet->address & cache->block_address_mask), P_TIME);*/
-
 		}
 
 		//clear the conflict bit in the packet

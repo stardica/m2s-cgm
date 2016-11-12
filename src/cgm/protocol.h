@@ -260,6 +260,9 @@ int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *messa
 void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+void cgm_mesi_gpu_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_gpu_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 

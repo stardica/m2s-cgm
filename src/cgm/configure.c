@@ -402,6 +402,11 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		cgm_stats = atoi(value);
 	}
 
+	if(MATCH("Stats", "Quick_Dump"))
+	{
+		quick_dump = atoi(value);
+	}
+
 	if(MATCH("Stats", "MEM_Trace"))
 	{
 		mem_trace = atoi(value);
@@ -2896,6 +2901,9 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_write_back = cgm_mesi_gpu_l2_write_back;
 			gpu_l2_caches[i].gpu_l2_flush_block = cgm_mesi_gpu_l2_flush_block;
 			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
+
+			gpu_l2_caches[i].gpu_l2_get_nack = cgm_mesi_gpu_l2_get_nack;
+			gpu_l2_caches[i].gpu_l2_getx_nack = cgm_mesi_gpu_l2_getx_nack;
 
 			gpu_l2_caches[i].gpu_l2_gpu_flush = cgm_mesi_gpu_l2_gpu_flush;
 			gpu_l2_caches[i].gpu_l2_gpu_flush_ack = cgm_mesi_gpu_l2_gpu_flush_ack;

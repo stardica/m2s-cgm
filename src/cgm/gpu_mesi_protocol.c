@@ -1198,6 +1198,82 @@ int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *me
 	return 1;
 }
 
+
+void cgm_mesi_gpu_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int ort_row = 0;
+	int conflict_bit = -1;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	/*int way = 0;*/
+	//int l3_map = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	/*int *way_ptr = &way;*/
+
+	/*should only occur if connected to l3*/
+	assert(hub_iommu_connection_type == hub_to_l3);
+
+	//charge delay
+	GPU_PAUSE(cache->latency);
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get_nack ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			message_packet->access_type, P_TIME);
+
+	//store the decoded address
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+
+	//do not set retry because this contains the coalesce set and tag.
+	//check that there is an ORT entry for this address
+	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
+	assert(ort_row < cache->mshr_size);
+	conflict_bit = cache->ort[ort_row][2];
+
+
+	//if the conflict bit is set in the ort reset it because this is the nack
+	if(conflict_bit == 0)
+	{
+		cache->ort[ort_row][2] = 1;
+
+		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			message_packet->access_type, P_TIME);
+	}
+
+
+	//message is going down to L3 so its a getx
+	message_packet->access_type = cgm_access_getx;
+	message_packet->cpu_access_type = cgm_access_load;
+	message_packet->cache_block_state = cgm_cache_block_exclusive;
+	message_packet->size = 1;
+
+	/*reset mp flags*/
+	message_packet->coalesced = 0;
+	message_packet->assoc_conflict = 0;
+
+	//L3 should see the entire GPU as a single core.
+	message_packet->l2_cache_id = gpu_core_id;
+	message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
+
+	//transmit to L3
+	cache_put_io_down_queue(cache, message_packet);
+
+
+	return;
+}
+
+
+
 void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int ort_row = -1;
@@ -1690,6 +1766,9 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				message_packet->coalesced = 0;
 				message_packet->assoc_conflict = 0;
 
+				/*shouldn't be another pending request for this block*/
+				assert(cache_search_pending_request_buffer(cache, message_packet->address) == NULL);
+
 				//drop the message packet into the pending request buffer
 				message_packet = list_remove(cache->last_queue, message_packet);
 				list_enqueue(cache->pending_request_buffer, message_packet);
@@ -1782,6 +1861,95 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	return;
 }*/
+
+
+void cgm_mesi_gpu_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+	int ort_row = 0;
+	int conflict_bit = -1;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	/*int way = 0;*/
+	//int l3_map = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	/*int *way_ptr = &way;*/
+
+	/*should only occur if connected to l3*/
+	assert(hub_iommu_connection_type == hub_to_l3);
+
+	//charge delay
+	GPU_PAUSE(cache->latency);
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_nack ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+	//store the decoded address
+	message_packet->tag = tag;
+	message_packet->set = set;
+	message_packet->offset = offset;
+
+	//do not set retry because this contains the coalesce set and tag.
+	//check that there is an ORT entry for this address
+	ort_row = ort_search(cache, message_packet->tag, message_packet->set);
+	assert(ort_row < cache->mshr_size);
+	conflict_bit = cache->ort[ort_row][2];
+
+	//pull the GETX_FWD from the pending request buffer
+	//pending_get_getx_fwd_request = cache_search_pending_request_buffer(cache, message_packet->address);
+
+	//if the conflict bit is set in the ort reset it because this is the nack
+	if(conflict_bit == 0)
+	{
+		cache->ort[ort_row][2] = 1;
+
+		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			message_packet->access_type, P_TIME);
+	}
+
+
+	if(ort_row >= cache->mshr_size)
+	{
+		ort_dump(cache);
+
+		printf("problem set %d tag %d block 0x%08x cycle %llu\n",
+			message_packet->set, message_packet->tag, (message_packet->address & cache->block_address_mask), P_TIME);
+
+		assert(ort_row < cache->mshr_size);
+	}
+
+	//add some routing/status data to the packet
+	//message is going down to L3 so its a getx
+	message_packet->access_type = cgm_access_getx;
+	message_packet->cpu_access_type = cgm_access_load;
+	message_packet->cache_block_state = cgm_cache_block_exclusive;
+	message_packet->size = 1;
+
+	/*reset mp flags*/
+	message_packet->coalesced = 0;
+	message_packet->assoc_conflict = 0;
+
+
+	//L3 should see the entire GPU as a single core.
+	message_packet->l2_cache_id = gpu_core_id;
+	message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
+
+	//transmit to L3
+
+	cache_put_io_down_queue(cache, message_packet);
+
+	return;
+}
+
+
 
 int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
@@ -2223,9 +2391,15 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				message_packet->coalesced = 0;
 				message_packet->assoc_conflict = 0;
 
+				/*shouldn't be another pending request for this block*/
+				assert(cache_search_pending_request_buffer(cache, message_packet->address) == NULL);
+
 				//drop the message packet into the pending request buffer
 				message_packet = list_remove(cache->last_queue, message_packet);
 				list_enqueue(cache->pending_request_buffer, message_packet);
+
+
+
 
 			}
 			else
@@ -3461,7 +3635,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	if(ort_status != cache->mshr_size)
 	{
-		fatal("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
+		//fatal("block 0x%08x %s flush block conflict found ort set cycle %llu\n", (message_packet->address & cache->block_address_mask), cache->name, P_TIME);
 		/*yep there is so set the bit in the ort table to 0.
 		 * When the put/putx comes kill it and try again...*/
 		ort_set_pending_join_bit(cache, ort_status, message_packet->tag, message_packet->set);
@@ -3564,7 +3738,18 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 						/*nack the packet*/
 						if(pending_request_packet)
 						{
-							assert(pending_request_packet->access_type == cgm_access_get || pending_request_packet->access_type == cgm_access_getx);
+							if(pending_request_packet->access_type != cgm_access_get && pending_request_packet->access_type != cgm_access_getx
+									&& pending_request_packet->access_type != cgm_access_load_retry && pending_request_packet->access_type != cgm_access_store_retry)
+							{
+									//&& pending_request_packet->access_type != cgm_access_load_retry && pending_request_packet->access_type != cgm_access_store_retry)
+								fatal("cgm_mesi_gpu_l2_flush_block(): bad pending packet block 0x%08x evict_is %llu pending_id %llu pending_type %d start_cycle %llu cycle %llu\n",
+										(message_packet->address & cache->block_address_mask), message_packet->evict_id, pending_request_packet->access_id,
+										pending_request_packet->access_type, pending_request_packet->start_cycle, P_TIME);
+							}
+
+
+							assert(pending_request_packet->access_type == cgm_access_get || pending_request_packet->access_type == cgm_access_getx
+									|| pending_request_packet->access_type == cgm_access_load_retry || pending_request_packet->access_type == cgm_access_store_retry);
 
 							num_pending_requests++;
 
@@ -4135,6 +4320,11 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 	/*reply has returned for a previously sent gets/get/getx*/
 	if(pending_join_bit == 1 && pending_upgrade_bit == 0)
 	{
+
+		if(message_packet->l3_pending == 1)
+			fatal("l3 pending bit in gpu\n");
+
+
 		ort_clear(cache, message_packet);
 
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
@@ -4197,33 +4387,14 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 	//We have a eviction conflict OR a pending get/getx_fwd packet
 	else if(pending_join_bit == 0 && pending_upgrade_bit == 0)
 	{
-		/*ORT is set, this means either a pending request is in OR L3 evicted the line*/
+		/*ORT is set, this means either a pending request is here OR L3 evicted the line*/
 		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
-		if(!pending_get_getx_fwd)
-		{
-			/*printf("\n");
-
-			ort_dump(cache);
-
-			printf("\n");
-			cgm_cache_dump_set(cache, message_packet->set);
-
-			printf("\n");
-			cache_dump_queue(cache->pending_request_buffer);*/
-
-			/*printf("\n");*/
-			/*warning("block 0x%08x %s write block case two ID %llu cpu_access type %d type %d state %d set %d tag %d way %d pj_bit %d pu_bit %d cycle %llu\n",
-			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->cpu_access_type,
-			message_packet->access_type, message_packet->cache_block_state,
-			message_packet->set, message_packet->tag, message_packet->way,
-			pending_join_bit, pending_upgrade_bit, P_TIME);*/
-
-		}
-
 		if(pending_get_getx_fwd)
 		{
+			/*pending get/getx_fwd*/
+
 			assert(pending_get_getx_fwd->access_type == cgm_access_get_fwd || pending_get_getx_fwd->access_type == cgm_access_getx_fwd);
 			assert((pending_get_getx_fwd->address & cache->block_address_mask) == (message_packet->address & cache->block_address_mask));
 			assert(pending_get_getx_fwd->downgrade_pending == 1);
@@ -4233,9 +4404,68 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 		}
 		else
 		{
+			/*eviction conflict*/
+
+			assert(!pending_get_getx_fwd);
+			assert(message_packet->l3_pending == 0);
+
 			assert(message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_putx
 					|| message_packet->access_type == cgm_access_puts);
+
+			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write block failed on conflict (L3 evict/upgrade_inval) retrying access ID %llu type %d state %d cycle %llu\n",
+					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+					message_packet->access_type, message_packet->cache_block_state, P_TIME);
+
+			/*ORT entry is already set so just send down as a get/getx*/
+			assert(row < cache->mshr_size);
+			assert(pending_join_bit == 0);
+			assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way) == 0);
+
+			assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) == 0);
+
+			//clear the ort pending join bit
+			ort_clear_pending_join_bit(cache, row, message_packet->tag, message_packet->set);
+
+			//add some routing/status data to the packet
+			if(message_packet->l1_access_type == cgm_access_getx)
+			{
+				assert(message_packet->cpu_access_type == cgm_access_store);
+
+				message_packet->access_type = cgm_access_getx;
+			}
+			else if(message_packet->l1_access_type == cgm_access_get)
+			{
+				assert(message_packet->cpu_access_type == cgm_access_load);
+
+				message_packet->access_type = cgm_access_get;
+			}
+			else
+			{
+				fatal("cgm_mesi_gpu_l2_write_block(): unexpected l1 access type as %d\n", message_packet->access_type);
+			}
+
+			/*should be headed to L3*/
+			assert(hub_iommu_connection_type == hub_to_l3);
+
+
+			/*reset mp flags*/
+			message_packet->coalesced = 0;
+			message_packet->assoc_conflict = 0;
+
+			message_packet->size = 1;
+
+			message_packet->l2_cache_id = gpu_core_id;
+			message_packet->l2_cache_name = str_map_value(&l2_strn_map, gpu_core_id);
+
+			cache_put_io_down_queue(cache, message_packet);
+
+			return 1;
+
 		}
+
+		//clear the conflict bit in the packet if set
+		if(message_packet->l3_pending == 1)
+			message_packet->l3_pending = 0;
 
 		//write the block
 		cgm_cache_set_block(cache, message_packet->set, message_packet->way, message_packet->tag, message_packet->cache_block_state);
@@ -4359,7 +4589,7 @@ int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *mess
 	/*stats*/
 	cache->TotalWriteBlocks++;
 
-	return 1;
+	return 0;
 }
 
 

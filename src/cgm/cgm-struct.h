@@ -451,6 +451,10 @@ struct cache_t{
 	//GPU L2 cache protocol virtual functions
 	int (*gpu_l2_getx)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	void (*gpu_l2_get_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_getx_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 	int (*gpu_l2_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*gpu_l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);

@@ -3831,10 +3831,10 @@ void gpu_l2_cache_ctrl(void){
 					|| access_type == cgm_access_put_clnx)
 			{
 				//Call back function (gpu_cache_access_put)
-				gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet);
-
+				if(!gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet))
+						step--;
 				//entered retry state run again.
-				step--;
+
 			}
 			else if(access_type == cgm_access_write_back)
 			{
@@ -3875,6 +3875,14 @@ void gpu_l2_cache_ctrl(void){
 			else if(access_type == cgm_access_getx_fwd_nack)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_nack(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_get_nack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_get_nack(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx_nack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_getx_nack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else
 			{
