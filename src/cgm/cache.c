@@ -3082,6 +3082,8 @@ void l2_cache_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
+	//int nack_count = 0;
+
 	while(1)
 	{
 		/*wait here until there is a job to do.*/
@@ -3194,6 +3196,17 @@ void l2_cache_ctrl(void){
 			else if(access_type == cgm_access_get_nack)//
 			{
 				//Call back function (cgm_mesi_l2_downgrade_ack)
+
+				/*if((P_TIME >= 40821197) && (nack_count > 10) && ((message_packet->address & l2_caches[my_pid].block_address_mask) == 0x0002dc40) && my_pid == 5)
+				{
+					fatal("should be stalled.... cycle %llu\n", P_TIME);
+				}
+				else if((P_TIME >= 40821197) && (nack_count <= 10) && ((message_packet->address & l2_caches[my_pid].block_address_mask) == 0x0002dc40) && my_pid == 5)
+				{
+					nack_count++;
+				}*/
+
+
 				l2_caches[my_pid].l2_get_nack(&(l2_caches[my_pid]), message_packet);
 
 				/*stats*/

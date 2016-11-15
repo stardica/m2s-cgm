@@ -1998,6 +1998,10 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 	struct cache_t *l3_cache_ptr = NULL;
 
+	struct cgm_packet_t *pending_packet = NULL;
+
+	int num_packets = 0;
+
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -2029,6 +2033,23 @@ void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_pa
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, P_TIME);
+
+		/*search for a pending request*/
+		do
+		{
+			pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
+			if(pending_packet)
+			{
+				fatal("get nack found a pending packet access_id %llu blk addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+				num_packets++;
+			}
+
+		}
+		while(pending_packet);
+
+		assert(num_packets <= 1);
+
 	}
 
 
@@ -2344,9 +2365,11 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 	unsigned int *offset_ptr = &offset;
 	/*int *way_ptr = &way;*/
 
-	//struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
+	struct cgm_packet_t *pending_packet = NULL;
 
 	struct cache_t *l3_cache_ptr = NULL;
+
+	int num_packets = 0;
 
 	//charge delay
 	P_PAUSE(cache->latency);
@@ -2379,6 +2402,23 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, P_TIME);
+
+		/*search for a pending request*/
+		do
+		{
+			pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+
+			if(pending_packet)
+			{
+				fatal("getx nack found a pending packet access_id %llu blk addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+				num_packets++;
+			}
+
+		}
+		while(pending_packet);
+
+		assert(num_packets <= 1);
+
 	}
 
 
@@ -3962,7 +4002,6 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 	//charge delay
 	P_PAUSE(cache->latency);
 
-
 	//get the status of the cache block and try to find it in either the cache or wb buffer
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
@@ -3981,9 +4020,9 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 		if(*cache_block_state_ptr == cgm_cache_block_invalid)
 			assert(!write_back_packet);
 
-		/*printf("block 0x%08x %s get_fwd ID %llu type %d state %d cycle %llu\n",
+		warning("block 0x%08x %s block is pending a return get_fwd ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name,
-					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
+					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 		//assert(cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way) == cgm_cache_block_transient);
 	}
@@ -4023,6 +4062,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 			message_packet->downgrade_pending = 1;
 
 			/*drop into the pending request buffer*/
+
+			if(message_packet->access_id == 40547176)
+				fatal("(1) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+
 			message_packet =  list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->pending_request_buffer, message_packet);
 
@@ -4138,6 +4181,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 					//message_packet->downgrade_pending = 1;
 					message_packet->L3_flush_join = 1;
+
+					if(message_packet->access_id == 40547176)
+						fatal("(2) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+
 					cgm_cache_insert_pending_request_buffer(cache, message_packet);
 				}
 			}
@@ -4161,6 +4208,12 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//getchar();
 
 					message_packet->downgrade_pending = 1;
+
+					if(message_packet->access_id == 40547176)
+					{
+						warning("(3) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+						getchar();
+					}
 
 					/*drop into the pending request buffer*/
 					message_packet =  list_remove(cache->last_queue, message_packet);
@@ -4230,6 +4283,10 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 			//store the get_fwd in the pending request buffer
 			message_packet->downgrade_pending = 1;
+
+			if(message_packet->access_id == 40547176)
+				fatal("(4) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+
 			cgm_cache_insert_pending_request_buffer(cache, message_packet);
 
 			//set the flush_pending bit to 1 in the block
@@ -4773,7 +4830,6 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//clear the conflict bit in the packet
 		assert(message_packet->l3_pending != 1);
 
-
 		//pull the pending request from the buffer
 		pending_upgrade = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
@@ -4825,6 +4881,9 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		/*ORT is set, this means either a pending request is in OR L3 evicted the line*/
 		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
+
+		if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
+			warning("blk 0x%08x (1) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
 
 		if(pending_get_getx_fwd)
 		{
@@ -4931,6 +4990,9 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	//there are TWO pending requests in the buffer or there is an upgrade and a conflict (L3 evicted or upgrade_inval).
 	else if(pending_join_bit == 0 && pending_upgrade_bit == 1)
 	{
+
+		if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
+			warning("blk 0x%08x (2) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
 
 		//clear the conflict bit in the packet
 		assert(message_packet->l3_pending != 1);
