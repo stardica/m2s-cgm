@@ -242,16 +242,18 @@ enum x86_uinst_opcode_t
 	x86_uinst_gpu_flush,	//58star added this
 	x86_uinst_cpu_fence,	//59star added this
 	x86_uinst_cpu_load_fence,//60star added this
+	x86_uinst_cpu_drain,    //61star added this
 
-	x86_uinst_call,			//61
-	x86_uinst_ret,			//62
-	x86_uinst_jump,			//63
-	x86_uinst_branch,		//64
-	x86_uinst_ibranch,		//65
 
-	x86_uinst_syscall,		//66
+	x86_uinst_call,			//62
+	x86_uinst_ret,			//63
+	x86_uinst_jump,			//64
+	x86_uinst_branch,		//65
+	x86_uinst_ibranch,		//66
 
-	x86_uinst_opcode_count	//67
+	x86_uinst_syscall,		//67
+
+	x86_uinst_opcode_count	//68
 };
 
 
@@ -271,6 +273,8 @@ extern int uinst_id;
 struct x86_uinst_t
 {
 	long long id;
+
+	long long start_cycle;
 
 	/* Operation */
 	enum x86_uinst_opcode_t opcode;

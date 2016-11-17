@@ -4229,7 +4229,8 @@ void l2_cache_down_io_ctrl(void){
 		if(message_packet->access_type == cgm_access_gets || message_packet->access_type == cgm_access_get
 				|| message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade
 				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush
-				|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_flush_block_ack)
+				|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_flush_block_ack
+				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack) //moved these two from reply queue
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -4269,11 +4270,10 @@ void l2_cache_down_io_ctrl(void){
 
 			}
 		}
-		else if( message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
-				|| message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_getx_fwd_ack
+		else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_getx_fwd_ack
 				|| message_packet->access_type == cgm_access_downgrade_nack || message_packet->access_type == cgm_access_getx_fwd_nack
-				|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack
-				/*|| message_packet->access_type == cgm_access_gpu_flush_ack*/)
+				|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack)
+				/*|| message_packet->access_type == cgm_access_gpu_flush_ack)*/
 		{
 
 			if(list_count(switches[my_pid].north_rx_coherence_queue) >= QueueSize)

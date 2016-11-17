@@ -407,6 +407,16 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 		quick_dump = atoi(value);
 	}
 
+	if(MATCH("Stats", "Dump_GPU"))
+	{
+		dump_gpu = atoi(value);
+	}
+
+	if(MATCH("Stats", "Dump_CPU"))
+	{
+		dump_cpu = atoi(value);
+	}
+
 	if(MATCH("Stats", "MEM_Trace"))
 	{
 		mem_trace = atoi(value);

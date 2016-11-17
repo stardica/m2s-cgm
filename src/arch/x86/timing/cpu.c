@@ -995,7 +995,7 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats, char *pref
 	fprintf(f, "\n");
 }
 
-int i = 0;
+#include <arch/x86/emu/checkpoint.h>
 
 int X86CpuRun(Timing *self){
 
@@ -1048,6 +1048,14 @@ int X86CpuRun(Timing *self){
 	{
 		tick();
 	}
+
+	/*if(P_TIME >= 1345000000)
+	{
+		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
+		fatal("---Checkpoint Saved, exiting... cycle %llu---\n", P_TIME);
+	}*/
+
 
 	X86CpuEmptyTraceList(cpu);
 	/* Processor stages */

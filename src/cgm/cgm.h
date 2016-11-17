@@ -56,7 +56,7 @@
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
 #define WATCHBLOCK (unsigned int) 0x000cd580
-#define WATCHLINE 1
+#define WATCHLINE 0
 //Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 = L1-L3,
 #define LEVEL 3
 //dumps the system trace 0 off 1 on
@@ -124,6 +124,9 @@ extern FILE *load_store_log_file;
 extern int load_store_debug;
 
 extern int quick_dump;
+
+extern int dump_gpu;
+extern int dump_cpu;
 
 extern int Histograms;
 
@@ -220,13 +223,25 @@ struct cpu_gpu_stats_t{
 
 	//system stalls
 	long long *core_num_fences;
+	long long *core_pipe_drain;
 	long long *core_num_syscalls;
 	long long *core_stall_syscall;
+	long long *core_stall_memcopy;
+	long long *core_stall_flush;
+	int copy_bit;
 	long long systemcall_num_fences;
 	long long systemcall_start_cycle;
 	long long systemcall_total_cycles;
+
+	long long *core_stall_mem_copy;
+
+
+
+	/*delete these*/
 	long long systemcall_start_rob_stalls;
 	long long systemcall_total_rob_stalls;
+
+
 
 	long long *core_rename_stalls;
 
@@ -283,6 +298,9 @@ extern long long last_issued_fetch_access_id;
 extern unsigned int last_issued_fetch_access_blk;
 extern long long last_committed_fetch_access_id;
 extern unsigned int last_committed_fetch_access_blk;
+
+
+
 
 //set up related
 void m2scgm_init(void);

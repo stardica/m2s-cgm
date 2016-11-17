@@ -111,7 +111,7 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
-static X86Cpu *x86_cpu;
+X86Cpu *x86_cpu;
 
 static char *m2s_help =
 		"Syntax:\n"

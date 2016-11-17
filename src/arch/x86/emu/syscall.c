@@ -5758,7 +5758,7 @@ static int x86_sys_check_point_impl(X86Context *ctx)
 	/*this syscall represents the beginning of the parallel section of the benchmark
 	we need to save away the current stats which contains the start up section stats.
 	Then reset all stats and commence taking stats for the parallel section*/
-
+/*
 	if(x86_save_checkpoint_file_name[0])
 	{
 		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
@@ -5768,7 +5768,7 @@ static int x86_sys_check_point_impl(X86Context *ctx)
 	else
 	{
 		printf("---Checkpoint skipped cycle %llu---\n", P_TIME);
-	}
+	}*/
 
 	return 0;
 }

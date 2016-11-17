@@ -162,6 +162,14 @@ void X86ThreadSetName(X86Thread *self, char *name);
 
 int X86ThreadIsPipelineEmpty(X86Thread *self);
 
+void thread_dump_fetch_queue(X86Thread *self);
+void thread_dump_uop_queue(X86Thread *self);
+void thread_dump_inst_queue(X86Thread *self);
+void thread_dump_load_queue(X86Thread *self);
+void thread_dump_store_queue(X86Thread *self);
+void thread_dump_pred_queue(X86Thread *self);
+/*void dump_uinst_queue(struct list_t *x86_uinst_list);*/
+
 
 #endif
 

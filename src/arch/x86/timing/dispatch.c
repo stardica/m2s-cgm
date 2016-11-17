@@ -308,10 +308,9 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 					cpu_gpu_stats->core_total_stalls[core->id]++;
 					cpu_gpu_stats->core_stall_syscall[core->id]++;
+
 				}
-
 			}
-
 
 			core->dispatch_stall[stall] += quantum;
 
@@ -325,29 +324,6 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
-
-		//assert(core->id == 0);
-
-		/*if(uop->id == 57923139)
-		{
-			warning("dispatched syscall id %llu cycle %llu\n", uop->id, P_TIME);
-
-			getchar();
-		}*/
-
-		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		{
-			warning("Dispatch: core %d id %llu FENCE cycle %llu\n", core->id, uop->id, P_TIME);
-
-			printf("event queue size %d\n", core->event_queue->count);
-			core_dump_event_queue(core);
-
-			printf("rob size %d\n", self->rob_count);
-			core_dump_rob(core);
-
-			getchar();
-		}*/
-
 
 		/*set up some parameters for the pipeline*/
 		if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush)

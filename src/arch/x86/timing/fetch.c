@@ -74,17 +74,19 @@ static int X86ThreadCanFetch(X86Thread *self){
 	if (self->fetchq_occ >= x86_fetch_queue_size)
 		return 0;
 	
+	//if(cpu_gpu_stats->core_pipe_drain[self->core->id] == 1)
+	//	fatal("time to drain\n");
+
+
 	/*star added this; fetch must stall when the system is processing a system call
-	so that it will not process a 2nd syscall while it it still working on the current syscall*/
+	so that it will not process a 2nd syscall while it is still working on the current syscall*/
 	if (cpu_gpu_stats->core_num_fences[self->core->id] > 0)
+	{
 		return 0;
-
-
+	}
 
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
-
-
 
 //star looks like this is working ok.
 #if CGM
@@ -137,6 +139,27 @@ static int X86ThreadCanFetch(X86Thread *self){
 
 	/* We can fetch */
 	return 1;
+}
+
+
+void dump_unist_queue(struct list_t *queue){
+
+	int i = 0;
+	struct x86_uinst_t *uinst = NULL;
+
+	printf("Unist queue size %d\n", list_count(queue));
+
+	LIST_FOR_EACH(queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		uinst = list_get(queue, i);
+		printf("\t uinst_id %llu opcode %u\n", uinst->id, uinst->opcode);
+
+		/*if(uinst->opcode == x86_uinst_cpu_fence)
+			getchar();*/
+	}
+
+	return;
 }
 
 /* Run the emulation of one x86 macro-instruction and create its uops.
@@ -285,6 +308,30 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			x86_uinst_gpu_flush,	//58
 			x86_uinst_cpu_fence,	//59
 			x86_uinst_cpu_load_fence,	//60*/
+
+			/*if(uop->uinst->opcode >= 61)
+			{
+
+				core_dump_rob(x86_cpu->cores[0]);
+
+				struct x86_uop_t *uop = NULL;
+
+				uop = list_get(x86_cpu->cores[0]->rob, x86_cpu->cores[0]->threads[0]->rob_tail);
+
+				printf("\n");
+
+				thread_dump_fetch_queue(x86_cpu->cores[0]->threads[0]);
+
+				printf("\n");
+
+				thread_dump_uop_queue(x86_cpu->cores[0]->threads[0]);
+
+				dump_unist_queue(x86_uinst_list);
+
+				printf("\nrob tail id %llu\n", uop->id);
+
+				fatal("caught the drain\n");
+			}*/
 
 			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 60)
 			{
@@ -503,7 +550,6 @@ static void X86ThreadFetch(X86Thread *self)
 
 		if(self->ctx->address_space_index != 0)
 			fatal("X86ThreadFetch(): bad address space index as %d\n", self->ctx->address_space_index);
-
 
 		assert(self->ctx->address_space_index == 0);
 

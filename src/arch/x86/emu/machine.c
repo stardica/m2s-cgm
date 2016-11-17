@@ -1118,26 +1118,6 @@ void x86_isa_int_3_impl(X86Context *ctx)
 	x86_uinst_cpu_fence,	//59star added this
 	x86_uinst_cpu_load_fence,//60star added this*/
 
-void dump_unist_queue(struct list_t *queue){
-
-	int i = 0;
-	struct x86_uinst_t *uinst = NULL;
-
-	printf("Unist queue size %d\n", list_count(queue));
-
-	LIST_FOR_EACH(queue, i)
-	{
-		//get pointer to access in queue and check it's status.
-		uinst = list_get(queue, i);
-		printf("\t uinst_id %llu opcode %u\n", uinst->id, uinst->opcode);
-
-		/*if(uinst->opcode == x86_uinst_cpu_fence)
-			getchar();*/
-	}
-
-	return;
-}
-
 void x86_isa_int_imm8_impl(X86Context *ctx)
 {
 	int spec_mode;
@@ -1363,8 +1343,6 @@ void x86_isa_mov_al_moffs8_impl(X86Context *ctx)
 void x86_isa_mov_ax_moffs16_impl(X86Context *ctx)
 {
 	unsigned short value;
-
-
 
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 2, &value);
 	X86ContextStoreReg(ctx, x86_inst_reg_ax, value);

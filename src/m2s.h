@@ -9,6 +9,8 @@
 #ifndef M2S_H_
 #define M2S_H_
 
+#include <lib/util/class.h>
+
 //GPU 1 or 0 takes in and out all of the GPU and runtime code
 //CGM 1 or 0 takes in and out the new memory system
 #define GPU 1
@@ -30,7 +32,7 @@ void m2s_loop(void);
 extern char *x86_save_checkpoint_file_name;
 extern char *x86_load_checkpoint_file_name;
 
-
+extern X86Cpu *x86_cpu;
 
 
 #endif /*M2S_H_*/

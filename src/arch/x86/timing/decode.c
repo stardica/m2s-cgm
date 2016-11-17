@@ -92,7 +92,6 @@ static void X86ThreadDecode(X86Thread *self)
 
 			do
 			{
-
 				/* Move from fetch queue to uop queue */
 
 				X86ThreadRemoveFromFetchQueue(self, 0);

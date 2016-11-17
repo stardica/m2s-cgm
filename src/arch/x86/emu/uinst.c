@@ -28,6 +28,8 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/uinst.h>
 
+#include <cgm/cgm.h>
+
 
 /*
  * Global variables
@@ -196,6 +198,7 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "gpu_flush", X86_UINST_MEM }, //star added this
 	{ "cpu_fence", X86_UINST_MEM }, //star added this
 	{ "cpu_load_fence", X86_UINST_MEM }, //star added this
+	{ "cpu_drain", X86_UINST_MEM }, //star added this
 
 	{ "call", X86_UINST_CTRL | X86_UINST_UNCOND },
 	{ "ret", X86_UINST_CTRL | X86_UINST_UNCOND },
@@ -575,6 +578,7 @@ void __x86_uinst_new_mem(X86Context *ctx, enum x86_uinst_opcode_t opcode, unsign
 	/* Create micro-instruction */
 	assert(arch_x86->sim_kind == arch_sim_kind_detailed);
 	uinst = x86_uinst_create();
+	uinst->start_cycle = P_TIME;
 	uinst->opcode = opcode;
 	uinst->idep[0] = idep0;
 	uinst->idep[1] = idep1;

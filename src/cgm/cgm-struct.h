@@ -624,6 +624,8 @@ struct cgm_stats_t{
 	long long *core_rob_stall_load;
 	long long *core_rob_stall_store;
 	long long *core_stall_syscall;
+	long long *core_stall_memcopy;
+	long long *core_stall_flush;
 	long long *core_rob_stall_other;
 	long long *core_first_fetch_cycle;
 	long long *core_fetch_stalls;

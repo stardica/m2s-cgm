@@ -36,21 +36,32 @@
  */
 
 
-int is_rob_head(X86Core *self, int uop_id){
+int is_rob_head(X86Core *self, struct x86_uop_t *uop){
 
 	struct x86_uop_t *rob_uop;
-	int i = 0;
+	//int i = 0;
 
-	LIST_FOR_EACH(self->rob, i)
+	rob_uop = list_get(self->rob, uop->thread->rob_head);
+
+	if(rob_uop == uop)
+	{
+		assert(rob_uop->id == uop->id);
+		assert(rob_uop->uinst->opcode == x86_uinst_syscall);
+		//assert(rob_uop->syscall_ready == 0);
+		return 1;
+	}
+
+	/*LIST_FOR_EACH(self->rob, i)
 	{
 		//get pointer to access in queue and check it's status.
 		rob_uop = list_get(self->rob, i);
+
 		if(rob_uop)
 		{
 			if(rob_uop->id == uop_id && rob_uop->thread->rob_head == i)
 				return 1;
 		}
-	}
+	}*/
 
 	return 0;
 }
@@ -86,28 +97,33 @@ void X86CoreWriteback(X86Core *self)
 		if (!uop)
 			break;
 
+		/*if(uop->id == 2158165593LL)
+		{
+			core_dump_rob(self);
+
+			core_dump_event_queue(self);
+
+			getchar();
+		}*/
+
+
+		//look for the oldest access in the queue at this time.
 		LINKED_LIST_FOR_EACH(self->event_queue)
 		{
 			uop_next = linked_list_get(self->event_queue);
-			assert(uop_next);
 
-			if(uop_next)
-			{
-				if(uop->id > uop_next->id)
-					uop = uop_next;
-			}
+			//look for older uop
+			if(uop->id > uop_next->id)
+				uop = uop_next;
 		}
 
-		/*if(uop->uinst->opcode == x86_uinst_cpu_fence)
-		{
-			warning("writeback: fence id %llu cycle %llu\n", uop->id, P_TIME);
-			getchar();
-		}*/
+		//if(uop->id == 2158165593LL)
+		//	printf("\n is_rob_head %d thread_rob_head %d uop id %llu uop_thread_head %d\n", is_rob_head(self, uop), self->rob_head, uop->id, uop->thread->rob_head);
 
 		//wait until syscalls are at the head of the event queue and rob. then assess a latency...
 		if(uop->uinst->opcode == x86_uinst_syscall)
 		{
-			if(is_rob_head(self, uop->id) && uop->syscall_ready == 0)//syscall is at head of ROB, charge latency and stall core.
+			if(is_rob_head(self, uop) && uop->syscall_ready == 0)//syscall is at head of ROB, charge latency and stall core.
 				//dispatch will stall until this syscall is committed...
 			{
 				assert(uop->syscall_ready == 0);
@@ -140,6 +156,10 @@ void X86CoreWriteback(X86Core *self)
 				assert(uop->syscall_ready == 0);
 				uop->when = (P_TIME + 1); //punt 1 cycle until the syscall is at the head of the ROB...
 			}
+			/*else
+			{
+				fatal("problem might be here\n");
+			}*/
 		}
 
 

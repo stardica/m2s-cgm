@@ -4020,9 +4020,9 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 		if(*cache_block_state_ptr == cgm_cache_block_invalid)
 			assert(!write_back_packet);
 
-		warning("block 0x%08x %s block is pending a return get_fwd ID %llu type %d state %d cycle %llu\n",
+		/*warning("block 0x%08x %s block is pending a return get_fwd ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name,
-					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);*/
 
 		//assert(cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way) == cgm_cache_block_transient);
 	}

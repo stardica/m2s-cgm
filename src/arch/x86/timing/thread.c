@@ -19,6 +19,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 #include <arch/x86/timing/bpred.h>
 #include <arch/x86/timing/core.h>
@@ -79,4 +80,140 @@ void X86ThreadSetName(X86Thread *self, char *name)
 int X86ThreadIsPipelineEmpty(X86Thread *self)
 {
 	return !self->rob_count && !self->fetch_queue->count && !self->uop_queue->count;
+}
+
+
+void thread_dump_fetch_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LIST_FOR_EACH(self->fetch_queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = list_get(self->fetch_queue, i);
+		if(uop)
+		{
+			printf("\t Core id %d fetch slot %d rob_uop id %llu op_code %d\n",
+				self->core->id, i, uop->id, uop->uinst->opcode);
+		}
+	}
+
+	return;
+}
+
+
+void thread_dump_uop_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LIST_FOR_EACH(self->uop_queue, i)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = list_get(self->uop_queue, i);
+		if(uop)
+		{
+			printf("\t Core id %d uop queue slot %d rob_uop id %llu syscall_ready %d op_code %d\n",
+				self->core->id, i, uop->id, uop->syscall_ready, uop->uinst->opcode);
+		}
+	}
+
+	return;
+}
+
+/*void dump_uinst_queue(struct list_t *x86_uinst_list){
+
+	int i = 0;
+	struct x86_uinst_t *uinst = NULL;
+
+	LIST_FOR_EACH(x86_uinst_list, i)
+	{
+		//get pointer to access in queue and check it's status.
+		uinst = list_get(x86_uinst_list, i);
+		if(uinst)
+		{
+			printf("\t slot %d rob_uop id %llu op_code %d\n",
+				i, uinst->id, uinst->opcode);
+		}
+	}
+
+	return;
+}*/
+
+
+void thread_dump_inst_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LINKED_LIST_FOR_EACH(self->iq)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = linked_list_get(self->iq);
+		if(uop)
+		{
+			printf("\t Core id %d inst slot %d rob_uop id %llu op_code %d\n",
+				self->core->id, i, uop->id, uop->uinst->opcode);
+		}
+	}
+
+	return;
+}
+
+void thread_dump_load_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LINKED_LIST_FOR_EACH(self->lq)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = linked_list_get(self->lq);
+		if(uop)
+		{
+			printf("\t Core id %d load slot %d rob_uop id %llu op_code %d\n",
+				self->core->id, i, uop->id, uop->uinst->opcode);
+		}
+	}
+
+	return;
+}
+
+void thread_dump_store_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LINKED_LIST_FOR_EACH(self->sq)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = linked_list_get(self->sq);
+		if(uop)
+		{
+			printf("\t Core id %d store slot %d rob_uop id %llu op_code %d\n",
+				self->core->id, i, uop->id, uop->uinst->opcode);
+		}
+	}
+
+	return;
+}
+
+void thread_dump_pred_queue(X86Thread *self){
+
+	int i = 0;
+	struct x86_uop_t *uop = NULL;
+
+	LINKED_LIST_FOR_EACH(self->preq)
+	{
+		//get pointer to access in queue and check it's status.
+		uop = linked_list_get(self->preq);
+		if(uop)
+		{
+			printf("\t Core id %d preq slot %d rob_uop id %llu op_code %d\n",
+				self->core->id, i, uop->id, uop->uinst->opcode);
+		}
+	}
+
+	return;
 }

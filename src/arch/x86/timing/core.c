@@ -98,12 +98,13 @@ void core_dump_event_queue(X86Core *core){
 		event_queue_uop = linked_list_get(core->event_queue);
 		if(event_queue_uop)
 		{
-			printf("\t Core id %d event_queue_uop id %llu op_code %d\n",
-				core->id, event_queue_uop->id, event_queue_uop->uinst->opcode);
+			printf("\t Core id %d event_queue_uop id %llu syscall_ready %d op_code %d\n",
+				core->id, event_queue_uop->id, event_queue_uop->syscall_ready, event_queue_uop->uinst->opcode);
 		}
 	}
 	return;
 }
+
 
 
 void core_dump_rob(X86Core *core){
@@ -117,11 +118,10 @@ void core_dump_rob(X86Core *core){
 		rob_uop = list_get(core->rob, i);
 		if(rob_uop)
 		{
-			printf("\t Core id %d ROB slot %d rob_uop id %llu op_code %d %s\n",
-				core->id, i, rob_uop->id, rob_uop->uinst->opcode, (i == rob_uop->thread->rob_head) ? "<-- ROB head" : "");
+			printf("\t Core id %d ROB slot %d rob_uop id %llu syscall_ready %d op_code %d start_cycle %llu %s\n",
+				core->id, i, rob_uop->id, rob_uop->syscall_ready, rob_uop->uinst->opcode, rob_uop->uinst->start_cycle, (i == rob_uop->thread->rob_head) ? "<-- ROB head" : "");
 		}
 	}
 
-	//getchar();
 	return;
 }
