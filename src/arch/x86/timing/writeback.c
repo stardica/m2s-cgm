@@ -118,7 +118,7 @@ void X86CoreWriteback(X86Core *self)
 		}
 
 		//if(uop->id == 2158165593LL)
-		//	printf("\n is_rob_head %d thread_rob_head %d uop id %llu uop_thread_head %d\n", is_rob_head(self, uop), self->rob_head, uop->id, uop->thread->rob_head);
+		//printf("\n is_rob_head %d thread_rob_head %d uop id %llu uop_thread_head %d\n", is_rob_head(self, uop), self->rob_head, uop->id, uop->thread->rob_head);
 
 		//wait until syscalls are at the head of the event queue and rob. then assess a latency...
 		if(uop->uinst->opcode == x86_uinst_syscall)
