@@ -1133,6 +1133,13 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 	/*syscall*/
 	/*warning("EMU new syscall eax %u ebx %u cycle %llu\n", ctx->regs->eax, ctx->regs->ebx, P_TIME);*/
 
+	if(ctx->curr_eip == 0x806ef20 && ctx->regs->eax == 328)
+	{
+		printf("sycall in simulator!!! curr_eip is 0x%08x\n", ctx->curr_eip);
+		getchar();
+	}
+
+
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)

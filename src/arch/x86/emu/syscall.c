@@ -4634,8 +4634,6 @@ static int x86_sys_madvise_impl(X86Context *ctx)
 }
 
 
-
-
 /*
  * System call 'getdents64'
  */
@@ -5777,10 +5775,27 @@ static int x86_sys_check_point_impl(X86Context *ctx)
  * System call 'debug_point' (code 328)
  */
 
-static int x86_sys_debug_point_impl(X86Context *ctx)
+/*static int x86_sys_debug_point_impl(X86Context *ctx)
 {
 
 	//printf("DEBUG POINT! %llu---\n", P_TIME);
+
+	return 0;
+}*/
+
+
+/*
+ * System call 'debug_point' (code 329)
+ */
+
+static int x86_sys_test_syscall_impl(X86Context *ctx)
+{
+
+	//printf("DEBUG POINT! %llu---\n", P_TIME);
+
+	printf("Simulator *** in syscall %llu---\n", P_TIME);
+
+	ctx->regs->eip = 0x8048e80;
 
 	return 0;
 }

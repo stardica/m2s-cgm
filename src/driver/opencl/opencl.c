@@ -1296,9 +1296,9 @@ static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 	else 
 	{
 		opencl_debug("\tsuspending driver thread\n");
+
 		/* Suspend x86 context until simulation completes */
-		X86ContextSuspend(ctx, opencl_abi_si_ndrange_finish_can_wakeup, 
-			NULL, opencl_abi_si_ndrange_finish_wakeup, NULL);
+		X86ContextSuspend(ctx, opencl_abi_si_ndrange_finish_can_wakeup, NULL, opencl_abi_si_ndrange_finish_wakeup, NULL);
 	}
 
 	return 0;
