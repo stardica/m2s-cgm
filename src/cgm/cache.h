@@ -189,6 +189,11 @@ struct cgm_packet_t *cache_search_pending_request_buffer(struct cache_t *cache, 
 int cache_search_pending_request_get_getx_fwd(struct cache_t *cache, unsigned int address);
 int cache_search_pending_request_for_type(struct cache_t *cache, unsigned int address, enum cgm_access_kind_t access_type);
 
+
+//block functions for testing...
+void cache_put_block_for_hit_test(enum cache_type_enum cache_type, int id, struct cgm_packet_t *message_packet);
+
+
 //block Manipulations
 long long cgm_cache_get_block_transient_state_id(struct cache_t *cache, int set, int way);
 enum cgm_cache_block_state_t cgm_cache_get_block_transient_state(struct cache_t *cache, int set, int way);

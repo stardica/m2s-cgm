@@ -5081,6 +5081,11 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(message_packet->access_id == 1)
 		mem_system_stats->first_mem_access_lat = mem_lat;
 
+	if(message_packet->access_id == 1)
+	{
+		fatal("L1_i_return access id %llu lat %llu cycle %llu", message_packet->access_id, mem_lat, P_TIME);
+	}
+
 
 	assert(message_packet->protocol_case != invalid);
 	if(message_packet->protocol_case == L1_hit)
@@ -5142,6 +5147,9 @@ void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 		if(message_packet->protocol_case == L1_hit)
 		{
+			/*if(mem_lat < 2)
+				fatal("load id %llu lat %llu cycle %llu\n", message_packet->access_id, mem_lat, P_TIME);
+*/
 			mem_system_stats->load_l1_hits++;
 		}
 		else if (message_packet->protocol_case == L2_hit)
@@ -5319,6 +5327,66 @@ void cache_put_io_down_queue(struct cache_t *cache, struct cgm_packet_t *message
 	advance(cache->cache_io_down_ec);
 	return;
 }
+
+void cache_put_block_for_hit_test(enum cache_type_enum cache_type, int id, struct cgm_packet_t *message_packet){
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+
+	struct cache_t *l3_cache_ptr = NULL;
+
+	switch(cache_type)
+	{
+		case l1_i_cache_t:
+
+			//get the status of the cache block
+			cgm_cache_probe_address(&l1_i_caches[id], message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+			cgm_cache_set_block(&l1_i_caches[id], set, 0, tag, cgm_cache_block_shared);
+
+
+			break;
+
+		case l2_cache_t:
+
+			//get the status of the cache block
+			cgm_cache_probe_address(&l2_caches[id], message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+			cgm_cache_set_block(&l2_caches[id], set, 0, tag, cgm_cache_block_shared);
+
+
+			break;
+
+		case l3_cache_t:
+
+			//get the status of the cache block
+			cgm_cache_probe_address(&l3_caches[id], message_packet->address, set_ptr, tag_ptr, offset_ptr);
+
+			l3_cache_ptr = cgm_l3_cache_map(*set_ptr);
+
+			if(message_packet->access_id == 1)
+				warning("testing, access id %llu set %d sending to l3 id %d\n", message_packet->access_id, *set_ptr, l3_cache_ptr->id);
+
+			cgm_cache_set_block(&l3_caches[l3_cache_ptr->id], set, 0, tag, cgm_cache_block_shared);
+
+			break;
+
+		case l1_d_cache_t:
+		case gpu_v_cache_t:
+		case gpu_l2_cache_t:
+		case gpu_s_cache_t:
+			fatal("cache_put_block_for_hit_test(): bad cache\n");
+			break;
+		}
+
+	return;
+}
+
 
 void cache_put_block(struct cache_t *cache, struct cgm_packet_t *message_packet){
 

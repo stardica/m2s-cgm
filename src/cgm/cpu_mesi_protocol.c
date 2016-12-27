@@ -28,6 +28,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 	/*printf("l1 i %d fetching\n", cache->id);
 	STOP;*/
 
+
+
 	int cache_block_hit;
 	int cache_block_state;
 	int *cache_block_hit_ptr = &cache_block_hit;
@@ -49,6 +51,8 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	//charge the latency
 	P_PAUSE(cache->latency);
+
+	//fatal("Fetch access id %llu addr 0x%08x hit prt %d cycle %llu\n", message_packet->access_id, message_packet->address, *cache_block_hit_ptr, P_TIME);
 
 	switch(*cache_block_state_ptr)
 	{
