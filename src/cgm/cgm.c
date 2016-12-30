@@ -1911,13 +1911,13 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		return access_id;
 	}
 
-	if(new_packet->access_id > 1)
+	/*if(new_packet->access_id > 1)
 	{
 		list_dequeue(cgm_access_record);
 		status_packet_destroy(new_packet_status);
 		packet_destroy(new_packet);
 		return access_id;
-	}
+	}*/
 
 	/*int i = 0;
 	for(i = 0; i < num_cores; i++)
@@ -1931,12 +1931,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	id = thread->core->id;
 	assert(id < num_cores);
 
-	if(new_packet->access_id == 1)
+	/*if(new_packet->access_id == 1)
 	{
 		new_packet->address = 0x1c0;
 		warning("Fetch access id %llu addr 0x%08x cycle %llu\n", new_packet->access_id, new_packet->address, P_TIME);
 	//	cache_put_block_for_hit_test(l3_cache_t, id, new_packet);
-	}
+	}*/
 
 
 	/*stats*/

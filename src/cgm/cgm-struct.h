@@ -15,7 +15,7 @@
 #include <cgm/directory.h>
 #include <mem-image/mmu.h>
 
-#define HISTSIZE 40000
+#define HISTSIZE 5000
 
 typedef int bool;
 enum {false, true};

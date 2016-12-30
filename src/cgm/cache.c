@@ -5081,10 +5081,10 @@ void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packe
 	if(message_packet->access_id == 1)
 		mem_system_stats->first_mem_access_lat = mem_lat;
 
-	if(message_packet->access_id == 1)
-	{
-		fatal("L1_i_return access id %llu lat %llu cycle %llu", message_packet->access_id, mem_lat, P_TIME);
-	}
+	//if(message_packet->access_id == 1)
+	//{
+	//	fatal("L1_i_return access id %llu lat %llu cycle %llu", message_packet->access_id, mem_lat, P_TIME);
+	//}
 
 
 	assert(message_packet->protocol_case != invalid);
