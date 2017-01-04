@@ -2421,7 +2421,7 @@ void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_p
 		}
 		while(pending_packet);
 
-		assert(num_packets <= 1);
+		assert(num_packets == 0);
 
 	}
 
@@ -4067,8 +4067,8 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 			/*drop into the pending request buffer*/
 
-			if(message_packet->access_id == 40547176)
-				fatal("(1) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
+			//if(message_packet->access_id == 40547176)
+				//fatal("(1) caught packet id %llu cycle %llu\n", message_packet->access_id, P_TIME);
 
 			message_packet =  list_remove(cache->last_queue, message_packet);
 			list_enqueue(cache->pending_request_buffer, message_packet);
@@ -4315,14 +4315,19 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
-	int set = 0;
-	int tag = 0;
-	unsigned int offset = 0;
-	int way = 0;
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
 
-	int *set_ptr = &set;
-	int *tag_ptr = &tag;
-	unsigned int *offset_ptr = &offset;
+	//int set = 0;
+	//int tag = 0;
+	//unsigned int offset = 0;
+	//int way = 0;
+
+	//int *set_ptr = &set;
+	//int *tag_ptr = &tag;
+	//unsigned int *offset_ptr = &offset;
 	// *way_ptr = &way;
 
 	//int l3_map = 0;
@@ -4331,26 +4336,73 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	enum cgm_cache_block_state_t victim_trainsient_state;
 
 	//struct cgm_packet_t *pending_get_getx_fwd_request = NULL;
+	struct cgm_packet_t *pending_packet = NULL;
+	//int num_packets = 0;
 
 	struct cache_t *l3_cache_ptr = NULL;
 
+
+	cache_get_transient_block(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
+
 	//probe the address for set, tag, and offset.
-	cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
+	//cgm_cache_probe_address(cache, message_packet->address, set_ptr, tag_ptr, offset_ptr);
 
 	//store the decode in the packet for now.
-	message_packet->tag = tag;
-	message_packet->set = set;
-	message_packet->offset = offset;
-	message_packet->way = way;
+	//message_packet->tag = tag;
+	//message_packet->set = set;
+	//message_packet->offset = offset;
+	//message_packet->way = way;
 
 	//charge delay
 	P_PAUSE(cache->latency);
 
 	/*our load (getx_fwd) request has been nacked by the owning L2*/
+	ort_status = ort_search(cache, message_packet->tag, message_packet->set); // there is an outstanding request.
+	assert(ort_status <= cache->mshr_size);
+	int conflict_bit = cache->ort[ort_status][2];
+
+	//if the conflict bit is set in the ort reset it because this is the nack
+	if(conflict_bit == 0)
+	{
+		cache->ort[ort_status][2] = 1;
+
+		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_nack caught the conflict bit in the ORT table ID %llu type %d cycle %llu\n",
+			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+			message_packet->access_type, P_TIME);
+
+		/*search for a pending request, just to make sure >.> */
+		pending_packet = cache_search_pending_request_buffer(cache, message_packet->address);
+		if(pending_packet)
+		{
+			/*if this went out as an upgrade there will be an upgrade packet here....*/
+			warning("*******getx_fwd_nack pending access destroyed%d\n", pending_packet->access_type);
+
+			assert(pending_packet->access_type == cgm_access_upgrade);
+			cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
+
+			//change to a getx
+			message_packet->access_type = cgm_access_getx;
+			message_packet->cpu_access_type = pending_packet->cpu_access_type;
+			message_packet->l1_access_type = pending_packet->l1_access_type;
+			message_packet->l1_victim_way = pending_packet->l1_victim_way;
+			message_packet->event_queue = pending_packet->event_queue;
+			message_packet->data = pending_packet->data;
+			message_packet->access_id = pending_packet->access_id;
+			message_packet->name = strdup(pending_packet->name);
+			message_packet->start_cycle = pending_packet->start_cycle;
+
+			assert(message_packet->coalesced == 0);
+			assert(message_packet->assoc_conflict == 0);
+
+			//fatal("getx_fwd_nack found a pending packet access_id %llu blk addr 0x%08x cycle %llu\n", message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+			pending_packet = list_remove(cache->pending_request_buffer, pending_packet);
+			packet_destroy(pending_packet);
+		}
+	}
 
 	/*verify status of cache blk*/
-	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l2_victim_way);
-	assert(victim_trainsient_state == cgm_cache_block_transient); //there is a transient block
+	victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);
+
 	if(victim_trainsient_state != cgm_cache_block_transient)
 	{
 		ort_dump(cache);
@@ -4364,9 +4416,8 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 			message_packet->set, message_packet->tag, message_packet->way, P_TIME);
 	}
 
+	assert(victim_trainsient_state == cgm_cache_block_transient); //there is a transient block
 
-	ort_status = ort_search(cache, message_packet->tag, message_packet->set); // there is an outstanding request.
-	assert(ort_status <= cache->mshr_size);
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_nack nack ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
@@ -9015,7 +9066,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 						/*if no packet the block was evicted*/
 						assert(*cache_block_state_ptr == 0);
 
-						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_ack killed retrying as getx! ID %llu type %d state %d cycle %llu\n",
+						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s upgrade_ack killed on conflict retrying as getx! ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 						//find the access in the ORT table and clear it.

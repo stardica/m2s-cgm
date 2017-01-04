@@ -63,16 +63,11 @@
  * Public Variables
  */
 
-
 int x86_sys_debug_category;
-
-
-
 
 /*
  * Private Variables
  */
-
 
 static char *err_x86_sys_note =
 	"\tThe system calls performed by the executed application are intercepted by\n"
@@ -2902,6 +2897,8 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
+
+
 static int x86_sys_newuname_impl(X86Context *ctx){
 
 	struct x86_regs_t *regs = ctx->regs;
@@ -2920,8 +2917,6 @@ static int x86_sys_newuname_impl(X86Context *ctx){
 	mem_write(mem, utsname_ptr, sizeof sim_utsname, &sim_utsname);
 	return 0;
 }
-
-
 
 
 /*
@@ -2955,8 +2950,6 @@ static int x86_sys_mprotect_impl(X86Context *ctx)
 	/* Return */
 	return 0;
 }
-
-
 
 
 /*
@@ -3006,8 +2999,6 @@ static int x86_sys_llseek_impl(X86Context *ctx)
 	/* Return */
 	return 0;
 }
-
-
 
 
 /*

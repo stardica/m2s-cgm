@@ -1147,11 +1147,12 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 
-	//uinst = list_tail(x86_uinst_list);
+	//suspend current thread
+	//create new thread with OS kernel function
+	//run kernel
 
-	//warning("uinst opcodde %u id %llu\n", uinst->opcode, uinst->id);
 
-	//dump_unist_queue(x86_uinst_list);
+	//jump to our function...
 
 }
 
