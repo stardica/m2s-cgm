@@ -91,7 +91,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 					if(message_packet->coalesced == 1)
 						return;
 					else
-						fatal("cgm_mesi_load(): write failed to coalesce when all ways are transient...\n");
+						fatal("cgm_mesi_gpu_load(): write failed to coalesce when all ways are transient...\n");
 				}
 
 				//we are writing in a block so evict the victim
@@ -158,6 +158,7 @@ void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l1_victim_way].directory_entry.entry_bits.pending != 1);
 
 				/*	message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 				assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
@@ -415,7 +416,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 					if(message_packet->coalesced == 1)
 						return;
 					else
-						fatal("cgm_mesi_load(): write failed to coalesce when all ways are transient...\n");
+						fatal("cgm_mesi_gpu_load(): write failed to coalesce when all ways are transient...\n");
 				}
 
 				//we are writing in a block so evict the victim
@@ -480,6 +481,7 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l1_victim_way].directory_entry.entry_bits.pending != 1);
 
 				/*message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 				assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
@@ -1486,7 +1488,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 					if(message_packet->coalesced == 1)
 						return;
 					else
-						fatal("cgm_mesi_l2_get(): write failed to coalesce when all ways are transient...\n");
+						fatal("cgm_mesi_gpu_l2_get(): 1 write failed to coalesce when all ways are transient...\n");
 				}
 
 				assert(write_back_packet->L3_flush_join == 0);
@@ -1557,25 +1559,63 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 			}
 			else
 			{
-				//check ORT for coalesce
-				cache_check_ORT(cache, message_packet);
 
-				if(message_packet->coalesced == 1)
+				message_packet->l2_victim_way = cgm_cache_search_way(cache, message_packet->set);
+				//assert(cache->sets[message_packet->set].blocks[message_packet->l2_victim_way].directory_entry.entry_bits.pending != 1);
+
+				//super rare case here, where this is a unique access so not coalesced, but there isn't a blk->way to make transient
+				//this can happen if there is a pending bit set in the directory. No different than a pending conflict so nack this back for a retry
+				//if not then we must coalesce
+				if(message_packet->l2_victim_way == -1)
 				{
-					/*stats*/
-					cache->CoalescePut++;
+					//nack here the everything after this is normal....
 
-					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
-							message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					//no room in the set for this request, usually because one or more blocks have some pending action.
+
+					message_packet->access_type = cgm_access_get_nack;
+
+					//set message package size
+					message_packet->size = 1;
+
+					//warning("Nacking get access with no way back to v cache block 0x%08x %s load nack no way available flush ID %llu type %d state %d cycle %llu\n",
+					//		(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
+					//		*cache_block_state_ptr, P_TIME);
+
+					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load nack no way available flush ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
+							*cache_block_state_ptr, P_TIME);
+
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					cache_put_io_up_queue(cache, message_packet);
 
 					return;
 				}
+				else
+				{
+					//check ORT for coalesce
+					cache_check_ORT(cache, message_packet);
+
+					if(message_packet->coalesced == 1)
+					{
+						/*stats*/
+						cache->CoalescePut++;
+
+						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load miss coalesce ID %llu type %d state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+								message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+						return;
+					}
+				}
+
+				//set the transient state.
+				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
+				cgm_cache_set_victim(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag);
 
 				//we are bringing a new block so evict the victim and flush the L1 copies
-				message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
-				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
-
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
 							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0);
@@ -1610,7 +1650,13 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
 				//add some routing/status data to the packet
-				assert(message_packet->access_type == cgm_access_get);
+				//if(message_packet->access_type != cgm_access_get)
+				//	fatal("block 0x%08x %s ID %llu type %d state %d cycle %llu\n",
+				//			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
+				//			message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+
+				assert(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_load_retry);
 
 				message_packet->size = 1;
 
@@ -1643,7 +1689,6 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//transmit to L3
 				cache_put_io_down_queue(cache, message_packet);
 			}
-
 			break;
 
 		case cgm_cache_block_modified:
@@ -2144,7 +2189,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 					if(message_packet->coalesced == 1)
 						return 1;
 					else
-						fatal("cgm_mesi_l2_getx(): write failed to coalesce when all ways are transient...\n");
+						fatal("cgm_mesi_gpu_l2_getx(): write failed to coalesce when all ways are transient...\n");
 				}
 
 				assert(write_back_packet->L3_flush_join == 0);
@@ -2216,23 +2261,58 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 			else
 			{
 
-				//check ORT for coalesce
-				cache_check_ORT(cache, message_packet);
+				//find victim
+				message_packet->l2_victim_way = cgm_cache_search_way(cache, message_packet->set);
 
-				if(message_packet->coalesced == 1)
+				//if not then we must coalesce
+				if(message_packet->l2_victim_way == -1)
 				{
-					/*stats*/
-					cache->CoalescePut++;
+					//nack here the everything after this is normal....
 
-					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s store miss coalesce ID %llu type %d state %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					//no room in the set for this request, usually because one or more blocks have some pending action.
+					message_packet->access_type = cgm_access_getx_nack;
+
+					//set message package size
+					message_packet->size = 1;
+
+					//warning("Nacking getx access with no way back to v cache block 0x%08x %s load nack no way available flush ID %llu type %d state %d cycle %llu\n",
+					//		(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
+					//		*cache_block_state_ptr, P_TIME);
+
+					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load nack no way available flush ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
+							*cache_block_state_ptr, P_TIME);
+
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					cache_put_io_up_queue(cache, message_packet);
 
 					return 1;
+
+				}
+				else
+				{
+					//check ORT for coalesce
+					cache_check_ORT(cache, message_packet);
+
+					if(message_packet->coalesced == 1)
+					{
+						/*stats*/
+						cache->CoalescePut++;
+
+						DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s store miss coalesce ID %llu type %d state %d cycle %llu\n",
+								(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+						return 1;
+					}
 				}
 
-				//find victim
-				message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+
+				assert(cache->sets[message_packet->set].blocks[message_packet->l2_victim_way].directory_entry.entry_bits.pending != 1);
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
+				cgm_cache_set_victim(cache, message_packet->set, message_packet->l2_victim_way, message_packet->tag);
 
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
@@ -2245,7 +2325,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
 				//set access type
-				assert(message_packet->access_type == cgm_access_getx);
+				assert(message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_store_retry);
 
 				message_packet->size = 1;
 
@@ -2379,9 +2459,9 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				flush_packet->gpu_access_type = cgm_access_store;
 				flush_packet->l1_cache_id = owning_core;
 
-				if(message_packet->access_id == 6535548 || message_packet->access_id == 6310108)
+				/*if(message_packet->access_id == 6535548 || message_packet->access_id == 6310108)
 					printf("owning core is %d pending bit is %d evict is %llu core access type %d\n",
-							owning_core, cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way), flush_packet->evict_id, message_packet->access_type);
+							owning_core, cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way), flush_packet->evict_id, message_packet->access_type);*/
 
 
 				list_enqueue(cache->Tx_queue_top, flush_packet);

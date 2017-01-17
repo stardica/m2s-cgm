@@ -67,6 +67,7 @@
 //if 1 allocates all threads on a single core...
 extern int SINGLE_CORE;
 
+//#define DEBUG_TRACE
 #define DEBUG(level, message, ...)\
 if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
 	if(level)\

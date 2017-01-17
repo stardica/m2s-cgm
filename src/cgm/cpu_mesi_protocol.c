@@ -74,9 +74,11 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 				/*stats*/
 				cache->CoalescePut++;
 
+				#ifdef DEBUG
 				DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s fetch miss coalesce ID %llu type %d state %d cycle %llu\n",
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 								message_packet->access_type, *cache_block_state_ptr, P_TIME);
+				#endif
 
 				return;
 			}
@@ -90,6 +92,7 @@ void cgm_mesi_fetch(struct cache_t *cache, struct cgm_packet_t *message_packet){
 			//find victim and evict on return l1_i_cache just drops the block on return
 			//message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);
 			message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+			assert(cache->sets[message_packet->set].blocks[message_packet->l1_victim_way].directory_entry.entry_bits.pending != 1);
 			assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
 
 
@@ -620,6 +623,7 @@ void cgm_mesi_load(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l1_victim_way].directory_entry.entry_bits.pending != 1);
 
 				/*	message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 				assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
@@ -886,6 +890,7 @@ void cgm_mesi_store(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 				//find victim
 				message_packet->l1_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l1_victim_way].directory_entry.entry_bits.pending != 1);
 
 				/*message_packet->l1_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 				assert(message_packet->l1_victim_way >= 0 && message_packet->l1_victim_way < cache->assoc);
@@ -1484,11 +1489,11 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 		fflush(stderr);
 	}
 
-	if(message_packet->size != 64)
-		fatal("l1s_write_block access id %llu size %d type %d cycle %llu\n",
-				message_packet->access_id, message_packet->size, message_packet->access_type, P_TIME);
+	//if(message_packet->size != 64)
+	//	fatal("l1s_write_block access id %llu size %d type %d cycle %llu\n",
+	//			message_packet->access_id, message_packet->size, message_packet->access_type, P_TIME);
 
-	assert(message_packet->size == 64);
+	assert(message_packet->size >= 8);
 
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
@@ -1640,6 +1645,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//find victim, on return OK to just drop the block this is I$ traffic
 			message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+			assert(cache->sets[message_packet->set].blocks[message_packet->l2_victim_way].directory_entry.entry_bits.pending != 1);
 			assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 			/*if the block isn't already invalid evict it*/
@@ -1862,6 +1868,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//we are bringing a new block so evict the victim and flush the L1 copies
 				message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l2_victim_way].directory_entry.entry_bits.pending != 1);
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
@@ -2246,6 +2253,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//find victim
 				message_packet->l2_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l2_victim_way].directory_entry.entry_bits.pending != 1);
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 				//evict the victim
@@ -4812,7 +4820,7 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	pending_upgrade_bit = cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
 
 	/*if we are writing a block the message packet should have some size*/
-	assert(message_packet->size == 64);
+	assert(message_packet->size > 8);
 
 	/*reply has returned for a previously sent gets/get/getx*/
 	if(pending_join_bit == 1 && pending_upgrade_bit == 0)
@@ -4937,8 +4945,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 		//first look for a pending request in the buffer
 		pending_get_getx_fwd = cache_search_pending_request_buffer(cache, (message_packet->address & cache->block_address_mask));
 
-		if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
-			warning("blk 0x%08x (1) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
+		//if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
+			//warning("blk 0x%08x (1) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
 
 		if(pending_get_getx_fwd)
 		{
@@ -5046,8 +5054,8 @@ int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_
 	else if(pending_join_bit == 0 && pending_upgrade_bit == 1)
 	{
 
-		if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
-			warning("blk 0x%08x (2) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
+		//if((message_packet->address & cache->block_address_mask) == 0x0002dc40)
+		//	warning("blk 0x%08x (2) caught join cycle %llu\n", message_packet->address & cache->block_address_mask, P_TIME);
 
 		//clear the conflict bit in the packet
 		assert(message_packet->l3_pending != 1);
@@ -5263,6 +5271,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//find the victim.
 			message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+			assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
 			assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 			assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->l3_victim_way) == 0);
 
@@ -5883,10 +5892,10 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			else
 			{
 
-				if(message_packet->cpu_access_type != cgm_access_load)
-					fatal("block 0x%08x %s load miss ID %llu type %d cpu access type %d cycle %llu\n",
-							(message_packet->address & cache->block_address_mask), cache->name,
-							message_packet->access_id, message_packet->access_type, message_packet->cpu_access_type, P_TIME);
+				//if(message_packet->cpu_access_type != cgm_access_load)
+				//	fatal("block 0x%08x %s load miss ID %llu type %d cpu access type %d cycle %llu\n",
+				//			(message_packet->address & cache->block_address_mask), cache->name,
+				//			message_packet->access_id, message_packet->access_type, message_packet->cpu_access_type, P_TIME);
 
 				assert(message_packet->cpu_access_type == cgm_access_load);
 
@@ -5909,6 +5918,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//find victim .
 				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
 				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 
 				//evict the block
@@ -6455,6 +6465,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//find victim because LRU has been updated on hits.
 				/*message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
 				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
 				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 
 				//evict the victim

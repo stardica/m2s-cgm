@@ -5752,7 +5752,9 @@ static int x86_sys_check_point_impl(X86Context *ctx)
 	{
 		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
 		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
-		fatal("---Checkpoint Saved, exiting... cycle %llu---\n", P_TIME);
+		warning("---Checkpoint Saved cycle %llu---\n", P_TIME);
+		warning("---Exiting cycle %llu---\n", P_TIME);
+		exit(0);
 	}
 	else
 	{

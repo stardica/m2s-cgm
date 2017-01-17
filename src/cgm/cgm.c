@@ -1866,6 +1866,12 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	enum cgm_access_kind_t access_kind = cgm_access_fetch;
 	int id = 0;
 
+/*
+#ifdef DEBUG_TRACE
+	fatal("here\n");
+#endif
+*/
+
 	//build two packets (1) to track global accesses and (2) to pass through the memory system
 	memset(buff, '\0', 100);
 	snprintf(buff, 100, "fetch_access.%llu", access_id);

@@ -145,6 +145,7 @@ int cache_can_access_bottom(struct cache_t *cache);
 int cache_can_access_Tx_bottom(struct cache_t *cache);
 int cache_can_access_Tx_top(struct cache_t *cache);
 int cgm_gpu_cache_map(struct cache_t *cache, unsigned int addr);
+void cache_nack_request(struct cache_t *cache, struct cgm_packet_t *message_packet);
 /*int cgm_gpu_cache_map(int cache_id);*/
 void cache_l1_i_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cache_l1_d_return(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -181,6 +182,7 @@ int cgm_cache_is_owning_core(struct cache_t *cache, int set, int way, int l2_cac
 struct cgm_packet_t *cache_search_wb(struct cache_t *cache, int tag, int set);
 int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set);
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache);
+int cache_search_for_free_way(struct cache_t *cache, struct cgm_packet_t *new_message);
 void cache_dump_write_back(struct cache_t *cache);
 
 //Pending Request Buffer Manipulations
@@ -227,6 +229,8 @@ void cgm_cache_update_block_order(struct cache_t *cache, int set);
 
 int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set);
 int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag);
+int cgm_cache_search_way(struct cache_t *cache, int set);
+void cgm_cache_set_victim(struct cache_t *cache, int set, int way, int tran_tag);
 int cgm_cache_replace_block(struct cache_t *cache, int set);
 void cgm_cache_dump_set(struct cache_t *cache, int set);
 void cgm_cache_clear_block_usage(struct cache_t *cache);

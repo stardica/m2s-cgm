@@ -97,7 +97,7 @@ void memctrl_ctrl_io(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		if(list_count(mem_ctrl->system_agent_queue) > QueueSize)
+		if(list_count(mem_ctrl->system_agent_queue) >= QueueSize)
 		{
 			//warning("SA stalling tx_bottom %d tx_top %d cycle %llu\n", list_count(system_agent->Tx_queue_top), list_count(system_agent->Tx_queue_bottom), P_TIME);
 			SYSTEM_PAUSE(1);
@@ -203,6 +203,8 @@ void memctrl_ctrl(void){
 
 	/*int i = 0;*/
 
+	int num_accesses = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
@@ -211,11 +213,12 @@ void memctrl_ctrl(void){
 
 		occ_start = P_TIME;
 
-		if(list_count(mem_ctrl->pending_accesses) >= 32)	//!sys_agent_can_access_bottom())
+		num_accesses = list_count(mem_ctrl->pending_accesses) + list_count(mem_ctrl->Tx_queue_top);
+
+		if(num_accesses >= 32)	//!sys_agent_can_access_bottom())
 		{
 			//warning("MC stalling dram ctrl full cycle size %d %llu\n", list_count(mem_ctrl->pending_accesses), P_TIME);
 			SYSTEM_PAUSE(1);
-
 		}
 		else
 		{
@@ -257,11 +260,11 @@ void memctrl_ctrl(void){
 				/*the message is a store message (Write Back) from a L3 cache
 				for now charge the latency for the store, then, just destroy the packet*/
 
-				if(message_packet->size != 64)
+				if(message_packet->size <= 8)
 					fatal("here id %llu type %d blk 0x%08x cycle %llu\n",
 							message_packet->access_id, message_packet->access_type, message_packet->address & l3_caches[0].block_address_mask, P_TIME);
 
-				assert(message_packet->size == 64);
+				assert(message_packet->size >= 8);
 
 				if(DRAMSim == 1)
 				{

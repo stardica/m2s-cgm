@@ -153,7 +153,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 	mem_ctrl->dram_busy_cycles += elapsed_cycles;
 	//stats end//////
 
-	if(list_count(mem_ctrl->Tx_queue_top) > QueueSize)
+	if(list_count(mem_ctrl->Tx_queue_top) > 32)
 		warning("mem ctrl tx queue top size %d\n", list_count(mem_ctrl->Tx_queue_top));
 
 	//reply to L3

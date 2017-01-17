@@ -356,6 +356,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	int write_back_queue_size = list_count(cache->write_back_buffer);
 	int coherence_queue_size = list_count(cache->Coherance_Rx_queue);
 
+	//int free_way = 0;
+
 	//queues should never exceed their max sizes.
 	//assert(ort_status <= cache->mshr_size);
 	//assert(ort_coalesce_size <= (cache->max_coal + 1));
@@ -432,6 +434,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		}
 	}
 
+	//check to see if there is a free way in the cache...
+
+
+
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
 			|| cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t
 			|| cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t)
@@ -484,7 +490,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	/*if the state is still "can process" then check queue statuses and schedule a packet*/
 	if(state == schedule_can_process)
 	{
-
+		//check the cache's set
 		if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
 		{
 			if(retry_queue_size > 0)
@@ -513,10 +519,24 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			{
 				/*pull from the cpu side*/
 				new_message = list_get(cache->Rx_queue_top, 0);
+				//free_way = cache_search_for_free_way(cache, new_message);
 
-				//keep pointer to last queue
-				cache->last_queue = cache->Rx_queue_top;
-				assert(new_message);
+				//we are processing a new request make sure there is a way for the packet.
+				/*if(!free_way)
+				{
+					printf("%s\n", cache->name);
+
+					//fatal("caught you\n cycle %llu\n", P_TIME);
+
+					state = schedule_stall;
+				}
+				else
+				{*/
+					//keep pointer to last queue
+					cache->last_queue = cache->Rx_queue_top;
+					assert(new_message);
+				/*}*/
+
 			}
 			else if(write_back_queue_size > 0)
 			{
@@ -569,9 +589,21 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 				/*pull from the cpu side*/
 				new_message = list_get(cache->Rx_queue_top, 0);
 
-				//keep pointer to last queue
-				cache->last_queue = cache->Rx_queue_top;
-				assert(new_message);
+				//free_way = cache_search_for_free_way(cache, new_message);
+
+				//we are processing a new request make sure there is a way for the packet.
+				/*if(!free_way)
+				{
+					//fatal("caught you\n cycle %llu\n", P_TIME);
+					state = schedule_stall;
+				}
+				else
+				{*/
+					//keep pointer to last queue
+					cache->last_queue = cache->Rx_queue_top;
+					assert(new_message);
+				/*}*/
+
 			}
 			else if(write_back_queue_size > 0)
 			{
@@ -592,7 +624,6 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			{
 				fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
 			}
-
 		}
 
 	}
@@ -771,6 +802,8 @@ int get_ort_status(struct cache_t *cache){
 	}
 	return i;
 }
+
+
 int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set){
 
 	int i = 0;
@@ -827,6 +860,47 @@ void cache_dump_write_back(struct cache_t *cache){
 	return;
 }
 
+int cache_search_for_free_way(struct cache_t *cache, struct cgm_packet_t *new_message){
+
+	int way = 0;
+	int hit = 0;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+
+	//probe the address for set, tag, and offset.
+	cgm_cache_probe_address(cache, new_message->address, set_ptr, tag_ptr, offset_ptr);
+
+	//store the decode in the packet for now.
+	new_message->tag = tag;
+	new_message->set = set;
+	new_message->offset = offset;
+
+	//search for an open way
+	assert(set >= 0 && set < cache->num_sets);
+
+	//get the tail block.
+	for(way = 0; way < cache->assoc; way++)
+	{
+		assert(cache->sets[set].blocks[way].transient_state == cgm_cache_block_invalid
+				|| cache->sets[set].blocks[way].transient_state == cgm_cache_block_transient);
+
+		if(cache->sets[set].blocks[way].transient_state == cgm_cache_block_invalid
+				&& cache->sets[set].blocks[way].directory_entry.entry_bits.pending == 0)
+		{
+			hit = 1;
+			break;
+		}
+
+	}
+
+	return hit;
+}
 
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache){
 
@@ -1232,6 +1306,15 @@ struct cache_t *cgm_l3_cache_map(int set){
 	assert(map >= 0 && map <= (num_cores - 1));
 	return &l3_caches[map];
 }
+
+/*void cache_nack_request(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+
+
+
+
+}*/
 
 /*int cgm_gpu_cache_map(int cache_id){*/
 int cgm_gpu_cache_map(struct cache_t *cache, unsigned int addr){
@@ -1890,6 +1973,29 @@ int cgm_cache_get_block_usage(struct cache_t *cache){
 	return count;
 }
 
+void cgm_cache_dump_set_lru_to_mru(struct cache_t *cache, int set){
+
+	int i = 0;
+
+	struct cache_block_t *block;
+
+	block = cache->sets[set].way_tail;
+
+	for(i = 0; i < cache->assoc; i++)
+	{
+		printf("\tcache %s set %d way %d tag %d blk_state %s tran_state %s tran_tag %d dir pending %d upgrade_pending %d cycle %llu\n",
+		cache->name, set, block->way, cache->sets[set].blocks[i].tag,
+		str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state),
+		str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state),
+		cache->sets[set].blocks[i].transient_tag,
+		cache->sets[set].blocks[i].directory_entry.entry_bits.pending, cache->sets[set].blocks[i].upgrade_pending, P_TIME);
+
+		block = block->way_prev;
+	}
+
+
+	return;
+}
 
 void cgm_cache_dump_set(struct cache_t *cache, int set){
 
@@ -1897,12 +2003,12 @@ void cgm_cache_dump_set(struct cache_t *cache, int set){
 
 	for(i=0; i < cache->assoc; i++)
 	{
-		printf("\tcache %s set %d way %d tag %d blk_state %s tran_state %s tran_tag %d upgrade_pending %d cycle %llu\n",
+		printf("\tcache %s set %d way %d tag %d blk_state %s tran_state %s tran_tag %d dir pending %d upgrade_pending %d cycle %llu\n",
 				cache->name, set, i, cache->sets[set].blocks[i].tag,
 				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].state),
 				str_map_value(&cgm_cache_block_state_map, cache->sets[set].blocks[i].transient_state),
 				cache->sets[set].blocks[i].transient_tag,
-				cache->sets[set].blocks[i].upgrade_pending, P_TIME);
+				cache->sets[set].blocks[i].directory_entry.entry_bits.pending, cache->sets[set].blocks[i].upgrade_pending, P_TIME);
 	}
 
 	return;
@@ -1938,6 +2044,73 @@ int cgm_cache_get_victim_for_wb(struct cache_t *cache, int set){
 	return way;
 }
 
+int cgm_cache_search_way(struct cache_t *cache, int set){
+
+	int i = 0;
+
+	struct cache_block_t *block;
+
+	assert(set >= 0 && set < cache->num_sets);
+
+	if(cache->policy == cache_policy_lru)
+	{
+		//get the tail block.
+		block = cache->sets[set].way_tail;
+
+		//the block should not be in the transient state.
+		for(i = 0; i < cache->assoc; i++)
+		{
+			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
+
+			if(block->transient_state == cgm_cache_block_invalid && block->directory_entry.entry_bits.pending == 0)
+			{
+				//block->transient_state = cgm_cache_block_transient;
+				//block->transient_tag = tran_tag;
+				break;
+			}
+
+			if(block->way_prev != NULL)
+			{
+				block = block->way_prev;
+			}
+			else
+			{
+				//we didn't find a block
+				assert(cache->assoc == (i + 1));
+				block = NULL;
+			}
+		}
+
+		//assert(block->way >= 0 && block->way < cache->assoc);
+
+		//set this block the MRU
+		if(block)
+		{
+			//cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
+			return block->way;
+		}
+	}
+	else
+	{
+		fatal("cgm_cache_get_victim(): %s invalid cache eviction policy\n", cache->name);
+	}
+
+	return -1;
+}
+
+void cgm_cache_set_victim(struct cache_t *cache, int set, int way, int tran_tag){
+
+
+	assert(cache->sets[set].blocks[way].transient_state == cgm_cache_block_invalid);
+	assert(cache->sets[set].blocks[way].directory_entry.entry_bits.pending == 0);
+
+	cache->sets[set].blocks[way].transient_state = cgm_cache_block_transient;
+	cache->sets[set].blocks[way].transient_tag = tran_tag;
+
+
+	return;
+}
+
 
 int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag){
 
@@ -1971,8 +2144,6 @@ int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag){
 		block = cache->sets[set].way_tail;
 
 		//the block should not be in the transient state.
-
-
 		for(i = 0; i < cache->assoc; i++)
 		{
 			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
@@ -1984,21 +2155,27 @@ int cgm_cache_get_victim(struct cache_t *cache, int set, int tran_tag){
 				break;
 			}
 
-			if(block->way_prev == NULL)
-				cgm_cache_dump_set(cache, set);
-
-			assert(block->way_prev != NULL);
-			block = block->way_prev;
+			if(block->way_prev != NULL)
+			{
+				block = block->way_prev;
+			}
+			else
+			{
+				//we didn't find a block
+				//printf("i is %d $ assoc %d\n", i, cache->assoc);
+				assert(cache->assoc == (i + 1));
+				block = NULL;
+			}
 		}
 
-
-		assert(block->way >= 0 && block->way < cache->assoc);
+		//assert(block->way >= 0 && block->way < cache->assoc);
 
 		//set this block the MRU
-		cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
-
-
-		return block->way;
+		if(block)
+		{
+			cgm_cache_update_waylist(&cache->sets[set], block, cache_waylist_head);
+			return block->way;
+		}
 	}
 	else
 	{
@@ -3672,8 +3849,7 @@ void gpu_v_cache_ctrl(void){
 		//get the message out of the unit's queue
 		message_packet = cache_get_message(&(gpu_v_caches[my_pid]));
 
-		//star todo fix this
-		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
+		if (message_packet == NULL)// || !cache_can_access_Tx_bottom(&(gpu_v_caches[my_pid])))
 		{
 
 			/*printf("%s stalling rx_t %d cycle tx_b %d rx_b %d %llu\n",
@@ -3799,7 +3975,7 @@ void gpu_l2_cache_ctrl(void){
 		//check the top or bottom rx queues for messages.
 		message_packet = cache_get_message(&(gpu_l2_caches[my_pid]));
 
-		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(gpu_l2_caches[my_pid])) || !cache_can_access_Tx_top(&(gpu_l2_caches[my_pid])))
+		if (message_packet == NULL || !cache_can_access_Tx_top(&(gpu_l2_caches[my_pid]))) //|| !cache_can_access_Tx_bottom(&(gpu_l2_caches[my_pid]))
 		{
 			//the cache state is preventing the cache from working this cycle stall.
 			//printf("%s stalling cycle %llu\n", gpu_l2_caches[my_pid].name, P_TIME);
@@ -3810,8 +3986,10 @@ void gpu_l2_cache_ctrl(void){
 
 			getchar();*/
 
-			/*if(P_TIME > 106034981)
-				printf("%s stalling\n", gpu_l2_cache[my_pid].name);*/
+			//if(P_TIME >= 11483800 && message_packet)
+			//	printf("GPU l2 cache %d stalling type %d cycle %llu\n", my_pid, message_packet->access_type, P_TIME);
+			//else if(P_TIME >= 11483800)
+			//	printf("GPU l2 cache %d stalling cycle %llu\n", my_pid, P_TIME);
 
 			gpu_l2_caches[my_pid].Stalls++;
 
@@ -3823,8 +4001,6 @@ void gpu_l2_cache_ctrl(void){
 
 			step++;
 
-			/*if(message_packet->access_id == 27511114)
-				printf("packet is here\n");*/
 
 			access_type = message_packet->access_type;
 			access_id = message_packet->access_id;
@@ -3933,13 +4109,16 @@ void l1_i_cache_down_io_ctrl(void){
 		/*stats*/
 		occ_start = P_TIME;
 
-		if(list_count(l2_caches[my_pid].Rx_queue_top) > QueueSize)
+		if(list_count(l2_caches[my_pid].Rx_queue_top) >= QueueSize
+				|| l2_caches[my_pid].Rx_queue_top->locked == 1)
 		{
 			P_PAUSE(1);
 		}
 		else
 		{
 			step++;
+
+			l2_caches[my_pid].Rx_queue_top->locked = 1;
 
 			message_packet = list_dequeue(l1_i_caches[my_pid].Tx_queue_bottom);
 			assert(message_packet);
@@ -3962,6 +4141,8 @@ void l1_i_cache_down_io_ctrl(void){
 			assert(message_packet->access_type == cgm_access_gets);
 			if(message_packet->access_type == cgm_access_gets)
 				l2_caches[my_pid].TotalReads++;
+
+			l2_caches[my_pid].Rx_queue_top->locked = 0;
 		}
 
 		/*stats occupancy*/
@@ -4012,13 +4193,16 @@ void l1_d_cache_down_io_ctrl(void){
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
-			if(list_count(l2_caches[my_pid].Rx_queue_top) >= (QueueSize - 1))
+			if(list_count(l2_caches[my_pid].Rx_queue_top) >= QueueSize
+					|| l2_caches[my_pid].Rx_queue_top->locked == 1)
 			{
 				P_PAUSE(1);
 			}
 			else
 			{
 				step++;
+
+				l2_caches[my_pid].Rx_queue_top->locked = 1;
 
 				P_PAUSE(transfer_time);
 
@@ -4034,6 +4218,8 @@ void l1_d_cache_down_io_ctrl(void){
 
 				if (message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
 					l2_caches[my_pid].TotalWrites++;
+
+				l2_caches[my_pid].Rx_queue_top->locked = 0;
 			}
 		}
 		else// if()
@@ -4041,13 +4227,16 @@ void l1_d_cache_down_io_ctrl(void){
 
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
 
-			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize)
+			if(list_count(l2_caches[my_pid].Coherance_Rx_queue) >= QueueSize
+					|| l2_caches[my_pid].Coherance_Rx_queue->locked == 1)
 			{
 				P_PAUSE(1);
 			}
 			else
 			{
 				step++;
+
+				l2_caches[my_pid].Coherance_Rx_queue->locked = 1;
 
 				P_PAUSE(transfer_time);
 
@@ -4057,6 +4246,8 @@ void l1_d_cache_down_io_ctrl(void){
 
 				/*stats*/
 				l2_caches[my_pid].TotalAcesses++;
+
+				l2_caches[my_pid].Coherance_Rx_queue->locked = 0;
 			}
 		}
 		/*else
@@ -4234,7 +4425,7 @@ void l2_cache_down_io_ctrl(void){
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
-			if(list_count(switches[my_pid].north_rx_request_queue) >= (QueueSize - 1))
+			if(list_count(switches[my_pid].north_rx_request_queue) >= QueueSize)
 			{
 				P_PAUSE(1);
 			}
@@ -4684,13 +4875,16 @@ void gpu_v_cache_down_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_write_back
 				|| message_packet->access_type == cgm_access_flush_block_ack)
 		{
-			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= GPUQueueSize)
+			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= GPUQueueSize
+					|| gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top->locked == 1)
 			{
 				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
+
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top->locked = 1;
 
 				GPU_PAUSE(transfer_time);
 
@@ -4706,19 +4900,25 @@ void gpu_v_cache_down_io_ctrl(void){
 
 				if (message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade)
 					gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalWrites++;
+
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top->locked = 0;
+
 			}
 		}
 		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
 				|| message_packet->access_type == cgm_access_gpu_flush_ack)
 		{
 
-			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize)
+			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize
+					|| gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue->locked == 1)
 			{
 				GPU_PAUSE(1);
 			}
 			else
 			{
 				step++;
+
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue->locked = 1;
 
 				GPU_PAUSE(transfer_time);
 
@@ -4730,6 +4930,8 @@ void gpu_v_cache_down_io_ctrl(void){
 
 				/*stats*/
 				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].TotalAcesses++;
+
+				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue->locked = 0;
 
 			}
 		}
@@ -4780,7 +4982,8 @@ void gpu_l2_cache_up_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_gpu_flush)
 		{
 
-			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom) >= QueueSize)
+			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom) >= QueueSize
+					|| gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom->locked == 1)
 			{
 				GPU_PAUSE(1);
 			}
@@ -4788,11 +4991,15 @@ void gpu_l2_cache_up_io_ctrl(void){
 			{
 				step++;
 
+				gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom->locked = 1;
+
 				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom, message_packet);
 				advance(&gpu_v_cache[message_packet->l1_cache_id]);
+
+				gpu_v_caches[message_packet->l1_cache_id].Rx_queue_bottom->locked = 0;
 			}
 		}
 		else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
@@ -4800,7 +5007,8 @@ void gpu_l2_cache_up_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_upgrade_inval || message_packet->access_type == cgm_access_getx_fwd_inval)
 		{
 
-			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) > QueueSize)
+			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) >= QueueSize
+					|| gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue->locked == 1)
 			{
 				GPU_PAUSE(1);
 			}
@@ -4808,11 +5016,15 @@ void gpu_l2_cache_up_io_ctrl(void){
 			{
 				step++;
 
+				gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue->locked = 1;
+
 				GPU_PAUSE(transfer_time);
 
 				message_packet = list_remove(gpu_l2_caches[my_pid].Tx_queue_top, message_packet);
 				list_enqueue(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue, message_packet);
 				advance(&gpu_v_cache[message_packet->l1_cache_id]);
+
+				gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue->locked = 0;
 			}
 		}
 		else
@@ -5244,10 +5456,6 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 	if((*hit_row_ptr == cache->mshr_size && *num_sets_ptr < cache->assoc) || message_packet->assoc_conflict == 1)
 	{
-		/*if(message_packet->access_id == 72735041)
-			warning("coal case 1\n");*/
-
-
 		//unique access and number of outstanding accesses are less than cache associativity
 		//i.e. there IS a space in the cache's set and ways for the block on return
 		assert(*hit_row_ptr >= 0 && *hit_row_ptr <= cache->mshr_size);
@@ -5263,12 +5471,8 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 	else if(*hit_row_ptr == cache->mshr_size && *num_sets_ptr >= cache->assoc)
 	{
-
-		/*if(message_packet->access_id == 72735041)
-			warning("coal case 2\n");*/
-
 		//this is an associativity conflict
-		//unique access, but number of outstanding accesses are greater than or equal to cache's number of ways
+		//unique access, but number of outstanding accesses are equal to cache's number of ways
 		//i.e. there IS NOT a space for the block in the cache set and ways on return
 
 		//set the row in the ORT
@@ -5283,9 +5487,6 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	}
 	else if(*hit_row_ptr >= 0 && *hit_row_ptr < cache->mshr_size)
 	{
-		/*if(message_packet->access_id == 72735041)
-			warning("coal case 3\n");*/
-
 		//non unique access that can be coalesced with another miss
 		assert(cache->ort[*hit_row_ptr][0] == message_packet->tag && cache->ort[*hit_row_ptr][1] == message_packet->set);
 

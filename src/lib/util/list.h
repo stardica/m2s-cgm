@@ -38,6 +38,8 @@ struct list_t
 	int count;  /* Number of elements in the list */
 	int error_code;  /* Error code updated by functions */
 
+	int locked;
+
 	/* Private */
 	int size;  /* Size of allocated vector */
 	int head;  /* Head element in vector */
