@@ -1896,6 +1896,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = cgm_access_fetch;
+	new_packet->size = packet_set_size(0);
 
 	//////////////testing
 	/*if(new_packet->cpu_access_type == cgm_access_fetch)
@@ -1939,9 +1940,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 
 	/*if(new_packet->access_id == 1)
 	{
-		new_packet->address = 0x1c0;
+		new_packet->address = 0x1C0;
 		warning("Fetch access id %llu addr 0x%08x cycle %llu\n", new_packet->access_id, new_packet->address, P_TIME);
-	//	cache_put_block_for_hit_test(l3_cache_t, id, new_packet);
+		//cache_put_block_for_hit_test(l3_cache_t, id, new_packet);
 	}*/
 
 
@@ -2239,6 +2240,8 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 
+	new_packet->size = packet_set_size(0);
+
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
 
@@ -2400,6 +2403,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
 	//new_packet->in_flight = 1;
+	new_packet->size = packet_set_size(0);
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 	new_packet->start_cycle = P_TIME;
@@ -2484,6 +2488,7 @@ void cgm_scalar_access(struct si_scalar_unit_t *scalar_unit, enum cgm_access_kin
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);
 	new_packet->start_cycle = P_TIME;
+	new_packet->size = packet_set_size(0);
 
 
 	//leave for debugging purposes
@@ -2539,6 +2544,7 @@ void cgm_lds_access(struct si_lds_t *lds, enum cgm_access_kind_t access_kind, un
 	new_packet->access_type = access_kind;
 	new_packet->address = addr;
 	new_packet->witness_ptr = witness_ptr;
+	new_packet->size = packet_set_size(0);
 	//new_packet->in_flight = 1;
 	new_packet->access_id = access_id;
 	new_packet->name = strdup(buff);

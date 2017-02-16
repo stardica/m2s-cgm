@@ -338,6 +338,11 @@ void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	return;
 }
 
+int packet_set_size(int size){
+
+	return size + HEADER_SIZE;
+}
+
 void mem_system_reset_stats(void){
 
 	int i = 0;
@@ -401,6 +406,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	write_back_packet->cache_block_state = victim_state;
 	write_back_packet->write_back_id = write_back_id++;
 	write_back_packet->start_cycle = P_TIME;
+	write_back_packet->size = packet_set_size(cache->block_size);
 
 	//reconstruct the address from the set and tag
 	//write_back_packet->address = cache->sets[set].blocks[way].address;
@@ -448,7 +454,7 @@ void init_downgrade_nack_packet(struct cgm_packet_t *nack_packet, unsigned int a
 
 	nack_packet->access_type = cgm_access_downgrade_nack;
 	nack_packet->downgrade_ack = 1;
-	nack_packet->size = 1;
+	nack_packet->size = HEADER_SIZE;
 	nack_packet->address = address;
 	nack_packet->start_cycle = P_TIME;
 	return;
@@ -459,7 +465,7 @@ void init_upgrade_ack_packet(struct cgm_packet_t *ack_packet, unsigned int addre
 
 	ack_packet->access_type = cgm_access_upgrade_ack;
 	ack_packet->downgrade_ack = 1;
-	ack_packet->size = 1;
+	ack_packet->size = HEADER_SIZE;
 	ack_packet->address = address;
 	ack_packet->start_cycle = P_TIME;
 	return;
@@ -470,7 +476,7 @@ void init_downgrade_ack_packet(struct cgm_packet_t *reply_packet, unsigned int a
 
 	reply_packet->access_type = cgm_access_downgrade_ack;
 	reply_packet->downgrade_ack = 1;
-	reply_packet->size = 1;
+	reply_packet->size = HEADER_SIZE;
 	reply_packet->address = address;
 	reply_packet->start_cycle = P_TIME;
 	return;
@@ -480,7 +486,7 @@ void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int ad
 
 	reply_packet->access_type = cgm_access_getx_fwd_ack;
 	reply_packet->inval_ack = 1;
-	reply_packet->size = 1;
+	reply_packet->size = HEADER_SIZE;
 	reply_packet->address = address;
 	reply_packet->start_cycle = P_TIME;
 	return;
@@ -490,7 +496,7 @@ void init_getx_fwd_nack_packet(struct cgm_packet_t *reply_packet, unsigned int a
 
 	reply_packet->access_type = cgm_access_getx_fwd_nack;
 	reply_packet->inval_ack = 1;
-	reply_packet->size = 1;
+	reply_packet->size = HEADER_SIZE;
 	reply_packet->address = address;
 	reply_packet->start_cycle = P_TIME;
 	return;
@@ -501,7 +507,7 @@ void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int a
 
 	downgrade_packet->access_type = cgm_access_downgrade;
 	downgrade_packet->downgrade = 1;
-	downgrade_packet->size = 1;
+	downgrade_packet->size = HEADER_SIZE;
 	downgrade_packet->address = address;
 	downgrade_packet->start_cycle = P_TIME;
 	return;
@@ -521,7 +527,7 @@ void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, un
 
 	upgrade_request_packet->access_type = cgm_access_upgrade;
 	upgrade_request_packet->upgrade = 1;
-	upgrade_request_packet->size = 1;
+	upgrade_request_packet->size = HEADER_SIZE;
 	upgrade_request_packet->address = address;
 	upgrade_request_packet->start_cycle = P_TIME;
 	return;
@@ -531,7 +537,7 @@ void init_upgrade_inval_request_packet(struct cgm_packet_t *upgrade_request_pack
 
 	upgrade_request_packet->access_type = cgm_access_upgrade_inval;
 	upgrade_request_packet->upgrade = 1;
-	upgrade_request_packet->size = 1;
+	upgrade_request_packet->size = HEADER_SIZE;
 	upgrade_request_packet->address = address;
 	upgrade_request_packet->start_cycle = P_TIME;
 	return;
@@ -541,7 +547,7 @@ void init_upgrade_putx_n_inval_request_packet(struct cgm_packet_t *upgrade_reque
 
 	upgrade_request_packet->access_type = cgm_access_upgrade_inval;
 	upgrade_request_packet->upgrade_putx_n = 1;
-	upgrade_request_packet->size = 1;
+	upgrade_request_packet->size = HEADER_SIZE;
 	upgrade_request_packet->address = address;
 	upgrade_request_packet->start_cycle = P_TIME;
 	return;
@@ -551,7 +557,7 @@ void init_getx_fwd_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned 
 
 	downgrade_packet->access_type = cgm_access_getx_fwd_inval;
 	downgrade_packet->inval = 1;
-	downgrade_packet->size = 1;
+	downgrade_packet->size = HEADER_SIZE;
 	downgrade_packet->address = address;
 	downgrade_packet->start_cycle = P_TIME;
 	return;
@@ -561,7 +567,7 @@ void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet,
 
 	inval_packet->access_type = cgm_access_flush_block;
 	inval_packet->inval = 1;
-	inval_packet->size = 1;
+	inval_packet->size = HEADER_SIZE;
 	inval_packet->evict_id = evict_id++;
 	inval_packet->write_back_id = write_back_id;
 	inval_packet->start_cycle = P_TIME;

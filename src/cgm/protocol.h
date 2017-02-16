@@ -108,6 +108,8 @@ struct mem_system_stats_t{
 
 extern struct mem_system_stats_t *mem_system_stats;
 
+#define HEADER_SIZE 8
+
 long long write_back_id;
 
 extern int gpu_core_id;
@@ -138,6 +140,8 @@ void init_getx_fwd_ack_packet(struct cgm_packet_t *reply_packet, unsigned int ad
 void init_flush_packet(struct cache_t *cache, struct cgm_packet_t *inval_packet, int set, int way);
 unsigned int get_block_address(unsigned int address, unsigned int cache_address_mask);
 int is_writeback_present(struct cgm_packet_t *writeback_packet);
+
+int packet_set_size(int size);
 
 
 void mem_system_dump_stats(struct cgm_stats_t *cgm_stat_container);
@@ -271,43 +275,5 @@ void cgm_mesi_gpu_l2_get_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_
 void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
-//void cgm_mesi_gpu_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-//void cgm_mesi_gpu_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-//int cgm_mesi_gpu_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//int cgm_mesi_gpu_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
-
-/*OLD functions*/
-/*void cgm_nc_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_nc_gpu_s_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_nc_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_nc_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_nc_gpu_v_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_nc_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
-int cgm_nc_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_mesi_gpu_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_gpu_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_gpu_v_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_gpu_v_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-void cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 
 #endif /*PROTOCOL_H_*/

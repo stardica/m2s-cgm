@@ -296,7 +296,7 @@ void memctrl_ctrl(void){
 				/*This is a L3 load request (cached memory system miss)
 				charge the latency for the load, then, reply with data*/
 
-				assert(message_packet->size == 1);
+				assert(message_packet->size == HEADER_SIZE);
 
 				if(DRAMSim == 1)
 				{
@@ -324,7 +324,7 @@ void memctrl_ctrl(void){
 
 					//set the access type
 					message_packet->access_type = cgm_access_mc_put;
-					message_packet->size = l3_caches[0].block_size;
+					message_packet->size = packet_set_size(l3_caches[0].block_size);
 
 					//reply to L3
 					message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);

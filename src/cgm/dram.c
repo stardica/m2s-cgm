@@ -135,7 +135,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 
 	//set the access type
 	message_packet->access_type = cgm_access_mc_put;
-	message_packet->size = l3_caches[0].block_size;
+	message_packet->size = packet_set_size(l3_caches[0].block_size);
 
 	//stats//////
 	mem_ctrl->num_reads++;

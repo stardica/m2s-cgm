@@ -159,7 +159,7 @@ void cgm_mesi_l1_i_write_block(struct cache_t *cache, struct cgm_packet_t *messa
 	ort_clear(cache, message_packet);
 
 
-	assert(message_packet->size > 1);
+	assert(message_packet->size == 72);
 
 
 	//set the block and retry the access in the cache.
@@ -284,9 +284,8 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 	cache->flush_tx_counter++;
 
 
-
 	//pass the flush on to L2 cache
-	message_packet->size = 1;
+	message_packet->size = HEADER_SIZE;
 	message_packet->access_type = cgm_access_gpu_flush;
 
 	//set the flush core
@@ -382,7 +381,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 				{
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -398,7 +397,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 
 					/*Dropped if exclusive or shared
 					 Also WB may be in the pipe between L1 and L2 if Modified This will flush it out*/
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 
 					//set access type inval_ack
@@ -413,7 +412,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_exclusive:
 		case cgm_cache_block_shared:
 
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 			message_packet->cache_block_state = cgm_cache_block_invalid;
 
 			//invalidate the local block
@@ -429,7 +428,7 @@ int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 		case cgm_cache_block_modified:
 
 			//hit and its dirty send the ack and block down to the L2 cache.
-			message_packet->size = cache->block_size;
+			message_packet->size = packet_set_size(cache->block_size);
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
 			//invalidate the local block
@@ -473,6 +472,8 @@ void cgm_mesi_load_nack(struct cache_t *cache, struct cgm_packet_t *message_pack
 	message_packet->tag = tag;
 	message_packet->set = set;
 	message_packet->offset = offset;
+
+	assert(message_packet->size == HEADER_SIZE);
 
 	//do not set retry because this contains the coalesce set and tag.
 	//check that there is an ORT entry for this address
@@ -737,6 +738,8 @@ void cgm_mesi_store_nack(struct cache_t *cache, struct cgm_packet_t *message_pac
 	message_packet->tag = tag;
 	message_packet->set = set;
 	message_packet->offset = offset;
+
+	assert(message_packet->size == HEADER_SIZE);
 
 	//do not set retry because this contains the coalesce set and tag.
 	//check that there is an ORT entry for this address
@@ -1044,6 +1047,8 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
+	assert(message_packet->size == HEADER_SIZE);
+
 	switch(*cache_block_state_ptr)
 	{
 		case cgm_cache_block_noncoherent:
@@ -1068,12 +1073,12 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 
 				if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 				}
 				else
 				{
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 				}
 
 				//clear the WB from the buffer
@@ -1092,7 +1097,7 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			else
 			{
 				//if invalid and not in write back it was silently dropped
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set the access type
@@ -1113,13 +1118,13 @@ void cgm_mesi_l1_d_downgrade(struct cache_t *cache, struct cgm_packet_t *message
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 			{
 				//if E it is not dirty
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 			else if(*cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				//hit and its dirty send the ack and block down (sharing write back) to the L2 cache.
-				message_packet->size = cache->block_size;
+				message_packet->size = packet_set_size(cache->block_size);
 				message_packet->cache_block_state = cgm_cache_block_modified;
 			}
 
@@ -1178,6 +1183,7 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
+	assert(message_packet->size == HEADER_SIZE);
 
 
 	/*if the block is in the cache it is not in the WB buffer
@@ -1205,7 +1211,7 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 
 				if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 				}
 
@@ -1213,7 +1219,7 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 				write_back_packet = list_remove(cache->write_back_buffer, write_back_packet);
 				packet_destroy(write_back_packet);
 
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type
@@ -1227,7 +1233,7 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 			else
 			{
 				//if invalid it was silently dropped
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type
@@ -1247,13 +1253,13 @@ void cgm_mesi_l1_d_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *me
 			if(*cache_block_state_ptr == cgm_cache_block_exclusive)
 			{
 				//if E it is not dirty
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 			else if(*cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				//hit and its dirty send the ack and block down (sharing write back) to the L2 cache.
-				message_packet->size = cache->block_size;
+				message_packet->size = packet_set_size(cache->block_size);
 				message_packet->cache_block_state = cgm_cache_block_modified;
 			}
 
@@ -1316,6 +1322,8 @@ void cgm_mesi_l1_d_write_back(struct cache_t *cache, struct cgm_packet_t *messag
 	assert(*cache_block_hit_ptr == 0);
 	assert(message_packet->flush_pending == 0 && message_packet->L3_flush_join == 0);
 
+	assert(message_packet->size == 72);
+
 	/*stats*/
 	cache->TotalWriteBackSent++;
 
@@ -1359,6 +1367,13 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
 
+	if(message_packet->size != HEADER_SIZE)
+		fatal("error access id %llu size %d type %d cycle %llu\n",
+				message_packet->access_id, message_packet->size, message_packet->access_type, P_TIME);
+
+
+	assert(message_packet->size == HEADER_SIZE);
+
 	//victim_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->l1_victim_way);
 
 	//first check the cache for the block
@@ -1379,7 +1394,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 				{
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -1397,7 +1412,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 					/*Dropped if exclusive or shared
 					 Also WB may be in the pipe between L1 and L2 if Modified This will flush it out*/
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 
 					//set access type inval_ack
@@ -1411,7 +1426,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 		case cgm_cache_block_exclusive:
 
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 			message_packet->cache_block_state = cgm_cache_block_invalid;
 
 			//invalidate the local block
@@ -1426,7 +1441,7 @@ void cgm_mesi_l1_d_flush_block(struct cache_t *cache, struct cgm_packet_t *messa
 
 		case cgm_cache_block_modified:
 			//hit and its dirty send the ack and block down (sharing writeback) to the L2 cache.
-			message_packet->size = cache->block_size;
+			message_packet->size = packet_set_size(cache->block_size);
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
 			//invalidate the local block
@@ -1493,7 +1508,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 	//	fatal("l1s_write_block access id %llu size %d type %d cycle %llu\n",
 	//			message_packet->access_id, message_packet->size, message_packet->access_type, P_TIME);
 
-	assert(message_packet->size >= 8);
+	assert(message_packet->size == 72);
 
 	ort_status = ort_search(cache, message_packet->tag, message_packet->set);
 	assert(ort_status < cache->mshr_size);
@@ -1551,7 +1566,7 @@ int cgm_mesi_l1_d_write_block(struct cache_t *cache, struct cgm_packet_t *messag
 
 
 		/*change the size*/
-		message_packet->size = 1;
+		message_packet->size = HEADER_SIZE;
 
 		//transmit to L2
 		cache_put_io_down_queue(cache, message_packet);
@@ -1683,7 +1698,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			//set block state and message size
 			message_packet->cache_block_state = *cache_block_state_ptr;
-			message_packet->size = l1_i_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+			message_packet->size = packet_set_size(l1_i_caches[cache->id].block_size); //this can be either L1 I or L1 D cache block size.
 			message_packet->access_type = cgm_access_puts;
 
 			/*stats*/
@@ -1762,7 +1777,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					message_packet->access_type = cgm_access_get_nack;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					/*stats*/
 					/*star todo add a stat for this*/
@@ -1817,7 +1832,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				//set message size
-				message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+				message_packet->size = packet_set_size(l1_d_caches[cache->id].block_size); //this can be either L1 I or L1 D cache block size.
 				message_packet->cache_block_state = write_back_packet->cache_block_state;
 
 				//update message status
@@ -1954,7 +1969,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			}
 
 			//set message size
-			message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+			message_packet->size = packet_set_size(l1_d_caches[cache->id].block_size); //this can be either L1 I or L1 D cache block size.
 
 			//update message status
 			if(*cache_block_state_ptr == cgm_cache_block_modified)
@@ -2148,7 +2163,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					message_packet->access_type = cgm_access_getx_nack;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					/*stats*/
 					/*star todo add a stat for this*/
@@ -2201,7 +2216,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				//set message size
-				message_packet->size = l1_d_caches[cache->id].block_size; //this can be either L1 I or L1 D cache block size.
+				message_packet->size = packet_set_size(l1_d_caches[cache->id].block_size); //this can be either L1 I or L1 D cache block size.
 				message_packet->cache_block_state = write_back_packet->cache_block_state;
 
 				//update message status
@@ -2319,7 +2334,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			}
 
 			//set message status and size
-			message_packet->size = l1_d_caches[cache->id].block_size; //this should be L1 D cache block size.
+			message_packet->size = packet_set_size(l1_d_caches[cache->id].block_size); //this should be L1 D cache block size.
 			message_packet->access_type = cgm_access_putx;
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
@@ -2609,7 +2624,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
-					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
+					reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size);
 				}
 				else
 				{
@@ -2732,7 +2747,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			//end uncomment here
 
 			//set message package size
-			pending_request->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
+			pending_request->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size);
 
 			//fwd block to requesting core
 			//update routing headers swap dest and src
@@ -2769,7 +2784,7 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
 			{
 				reply_packet->cache_block_state = cgm_cache_block_modified;
-				reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size;
+				reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_request->l2_cache_name)].block_size);
 			}
 			else
 			{
@@ -2870,7 +2885,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//set the block state
 				pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
-				pending_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+				pending_getx_fwd_request->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size);
 
 				//set message package size if modified in L2/L1.
 				/*if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
@@ -2913,12 +2928,12 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//set message package size if modified in L2/L1.
 				if(message_packet->cache_block_state == cgm_cache_block_modified || write_back_packet->cache_block_state == cgm_cache_block_modified)
 				{
-					getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+					getx_fwd_reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size);
 					getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 				}
 				else
 				{
-					getx_fwd_reply_packet->size = 1;
+					getx_fwd_reply_packet->size = HEADER_SIZE;
 					getx_fwd_reply_packet->cache_block_state = cgm_cache_block_invalid;
 				}
 
@@ -3021,7 +3036,7 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//set the block state
 			pending_getx_fwd_request->cache_block_state = cgm_cache_block_modified;
 
-			pending_getx_fwd_request->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+			pending_getx_fwd_request->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size);
 
 			//set message package size if modified in L2/L1.
 			/*if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
@@ -3063,12 +3078,12 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//set message package size if modified in L2/L1.
 			if(*cache_block_state_ptr == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				getx_fwd_reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size;
+				getx_fwd_reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_getx_fwd_request->l2_cache_name)].block_size);
 				getx_fwd_reply_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
 			{
-				getx_fwd_reply_packet->size = 1;
+				getx_fwd_reply_packet->size = HEADER_SIZE;
 				getx_fwd_reply_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 
@@ -3166,7 +3181,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -3209,7 +3224,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 
 				//star todo somehow check and make sure these are modified
 				/*if here the L2 cache has already written back, send down so the flush can complete*/
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
@@ -3266,7 +3281,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 
 				assert(victim_trainsient_state == cgm_cache_block_transient);
 
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
@@ -3331,7 +3346,7 @@ void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	message_packet->size = 1;
+	message_packet->size = HEADER_SIZE;
 	message_packet->access_type = cgm_access_gpu_flush;
 
 	//set flush core id
@@ -3382,7 +3397,7 @@ void cgm_mesi_l2_cpu_flush_fwd(struct cache_t *cache, struct cgm_packet_t *messa
 	//charge delay
 	P_PAUSE(cache->latency);
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 	assert(message_packet->access_type == cgm_access_cpu_flush_fwd);
 
 	//fixed this for routing.
@@ -3441,7 +3456,7 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	}
 
 	if(message_packet->cache_block_state == cgm_cache_block_modified)
-		assert(message_packet->size == 64);
+		assert(message_packet->size == 72);
 
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
@@ -3467,7 +3482,7 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -3512,7 +3527,7 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				//star todo somehow check and make sure these are modified
 				/*if here the L2 cache has already written back, send down so the flush can complete*/
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
@@ -3536,7 +3551,7 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			/*if the block is found in the L2 it may or may not be in the L1 cache
 			we must invalidate here and send an invalidation to the L1 D cache*/
 
-			message_packet->size = cache->block_size;
+			message_packet->size = packet_set_size(cache->block_size);
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
 			//invalidate the local block
@@ -3562,7 +3577,7 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			/*if the block is found in the L2 it may or may not be in the L1 cache
 			we must invalidate here and send an invalidation to the L1 D cache*/
 
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 			message_packet->cache_block_state = cgm_cache_block_invalid;
 
 			//invalidate the local block
@@ -3701,7 +3716,7 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				}
 
 				//set message package size
-				pending_request_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
+				pending_request_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size);
 
 				//fwd block to requesting core
 				//update routing headers swap dest and src
@@ -3752,12 +3767,12 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 				if(message_packet->cache_block_state == cgm_cache_block_modified || wb_packet->cache_block_state == cgm_cache_block_modified)
 				{
 					reply_packet->cache_block_state = cgm_cache_block_modified;
-					reply_packet->size = l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size;
+					reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, pending_request_packet->l2_cache_name)].block_size);
 				}
 				else
 				{
 					reply_packet->cache_block_state = cgm_cache_block_shared;
-					reply_packet->size = 1;
+					reply_packet->size = HEADER_SIZE;
 				}
 
 				//fwd reply (downgrade_ack) to L3
@@ -3829,12 +3844,12 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 
 			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				pending_request_packet->size = cache->block_size;
+				pending_request_packet->size = packet_set_size(cache->block_size);
 				pending_request_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
 			{
-				pending_request_packet->size = 1;
+				pending_request_packet->size = HEADER_SIZE;
 				pending_request_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 
@@ -4111,7 +4126,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					/////////
 
 					//set message package size
-					message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+					message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 					//fwd block to requesting core
 					//update routing headers swap dest and src
@@ -4153,12 +4168,12 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
 						reply_packet->cache_block_state = cgm_cache_block_modified;
-						reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+						reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 					}
 					else
 					{
 						reply_packet->cache_block_state = cgm_cache_block_shared;
-						reply_packet->size = 1;
+						reply_packet->size = HEADER_SIZE;
 					}
 
 					//fwd reply (downgrade_ack) to L3
@@ -4249,7 +4264,7 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					//fwd nack to requesting core
 					//update routing headers swap dest and src
@@ -4567,7 +4582,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 
 					//forward block to requesting core
 					//set message package size
-					message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+					message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 					//set access type
 					message_packet->access_type = cgm_access_putx;
 
@@ -4614,12 +4629,12 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//set message package size if modified in L2/L1.
 					if(write_back_packet->cache_block_state == cgm_cache_block_modified)
 					{
-						reply_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+						reply_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 						reply_packet->cache_block_state = cgm_cache_block_modified;
 					}
 					else
 					{
-						reply_packet->size = 1;
+						reply_packet->size = HEADER_SIZE;
 						reply_packet->cache_block_state = cgm_cache_block_invalid;
 					}
 
@@ -4694,7 +4709,7 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					//fwd nack to requesting core
 					//update routing headers swap dest and src
@@ -5286,7 +5301,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_load;
 
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 
 			//set return cache block state
 			message_packet->cache_block_state = cgm_cache_block_shared;
@@ -5329,7 +5344,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 			l2_cache_ptr = &l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)];
 			//message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
 
-			message_packet->size = l2_cache_ptr->block_size;
+			message_packet->size = packet_set_size(l2_cache_ptr->block_size);
 
 			message_packet->cache_block_state = *cache_block_state_ptr;
 			message_packet->access_type = cgm_access_puts;
@@ -5509,7 +5524,7 @@ int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write back sent (to L3) %llu type %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
 
-			message_packet->size = cache->block_size;
+			message_packet->size = packet_set_size(cache->block_size);
 
 			//block is dirty send the write back down to the L3 cache.
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
@@ -5658,7 +5673,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->cache_block_state = *cache_block_state_ptr;
 
 			//set message package size
-			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
@@ -5719,7 +5734,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			message_packet->access_type = cgm_access_get_nack;
 
 			//set message package size
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 
 			//update routing headers
 
@@ -5803,7 +5818,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					message_packet->access_type = cgm_access_get_nack;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					//update routing headers
 					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -5850,7 +5865,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				//set message size
-				message_packet->size = l2_caches[message_packet->l2_cache_id].block_size;
+				message_packet->size = packet_set_size(l2_caches[message_packet->l2_cache_id].block_size);
 				message_packet->cache_block_state = write_back_packet->cache_block_state;
 
 				//update message status
@@ -5918,7 +5933,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//find victim .
 				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
-				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1); /*<-- if this pops up we need to nack or stall*/
 				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 
 				//evict the block
@@ -5932,7 +5947,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_mc_load;
 
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 
 				message_packet->cache_block_state = cgm_cache_block_exclusive;
 
@@ -6010,7 +6025,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 
 				//set message package size
-				message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+				message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 				//update routing headers
 				cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -6138,7 +6153,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			cgm_cache_set_dir(cache, message_packet->set, message_packet->way, message_packet->l2_cache_id);
 
 			//set message package size
-			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 			//update routing
 			SETROUTE(message_packet, cache, l2_cache_ptr)
@@ -6246,7 +6261,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
 			// update message packet size
-			message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+			message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
@@ -6293,7 +6308,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			message_packet->access_type = cgm_access_getx_nack;
 
 			//set message package size
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 
 			//update routing headers
 			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -6358,7 +6373,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					message_packet->access_type = cgm_access_getx_nack;
 
 					//set message package size
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 
 					//update routing headers
 					cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -6403,7 +6418,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				}
 
 				//set message size
-				message_packet->size = l2_caches[message_packet->l2_cache_id].block_size;
+				message_packet->size = packet_set_size(l2_caches[message_packet->l2_cache_id].block_size);
 				message_packet->cache_block_state = write_back_packet->cache_block_state;
 
 				//update message status
@@ -6479,7 +6494,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//add some routing/status data to the packet
 				message_packet->access_type = cgm_access_mc_load;
 
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 
 				//set the returned block state
 				message_packet->cache_block_state = cgm_cache_block_modified;
@@ -6540,7 +6555,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				message_packet->cache_block_state = cgm_cache_block_modified;
 
 				// update message packet size
-				message_packet->size = l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size;
+				message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
 
 				//update directory
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->way);
@@ -6823,7 +6838,7 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				//add routing/status data to the packet
 				write_back_packet->access_type = cgm_access_mc_store;
-				write_back_packet->size = cache->block_size;
+				write_back_packet->size = packet_set_size(cache->block_size);
 
 				SETROUTE(write_back_packet, cache, system_agent)
 
@@ -6933,7 +6948,7 @@ void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *mess
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 
 	//failed to downgrade block in sharing core, the block may not be present
 	//if hit clear directory state and set retry
@@ -7048,9 +7063,9 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 
 
 	if(message_packet->cache_block_state == cgm_cache_block_modified)
-		assert(message_packet->size > 1);
+		assert(message_packet->size == 72);
 	else
-		assert(message_packet->size == 1);
+		assert(message_packet->size == HEADER_SIZE);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -7174,7 +7189,7 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s get_fwd_upgrade_nack ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 
 	/*if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
 	{
@@ -7259,7 +7274,7 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_upgrade_nack ID %llu type %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 
 	//This is a nack to a GetX_FWD that found the block in in a pending state at the owning L2
 	//the local block should be in the pending state and there should only be one sharer
@@ -7343,7 +7358,7 @@ void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 	/*block_trainsient_state = cgm_cache_get_block_transient_state(cache, message_packet->set, message_packet->way);*/
 	/*assert(block_trainsient_state == cgm_cache_block_transient);*/
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 
 	DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s getx_fwd_nack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
@@ -7506,7 +7521,7 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 	}
 
 	if(message_packet->cache_block_state == cgm_cache_block_modified)
-		assert(message_packet->size == 64);
+		assert(message_packet->size == 72);
 
 	/*//search the WB buffer for the data
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);*/
@@ -7529,7 +7544,7 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				{
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -7554,7 +7569,7 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 				//star todo somehow check and make sure these are modified
 				/*if here the L2 cache has already written back, send down so the flush can complete*/
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
@@ -7587,12 +7602,12 @@ void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 			if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
 			{
-				message_packet->size = cache->block_size;
+				message_packet->size = packet_set_size(cache->block_size);
 				message_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
 			{
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 
@@ -7731,7 +7746,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 	}*/
 
 	if(message_packet->cache_block_state == cgm_cache_block_modified)
-		assert(message_packet->size == 64);
+		assert(message_packet->size == 72);
 
 
 	/*//search the WB buffer for the data
@@ -7755,7 +7770,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				{
 					assert(wb_packet->cache_block_state == cgm_cache_block_modified);
 
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 
 					//remove the block from the WB buffer
@@ -7781,7 +7796,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 			{
 				//star todo somehow check and make sure these are modified
 				/*if here the L2 cache has already written back, send down so the flush can complete*/
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->cache_block_state = cgm_cache_block_invalid;
 
 				//set access type inval_ack
@@ -7818,12 +7833,12 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 
 				if(message_packet->cache_block_state == cgm_cache_block_modified || *cache_block_state_ptr == cgm_cache_block_modified)
 				{
-					message_packet->size = cache->block_size;
+					message_packet->size = packet_set_size(cache->block_size);
 					message_packet->cache_block_state = cgm_cache_block_modified;
 				}
 				else
 				{
-					message_packet->size = 1;
+					message_packet->size = HEADER_SIZE;
 					message_packet->cache_block_state = cgm_cache_block_invalid;
 				}
 
@@ -7857,7 +7872,7 @@ void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				bit_vector = bit_vector & cache->share_mask;
 
 				//making sure something didn't happen to these fields.
-				message_packet->size = 1;
+				message_packet->size = HEADER_SIZE;
 				message_packet->access_type = cgm_access_cpu_flush_fwd;
 
 				l2_cache_ptr = &l2_caches[LOG2(bit_vector)];
@@ -8005,12 +8020,12 @@ void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 			if(wb_packet->cache_block_state == cgm_cache_block_modified || message_packet->cache_block_state == cgm_cache_block_modified)
 			{
 				//merge the block.
-				pending_request_packet->size = cache->block_size;
+				pending_request_packet->size = packet_set_size(cache->block_size);
 				pending_request_packet->cache_block_state = cgm_cache_block_modified;
 			}
 			else
 			{
-				pending_request_packet->size = 1;
+				pending_request_packet->size = HEADER_SIZE;
 				pending_request_packet->cache_block_state = cgm_cache_block_invalid;
 			}
 
@@ -8236,7 +8251,7 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 
 			//add routing/status data to the packet
 			message_packet->access_type = cgm_access_mc_store;
-			message_packet->size = cache->block_size;
+			message_packet->size = packet_set_size(cache->block_size);
 
 			SETROUTE(message_packet, cache, system_agent)
 
@@ -8288,6 +8303,8 @@ void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *mes
 
 		//warning("l1 conflict found ort set cycle %llu\n", P_TIME);
 	}
+
+	assert(message_packet->size == HEADER_SIZE);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -8352,6 +8369,8 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 
 	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s upgrade ack ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
+	assert(message_packet->size == HEADER_SIZE);
 
 	switch(*cache_block_state_ptr)
 	{
@@ -9118,7 +9137,7 @@ int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_
 				if(pending_packet->l1_access_type == cgm_access_getx)
 				{
 					pending_packet->access_type = cgm_access_putx;
-					pending_packet->size = l1_d_caches[cache->id].block_size;
+					pending_packet->size = packet_set_size(l1_d_caches[cache->id].block_size);
 				}
 				else
 				{
@@ -9476,12 +9495,12 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 					if(putx_n_coutner->l1_access_type == cgm_access_getx)
 					{
 						putx_n_coutner->access_type = cgm_access_putx;
-						putx_n_coutner->size = l1_d_caches[cache->id].block_size;
+						putx_n_coutner->size = packet_set_size(l1_d_caches[cache->id].block_size);
 					}
 					else
 					{
 						putx_n_coutner->access_type = cgm_access_upgrade_ack;
-						putx_n_coutner->size = 1;
+						putx_n_coutner->size = HEADER_SIZE;
 					}
 
 					putx_n_coutner->cache_block_state = cgm_cache_block_modified;
@@ -9697,7 +9716,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	}
 
-	assert(message_packet->size == 1);
+	assert(message_packet->size == HEADER_SIZE);
 
 	/*NOTE: rare protocol case... it is possible for the block to be transient if L3 has evcited AND a new line is being brought in
 	In this case nack the upgrade request back to the requesting L2 so the L2 can clear the sate and request the L2 cache will receive an
@@ -9751,7 +9770,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 		message_packet->access_type = cgm_access_upgrade_nack;
 
 		//set message package size
-		message_packet->size = 1;
+		message_packet->size = HEADER_SIZE;
 
 		//update routing headers
 		cgm_cache_set_route(message_packet, cache, l2_cache_ptr);
@@ -9803,7 +9822,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 			message_packet->access_type = cgm_access_upgrade_nack;
 
 			//set message package size
-			message_packet->size = 1;
+			message_packet->size = HEADER_SIZE;
 
 			//update routing headers
 			cgm_cache_set_route(message_packet, cache, l2_cache_ptr);

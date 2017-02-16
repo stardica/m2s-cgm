@@ -5708,6 +5708,9 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	{
 		printf("---Quick Dump System Cycle %llu---\n", P_TIME);
 
+		printf("fetches %llu loads %llu stores %llu\n",
+				mem_system_stats->cpu_total_fetch_requests, mem_system_stats->cpu_total_load_requests, mem_system_stats->cpu_total_store_requests);
+
 		//mark that sim finished successfully
 		cgm_stat->execution_success = 1;
 
