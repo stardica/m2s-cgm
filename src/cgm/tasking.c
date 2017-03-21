@@ -554,7 +554,7 @@ count_t get_time (void){
 
 }
 
-void task_write (FILE *fp, task *t, int ctxt){
+/*void task_write (FILE *fp, task *t, int ctxt){
 
 	if (ctxt)
 		context_write(fp, (process_t*)&t->c);
@@ -572,7 +572,7 @@ void task_read (FILE *fp, task *t, int ctxt){
 	count_read (fp, &t->count);
 
 	return;
-}
+}*/
 
 void count_write (FILE *fp, count_t c){
 

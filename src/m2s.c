@@ -43,6 +43,8 @@
 #include <lib/util/elf-format.h>
 #include <lib/util/class.h>
 
+#include <lib/util/class.h>
+
 #if CGM
 #include <cgm/cgm.h>
 #include <cgm/tasking.h>

@@ -285,13 +285,14 @@ void context_exit (void)
 /*
  * Crazy Ubuntu jmpbuf encoder/decoder functions
  */
-
-int
-DecodeJMPBUF(int j) 
-{
+#if defined(__linux__) && defined(__i386__)
+int DecodeJMPBUF32(int j){
    int retVal;
 
-   asm ("mov %1,%%edx; ror $0x9,%%edx; xor %%gs:0x18,%%edx; mov %%edx,%0;"
+   asm ("mov %1,%%edx;"
+		"ror $0x9,%%edx;"
+		"xor %%gs:0x18,%%edx;"
+		"mov %%edx,%0;"
       :"=r" (retVal)  /* output */           
       :"r" (j)        /* input */        
       :"%edx"         /* clobbered register */ 
@@ -300,12 +301,13 @@ DecodeJMPBUF(int j)
    return retVal;
 }
 
-int
-EncodeJMPBUF(int j) 
-{
+int EncodeJMPBUF32(int j) {
    int retVal;
 
-   asm ("mov %1,%%edx; xor %%gs:0x18,%%edx; rol $0x9,%%edx; mov %%edx,%0;"
+   asm ("mov %1,%%edx;"
+		"xor %%gs:0x18,%%edx;"
+		"rol $0x9,%%edx;"
+		"mov %%edx,%0;"
       :"=r" (retVal)  /* output */           
       :"r" (j)        /* input */        
       :"%edx"         /* clobbered register */ 
@@ -313,6 +315,40 @@ EncodeJMPBUF(int j)
 
    return retVal;
 }
+
+#elif defined(__linux__) && defined(__x86_64)
+long long DecodeJMPBUF64(long long j){
+
+  long long retVal;
+
+  asm volatile ("mov %1, %%rax;"
+		"ror $0x11, %%rax;"
+		"xor %%fs:0x30, %%rax;"
+		"mov %%rax, %0;"
+	 :"=r" (retVal)   /*output*/
+	 :"r" (j)         /*input*/
+	 :"%rax"          /*clobbered register*/
+  );
+
+  return retVal;
+}
+
+long long EncodeJMPBUF64(long long j) {
+
+long long retVal;
+
+asm (	"mov %1, %%rax;"
+		"xor %%fs:0x30, %%rax;"
+		"rol $0x11, %%rax;"
+		"mov %%rax, %0;"
+		:"=r" (retVal)   /*output*/
+		:"r" (j)         /*input*/
+		:"%rax"          /*clobbered register*/
+	);
+
+return retVal;
+}
+#endif
 
 /*
  * Non-portable code is in this function
@@ -373,7 +409,7 @@ void context_init (process_t *p, void (*f)(void))
 
 /* This works with Ubuntu 12.04 */
 #define INIT_SP(p) (int)((char*)(p)->c.stack + (p)->c.sz)
-#define CURR_SP(p) DecodeJMPBUF((p)->c.buf[0].__jmpbuf[4])
+#define CURR_SP(p) DecodeJMPBUF32((p)->c.buf[0].__jmpbuf[4])
 
 /*newer versions of GCC enable stack protectors by default
 which breaks the way context.c works via _FORTIFY_SOURCE =1 or = 2
@@ -386,8 +422,8 @@ To fix this undef and redefine _FORTIFY_SOURCE to get things working again.*/
   //  printf("%d: Before Decode: %x\tAfter Decode: %x\n", i, p->c.buf[0].__jmpbuf[i], DecodeJMPBUF(p->c.buf[0].__jmpbuf[i]));
   //}
 
-  p->c.buf[0].__jmpbuf[5] = EncodeJMPBUF((int)context_stub);
-  p->c.buf[0].__jmpbuf[4] = EncodeJMPBUF((int)((char*)stack+n-4));
+  p->c.buf[0].__jmpbuf[5] = EncodeJMPBUF32((int)context_stub);
+  p->c.buf[0].__jmpbuf[4] = EncodeJMPBUF32((int)((char*)stack+n-4));
 
   /*AFAIK there is no way to distinguish between the lines
   below and above using ifdefs... argh!*/
@@ -408,6 +444,16 @@ To fix this undef and redefine _FORTIFY_SOURCE to get things working again.*/
 
   p->c.buf[0].__pc = (__ptr_t)context_stub;
   p->c.buf[0].__sp = (__ptr_t)((char*)stack+n-4);*/
+#elif defined(__linux__) && defined(__x86_64)
+
+//#define INIT_SP(p) EncodeJMPBUF64((long long)(((char *)stack) + n - 4));
+//#define CURR_SP(p) DecodeJMPBUF64((p)->c.buf[0].__jmpbuf[4])
+
+#define INIT_SP(p) 0
+#define CURR_SP(p) 0
+
+  p->c.buf[0].__jmpbuf[7] = EncodeJMPBUF64((long long)context_stub);
+  p->c.buf[0].__jmpbuf[6] = EncodeJMPBUF64((long long)(((char *)stack) + n - 4));
 
 #elif defined(__FreeBSD__) && defined(__i386__)
 
@@ -476,7 +522,7 @@ To fix this undef and redefine _FORTIFY_SOURCE to get things working again.*/
 void context_write (FILE *fp, process_t *p)
 {
   int i;
-  /*int n;*/
+  //int n;
   unsigned long *l;
   unsigned char *curr_sp, *init_sp;
 
@@ -485,7 +531,7 @@ void context_write (FILE *fp, process_t *p)
     fprintf (fp, "%lu\n", *l);
     l++;
   }
- /* save stack */
+  /*save stack*/
   init_sp = (unsigned char *)INIT_SP(p);
   curr_sp = (unsigned char *)CURR_SP(p);
 
@@ -493,11 +539,11 @@ void context_write (FILE *fp, process_t *p)
     curr_sp = init_sp;
     init_sp = (unsigned char *)CURR_SP(p);
   }
-  /*
-   * This is broken. if init_sp == curr_sp, do we save or not???
+
+  /* * This is broken. if init_sp == curr_sp, do we save or not???
    * (machine-dependent)
-   *
-   */
+   **/
+
   while (init_sp < curr_sp) {
     i = *init_sp;
     fprintf (fp, "%d\n", i);
@@ -518,7 +564,7 @@ void context_write (FILE *fp, process_t *p)
 void context_read (FILE *fp, process_t *p)
 {
   int i;
-  /*int n;*/
+  //int n;
   unsigned long *l;
   unsigned char *init_sp, *curr_sp;
 
@@ -533,7 +579,7 @@ void context_read (FILE *fp, process_t *p)
     curr_sp = init_sp;
     init_sp = (unsigned char *)CURR_SP(p);
   }
-  /* this is broken too... */
+  /* this is broken too...*/
   while (init_sp < curr_sp) {
     fscanf (fp, "%d", &i);
     *init_sp = i;

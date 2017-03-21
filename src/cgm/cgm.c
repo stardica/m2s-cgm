@@ -1732,6 +1732,7 @@ void cgm_dump_summary(void){
 }
 
 void cgm_mem_run(void){
+
 	advance(sim_start);
 	//simulation execution
 
