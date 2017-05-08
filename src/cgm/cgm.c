@@ -75,6 +75,7 @@ int quick_dump = 0;
 int dump_gpu = 0;
 int dump_cpu = 0;
 int simple_mem = 0;
+int simple_mem_cycles = 0;
 
 
 

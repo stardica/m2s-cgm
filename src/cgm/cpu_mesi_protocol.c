@@ -5282,45 +5282,105 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 				return;
 			}
 
-			//find the victim.
-			message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
-			assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
-			assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
-			assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->l3_victim_way) == 0);
+			if(simple_mem == 0)
+			{
 
-			//evict the block
-			if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
-				cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-						cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
-			//clear the directory entry
-			cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+				//find the victim.
+				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
+				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+				assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->l3_victim_way) == 0);
 
-			//add some routing/status data to the packet
-			message_packet->access_type = cgm_access_mc_load;
+				//evict the block
+				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
-			message_packet->size = HEADER_SIZE;
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
 
-			//set return cache block state
-			message_packet->cache_block_state = cgm_cache_block_shared;
+				//add some routing/status data to the packet
+				message_packet->access_type = cgm_access_mc_load;
 
-			assert(message_packet->cpu_access_type == cgm_access_fetch);
+				message_packet->size = HEADER_SIZE;
 
-			SETROUTE(message_packet, cache, system_agent)
+				//set return cache block state
+				message_packet->cache_block_state = cgm_cache_block_shared;
 
-			/*stats*/
-			if(!message_packet->protocol_case)
-				message_packet->protocol_case = memory;
+				assert(message_packet->cpu_access_type == cgm_access_fetch);
 
-			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch miss ID %llu type %d cycle %llu\n",
-					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+				SETROUTE(message_packet, cache, system_agent)
 
-			/*reset mp flags*/
-			message_packet->coalesced = 0;
-			message_packet->assoc_conflict = 0;
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = memory;
 
-			//transmit to SA/MC
-			cache_put_io_up_queue(cache, message_packet);
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch miss ID %llu type %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
+				//transmit to SA/MC
+				cache_put_io_up_queue(cache, message_packet);
+
+				//break;
+			}
+			else
+			{
+				/*this simulates a simpler memory system
+				 * the memory access is dropped into a buffer
+				 * and returned in a configurable number of cycles*/
+
+				assert(simple_mem == 1);
+
+				//find the victim.
+				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
+				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+				assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->l3_victim_way) == 0);
+
+				//evict the block
+				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
+
+				//clear the directory entry
+				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+
+				//add some routing/status data to the packet
+				message_packet->access_type = cgm_access_mc_load;
+
+				message_packet->size = HEADER_SIZE;
+
+				//set return cache block state
+				message_packet->cache_block_state = cgm_cache_block_shared;
+
+				assert(message_packet->cpu_access_type == cgm_access_fetch);
+
+				/*stats*/
+				if(!message_packet->protocol_case)
+					message_packet->protocol_case = memory;
+
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch miss SIMPLE MEM ID %llu type %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, P_TIME);
+
+				/*reset mp flags*/
+				message_packet->coalesced = 0;
+				message_packet->assoc_conflict = 0;
+
+				message_packet->ready_cycle = (P_TIME + simple_mem_cycles);
+
+				//drop into simple mem buffer
+				message_packet = list_remove(cache->last_queue, message_packet);
+				list_enqueue(cache->simple_mem_buffer, message_packet);
+				future_advance(&simple_mem_ec[cache->id], etime.count + (simple_mem_cycles * 2)); //600 is really 300 cycles in P_TIME
+
+				//warning("l3 $ current cycle %llu future advance %llu mp wakeup %llu\n", P_TIME, (etime.count + 600)/2, message_packet->ready_cycle);
+
+			}
 
 			break;
 
@@ -5929,38 +5989,85 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 					return;
 				}
 
-				//find victim .
-				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
-				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1); /*<-- if this pops up we need to nack or stall*/
-				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+				if(simple_mem == 0)
+				{
 
-				//evict the block
-				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
-					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
+					//find victim .
+					message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+					assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1); /*<-- if this pops up we need to nack or stall*/
+					assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 
-				//clear the directory entry
-				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+					//evict the block
+					if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+						cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+								cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
-				//add some routing/status data to the packet
-				message_packet->access_type = cgm_access_mc_load;
+					//clear the directory entry
+					cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
 
-				message_packet->size = HEADER_SIZE;
+					//add some routing/status data to the packet
+					message_packet->access_type = cgm_access_mc_load;
 
-				message_packet->cache_block_state = cgm_cache_block_exclusive;
+					message_packet->size = HEADER_SIZE;
 
-				//set dest and src
-				SETROUTE(message_packet, cache, system_agent)
+					message_packet->cache_block_state = cgm_cache_block_exclusive;
 
-				//transmit to SA/MC
-				if(!message_packet->protocol_case)
-					message_packet->protocol_case = memory;
+					//set dest and src
+					SETROUTE(message_packet, cache, system_agent)
 
-				/*reset mp flags*/
-				message_packet->coalesced = 0;
-				message_packet->assoc_conflict = 0;
+					//transmit to SA/MC
+					if(!message_packet->protocol_case)
+						message_packet->protocol_case = memory;
 
-				cache_put_io_up_queue(cache, message_packet);
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					cache_put_io_up_queue(cache, message_packet);
+				}
+				else
+				{
+					assert(simple_mem == 1);
+
+					//find victim .
+					message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+					assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1); /*<-- if this pops up we need to nack or stall*/
+					assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+
+					//evict the block
+					if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+						cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+								cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
+
+					//clear the directory entry
+					cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+
+					//add some routing/status data to the packet
+					message_packet->access_type = cgm_access_mc_load;
+
+					message_packet->size = HEADER_SIZE;
+
+					message_packet->cache_block_state = cgm_cache_block_exclusive;
+
+					//set dest and src
+					SETROUTE(message_packet, cache, system_agent)
+
+					//transmit to SA/MC
+					if(!message_packet->protocol_case)
+						message_packet->protocol_case = memory;
+
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					message_packet->ready_cycle = (P_TIME + simple_mem_cycles);
+
+					//drop into simple mem buffer
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->simple_mem_buffer, message_packet);
+					future_advance(&simple_mem_ec[cache->id], etime.count + (simple_mem_cycles * 2) ); //600 is really 300 cycles in P_TIME
+
+				}
 
 			}
 
@@ -6475,41 +6582,91 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 					return;
 				}
 
-				//find victim because LRU has been updated on hits.
-				/*message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
-				message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
-				assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
-				assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+				if(simple_mem == 0)
+				{
 
-				//evict the victim
-				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
-					cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
-							cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
+					//find victim because LRU has been updated on hits.
+					/*message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
+					message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+					assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
+					assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
 
-				//clear the directory entry
-				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+					//evict the victim
+					if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+						cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+								cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
 
-				//add some routing/status data to the packet
-				message_packet->access_type = cgm_access_mc_load;
+					//clear the directory entry
+					cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
 
-				message_packet->size = HEADER_SIZE;
+					//add some routing/status data to the packet
+					message_packet->access_type = cgm_access_mc_load;
 
-				//set the returned block state
-				message_packet->cache_block_state = cgm_cache_block_modified;
+					message_packet->size = HEADER_SIZE;
 
-				//set dest and src
-				SETROUTE(message_packet, cache, system_agent)
+					//set the returned block state
+					message_packet->cache_block_state = cgm_cache_block_modified;
 
-				/*stats*/
-				if(!message_packet->protocol_case)
-					message_packet->protocol_case = memory;
+					//set dest and src
+					SETROUTE(message_packet, cache, system_agent)
 
-				/*reset mp flags*/
-				message_packet->coalesced = 0;
-				message_packet->assoc_conflict = 0;
+					/*stats*/
+					if(!message_packet->protocol_case)
+						message_packet->protocol_case = memory;
 
-				//transmit to SA
-				cache_put_io_up_queue(cache, message_packet);
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					//transmit to SA
+					cache_put_io_up_queue(cache, message_packet);
+				}
+				else
+				{
+
+					assert(simple_mem == 1);
+
+					//find victim because LRU has been updated on hits.
+					/*message_packet->l3_victim_way = cgm_cache_replace_block(cache, message_packet->set);*/
+					message_packet->l3_victim_way = cgm_cache_get_victim(cache, message_packet->set, message_packet->tag);
+					assert(cache->sets[message_packet->set].blocks[message_packet->l3_victim_way].directory_entry.entry_bits.pending != 1);
+					assert(message_packet->l3_victim_way >= 0 && message_packet->l3_victim_way < cache->assoc);
+
+					//evict the victim
+					if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l3_victim_way) != cgm_cache_block_invalid)
+						cgm_L3_cache_evict_block(cache, message_packet->set, message_packet->l3_victim_way,
+								cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->l3_victim_way), 0);
+
+					//clear the directory entry
+					cgm_cache_clear_dir(cache, message_packet->set, message_packet->l3_victim_way);
+
+					//add some routing/status data to the packet
+					message_packet->access_type = cgm_access_mc_load;
+
+					message_packet->size = HEADER_SIZE;
+
+					//set the returned block state
+					message_packet->cache_block_state = cgm_cache_block_modified;
+
+					//set dest and src
+					SETROUTE(message_packet, cache, system_agent)
+
+					/*stats*/
+					if(!message_packet->protocol_case)
+						message_packet->protocol_case = memory;
+
+					/*reset mp flags*/
+					message_packet->coalesced = 0;
+					message_packet->assoc_conflict = 0;
+
+					message_packet->ready_cycle = (P_TIME + simple_mem_cycles);
+
+					//drop into simple mem buffer
+					message_packet = list_remove(cache->last_queue, message_packet);
+					list_enqueue(cache->simple_mem_buffer, message_packet);
+					future_advance(&simple_mem_ec[cache->id], etime.count + (simple_mem_cycles * 2) ); //600 is really 300 cycles in P_TIME
+
+				}
 			}
 
 			break;
@@ -6829,27 +6986,31 @@ void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			//move the block to the WB buffer
 			if(message_packet->cache_block_state == cgm_cache_block_modified)
 			{
-				struct cgm_packet_t *write_back_packet = packet_create();
-				assert(write_back_packet);
 
-				init_write_back_packet(cache, write_back_packet, message_packet->set, message_packet->way, 0, cgm_cache_block_modified);
+				if(simple_mem == 0)
+				{
+					struct cgm_packet_t *write_back_packet = packet_create();
+					assert(write_back_packet);
 
-				//add routing/status data to the packet
-				write_back_packet->access_type = cgm_access_mc_store;
-				write_back_packet->size = packet_set_size(cache->block_size);
+					init_write_back_packet(cache, write_back_packet, message_packet->set, message_packet->way, 0, cgm_cache_block_modified);
 
-				SETROUTE(write_back_packet, cache, system_agent)
+					//add routing/status data to the packet
+					write_back_packet->access_type = cgm_access_mc_store;
+					write_back_packet->size = packet_set_size(cache->block_size);
 
-				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s writeback sent to main memory block is shared at L3 ID %llu type %d state %d cycle %llu\n",
-						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
+					SETROUTE(write_back_packet, cache, system_agent)
+
+					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s writeback sent to main memory block is shared at L3 ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
-				//transmit to SA/MC
-				list_enqueue(cache->Tx_queue_top, write_back_packet);
-				advance(cache->cache_io_up_ec);
+					//transmit to SA/MC
+					list_enqueue(cache->Tx_queue_top, write_back_packet);
+					advance(cache->cache_io_up_ec);
 
-				/*stats*/
-				cache->TotalSharingWriteBackSent++;
+					/*stats*/
+					cache->TotalSharingWriteBackSent++;
+				}
 
 			}
 
@@ -8247,16 +8408,31 @@ int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_p
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s write back sent (to MC) %llu type %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->write_back_id, message_packet->access_type, P_TIME);
 
-			//add routing/status data to the packet
-			message_packet->access_type = cgm_access_mc_store;
-			message_packet->size = packet_set_size(cache->block_size);
+			if(simple_mem == 0)
+			{
+				//add routing/status data to the packet
+				message_packet->access_type = cgm_access_mc_store;
+				message_packet->size = packet_set_size(cache->block_size);
 
-			SETROUTE(message_packet, cache, system_agent)
+				SETROUTE(message_packet, cache, system_agent)
 
-			//transmit to SA/MC
-			cache_put_io_up_queue(cache, message_packet);
+				//transmit to SA/MC
+				cache_put_io_up_queue(cache, message_packet);
 
-			cache->TotalWriteBackSent++;
+				cache->TotalWriteBackSent++;
+			}
+			else
+			{
+				//kill the packet if working with simple memory
+				assert(simple_mem == 1);
+
+				cache->TotalWriteBackSent++;
+
+				/*drop the write back*/
+				message_packet = list_remove(cache->last_queue, message_packet);
+				packet_destroy(message_packet);
+			}
+
 		}
 		else
 		{

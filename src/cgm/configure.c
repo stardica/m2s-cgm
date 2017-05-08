@@ -296,7 +296,11 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Debug", "Simple_Mem"))
 	{
 		simple_mem = atoi(value);
-		fatal("simple mem %d\n", simple_mem);
+	}
+
+	if(MATCH("Debug", "Simple_Mem_Cycles"))
+	{
+		simple_mem_cycles = atoi(value);
 	}
 
 	if(MATCH("Debug", "Path"))
@@ -2182,6 +2186,11 @@ int cache_finish_create(){
 
 		//pointer to my own event counter
 		l3_caches[i].ec_ptr = &l3_cache[i];
+
+		l3_caches[i].simple_mem_buffer = list_create();
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "l3_caches[%d].simple_mem_buffer", i);
+		l3_caches[i].simple_mem_buffer->name = strdup(buff);
 
 		l3_caches[i].Rx_queue_top = list_create();
 		memset (buff,'\0' , 100);

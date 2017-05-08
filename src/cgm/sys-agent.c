@@ -236,8 +236,6 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 	{
 
 
-
-
 		//set the dest and sources
 		//message_packet->access_type = cgm_access_put;
 		message_packet->dest_id = message_packet->src_id;
@@ -470,6 +468,9 @@ void sys_agent_ctrl(void){
 			//if we are here there should be a message in the queue
 			message_packet = sysagent_get_message();
 			assert(message_packet);
+
+			if(simple_mem == 1)
+				fatal("sys_agent_ctrl(): sa running, but simple_mem set 1 cycle %llu\n", P_TIME);
 
 			system_agent_route(message_packet);
 

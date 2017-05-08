@@ -164,6 +164,8 @@ struct cgm_packet_t{
 	int flush_core;
 	int l3_pending;
 
+	long long ready_cycle;
+
 	//access data
 	long long access_id;
 	long long write_back_id;
@@ -338,6 +340,7 @@ struct cache_t{
 	//cache queues
 	//star todo rewrite all of this queues should be in-boxes
 	//buffers are internal buffers
+	struct list_t *simple_mem_buffer;
 	struct list_t *Rx_queue_top;
 	struct list_t *Rx_queue_bottom;
 	struct list_t *Tx_queue_top;

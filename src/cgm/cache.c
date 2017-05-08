@@ -65,6 +65,7 @@ int l1_i_pid = 0;
 int l1_d_pid = 0;
 int l2_pid = 0;
 int l3_pid = 0;
+int simple_mem_pid = 0;
 int gpu_v_pid = 0;
 int gpu_s_pid = 0;
 int gpu_l2_pid = 0;
@@ -88,6 +89,7 @@ eventcount volatile *l1_i_cache;
 eventcount volatile *l1_d_cache;
 eventcount volatile *l2_cache;
 eventcount volatile *l3_cache;
+eventcount volatile *simple_mem_ec;
 eventcount volatile *gpu_l2_cache;
 eventcount volatile *gpu_v_cache;
 eventcount volatile *gpu_s_cache;
@@ -97,6 +99,7 @@ task *l1_i_cache_tasks;
 task *l1_d_cache_tasks;
 task *l2_cache_tasks;
 task *l3_cache_tasks;
+task *simple_mem_tasks;
 task *gpu_l2_cache_tasks;
 task *gpu_v_cache_tasks;
 task *gpu_s_cache_tasks;
@@ -207,6 +210,14 @@ void cache_create_tasks(void){
 		l3_cache[i] = *(new_eventcount(strdup(buff)));
 	}
 
+	//simple_mem tasks
+	simple_mem_ec = (void *) calloc(num_cores, sizeof(eventcount));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "simple_mem_%d", i);
+		simple_mem_ec[i] = *(new_eventcount(strdup(buff)));
+	}
 
 
 	//GPU L2
@@ -286,6 +297,16 @@ void cache_create_tasks(void){
 		snprintf(buff, 100, "l3_cache_ctrl_%d", i);
 		l3_cache_tasks[i] = *(create_task(l3_cache_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
+
+	//simple_mem
+	simple_mem_tasks = (void *) calloc(num_cores, sizeof(task));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "simple_mem_ctrl_%d", i);
+		simple_mem_tasks[i] = *(create_task(simple_mem_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
+
 
 	//gpu l2 caches
 	gpu_l2_cache_tasks = (void *) calloc(gpu_group_cache_num, sizeof(task));
@@ -555,7 +576,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			}
 			else
 			{
-				fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
+				fatal("cache_get_message(): %s can process, but didn't find a packet cycle %llu\n", cache->name, P_TIME);
 			}
 		}
 		else
@@ -622,6 +643,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			}
 			else
 			{
+
+
+
+
 				fatal("cache_get_message(): %s can process, but didn't find a packet\n", cache->name);
 			}
 		}
@@ -3525,6 +3550,41 @@ void l2_cache_ctrl(void){
 	return;
 }
 
+void simple_mem_ctrl(void){
+
+
+	int my_pid = simple_mem_pid++;
+	int num_cores = x86_cpu_num_cores;
+	long long step = 1;
+
+	struct cgm_packet_t *message_packet;
+
+	assert(my_pid <= num_cores);
+	set_id((unsigned int)my_pid);
+
+	while(1)
+	{
+		/*wait here until there is a job to do.*/
+		await(&simple_mem_ec[my_pid], step);
+		step++;
+
+		message_packet = list_get(l3_caches[my_pid].simple_mem_buffer, 0);
+		assert(message_packet);
+		assert(message_packet->ready_cycle == P_TIME);
+
+		message_packet->access_type = cgm_access_mc_put;
+
+		message_packet = list_remove(l3_caches[my_pid].simple_mem_buffer, message_packet);
+		list_enqueue(l3_caches[my_pid].Rx_queue_bottom, message_packet);
+		advance(&l3_cache[my_pid]);
+
+		//warning("simple mem ctrl %d cycle %llu\n", my_pid, P_TIME);
+	}
+
+	fatal("simple_mem_ctrl(): id %d out of loop\n", my_pid);
+
+	return;
+}
 
 
 
