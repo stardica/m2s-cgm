@@ -128,6 +128,7 @@ extern int quick_dump;
 
 extern int dump_gpu;
 extern int dump_cpu;
+extern int simple_mem;
 
 extern int Histograms;
 

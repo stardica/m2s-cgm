@@ -293,6 +293,12 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 		load_store_debug = atoi(value);
 	}
 
+	if(MATCH("Debug", "Simple_Mem"))
+	{
+		simple_mem = atoi(value);
+		fatal("simple mem %d\n", simple_mem);
+	}
+
 	if(MATCH("Debug", "Path"))
 	{
 		cgm_debug_output_path = strdup(value);
