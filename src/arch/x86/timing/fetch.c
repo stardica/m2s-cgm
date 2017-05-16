@@ -507,6 +507,7 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 
 	/* Set next fetch address as returned by the trace cache, and exit. */
 	self->fetch_neip = neip;
+
 	return 1;
 }
 
