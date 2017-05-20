@@ -1418,6 +1418,9 @@ void cgm_cache_print_set_tag(struct cache_t *cache, unsigned int addr){
 /* Return {tag, set, offset} for a given address */
 void cgm_cache_probe_address(struct cache_t *cache, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
 {
+
+	//fatal("val %d %d %d\n", (cache->log_block_size + cache->log_set_size), (cache->log_block_size), (cache->log_set_size));
+
 	*(tag_ptr) = (addr >> (cache->log_block_size + cache->log_set_size));//addr & ~(cache->block_mask);
 	*(set_ptr) =  ((addr >> cache->log_block_size) & (cache->set_mask));//(addr >> cache->log_block_size) % cache->num_sets;
 	*(offset_ptr) = addr & (cache->block_mask);

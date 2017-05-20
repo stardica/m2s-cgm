@@ -20,6 +20,10 @@
 #ifndef MEM_SYSTEM_MMU_H
 #define MEM_SYSTEM_MMU_H
 
+#include <cgm/tasking.h>
+#include <arch/x86/timing/thread.h>
+#include <arch/x86/emu/context.h>
+#include <arch/x86/timing/uop.h>
 
 /* Local constants */
 #define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
@@ -92,11 +96,34 @@ struct mmu_page_t
 /* Memory management unit */
 struct mmu_t
 {
-	/* List of pages */
+	int id;
+
+	/*Forward translate variables*/
+	int fetch_ready;
+	int fetch_address_space_index;
+	unsigned int vtl_fetch_address;
+	unsigned int phy_fetch_address;
+
+	int issue_width;
+	int *data_ready;
+	int *data_valid;
+	int *data_address_space_index;
+	unsigned int *vtl_data_address;
+	unsigned int *phy_data_address;
+
+	int num_fault_bits;
+	int *fault_bits;
+
+	long long num_processed;
+
+	/*CPU request in box*/
 	struct list_t *page_list;
 
 	/* star List of quests */
 	struct list_t *guest_list;
+
+	/*CPU request in box*/
+	//struct list_t *request_queue;
 
 	/* Hash table of pages */
 	struct mmu_page_t *page_hash_table[MMU_PAGE_HASH_SIZE];
@@ -113,6 +140,11 @@ extern char *mmu_report_file_name;
 extern unsigned int mmu_page_size;
 extern unsigned int mmu_page_mask;
 extern unsigned int mmu_log_page_size;
+
+extern eventcount volatile *mmu_fetch_ec;
+extern eventcount volatile *mmu_data_ec;
+extern task *mmu_fetch_task;
+extern task *mmu_data_task;
 
 void mmu_init(void);
 void mmu_done(void);
@@ -134,11 +166,22 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 int mmu_valid_phy_addr(unsigned int phy_addr);
 void mmu_access_stats(unsigned int phy_addr, enum mmu_access_t access);
 
-void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
+void mmu_access_page(struct mmu_t *mmu, unsigned int phy_addr, enum mmu_access_t access);
 
 void mmu_add_guest(int address_space_index, int guest_pid, unsigned int guest_pointer, unsigned int host_ptr, unsigned int size);
 struct page_guest_t *mmu_create_guest(void);
 unsigned int mmu_reverse_translate(int address_space_index, unsigned int phy_addr, enum mmu_access_t access_type);
+
+
+void mmu_ctrl(void);
+int mmu_has_fault(struct mmu_t *mmu);
+int mmu_fetch_translate(X86Thread *self, unsigned int block);
+int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop);
+
+
+int can_access_mmu(void);
+
+
 
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr);
 unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid, unsigned int host_phy_addr);

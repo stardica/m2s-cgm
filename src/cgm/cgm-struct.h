@@ -57,6 +57,13 @@ enum cgm_cache_block_state_t{
 	cgm_cache_block_state_num
 };
 
+enum cgm_tlb_block_state_t{
+
+	cgm_tlb_block_invalid = 0,
+	cgm_tlb_block_valid,
+	cgm_tlb_block_state_num
+};
+
 enum cache_waylist_enum{
 
 	cache_waylist_head,
@@ -260,6 +267,31 @@ struct cache_block_t{
 	long long transient_access_id;
 };
 
+
+struct tlb_block_t{
+
+	struct tlb_block_t *way_next;
+	struct tlb_block_t *way_prev;
+
+	int tag;
+	int set;
+	int way;
+	unsigned int address;
+	int written;
+
+	enum cgm_tlb_block_state_t state;
+};
+
+struct tlb_set_t{
+
+	int id;
+
+	struct tlb_block_t *way_head;
+	struct tlb_block_t *way_tail;
+	struct tlb_block_t *blocks;
+
+};
+
 struct cache_set_t{
 
 	int id;
@@ -290,6 +322,43 @@ enum cache_policy_t{
 	cache_policy_first_available,
 	cache_policy_num
 };
+
+enum tlb_type_enum{
+
+	itlb,
+	dtlb
+};
+
+enum tlb_policy_t{
+
+	tlb_policy_invalid = 0,
+	tlb_policy_lru,
+	tlb_policy_num
+};
+
+
+struct tlb_t{
+
+	char *name;
+	int id;
+	enum tlb_type_enum tlb_type;
+
+	//cache configuration settings
+	unsigned int num_sets;
+	unsigned int address_size;
+	unsigned int assoc;
+	enum tlb_policy_t policy;
+	char * policy_type;
+
+	//cache data
+	struct tlb_set_t *sets;
+	unsigned int page_offset_mask;
+	unsigned int page_tag_mask;
+	unsigned int page_set_mask;
+	int log_page_size;
+
+};
+
 
 struct cache_t{
 

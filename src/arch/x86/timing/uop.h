@@ -85,9 +85,12 @@ struct x86_uop_t
 	int in_event_queue : 1;
 	int in_rob : 1;
 	int in_uop_trace_list : 1;
+	//star added this
+	int mmu_port;
 
 	//star added interrupt status
 	/* Instruction status */
+	int phy_address_ready;
 	int syscall_ready;
 	int ready;
 	int issued;

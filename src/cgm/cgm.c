@@ -1106,6 +1106,7 @@ void cgm_init(int argc, char **argv){
 
 	//init memory system structures
 	cache_init();
+	tlb_init();
 	switch_init();
 	hub_iommu_init();
 
@@ -1136,7 +1137,12 @@ void cgm_configure(void){
 	/*print errors or warnings if needed*/
 	if(SINGLE_CORE == 1)
 	{
-		warning("All threads allocated to a single core check SINGLE_CORE\n");
+		warning("---All threads allocated to a single core check SINGLE_CORE---\n");
+	}
+
+	if(simple_mem == 1)
+	{
+		warning("--SIMPLE_MEM set to 1, accesses stop at L3---\n");
 	}
 
 	fflush(stderr);
@@ -1805,7 +1811,14 @@ int cgm_can_fetch_access(X86Thread *self, unsigned int addr){
 	X86Thread *thread;
 	thread = self;
 
-	//check if request queue is full
+	/*//check if fetch TLB request queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
+	{
+		return 0;
+	}*/
+
+
+	//check if cache request queue is full
 	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
 	{
 		return 0;

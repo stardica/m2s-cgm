@@ -86,8 +86,22 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			assert(store->in_rob);
 
 			if (!X86ThreadIsUopReady(self, store))
-				break;
+			{
+
+
+				linked_list_next(sq);
+				continue;
+			}
 		}
+
+		if(!mmu_data_translate(self, store))
+		{
+			//translate the address
+			//warning("looping id %llu cycle %llu\n", load->id, P_TIME);
+			linked_list_next(sq);
+			continue;
+		}
+
 
 		/*old M2S code...
 		//Only committed stores issue
@@ -198,7 +212,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		
 		/* MMU statistics */
 		if (*mmu_report_file_name)
-			mmu_access_page(store->phy_addr, mmu_access_write);
+			mmu_access_page(&mmu[self->core->id], store->phy_addr, mmu_access_write);
 	}
 	return quantum;
 }
@@ -220,16 +234,27 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 	linked_list_head(lq);
 	while (!linked_list_is_end(lq) && quant)
 	{
-		/* Get element from load queue. If it is not ready, go to the next one */
+		/*Get element from load queue. If it is not ready, go to the next one */
 		//star >> makes uOp wait until operands are ready.
 		load = linked_list_get(lq);
+
+		//printf("load id %llu cycle %llu\n", load->id, P_TIME);
 
 		if (!load->ready && !X86ThreadIsUopReady(self, load))
 		{
 			linked_list_next(lq);
 			continue;
 		}
+		else if(!mmu_data_translate(self, load))
+		{
+			//translate the address
+			//warning("looping id %llu cycle %llu\n", load->id, P_TIME);
+			linked_list_next(lq);
+			continue;
+		}
 
+		//Dependencies satisfied and address translation complete.
+		//uop is ready to go to cache.
 		load->ready = 1;
 
 #if CGM
@@ -247,7 +272,9 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		}
 
 
-		/*//star >> added instrumentation here.
+		X86ThreadRemoveFromLQ(self);
+
+			/*//star >> added instrumentation here.
 		pthread_mutex_lock(&instrumentation_mutex);
 		IssuedLSQStats(load);
 		pthread_mutex_unlock(&instrumentation_mutex);*/
@@ -255,8 +282,6 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load || load->uinst->opcode == x86_uinst_load_ex
 				|| load->uinst->opcode == x86_uinst_cpu_load_fence || load->uinst->opcode == x86_uinst_gpu_flush);
-		X86ThreadRemoveFromLQ(self);
-
 
 #if CGM
 
@@ -275,16 +300,16 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		{
 			//should already be ready from dispatch
 			assert(load->ready == 1);
-
 			cgm_issue_lspq_access(self, cgm_access_gpu_flush, load->id, load->phy_addr, core->event_queue, load);
 		}
 		else
 		{
 			/*if(load->uinst->opcode == x86_uinst_load_ex)
 				printf("loadex id %llu cycle %llu\n", load->uinst->id, P_TIME);*/
-
 			cgm_issue_lspq_access(self, cgm_access_load, load->id, load->phy_addr, core->event_queue, load);
 		}
+
+
 
 #else
 		/* create and fill the mod_client_info_t object */
@@ -325,7 +350,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* MMU statistics */
 		if (*mmu_report_file_name)
-			mmu_access_page(load->phy_addr, mmu_access_read);
+			mmu_access_page(&mmu[self->core->id], load->phy_addr, mmu_access_read);
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n", load->id_in_core, core->id);
@@ -437,7 +462,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		
 		/* MMU statistics */
 		if (*mmu_report_file_name)
-			mmu_access_page(prefetch->phy_addr, mmu_access_read);
+			mmu_access_page(&mmu[self->core->id], prefetch->phy_addr, mmu_access_read);
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n", prefetch->id_in_core, core->id);
@@ -570,6 +595,8 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 
 static int X86ThreadIssueLSQ(X86Thread *self, int quantum)
 {
+
+	//translate address here?
 	quantum = X86ThreadIssueLQ(self, quantum);
 	quantum = X86ThreadIssueSQ(self, quantum);
 	quantum = X86ThreadIssuePreQ(self, quantum);

@@ -22,6 +22,7 @@
 #include <lib/util/misc.h>
 
 #include <mem-image/memory.h>
+#include <mem-image/tlb.h>
 
 #include <cgm/cache.h>
 #include <cgm/directory.h>
@@ -301,7 +302,6 @@ extern long long last_issued_fetch_access_id;
 extern unsigned int last_issued_fetch_access_blk;
 extern long long last_committed_fetch_access_id;
 extern unsigned int last_committed_fetch_access_blk;
-
 
 
 

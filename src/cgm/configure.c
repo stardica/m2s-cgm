@@ -46,6 +46,18 @@ int cgm_mem_configure(){
 
 	cache_finish_create();
 
+	//configure the caches
+	error = ini_parse(cgm_config_file_name_and_path, tlb_read_config, NULL);
+	if (error < 0)
+	{
+		printf("Unable to open Config.ini for tlb configuration.\n");
+		return 1;
+	}
+
+	tlb_finish_create();
+
+
+
 	error = ini_parse(cgm_config_file_name_and_path, directory_read_config, NULL);
 	if (error < 0)
 	{
@@ -296,6 +308,7 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 	if(MATCH("Debug", "Simple_Mem"))
 	{
 		simple_mem = atoi(value);
+
 	}
 
 	if(MATCH("Debug", "Simple_Mem_Cycles"))
@@ -515,6 +528,199 @@ int stats_finish_create(void){
 	return 1;
 }
 
+
+
+int tlb_read_config(void* user, const char* section, const char* name, const char* value){
+
+
+	int num_cores = x86_cpu_num_cores;
+	//int num_cus = si_gpu_num_compute_units;
+	int i = 0;
+	int Sets = 0;
+	int Assoc = 0;
+	char *Policy = 0;
+	/*//int gpu_group_cache_num = (num_cus/4);
+
+
+	int Sliced = 0;
+
+	int Qty = 0;
+
+	int BlockSize = 0;
+	int Latency = 0;
+
+	int Ports = 0;
+	int MSHR = 0;
+	int DirectoryLatency = 0;
+	int WireLatency = 0;
+	int maxcoal = 0;
+	int Bus_width = 0;
+	char *temp_strn;*/
+
+	////////////////////////
+	//tlb_caches
+	////////////////////////
+
+
+	/*configure tlb caches*/
+	if(MATCH("TLB", "Sets"))
+	{
+		Sets = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			d_tlbs[i].num_sets = Sets;
+			i_tlbs[i].num_sets = Sets;
+		}
+	}
+
+	if(MATCH("TLB", "Assoc"))
+	{
+		Assoc = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			d_tlbs[i].assoc = Assoc;
+			i_tlbs[i].assoc = Assoc;
+		}
+	}
+
+	if(MATCH("TLB", "Policy"))
+	{
+		Policy = strdup(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			if(strcmp(Policy, "LRU") == 0)
+			{
+				d_tlbs[i].policy = cache_policy_lru;
+				i_tlbs[i].policy = cache_policy_lru;
+			}
+			else
+			{
+				fatal("tlb_read_config(): invalid tlb policy, check config file\n");
+			}
+		}
+	}
+
+	return 1;
+}
+
+
+
+
+
+int tlb_finish_create(void){
+
+	int num_cores = x86_cpu_num_cores;
+	//int num_cus = si_gpu_num_compute_units;
+	//int gpu_group_cache_num = (num_cus/4);
+	struct tlb_block_t *block;
+	int i = 0, set = 0, way = 0;
+	char buff[100];
+
+
+	//finish creating the CPU caches
+	for(i = 0; i < num_cores; i++)
+	{
+		/////////////
+		//I TLBs
+		/////////////
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "i_tlb[%d]", i);
+		i_tlbs[i].name = strdup(buff);
+		i_tlbs[i].id = i;
+		i_tlbs[i].tlb_type = itlb;
+		i_tlbs[i].address_size = 8;
+		i_tlbs[i].page_offset_mask = mmu_page_size - 1;
+		i_tlbs[i].page_set_mask = (i_tlbs[i].num_sets - 1) << 12;
+		i_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ i_tlbs[i].page_offset_mask ^ i_tlbs[i].page_set_mask;
+
+
+
+
+		//l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
+		//l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
+		//l1_i_caches[i].block_mask = l1_i_caches[i].block_size - 1;
+
+		//l1_i_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l1_i_caches[i].block_mask;
+
+
+		warning("page mask %u\n", i_tlbs[i].page_offset_mask);
+		warning("page set mask %u\n", i_tlbs[i].page_set_mask);
+		fatal("page tag mask %u\n", i_tlbs[i].page_tag_mask);
+
+		if(!i_tlbs[i].policy)
+		{
+			fatal("cache_finish_create(): Invalid cache policy\n");
+		}
+
+		/////////////
+		//D TLBs
+		/////////////
+
+		memset (buff,'\0' , 100);
+		snprintf(buff, 100, "d_tlb[%d]", i);
+		d_tlbs[i].name = strdup(buff);
+		d_tlbs[i].id = i;
+		d_tlbs[i].tlb_type = dtlb;
+		d_tlbs[i].address_size = 8;
+		d_tlbs[i].page_offset_mask = mmu_page_size - 1;
+		d_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ d_tlbs[i].page_offset_mask;
+
+		//warning("page mask %u\n", i_tlbs[i].page_offset_mask);
+		//fatal("page tag mask %u\n", i_tlbs[i].page_tag_mask);
+
+		if(!d_tlbs[i].policy)
+		{
+			fatal("cache_finish_create(): Invalid cache policy dtlb\n");
+		}
+
+
+		//Initialize array of sets
+		i_tlbs[i].sets = calloc(i_tlbs[i].num_sets, sizeof(struct tlb_set_t));
+		for (set = 0; set < i_tlbs[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			i_tlbs[i].sets[set].id = set;
+			i_tlbs[i].sets[set].blocks = calloc(i_tlbs[i].assoc, sizeof(struct tlb_block_t));
+			i_tlbs[i].sets[set].way_head = &i_tlbs[i].sets[set].blocks[0];
+			i_tlbs[i].sets[set].way_tail = &i_tlbs[i].sets[set].blocks[i_tlbs[i].assoc - 1];
+			for (way = 0; way < i_tlbs[i].assoc; way++)
+			{
+				block = &i_tlbs[i].sets[set].blocks[way];
+				assert(block->written == 0);
+				block->way = way;
+				block->way_prev = way ? &i_tlbs[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < i_tlbs[i].assoc - 1 ? &i_tlbs[i].sets[set].blocks[way + 1] : NULL;
+			}
+
+		}
+
+		d_tlbs[i].sets = calloc(d_tlbs[i].num_sets, sizeof(struct tlb_set_t));
+		for (set = 0; set < d_tlbs[i].num_sets; set++)
+		{
+			//Initialize array of blocks
+			d_tlbs[i].sets[set].id = set;
+			d_tlbs[i].sets[set].blocks = calloc(d_tlbs[i].assoc, sizeof(struct tlb_block_t));
+			d_tlbs[i].sets[set].way_head = &d_tlbs[i].sets[set].blocks[0];
+			d_tlbs[i].sets[set].way_tail = &d_tlbs[i].sets[set].blocks[d_tlbs[i].assoc - 1];
+			for (way = 0; way < d_tlbs[i].assoc; way++)
+			{
+				block = &d_tlbs[i].sets[set].blocks[way];
+				assert(block->written == 0);
+				block->way = way;
+				block->way_prev = way ? &d_tlbs[i].sets[set].blocks[way - 1] : NULL;
+				block->way_next = way < d_tlbs[i].assoc - 1 ? &d_tlbs[i].sets[set].blocks[way + 1] : NULL;
+			}
+
+		}
+
+	}
+
+	return 1;
+}
+
+
+
 int cache_read_config(void* user, const char* section, const char* name, const char* value){
 
 	int num_cores = x86_cpu_num_cores;
@@ -540,6 +746,7 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	////////////////////////
 	//MISC Checks
 	////////////////////////
+
 
 	if( num_cus % 4 != 0)
 	{

@@ -54,6 +54,8 @@ int stats_read_config(void* user, const char* section, const char* name, const c
 int stats_finish_create(void);
 int cache_read_config(void* user, const char* section, const char* name, const char* value);
 int cache_finish_create(void);
+int tlb_read_config(void* user, const char* section, const char* name, const char* value);
+int tlb_finish_create(void);
 int directory_read_config(void* user, const char* section, const char* name, const char* value);
 int directory_finish_create(void);
 int switch_read_config(void* user, const char* section, const char* name, const char* value);

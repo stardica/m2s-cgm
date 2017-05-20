@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <arch/x86/timing/thread.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -46,10 +47,16 @@ int page_number = 0;
 unsigned int max_2 = 0;
 unsigned int max_1 = 0;
 
+int mmu_fetch_pid = 0;
+int mmu_data_pid = 0;
+eventcount volatile *mmu_fetch_ec;
+eventcount volatile *mmu_data_ec;
+task *mmu_fetch_task;
+task *mmu_data_task;
+
 /*
  * Private variables
  */
-
 
 struct mmu_t *mmu;
 
@@ -389,24 +396,98 @@ static int mmu_page_compare(const void *ptr1, const void *ptr2)
 
 void mmu_init()
 {
+
+	int num_cores = x86_cpu_num_cores;
+	char buff[100];
+	int i = 0;
+	int j = 0;
+	int core_issue_width = x86_cpu_issue_width;
+
+	//create event counts
+	mmu_fetch_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "mmu_fetch_ec_%d", i);
+		mmu_fetch_ec[i] = *(new_eventcount(strdup(buff)));
+	}
+
+	//create event counts
+	mmu_data_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "mmu_data_ec_%d", i);
+		mmu_data_ec[i] = *(new_eventcount(strdup(buff)));
+	}
+
+	//create tasks
+	mmu_fetch_task = (void *) xcalloc(num_cores, sizeof(task));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "mmu_task_%d", i);
+		mmu_fetch_task[i] = *(create_task(mmu_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}
+
+	/*mmu_data_task = (void *) xcalloc(num_cores, sizeof(task));
+	for(i = 0; i < num_cores; i++)
+	{
+		memset(buff,'\0' , 100);
+		snprintf(buff, 100, "mmu_task_%d", i);
+		mmu_data_task[i] = *(create_task(mmu_data_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+	}*/
+
 	/* Variables derived from page size */
 	mmu_log_page_size = log_base2(mmu_page_size);
 	mmu_page_mask = mmu_page_size - 1;
 
+
 	/* Initialize */
-	mmu = xcalloc(1, sizeof(struct mmu_t));
-	mmu->page_list = list_create_with_size(MMU_PAGE_LIST_SIZE);
+	mmu = (void *) xcalloc(num_cores, sizeof(struct mmu_t));
 
-	/*star added this*/
-	mmu->guest_list = list_create();
-
-	/* Open report file */
-	if (*mmu_report_file_name)
+	for(i = 0; i < num_cores; i++)
 	{
-		mmu->report_file = file_open_for_write(mmu_report_file_name);
-		if (!mmu->report_file)
-			fatal("%s: cannot open report file for MMU", mmu_report_file_name);
+		mmu[i].id = i;
+
+		mmu[i].page_list = list_create_with_size(MMU_PAGE_LIST_SIZE);
+
+		/*star added these*/
+		//mmu->request_queue = list_create();
+		mmu[i].guest_list = list_create();
+
+		//fetch stuff
+		mmu[i].fetch_ready = 1;
+
+		//data stuff
+		mmu[i].issue_width = core_issue_width;
+		mmu[i].data_ready = (int *)xcalloc(core_issue_width, sizeof(int));
+		mmu[i].data_valid = (int *)xcalloc(core_issue_width, sizeof(int));
+		mmu[i].data_address_space_index = (int *)xcalloc(core_issue_width, sizeof(int));
+
+		//set up MMY initial state
+		for(j = 0; j < core_issue_width; j++)
+			mmu[i].data_ready[j] = 1;
+
+		mmu[i].vtl_data_address = (unsigned int *)xcalloc(core_issue_width, sizeof(unsigned int));
+		mmu[i].phy_data_address = (unsigned int *)xcalloc(core_issue_width, sizeof(unsigned int));
+
+		mmu[i].num_fault_bits = core_issue_width + 1;
+		mmu[i].fault_bits = (int *)xcalloc(mmu[i].num_fault_bits, sizeof(int));
+
+
+		/* Open report file */
+		if (*mmu_report_file_name)
+		{
+			mmu[i].report_file = file_open_for_write(mmu_report_file_name);
+			if (!mmu[i].report_file)
+				fatal("%s: cannot open report file for MMU", mmu_report_file_name);
+		}
+
+		//warning("makeing mmu %d\n", mmu[i].id);
 	}
+	//getchar();
+
 }
 
 
@@ -791,6 +872,450 @@ unsigned int mmu_reverse_translate_guest(int address_space_index, int guest_pid,
 	return guest_vtl_addr;
 }
 
+int can_access_mmu(void){
+
+	//int busy = 0;
+
+	/*//check if request queue is full
+	if(QueueSize <= list_count(thread->i_cache_ptr[thread->core->id].Rx_queue_top))
+	{
+		return 0;
+	}*/
+
+	//mmu is accessible.
+	return 0;
+}
+
+int mmu_get_free_port(struct mmu_t *mmu, unsigned int addr, int *port_num){
+
+	int i = 0;
+
+	/*mmu->data_ready[0] = 0;
+	mmu->data_ready[1] = 0;
+	mmu->data_ready[2] = 0;
+	mmu->data_ready[3] = 0;*/
+
+	for(i = 0; i < mmu->issue_width; i++)
+	{
+		if((mmu->data_ready[i] == 1) && (mmu->vtl_data_address[i] != addr))
+		{
+			*port_num = i;
+			return 1;
+		}
+
+	}
+
+	return 0;
+}
+
+
+enum uop_translation_status{
+	uop_trans_invalid = 0,
+	new_request,
+	in_process,
+	complete,
+	number_status_types
+};
+
+int mmu_is_access_pending(struct mmu_t *mmu, unsigned int addr, int address_space_index, int *port_num){
+
+	int i = 0;
+	int state = 0;
+
+	for(i = 0; i < mmu->issue_width; i++)
+	{
+		if((mmu->data_ready[i] == 0) && (mmu->data_valid[i] == 1) && (mmu->vtl_data_address[i] == addr) && (mmu->data_address_space_index[i] == address_space_index))
+		{
+			state = 1;
+			*port_num = i;
+			break;
+		}
+	}
+
+	return state;
+}
+
+int mmu_is_access_complete(struct mmu_t *mmu, unsigned int addr, int address_space_index, int *port_num){
+
+	int i = 0;
+	int state = 0;
+
+	for(i = 0; i < mmu->issue_width; i++)
+	{
+		if((mmu->data_ready[i] == 1) && (mmu->data_valid[i] == 1) && (mmu->vtl_data_address[i] == addr) && (mmu->data_address_space_index[i] == address_space_index))
+		{
+			//translation complete take the address
+			state = 1;
+			*port_num = i;
+			break;
+		}
+	}
+
+	return state;
+}
+
+enum uop_translation_status mmu_get_status(struct mmu_t *mmu, unsigned int addr, int address_space_index, int *port_num){
+
+	enum uop_translation_status status;
+
+	//is this a new access?
+	if(mmu_is_access_pending(mmu, addr, address_space_index, port_num))
+		status = in_process;
+	else if(mmu_is_access_complete(mmu, addr, address_space_index, port_num))
+		status = complete;
+	else
+		status = new_request;
+
+	return status;
+}
+
+
+
+int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
+
+	int stall = 1;
+	int port_num = -1;
+	int *port_num_ptr = &port_num;
+	enum uop_translation_status status = uop_trans_invalid;
+
+	//if(uop->id == 521)
+	//	warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+
+	//get the status
+	status = mmu_get_status(&mmu[self->core->id], uop->uinst->address, self->ctx->address_space_index, port_num_ptr);
+
+
+	//if(uop->id == 521)
+		//fatal("trans start status %d id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n",
+		//		status, uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+
+	//fatal("status is %d\n", status);
+
+	//need switch here...
+	//new access
+		//if fault quit
+		//if no port free quit
+		//if port free process
+	//in process
+		//if fault quit
+		//if in process quit
+	//complete
+		//provide translated address
+
+	switch(status)
+	{
+
+		case uop_trans_invalid:
+		case number_status_types:
+			fatal("mmu_data_translate(): Invalid access state");
+			break;
+
+		case new_request:
+
+			/*ORDER MATTERS HERE*/
+			assert(port_num == -1);
+
+			//if MMU has fault don't process
+			if(mmu_has_fault(&mmu[self->core->id]))
+			{
+				/*MMU is faulted in either i or D cache, can't process now*/
+				stall = 0;
+				return stall;
+			}
+
+			//check for free port
+			if(!mmu_get_free_port(&mmu[self->core->id], uop->uinst->address, port_num_ptr))
+			{
+				//all ports are busy
+				stall = 0;
+				return stall;
+			}
+
+			//if(uop->id == 521)
+			//	warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+
+			mmu[self->core->id].vtl_data_address[port_num] = uop->uinst->address;
+			mmu[self->core->id].data_ready[port_num] = 0;
+			mmu[self->core->id].data_valid[port_num] = 1;
+			mmu[self->core->id].data_address_space_index[port_num] = self->ctx->address_space_index;
+
+
+			advance(&mmu_fetch_ec[self->core->id]);
+			//warning("advance mmmu cycle %llu\n", P_TIME);
+			stall = 0;
+
+			//warning("starting id %llu port num %d cycle %llu\n", uop->id, port_num, P_TIME);
+
+			break;
+
+		case in_process:
+
+			assert(mmu[self->core->id].data_ready[port_num] == 0);
+			assert(mmu[self->core->id].vtl_data_address[port_num] == uop->uinst->address);
+
+			//warning("inprog id %llu port num %d cycle %llu\n", uop->id, port_num, P_TIME);
+
+			stall = 0;
+
+			break;
+
+		case complete:
+
+			//mmu complete with current translation
+			assert(uop->uinst->address == mmu[self->core->id].vtl_data_address[port_num]);
+
+			//if(uop->id == 20204)
+			//	warning("tans 0x%08x", mmu_translate(0, 0x080480cc, mmu_access_load_store));
+
+			//warning("complete id %llu op %d port num %d cycle %llu vtl 0x%08x uop phy 0x%08x mmu 0x%08x\n", uop->id, uop->uinst->opcode, port_num, P_TIME, uop->uinst->address, uop->phy_addr, mmu[self->core->id].phy_data_address[port_num]);
+
+			if(uop->phy_addr != mmu[self->core->id].phy_data_address[port_num])
+				warning("---uop %llu physical address miss match on translation cycle %llu---\n", uop->id, P_TIME);
+
+			//assert(uop->phy_addr == mmu[self->core->id].phy_data_address[port_num]);
+			mmu[self->core->id].data_valid[port_num] = 0;
+			uop->phy_addr = mmu[self->core->id].phy_data_address[port_num];
+
+			//if(uop->id == 521)
+			//	fatal("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+
+
+			/*MMU statistics*/
+			if (*mmu_report_file_name)
+				mmu_access_page(&mmu[self->core->id], uop->uinst->address, mmu_access_execute);
+
+			//fatal("complete id %llu port num %d cycle %llu uop 0x%08x mmu 0x%08x\n", uop->id, port_num, P_TIME, uop->phy_addr, mmu[self->core->id].phy_data_address[port_num]);
+			return stall;
+
+			break;
+
+	}
+
+	return stall;
+}
+
+int mmu_has_fault(struct mmu_t *mmu){
+
+	int fault_status = 0;
+	int i = 0;
+
+	for(i = 0; i < mmu->num_fault_bits; i++)
+	{
+		if(mmu->fault_bits[i] == 1)
+		{
+			fault_status = 1;
+			break;
+		}
+	}
+
+	return fault_status;
+}
+
+
+int mmu_fetch_translate(X86Thread *self, unsigned int block){
+
+	int stall = 1;
+
+	/*ORDER MATTERS HERE*/
+
+
+	//if translation complete for the current address space index then continue
+	if ((mmu[self->core->id].fetch_ready == 1) &&
+			(mmu[self->core->id].fetch_address_space_index == self->ctx->address_space_index) &&
+			(self->fetch_neip == mmu[self->core->id].vtl_fetch_address))
+	{
+		//mmu complete with current translation
+		assert(self->fetch_neip == mmu[self->core->id].vtl_fetch_address);
+		self->fetch_block = block;
+		self->fetch_address = mmu[self->core->id].phy_fetch_address;
+
+		/*MMU statistics*/
+		if (*mmu_report_file_name)
+			mmu_access_page(&mmu[self->core->id], self->fetch_address, mmu_access_execute);
+
+		return stall;
+	}
+
+	//if MMU has fault don't process
+	if(mmu_has_fault(&mmu[self->core->id]))
+	{
+		/*MMU is faulted in either i or D cache, can't process now*/
+		stall = 0;
+		return stall;
+	}
+
+
+	//compare the vtrl address to the address in the MMU
+	if((mmu[self->core->id].fetch_ready == 1) &&
+			(self->fetch_neip != mmu[self->core->id].vtl_fetch_address))
+	{
+		//warning("fetch mmu request %llu\n", P_TIME);
+
+		//mmu is ready for new translation, advance and return
+		mmu[self->core->id].vtl_fetch_address = self->fetch_neip;
+		mmu[self->core->id].fetch_ready = 0;
+		mmu[self->core->id].fetch_address_space_index = self->ctx->address_space_index;
+		advance(&mmu_fetch_ec[self->core->id]);
+		//warning("advance mmmu cycle %llu\n", P_TIME);
+		stall = 0;
+	}
+	else
+	{
+		assert(mmu[self->core->id].fetch_ready == 0);
+		assert(self->fetch_neip == mmu[self->core->id].vtl_fetch_address);
+
+		stall = 0;
+	}
+
+	return stall;
+}
+
+/*void mmu_data_ctrl(void){
+
+	int my_pid = mmu_data_pid++;
+	int num_cores = x86_cpu_num_cores;
+	long long step = 1;
+	//long long occ_start = 0;
+
+	assert(my_pid <= num_cores);
+	set_id((unsigned int)my_pid);
+
+	//unsigned int phy_address;
+	//unsigned int vtl_address;
+
+	int i = 0;
+
+	while(1)
+	{
+
+		await(&mmu_data_ec[my_pid], step); //&mmu_ec[my_pid], step);
+		step++;
+
+		fatal("data_ctrl\n");
+
+	}
+
+	fatal("mmu_data_ctrl(): out of loop\n");
+
+	return;
+}*/
+
+void mmu_ctrl(void){
+
+	//my_pid increments for the number of CPU cores. i.e. 0 - 4 for a quad core
+	int my_pid = mmu_fetch_pid++;
+	int num_cores = x86_cpu_num_cores;
+	long long step = 1;
+	//long long occ_start = 0;
+
+	assert(my_pid <= num_cores);
+	set_id((unsigned int)my_pid);
+
+	//unsigned int phy_address;
+	//unsigned int vtl_address;
+
+	int i = 0;
+	int num_translations = 0;
+	//int num_requests = 0;
+
+	//int cache_block_hit;
+	//int cache_block_state;
+	//int *cache_block_hit_ptr = &cache_block_hit;
+	//int *cache_block_state_ptr = &cache_block_state;
+	//struct cgm_packet_t *write_back_packet = NULL;
+
+	//int set = 0;
+	//int tag = 0;
+	//unsigned int offset = 0;
+	//int way = 0;
+
+	//int *set_ptr = &set;
+	//int *tag_ptr = &tag;
+	//unsigned int *offset_ptr = &offset;
+	//int *way_ptr = &way;
+
+	while(1)
+	{
+		//wait here until there is a job to do
+		await(&mmu_fetch_ec[my_pid], step); //&mmu_ec[my_pid], step);
+
+		//printf("mmu fetc %d data %d\n", mmu[my_pid].fetch_ready, mmu[my_pid].data_ready[0]);
+
+		assert(mmu[my_pid].fetch_ready == 0
+				|| mmu[my_pid].data_ready[0] == 0
+				|| mmu[my_pid].data_ready[1] == 0
+				|| mmu[my_pid].data_ready[2] == 0
+				|| mmu[my_pid].data_ready[3] == 0);
+
+		//ORDER MATTERS HERE!!!!!
+		//check caches first this "current" cpu cycle
+		//put all TLB hits in the right registers, mark complete and raise exceptions where there is a miss.
+
+		//check the I_TLB
+		if(mmu[my_pid].fetch_ready == 0)
+		{
+			//there is a fetch translation waiting....
+
+			//probe the address
+
+
+
+			mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
+			mmu[my_pid].fetch_ready = 1;
+			num_translations++;
+		}
+
+
+		//check the D_TLB
+
+
+
+
+
+
+
+
+
+		for(i = 0; i < mmu[my_pid].issue_width; i++)
+		{
+			if(mmu[my_pid].data_ready[i] == 0)
+			{
+				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store);
+				mmu[my_pid].data_ready[i] = 1;
+				num_translations++;
+			}
+		}
+
+		//if ALL hits charge single cycle and end
+		P_PAUSE(1);
+
+		//on a single TLB miss the processor will trap to OS. raise exception flag and access PTW.
+
+		/*if(num_translations > 2)
+		{
+			printf("translations %d cycle %llu\n", num_translations, P_TIME);
+			getchar();
+		}*/
+
+		step += num_translations;
+		num_translations = 0;
+
+		/*for(i = 0; i < mmu[my_pid].issue_width; i++)
+		{
+			if(mmu[my_pid].data_ready[i] == 0)
+			{
+				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store);
+				mmu[my_pid].data_ready[i] = 1;
+			}
+		}*/
+	}
+
+	fatal("mmu_fetch_ctrl(): out of loop\n");
+
+	return;
+}
+
+
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr){
 
 	struct mmu_page_t *page;
@@ -915,8 +1440,13 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	page = mmu_get_page(address_space_index, vtl_addr, access_type);
 	assert(page);
 
+
+
 	offset = vtl_addr & mmu_page_mask;
 	phy_addr = page->phy_addr | offset;
+
+	//fatal("vtl addr 0x%08x offset 0x%08x page phy addr 0x%08x phy 0x%08x \n", vtl_addr, offset, page->phy_addr, phy_addr);
+
 
 	//check for a protection fault.
 	if(page->page_type == mmu_page_text && access_type != mmu_access_fetch)
@@ -957,7 +1487,7 @@ int mmu_valid_phy_addr(unsigned int phy_addr)
 }
 
 
-void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access)
+void mmu_access_page(struct mmu_t *mmu, unsigned int phy_addr, enum mmu_access_t access)
 {
 	struct mmu_page_t *page;
 	int index;

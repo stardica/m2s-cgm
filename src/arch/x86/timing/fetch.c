@@ -60,7 +60,6 @@ static int X86ThreadCanFetch(X86Thread *self){
 	unsigned int block;
 
 
-
 	/* Context must be running */
 	if (!ctx || !X86ContextGetState(ctx, X86ContextRunning))
 		return 0;
@@ -333,21 +332,32 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 				fatal("caught the drain\n");
 			}*/
 
+			//if(uop->id == 521)
+				//fatal("fetch here\n");
+
 			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 60)
 			{
 				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
 				{
+
+					fatal("fix me\n");
 					uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
 				}
 				else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
 						|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
 				{
+
+					fatal("fix me mmu need to take care of this\n");
+
 					if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 					{
 						uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store);
 					}
 					else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 					{
+
+						fatal("fix me\n");
+
 						uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
 					}
 					else
@@ -358,6 +368,9 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 				else
 				{
 					uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
+
+					//if(uop->id == 20204)
+						//fatal("index %d uop id %llu vtl address 0x%08x phy addr 0x%08x cycle %llu\n", self->ctx->address_space_index, uop->id, uop->uinst->address, uop->phy_addr, P_TIME);
 				}
 			}
 			else
@@ -516,7 +529,7 @@ static void X86ThreadFetch(X86Thread *self)
 	X86Context *ctx = self->ctx;
 	struct x86_uop_t *uop;
 
-	unsigned int phy_addr;
+	//unsigned int phy_addr;
 	unsigned int block;
 	unsigned int target;
 
@@ -554,16 +567,35 @@ static void X86ThreadFetch(X86Thread *self)
 
 		assert(self->ctx->address_space_index == 0);
 
-		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
+		//changes here
+		//translate the address, wait for MMU to finish translation, will get run though TLB and PTW, fi faulted make no progress
+		//in the real world we would be trapping to the OS on a fault.
+		if(!mmu_fetch_translate(self, block))
+		{
+			return;
+		}
+
+
+		//warning("fetch vtl 0x%08x phy 0x%08x cycle %llu\n", self->fetch_neip, self->fetch_address, P_TIME);
+		//getchar();
+
+		//access the cache
+		//returns access ID
+		self->fetch_access = cgm_fetch_access(self, self->fetch_address);
+		self->btb_reads++;
+
+		/*phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 		self->fetch_block = block;
 		self->fetch_address = phy_addr;
 
 		self->fetch_access = cgm_fetch_access(self, phy_addr);
 		self->btb_reads++;
 
-		/* MMU statistics */
+		 MMU statistics
 		if (*mmu_report_file_name)
-			mmu_access_page(phy_addr, mmu_access_execute);
+			mmu_access_page(phy_addr, mmu_access_execute);*/
+
+
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
@@ -677,6 +709,7 @@ static void X86CoreFetch(X86Core *self)
 			{
 				self->fetch_current = (self->fetch_current + 1) % x86_cpu_num_threads;
 				thread = self->threads[self->fetch_current];
+
 				if (X86ThreadCanFetch(thread))
 				{
 					X86ThreadFetch(thread);
