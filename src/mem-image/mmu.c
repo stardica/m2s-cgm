@@ -30,7 +30,7 @@
 #include <mem-image/mmu.h>
 
 #include <cgm/cgm.h>
-
+#include <mem-image/ptw.h>
 
 /*
  * Global variables
@@ -969,7 +969,10 @@ enum uop_translation_status mmu_get_status(struct mmu_t *mmu, unsigned int addr,
 	return status;
 }
 
+void mmu_set_fetch_fault_bit(struct mmu_t *mmu, int val){
 
+	mmu->fault_bits[0] = val;
+}
 
 int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 
@@ -1211,28 +1214,25 @@ void mmu_ctrl(void){
 	assert(my_pid <= num_cores);
 	set_id((unsigned int)my_pid);
 
-	//unsigned int phy_address;
-	//unsigned int vtl_address;
-
 	int i = 0;
 	int num_translations = 0;
 	//int num_requests = 0;
 
-	//int cache_block_hit;
-	//int cache_block_state;
-	//int *cache_block_hit_ptr = &cache_block_hit;
-	//int *cache_block_state_ptr = &cache_block_state;
-	//struct cgm_packet_t *write_back_packet = NULL;
+	//int tlb_block_hit;
+	int tlb_block_state;
+	int *tlb_block_state_ptr = &tlb_block_state;
 
-	//int set = 0;
-	//int tag = 0;
-	//unsigned int offset = 0;
-	//int way = 0;
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
 
-	//int *set_ptr = &set;
-	//int *tag_ptr = &tag;
-	//unsigned int *offset_ptr = &offset;
-	//int *way_ptr = &way;
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int victim_way = 0;
 
 	while(1)
 	{
@@ -1251,63 +1251,90 @@ void mmu_ctrl(void){
 		//check caches first this "current" cpu cycle
 		//put all TLB hits in the right registers, mark complete and raise exceptions where there is a miss.
 
+		/*warning("tlb probe vtl addr in 0x%08x\n", mmu[my_pid].vtl_fetch_address);
+		warning("tag %d\n", tag);
+		warning("set %d\n", set);
+		warning("off %d\n", offset);*/
+
+
+		//warning("tlb set tag %d state %d\n", i_tlbs[my_pid].sets[set].blocks[0].tag, i_tlbs[my_pid].sets[set].blocks[0].state);*/
+
+		//fatal("done\n");
+
 		//check the I_TLB
 		if(mmu[my_pid].fetch_ready == 0)
 		{
 			//there is a fetch translation waiting....
 
 			//probe the address
+			cgm_tlb_probe_address(&i_tlbs[my_pid], mmu[my_pid].vtl_fetch_address, set_ptr, tag_ptr, offset_ptr);
+
+			/*i_tlbs[my_pid].sets[set].blocks[0].vtl_tag = tag;
+			i_tlbs[my_pid].sets[set].blocks[0].phy_page_num = 25;
+			i_tlbs[my_pid].sets[set].blocks[0].state = 1;*/
+
+			cgm_tlb_find_block(&i_tlbs[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, tlb_block_state_ptr);
+
+			switch(*tlb_block_state_ptr)
+			{
+				case cgm_tlb_block_valid:
+					//TLB hit, build the physical address, return to fetch stage*/
+
+					//mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
+					mmu[my_pid].phy_fetch_address = ((cgm_tlb_get_ppn(&i_tlbs[my_pid], tag, set, way) << i_tlbs[my_pid].page_offset_log) ^ offset);
+					mmu[my_pid].fetch_ready = 1;
+
+					//make this block the MRU
+					cgm_tlb_update_waylist(&i_tlbs[my_pid].sets[set], i_tlbs[my_pid].sets[set].way_tail, cache_waylist_head);
+
+					break;
+
+				case cgm_tlb_block_invalid:
+
+					//TLB miss raise fault flag
+					mmu_set_fetch_fault_bit(&mmu[my_pid], 1);
+
+					//find a victim in the tlb
+					victim_way = cgm_tlb_get_victim(&i_tlbs[my_pid], set, tag);
+
+					//Invalidate the victim
+					cgm_tlb_invalidate(&i_tlbs[my_pid], set, victim_way);
+
+					//set the victim transient with state and tag (this is the vtl_tag!)
+					cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_cache_block_transient);
 
 
+					advance(&ptw_ec[my_pid]);
 
-			mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
-			mmu[my_pid].fetch_ready = 1;
+					break;
+			}
+
+			//keep count of how many request there were.
 			num_translations++;
 		}
 
 
 		//check the D_TLB
 
-
-
-
-
-
-
-
-
 		for(i = 0; i < mmu[my_pid].issue_width; i++)
 		{
+
 			if(mmu[my_pid].data_ready[i] == 0)
 			{
 				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store);
 				mmu[my_pid].data_ready[i] = 1;
 				num_translations++;
 			}
+
 		}
 
 		//if ALL hits charge single cycle and end
 		P_PAUSE(1);
 
 		//on a single TLB miss the processor will trap to OS. raise exception flag and access PTW.
-
-		/*if(num_translations > 2)
-		{
-			printf("translations %d cycle %llu\n", num_translations, P_TIME);
-			getchar();
-		}*/
-
 		step += num_translations;
 		num_translations = 0;
 
-		/*for(i = 0; i < mmu[my_pid].issue_width; i++)
-		{
-			if(mmu[my_pid].data_ready[i] == 0)
-			{
-				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store);
-				mmu[my_pid].data_ready[i] = 1;
-			}
-		}*/
 	}
 
 	fatal("mmu_fetch_ctrl(): out of loop\n");

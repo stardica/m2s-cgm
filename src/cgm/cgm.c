@@ -1107,6 +1107,7 @@ void cgm_init(int argc, char **argv){
 	//init memory system structures
 	cache_init();
 	tlb_init();
+	ptw_init();
 	switch_init();
 	hub_iommu_init();
 
@@ -1758,6 +1759,9 @@ void cpu_gpu_run(void){
 
 		await(sim_start, t_1);
 		t_1++;
+
+		//for simulated cycles per second
+		last_time = get_wall_time();
 
 		m2s_loop();
 
@@ -2612,6 +2616,7 @@ void PrintCycle(void){
 
 		printf("---Total Cycles %lluM Simulated Cycles Per Sec %d---\n", P_TIME/SKIP, (int) ((curr_cycle - last_cycle)/(curr_time - last_time)));
 		fflush(stdout);
+
 
 		last_time = curr_time;
 		last_cycle = curr_cycle;

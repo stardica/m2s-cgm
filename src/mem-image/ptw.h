@@ -5,9 +5,24 @@
  *      Author: stardica
  */
 
-#ifndef SRC_MEM_IMAGE_PTW_H_
-#define SRC_MEM_IMAGE_PTW_H_
+#ifndef PTW_H_
+#define PTW_H_
+
+#include <lib/util/debug.h>
+#include <cgm/cgm-struct.h>
+#include <cgm/tasking.h>
 
 
+extern eventcount volatile *ptw_ec;
+extern task *ptw_task;
 
-#endif /* SRC_MEM_IMAGE_PTW_H_ */
+
+extern long long ptw_pid;
+
+void ptw_ctrl(void);
+
+void ptw_init(void);
+void ptw_create(void);
+
+
+#endif /* PTW_H_ */

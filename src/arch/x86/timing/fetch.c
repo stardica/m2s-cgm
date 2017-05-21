@@ -575,7 +575,6 @@ static void X86ThreadFetch(X86Thread *self)
 			return;
 		}
 
-
 		//warning("fetch vtl 0x%08x phy 0x%08x cycle %llu\n", self->fetch_neip, self->fetch_address, P_TIME);
 		//getchar();
 

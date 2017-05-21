@@ -94,6 +94,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			}
 		}
 
+
 		if(!mmu_data_translate(self, store))
 		{
 			//translate the address

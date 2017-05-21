@@ -631,11 +631,10 @@ int tlb_finish_create(void){
 		i_tlbs[i].tlb_type = itlb;
 		i_tlbs[i].address_size = 8;
 		i_tlbs[i].page_offset_mask = mmu_page_size - 1;
-		i_tlbs[i].page_set_mask = (i_tlbs[i].num_sets - 1) << 12;
+		i_tlbs[i].page_offset_log = LOG2(mmu_page_size);
+		i_tlbs[i].page_set_mask = (i_tlbs[i].num_sets - 1) << i_tlbs[i].page_offset_log;
+		i_tlbs[i].page_set_log = LOG2(i_tlbs[i].num_sets);
 		i_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ i_tlbs[i].page_offset_mask ^ i_tlbs[i].page_set_mask;
-
-
-
 
 		//l1_i_caches[i].log_block_size = LOG2(l1_i_caches[i].block_size);
 		//l1_i_caches[i].log_set_size = LOG2(l1_i_caches[i].num_sets);
@@ -644,9 +643,9 @@ int tlb_finish_create(void){
 		//l1_i_caches[i].block_address_mask = (unsigned int) 0xFFFFFFFF ^ l1_i_caches[i].block_mask;
 
 
-		warning("page mask %u\n", i_tlbs[i].page_offset_mask);
-		warning("page set mask %u\n", i_tlbs[i].page_set_mask);
-		fatal("page tag mask %u\n", i_tlbs[i].page_tag_mask);
+		//warning("page mask %u\n", i_tlbs[i].page_offset_mask);
+		//warning("page set mask %u\n", i_tlbs[i].page_set_mask);
+		//fatal("page tag mask %u\n", i_tlbs[i].page_tag_mask);
 
 		if(!i_tlbs[i].policy)
 		{
@@ -664,7 +663,8 @@ int tlb_finish_create(void){
 		d_tlbs[i].tlb_type = dtlb;
 		d_tlbs[i].address_size = 8;
 		d_tlbs[i].page_offset_mask = mmu_page_size - 1;
-		d_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ d_tlbs[i].page_offset_mask;
+		d_tlbs[i].page_set_mask = (d_tlbs[i].num_sets - 1) << 12;
+		d_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ d_tlbs[i].page_offset_mask ^ d_tlbs[i].page_set_mask;
 
 		//warning("page mask %u\n", i_tlbs[i].page_offset_mask);
 		//fatal("page tag mask %u\n", i_tlbs[i].page_tag_mask);

@@ -61,6 +61,7 @@ enum cgm_tlb_block_state_t{
 
 	cgm_tlb_block_invalid = 0,
 	cgm_tlb_block_valid,
+	cgm_tlb_block_transient,
 	cgm_tlb_block_state_num
 };
 
@@ -273,13 +274,17 @@ struct tlb_block_t{
 	struct tlb_block_t *way_next;
 	struct tlb_block_t *way_prev;
 
-	int tag;
+	int vtl_tag;
+	int tran_tag;
+	int phy_page_num;
 	int set;
 	int way;
 	unsigned int address;
 	int written;
 
 	enum cgm_tlb_block_state_t state;
+	enum cgm_tlb_block_state_t transient_state;
+
 };
 
 struct tlb_set_t{
@@ -353,8 +358,10 @@ struct tlb_t{
 	//cache data
 	struct tlb_set_t *sets;
 	unsigned int page_offset_mask;
-	unsigned int page_tag_mask;
+	unsigned int page_offset_log;
 	unsigned int page_set_mask;
+	unsigned int page_set_log;
+	unsigned int page_tag_mask;
 	int log_page_size;
 
 };

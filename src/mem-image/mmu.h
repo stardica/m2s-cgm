@@ -25,6 +25,8 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/timing/uop.h>
 
+
+
 /* Local constants */
 #define MMU_PAGE_HASH_SIZE  (1 << 10) /*1024*/
 #define MMU_PAGE_LIST_SIZE  (1 << 10) /*1024*/
@@ -177,6 +179,8 @@ void mmu_ctrl(void);
 int mmu_has_fault(struct mmu_t *mmu);
 int mmu_fetch_translate(X86Thread *self, unsigned int block);
 int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop);
+
+void mmu_set_fetch_fault_bit(struct mmu_t *mmu, int val);
 
 
 int can_access_mmu(void);
