@@ -94,6 +94,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			}
 		}
 
+		assert(store->phy_address_ready == 0);
 
 		if(!mmu_data_translate(self, store))
 		{
@@ -102,6 +103,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			linked_list_next(sq);
 			continue;
 		}
+
 
 
 		/*old M2S code...
@@ -241,18 +243,24 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		//printf("load id %llu cycle %llu\n", load->id, P_TIME);
 
+		assert(load->phy_address_ready == 0);
+
 		if (!load->ready && !X86ThreadIsUopReady(self, load))
 		{
 			linked_list_next(lq);
 			continue;
 		}
-		else if(!mmu_data_translate(self, load))
+
+		if(!mmu_data_translate(self, load))
 		{
 			//translate the address
 			//warning("looping id %llu cycle %llu\n", load->id, P_TIME);
 			linked_list_next(lq);
 			continue;
 		}
+
+		//if(load->id == 2)
+		//	fatal("in issue\n");
 
 		//Dependencies satisfied and address translation complete.
 		//uop is ready to go to cache.
@@ -292,6 +300,9 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		{
 			load->protection_fault = 1;
 		}*/
+
+		printf("performing a load cycle %llu\n", P_TIME);
+
 
 		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
 		{

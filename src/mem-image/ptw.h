@@ -11,6 +11,8 @@
 #include <lib/util/debug.h>
 #include <cgm/cgm-struct.h>
 #include <cgm/tasking.h>
+#include <cgm/cgm.h>
+#include <mem-image/tlb.h>
 
 
 extern eventcount volatile *ptw_ec;
@@ -22,7 +24,7 @@ extern long long ptw_pid;
 void ptw_ctrl(void);
 
 void ptw_init(void);
-void ptw_create(void);
+//void ptw_create(void);
 
 
 #endif /* PTW_H_ */

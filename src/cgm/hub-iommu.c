@@ -556,6 +556,9 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 	int gpu_group_cache_num = (num_cus/4);
 	int last_queue_num = -1;
 
+	int pf = 0;
+	int *pfptr = &pf;
+
 	//get the number of the last queue
 	last_queue_num = str_map_string(&Rx_queue_strn_map, hub_iommu->last_queue->name);
 
@@ -566,7 +569,7 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS vtl address in 0x%08x access type %s id %llu\n",
 					message_packet->address, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
-		message_packet->address = mmu_translate(1, message_packet->address, mmu_access_gpu);
+		message_packet->address = mmu_translate(1, message_packet->address, mmu_access_gpu, pfptr);
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}

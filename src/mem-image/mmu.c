@@ -54,6 +54,8 @@ eventcount volatile *mmu_data_ec;
 task *mmu_fetch_task;
 task *mmu_data_task;
 
+long long mmu_access_id = 0;
+
 /*
  * Private variables
  */
@@ -237,7 +239,7 @@ int mmu_search_page(struct mmu_page_t *page, enum mmu_address_type_t addr_type, 
 }
 
 
-struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type)
+struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, enum mmu_access_t access_type, int *page_fault_ptr)
 {
 	struct mmu_page_t *prev = NULL;
 	struct mmu_page_t *page = NULL;
@@ -354,6 +356,7 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	else
 	{
 		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
+		*page_fault_ptr = 1;
 	}
 
 	/* Locate page at the head of the hash table for faster subsequent lookup */
@@ -972,6 +975,15 @@ enum uop_translation_status mmu_get_status(struct mmu_t *mmu, unsigned int addr,
 void mmu_set_fetch_fault_bit(struct mmu_t *mmu, int val){
 
 	mmu->fault_bits[0] = val;
+
+	return;
+}
+
+void mmu_set_data_fault_bit(struct mmu_t *mmu, int row, int val){
+
+	mmu->fault_bits[row] = val;
+
+	return;
 }
 
 int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
@@ -980,9 +992,6 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 	int port_num = -1;
 	int *port_num_ptr = &port_num;
 	enum uop_translation_status status = uop_trans_invalid;
-
-	//if(uop->id == 521)
-	//	warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
 
 	//get the status
 	status = mmu_get_status(&mmu[self->core->id], uop->uinst->address, self->ctx->address_space_index, port_num_ptr);
@@ -1014,6 +1023,8 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 			break;
 
 		case new_request:
+
+			warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
 
 			/*ORDER MATTERS HERE*/
 			assert(port_num == -1);
@@ -1053,6 +1064,9 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 
 		case in_process:
 
+			if(uop->id == 52)
+				printf("tans 52 pending 0x%08x cycle %llu\n", uop->uinst->address, P_TIME);
+
 			assert(mmu[self->core->id].data_ready[port_num] == 0);
 			assert(mmu[self->core->id].vtl_data_address[port_num] == uop->uinst->address);
 
@@ -1067,17 +1081,27 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 			//mmu complete with current translation
 			assert(uop->uinst->address == mmu[self->core->id].vtl_data_address[port_num]);
 
-			//if(uop->id == 20204)
-			//	warning("tans 0x%08x", mmu_translate(0, 0x080480cc, mmu_access_load_store));
+			//warning("here id %llu cycle %llu\n", uop->id, P_TIME);
+
+
+
+			if(uop->id == 52)
+				fatal("tans complete\n");
 
 			//warning("complete id %llu op %d port num %d cycle %llu vtl 0x%08x uop phy 0x%08x mmu 0x%08x\n", uop->id, uop->uinst->opcode, port_num, P_TIME, uop->uinst->address, uop->phy_addr, mmu[self->core->id].phy_data_address[port_num]);
 
-			if(uop->phy_addr != mmu[self->core->id].phy_data_address[port_num])
-				warning("---uop %llu physical address miss match on translation cycle %llu---\n", uop->id, P_TIME);
+			//if(uop->phy_addr != mmu[self->core->id].phy_data_address[port_num])
+			//{
+			//	warning("---uop %llu physical address miss match on translation uop->phy_addr 0x%08x trans 0x%08x cycle %llu---\n", uop->id, uop->phy_addr, mmu[self->core->id].phy_data_address[port_num], P_TIME);
+			//	getchar();
+			//}
 
 			//assert(uop->phy_addr == mmu[self->core->id].phy_data_address[port_num]);
 			mmu[self->core->id].data_valid[port_num] = 0;
 			uop->phy_addr = mmu[self->core->id].phy_data_address[port_num];
+
+			warning("MMU trans complete id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+
 
 			//if(uop->id == 521)
 			//	fatal("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
@@ -1234,6 +1258,8 @@ void mmu_ctrl(void){
 
 	int victim_way = 0;
 
+	//int i_tlb = 0;
+
 	while(1)
 	{
 		//wait here until there is a job to do
@@ -1261,10 +1287,14 @@ void mmu_ctrl(void){
 
 		//fatal("done\n");
 
+
 		//check the I_TLB
 		if(mmu[my_pid].fetch_ready == 0)
 		{
 			//there is a fetch translation waiting....
+
+			//warning("mmu translate 0x%08x cycle %llu\n", mmu[my_pid].vtl_fetch_address, P_TIME);
+
 
 			//probe the address
 			cgm_tlb_probe_address(&i_tlbs[my_pid], mmu[my_pid].vtl_fetch_address, set_ptr, tag_ptr, offset_ptr);
@@ -1273,15 +1303,22 @@ void mmu_ctrl(void){
 			i_tlbs[my_pid].sets[set].blocks[0].phy_page_num = 25;
 			i_tlbs[my_pid].sets[set].blocks[0].state = 1;*/
 
-			cgm_tlb_find_block(&i_tlbs[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, tlb_block_state_ptr);
+			//warning("mmu probe tag %d set %d way %d\n", tag, set, way);
+
+
+			cgm_tlb_find_entry(&i_tlbs[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, tlb_block_state_ptr);
 
 			switch(*tlb_block_state_ptr)
 			{
 				case cgm_tlb_block_valid:
-					//TLB hit, build the physical address, return to fetch stage*/
+					//TLB hit, build the physical address, return to fetch stage*/8
 
 					//mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
 					mmu[my_pid].phy_fetch_address = ((cgm_tlb_get_ppn(&i_tlbs[my_pid], tag, set, way) << i_tlbs[my_pid].page_offset_log) ^ offset);
+
+					//warning("mmu: translated address is 0x%08x\n", mmu[my_pid].phy_fetch_address);
+					//getchar();
+
 					mmu[my_pid].fetch_ready = 1;
 
 					//make this block the MRU
@@ -1290,6 +1327,8 @@ void mmu_ctrl(void){
 					break;
 
 				case cgm_tlb_block_invalid:
+
+					//warning("i tlb miss\n");
 
 					//TLB miss raise fault flag
 					mmu_set_fetch_fault_bit(&mmu[my_pid], 1);
@@ -1300,10 +1339,12 @@ void mmu_ctrl(void){
 					//Invalidate the victim
 					cgm_tlb_invalidate(&i_tlbs[my_pid], set, victim_way);
 
+					//warning("mmu victim is set %d way %d\n", set, victim_way);
+
 					//set the victim transient with state and tag (this is the vtl_tag!)
-					cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_cache_block_transient);
+					//cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_tlb_block_transient);
 
-
+					//proceed to PTW
 					advance(&ptw_ec[my_pid]);
 
 					break;
@@ -1313,20 +1354,105 @@ void mmu_ctrl(void){
 			num_translations++;
 		}
 
+		tag = set = way = 0;
 
 		//check the D_TLB
-
 		for(i = 0; i < mmu[my_pid].issue_width; i++)
 		{
-
 			if(mmu[my_pid].data_ready[i] == 0)
 			{
-				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store);
-				mmu[my_pid].data_ready[i] = 1;
+
+				if(mmu[my_pid].vtl_data_address[i] == 0xbffefff4)
+					fatal("mmu D translate 0x%08x cycle %llu\n", mmu[my_pid].vtl_data_address[i], P_TIME);
+
+				//probe the address
+				cgm_tlb_probe_address(&d_tlbs[my_pid], mmu[my_pid].vtl_data_address[i], set_ptr, tag_ptr, offset_ptr);
+
+				//warning("mmu probe tag %d set %d way %d\n", tag, set, way);
+				cgm_tlb_find_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, offset_ptr, way_ptr, tlb_block_state_ptr);
+
+
+				switch(*tlb_block_state_ptr)
+				{
+					case cgm_tlb_block_valid:
+						//TLB hit, build the physical address, return to fetch stage*/8
+
+						//mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
+						mmu[my_pid].phy_data_address[i] = ((cgm_tlb_get_ppn(&d_tlbs[my_pid], tag, set, way) << d_tlbs[my_pid].page_offset_log) ^ offset);
+
+						warning("mmu: translated address is 0x%08x\n", mmu[my_pid].phy_data_address[i]);
+						//getchar();
+
+						mmu[my_pid].data_ready[i] = 1;
+
+						//make this block the MRU
+						cgm_tlb_update_waylist(&d_tlbs[my_pid].sets[set], d_tlbs[my_pid].sets[set].way_tail, cache_waylist_head);
+
+						break;
+
+					case cgm_tlb_block_invalid:
+
+						warning("D tlb miss cycle %llu\n", P_TIME);
+
+						//look for matching block in transient state
+						//if there is one break and wait for retry
+						int err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+
+						warning("D tlb checking for transient access err %d set %d tag %d way %d cycle %llu\n", err, tag, set, way, P_TIME);
+
+						//break only if a match was found!
+						if(err)
+						{
+							warning("let me guess err %d !err %d cycle %llu\n", err, !err, P_TIME);
+
+							break;
+						}
+
+						//TLB miss raise fault flag
+						mmu_set_data_fault_bit(&mmu[my_pid], (i+1), 1);
+
+						//find a victim in the tlb
+						victim_way = cgm_tlb_get_victim(&d_tlbs[my_pid], set, tag);
+
+						warning("D tlb victim set %d tag %d way %d cycle %llu\n", set, tag, victim_way, P_TIME);
+
+						//Invalidate the victim
+						cgm_tlb_invalidate(&d_tlbs[my_pid], set, victim_way);
+
+						//warning("mmu victim is set %d way %d\n", set, victim_way);
+
+						//set the victim transient with state and tag (this is the vtl_tag!)
+						//cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_tlb_block_transient);
+
+						//proceed to PTW
+						advance(&ptw_ec[my_pid]);
+
+						break;
+				}
+
+
+				// ---------------------------------------------- for each data translation request from issue stage try to translate the address.
+
+				//int pf = 0;
+				//int *pfptr = &pf;
+				//mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store, pfptr);
+				//mmu[my_pid].data_ready[i] = 1;
+
+
+				//proceed to PTW
+				//advance(&ptw_ec[my_pid]);
+
 				num_translations++;
+				fflush(stderr);
+				//getchar();
+
 			}
 
+			tag = set = way = 0;
+
 		}
+
+
 
 		//if ALL hits charge single cycle and end
 		P_PAUSE(1);
@@ -1446,7 +1572,7 @@ struct mmu_page_t *mmu_create_page(int address_space_index, unsigned int tag, en
 
 
 
-unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type)
+unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum mmu_access_t access_type, int *page_fault_ptr)
 {
 	struct mmu_page_t *page;
 
@@ -1464,7 +1590,7 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	//printf("address_space_index %d\n", address_space_index);
 	//assert(address_space_index == 0);
 
-	page = mmu_get_page(address_space_index, vtl_addr, access_type);
+	page = mmu_get_page(address_space_index, vtl_addr, access_type, page_fault_ptr);
 	assert(page);
 
 

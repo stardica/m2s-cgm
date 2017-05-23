@@ -123,7 +123,9 @@ static int X86ThreadCanFetch(X86Thread *self){
 		fflush(stdout);
 		getchar();*/
 
-		phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
+
+
+		phy_addr = 0xFFFFFFFF; //mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
 #if CGM
 		//if (!cgm_can_fetch_access(self->i_cache_ptr, phy_addr))
 		if (!cgm_can_fetch_access(self, phy_addr))
@@ -335,13 +337,16 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			//if(uop->id == 521)
 				//fatal("fetch here\n");
 
+			//int pf = 0;
+			//int *pfptr = &pf;
+
 			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 60)
 			{
 				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
 				{
 
-					fatal("fix me\n");
-					uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
+					fatal("fix me in mmu\n");
+					//uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
 				}
 				else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
 						|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
@@ -351,14 +356,14 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 					if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 					{
-						uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store);
+						//uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store, pfptr);
 					}
 					else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 					{
 
-						fatal("fix me\n");
+						fatal("fix me in mmu\n");
 
-						uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store);
+						//uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
 					}
 					else
 					{
@@ -367,7 +372,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 				}
 				else
 				{
-					uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store);
+					//uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store, pfptr);
 
 					//if(uop->id == 20204)
 						//fatal("index %d uop id %llu vtl address 0x%08x phy addr 0x%08x cycle %llu\n", self->ctx->address_space_index, uop->id, uop->uinst->address, uop->phy_addr, P_TIME);

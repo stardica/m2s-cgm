@@ -43,6 +43,21 @@ void tlb_create(void){
 	return;
 }
 
+void cgm_tlb_set_entry(struct tlb_t *tlb, int vtl_tag, int set, int way, unsigned int phy_tag){
+
+	//clear tran state
+	tlb->sets[set].blocks[way].transient_state = cgm_tlb_block_invalid;
+
+	//set entry state, vtl tag and phy tag
+	tlb->sets[set].blocks[way].state = cgm_tlb_block_valid;
+	tlb->sets[set].blocks[way].vtl_tag = vtl_tag;
+	tlb->sets[set].blocks[way].phy_page_num = (unsigned int) phy_tag;
+
+	//Remember offset is always available in both phy and vtl addresses.
+
+	return;
+}
+
 void cgm_tlb_set_tran_state(struct tlb_t *tlb, int set, int tag, int way, enum cgm_tlb_block_state_t tran_state){
 
 	tlb->sets[set].blocks[way].transient_state = tran_state;
@@ -113,7 +128,7 @@ void cgm_tlb_update_waylist(struct tlb_set_t *set, struct tlb_block_t *blk, enum
 	return;
 }
 
-int cgm_tlb_get_victim(struct tlb_t *tlb, int set, int phy_tag){
+int cgm_tlb_get_victim(struct tlb_t *tlb, int set, int vtl_tag){
 
 	int i = 0;
 
@@ -131,8 +146,8 @@ int cgm_tlb_get_victim(struct tlb_t *tlb, int set, int phy_tag){
 		{
 			if(block->transient_state == cgm_tlb_block_invalid)
 			{
-				block->transient_state = cgm_cache_block_transient;
-				block->tran_tag = phy_tag;
+				block->transient_state = cgm_tlb_block_transient;
+				block->tran_tag = vtl_tag;
 				break;
 			}
 
@@ -174,7 +189,7 @@ unsigned int cgm_tlb_get_ppn(struct tlb_t *tlb, int tag, int set, int way){
 	return (unsigned int) tlb->sets[set].blocks[way].phy_page_num;
 }
 
-int cgm_tlb_find_block(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
+int cgm_tlb_find_entry(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, unsigned int *offset_ptr, int *way_ptr, int *state_ptr){
 
 	int set, tag, way;
 	//unsigned int offset;
@@ -205,6 +220,43 @@ int cgm_tlb_find_block(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, unsigned i
 	return 0;
 }
 
+int cgm_tlb_get_tag(struct tlb_t *tlb, unsigned int addr){
+
+	return (addr >> (tlb->page_set_log + tlb->page_offset_log));
+}
+
+int cgm_tlb_get_ppn_tag(struct tlb_t *tlb, unsigned int addr){
+
+	return addr >> tlb->page_offset_log;
+}
+
+
+int cgm_tlb_find_transient_entry(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, int *way_ptr){
+
+	int set, tag, way;
+
+	/* Locate block */
+	tag = *(tag_ptr);
+	set = *(set_ptr);
+
+	for (way = 0; way < tlb->assoc; way++)
+	{
+
+		//printf("looking for %d found tag %d state %d\n", tag, tlb->sets[set].blocks[way].tran_tag, tlb->sets[set].blocks[way].transient_state);
+
+		if (tlb->sets[set].blocks[way].tran_tag == tag && tlb->sets[set].blocks[way].transient_state == cgm_tlb_block_transient)
+		{
+			/* Block found */
+			*(way_ptr) = way;
+			return 1;
+		}
+	}
+
+
+	assert(way == tlb->assoc);
+	return 0;
+}
+
 
 /* Return {tag, set, offset} for a given address */
 void cgm_tlb_probe_address(struct tlb_t *tlb, unsigned int addr, int *set_ptr, int *tag_ptr, unsigned int *offset_ptr)
@@ -216,7 +268,11 @@ void cgm_tlb_probe_address(struct tlb_t *tlb, unsigned int addr, int *set_ptr, i
 	unsigned int tag_size = 0xFFFFFFFF;
 	tag_size = tag_size >> (tlb->page_set_log + tlb->page_offset_log);
 
-	assert(*(tag_ptr) >= 0 && *(tag_ptr) < tag_size);
+	//warning("tag value %u tag size %u\n", *tag_ptr, tag_size);
+	assert((unsigned int)*(tag_ptr) >= 0 && (unsigned int)*(tag_ptr) < tag_size);
+
+	//warning("addr 0x%08x set value %u set size %u tlb page set mask 0x%08x page offset log %d\n", addr, *set_ptr, tlb->num_sets, tlb->page_set_mask, tlb->page_offset_log);
+
 	assert(*(set_ptr) >= 0 && *(set_ptr) < tlb->num_sets);
 	assert(*(offset_ptr) >=0 && *(offset_ptr) <= tlb->page_offset_mask);
 

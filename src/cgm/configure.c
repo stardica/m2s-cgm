@@ -663,7 +663,9 @@ int tlb_finish_create(void){
 		d_tlbs[i].tlb_type = dtlb;
 		d_tlbs[i].address_size = 8;
 		d_tlbs[i].page_offset_mask = mmu_page_size - 1;
-		d_tlbs[i].page_set_mask = (d_tlbs[i].num_sets - 1) << 12;
+		d_tlbs[i].page_offset_log = LOG2(mmu_page_size);
+		d_tlbs[i].page_set_mask = (d_tlbs[i].num_sets - 1) << d_tlbs[i].page_offset_log;
+		d_tlbs[i].page_set_log = LOG2(d_tlbs[i].num_sets);
 		d_tlbs[i].page_tag_mask = (unsigned int) 0xFFFFFFFF ^ d_tlbs[i].page_offset_mask ^ d_tlbs[i].page_set_mask;
 
 		//warning("page mask %u\n", i_tlbs[i].page_offset_mask);
