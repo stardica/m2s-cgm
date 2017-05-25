@@ -34,8 +34,9 @@ void cgm_tlb_invalidate(struct tlb_t *tlb, int set, int way);
 void cgm_tlb_set_entry(struct tlb_t *tlb, int vtl_tag, int set, int way, unsigned int phy_tag);
 int cgm_tlb_get_ppn_tag(struct tlb_t *tlb, unsigned int addr);
 void tlb_dump_set(struct tlb_t *tlb, int set);
+int cgm_tlb_get_block_usage(struct tlb_t *tlb);
 
-
+//CGM_STATS(cgm_stats_file, "l1_i_%d_CacheUtilization = %0.2f\n", i, ((double) blocks_written)/(double) (l1_i_caches[i].num_sets * l1_i_caches[i].assoc));
 
 
 #endif /* TLB_H_ */

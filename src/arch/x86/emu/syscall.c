@@ -5694,6 +5694,9 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 {
 
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
 	/*this syscall represents the end of the parallel section of the benchmark
 	we need to save away the current stats which contains the parallel section stats.
 	Then reset all stats and commence taking stats for the wrapup section*/
@@ -5708,8 +5711,25 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	{
 		printf("---Quick Dump System Cycle %llu---\n", P_TIME);
 
-		printf("fetches %llu loads %llu stores %llu\n",
-				mem_system_stats->cpu_total_fetch_requests, mem_system_stats->cpu_total_load_requests, mem_system_stats->cpu_total_store_requests);
+
+		printf("TLB utilization:\n");
+
+		for(i=0;i<num_cores;i++)
+			printf("core %d i_tlb %0.2f d_tlb %0.2f\n", i,
+					(double)cgm_tlb_get_block_usage(&i_tlbs[i])/(double) (i_tlbs[i].num_sets * i_tlbs[i].assoc),
+					(double)cgm_tlb_get_block_usage(&d_tlbs[i])/(double) (d_tlbs[i].num_sets * d_tlbs[i].assoc));
+
+		printf("TLB Miss Rate:\n");
+
+		for(i=0;i<num_cores;i++)
+			printf("core %d i_tlb %0.8f d_tlb %0.8f\n", i,
+					(double)i_tlbs[i].misses/((double)(i_tlbs[i].hits - i_tlbs[i].misses)),
+					(double)d_tlbs[i].misses/((double)(d_tlbs[i].hits - d_tlbs[i].misses)));
+
+		//printf
+
+		//printf("fetches %llu loads %llu stores %llu\n",
+		//		mem_system_stats->cpu_total_fetch_requests, mem_system_stats->cpu_total_load_requests, mem_system_stats->cpu_total_store_requests);
 
 		//mark that sim finished successfully
 		cgm_stat->execution_success = 1;

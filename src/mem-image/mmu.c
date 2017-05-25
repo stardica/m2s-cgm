@@ -1350,6 +1350,8 @@ void mmu_ctrl(void){
 
 					mmu[my_pid].fetch_ready = 1;
 
+					i_tlbs[my_pid].hits++;
+
 					mmu_set_fetch_fault_bit(&mmu[my_pid], 0);
 
 					//make this block the MRU
@@ -1374,6 +1376,9 @@ void mmu_ctrl(void){
 
 					//set the victim transient with state and tag (this is the vtl_tag!)
 					//cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_tlb_block_transient);
+
+					/*stats*/
+					i_tlbs[my_pid].misses++;
 
 
 					//proceed to PTW
@@ -1423,6 +1428,8 @@ void mmu_ctrl(void){
 
 						mmu_set_data_fault_bit(&mmu[my_pid], (i+1), 0);
 
+						d_tlbs[my_pid].hits++;
+
 						//fatal("fault bit %d\n", mmu[my_pid].fault_bits[i+1]);
 
 						//make this block the MRU
@@ -1436,6 +1443,15 @@ void mmu_ctrl(void){
 
 						err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
 
+						/*stats*/
+						d_tlbs[my_pid].misses++;
+
+
+						//printf("core %d hits %llu misses %llu i_tlb %0.2f hits %llu misses %llu d_tlb %0.2f\n", my_pid,
+						//		i_tlbs[my_pid].hits, i_tlbs[my_pid].misses,
+						//		(double)i_tlbs[my_pid].misses/((double)(i_tlbs[my_pid].hits - i_tlbs[my_pid].misses)),
+						//		d_tlbs[my_pid].hits, d_tlbs[my_pid].misses,
+						//		(double)d_tlbs[my_pid].misses/((double)(d_tlbs[my_pid].hits - d_tlbs[my_pid].misses)));
 
 						//look for matching block in transient state
 						//if there is one break and wait for retry

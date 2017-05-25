@@ -355,6 +355,9 @@ struct tlb_t{
 	enum tlb_policy_t policy;
 	char * policy_type;
 
+	long long hits;
+	long long misses;
+
 	//cache data
 	struct tlb_set_t *sets;
 	unsigned int page_offset_mask;

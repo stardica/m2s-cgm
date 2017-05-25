@@ -53,6 +53,8 @@ void cgm_tlb_set_entry(struct tlb_t *tlb, int vtl_tag, int set, int way, unsigne
 	tlb->sets[set].blocks[way].vtl_tag = vtl_tag;
 	tlb->sets[set].blocks[way].phy_page_num = (unsigned int) phy_tag;
 
+	tlb->sets[set].blocks[way].written = 1;
+
 	//Remember offset is always available in both phy and vtl addresses.
 
 	return;
@@ -240,6 +242,26 @@ void tlb_dump_set(struct tlb_t *tlb, int set){
 				tlb->sets[set].blocks[i].tran_tag, tlb->sets[set].blocks[i].transient_state);
 
 	return;
+}
+
+int cgm_tlb_get_block_usage(struct tlb_t *tlb){
+
+	int count = 0;
+	int set = 0;
+	int way = 0;
+
+	for (set = 0; set < tlb->num_sets; set++)
+	{
+		for (way = 0; way < tlb->assoc; way++)
+		{
+			if(tlb->sets[set].blocks[way].written == 1)
+			{
+				count++;
+			}
+		}
+	}
+
+	return count;
 }
 
 
