@@ -42,6 +42,15 @@ void ptw_init(void){
 	return;
 }
 
+void ptw_clear_mmu_fault_bits(struct mmu_t *mmu){
+
+	int i = 0;
+
+	for (i = 0; i < (mmu->issue_width + 1); i++)
+		mmu->fault_bits[i] = 0;
+
+	return;
+}
 
 void ptw_ctrl(void){
 
@@ -72,7 +81,9 @@ void ptw_ctrl(void){
 
 	int num_advances = 0;
 
-	//long long stall_time = 0;
+	int num_faults = 0;
+
+	int err = 0;
 
 	while(1)
 	{
@@ -106,7 +117,11 @@ void ptw_ctrl(void){
 			//warning("PTW probe tag %d set %d way %d\n", tag, set, way);
 
 			//find the transient line in the TLB
-			int err = cgm_tlb_find_transient_entry(&i_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+			err = cgm_tlb_find_transient_entry(&i_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+
+			if(err != 1)
+				tlb_dump_set(&i_tlbs[my_pid], set);
+
 			assert(err == 1);
 
 			/*feels weird that this should be invalid, but remember that execution has stopped because of the TLB miss*/
@@ -117,18 +132,15 @@ void ptw_ctrl(void){
 
 			//warning("setting phy tag %d on set %d way %d\n", cgm_tlb_get_ppn_tag(&i_tlbs[my_pid], mmu[my_pid].phy_fetch_address), set, way);
 
+			//mmu[my_pid].fault_bits[0] = 0;
 
 			if(page_fault)
-				P_PAUSE(6000);
-			else
-				P_PAUSE(8);
-
-			mmu[my_pid].fault_bits[0] = 0;
+				num_faults++;
 
 			//warning("advancing MMU\n");
 
 			//Advance the MMU for retry
-			advance(&mmu_fetch_ec[my_pid]);
+			//advance(&mmu_ec[my_pid]);
 
 			num_advances++;
 			page_fault = 0;
@@ -156,7 +168,11 @@ void ptw_ctrl(void){
 				//warning("PTW probe tag %d set %d way %d\n", tag, set, way);
 
 				//find the transient line in the TLB
-				int err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+				err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+
+				if(err != 1)
+					tlb_dump_set(&d_tlbs[my_pid], set);
+
 				assert(err == 1);
 
 
@@ -169,25 +185,39 @@ void ptw_ctrl(void){
 				//warning("setting phy tag %d on set %d way %d\n", cgm_tlb_get_ppn_tag(&i_tlbs[my_pid], mmu[my_pid].phy_fetch_address), set, way);
 
 
-				if(page_fault)
-					P_PAUSE(6000);
-				else
-					P_PAUSE(8);
+				//if(page_fault)
+				//	num_faults++;
 
-				mmu[my_pid].fault_bits[i] = 0;
+				//mmu[my_pid].fault_bits[i] = 0;
 
 				//warning("advancing MMU\n");
 
 				//Advance the MMU for retry
-				advance(&mmu_fetch_ec[my_pid]);
+				//advance(&mmu_ec[my_pid]);
 
 				num_advances++;
-				page_fault = 0;
+				//page_fault = 0;
 			}
+
 		}
 
+		if(page_fault > 0)
+			P_PAUSE(6000);
+		else
+			P_PAUSE(8);
+
+		//mmu[my_pid].fault_bits[0] = 0;
+
+		//Advance the MMU for retry
+
+		for(i=0; i < num_advances; i++)
+			advance(&mmu_ec[my_pid]);
+
 		step += num_advances;
+		//step++;
+		//assert(page_fault == 0);
 		num_advances = 0;
+		page_fault = 0;
 
 	}
 

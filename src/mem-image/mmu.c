@@ -49,10 +49,10 @@ unsigned int max_1 = 0;
 
 int mmu_fetch_pid = 0;
 int mmu_data_pid = 0;
-eventcount volatile *mmu_fetch_ec;
-eventcount volatile *mmu_data_ec;
-task *mmu_fetch_task;
-task *mmu_data_task;
+eventcount volatile *mmu_ec;
+//eventcount volatile *mmu_data_ec;
+task *mmu_task;
+//task *mmu_data_task;
 
 long long mmu_access_id = 0;
 
@@ -407,30 +407,30 @@ void mmu_init()
 	int core_issue_width = x86_cpu_issue_width;
 
 	//create event counts
-	mmu_fetch_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
+	mmu_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
 	for(i = 0; i < num_cores; i++)
 	{
 		memset(buff,'\0' , 100);
-		snprintf(buff, 100, "mmu_fetch_ec_%d", i);
-		mmu_fetch_ec[i] = *(new_eventcount(strdup(buff)));
+		snprintf(buff, 100, "mmu_ec_%d", i);
+		mmu_ec[i] = *(new_eventcount(strdup(buff)));
 	}
 
 	//create event counts
-	mmu_data_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
-	for(i = 0; i < num_cores; i++)
-	{
-		memset(buff,'\0' , 100);
-		snprintf(buff, 100, "mmu_data_ec_%d", i);
-		mmu_data_ec[i] = *(new_eventcount(strdup(buff)));
-	}
+	//mmu_data_ec = (void *) xcalloc(num_cores, sizeof(eventcount));
+	//for(i = 0; i < num_cores; i++)
+	//{
+	//	memset(buff,'\0' , 100);
+	//	snprintf(buff, 100, "mmu_data_ec_%d", i);
+	//	mmu_data_ec[i] = *(new_eventcount(strdup(buff)));
+	//}
 
 	//create tasks
-	mmu_fetch_task = (void *) xcalloc(num_cores, sizeof(task));
+	mmu_task = (void *) xcalloc(num_cores, sizeof(task));
 	for(i = 0; i < num_cores; i++)
 	{
 		memset(buff,'\0' , 100);
 		snprintf(buff, 100, "mmu_task_%d", i);
-		mmu_fetch_task[i] = *(create_task(mmu_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
+		mmu_task[i] = *(create_task(mmu_ctrl, DEFAULT_STACK_SIZE, strdup(buff)));
 	}
 
 	/*mmu_data_task = (void *) xcalloc(num_cores, sizeof(task));
@@ -997,9 +997,12 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 	status = mmu_get_status(&mmu[self->core->id], uop->uinst->address, self->ctx->address_space_index, port_num_ptr);
 
 
-	//if(uop->id == 521)
-		//fatal("trans start status %d id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n",
-		//		status, uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+	/*if(uop->id == 52)
+	{
+		warning("trans start status %d id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n",
+				status, uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+		//getchar();
+	}*/
 
 	//fatal("status is %d\n", status);
 
@@ -1024,7 +1027,7 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 
 		case new_request:
 
-			warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+			//warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
 
 			/*ORDER MATTERS HERE*/
 			assert(port_num == -1);
@@ -1033,6 +1036,8 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 			if(mmu_has_fault(&mmu[self->core->id]))
 			{
 				/*MMU is faulted in either i or D cache, can't process now*/
+				//warning("trans start id %llu mmu faulted cycle %llu\n", uop->id, P_TIME);
+
 				stall = 0;
 				return stall;
 			}
@@ -1042,19 +1047,22 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 			{
 				//all ports are busy
 				stall = 0;
+				//warning("trans start id %llu mmu no port cycle %llu\n", uop->id, P_TIME);
 				return stall;
 			}
 
 			//if(uop->id == 521)
-			//	warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+			//warning("trans start id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
 
 			mmu[self->core->id].vtl_data_address[port_num] = uop->uinst->address;
 			mmu[self->core->id].data_ready[port_num] = 0;
 			mmu[self->core->id].data_valid[port_num] = 1;
 			mmu[self->core->id].data_address_space_index[port_num] = self->ctx->address_space_index;
 
+			//warning("trans start id %llu mmu processing! cycle %llu\n", uop->id, P_TIME);
 
-			advance(&mmu_fetch_ec[self->core->id]);
+
+			advance(&mmu_ec[self->core->id]);
 			//warning("advance mmmu cycle %llu\n", P_TIME);
 			stall = 0;
 
@@ -1064,8 +1072,13 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 
 		case in_process:
 
-			if(uop->id == 52)
-				printf("tans 52 pending 0x%08x cycle %llu\n", uop->uinst->address, P_TIME);
+			/*if(uop->id == 52)
+			{
+				printf("tans 52 pending 0x%08x mmu_ec %llu step %llu cycle %llu\n", uop->uinst->address, mmu_ec[self->core->id].count, step, P_TIME);
+				//getchar();
+			}*/
+
+			//warning("trans in process id %llu cycle %llu\n", uop->id, P_TIME);
 
 			assert(mmu[self->core->id].data_ready[port_num] == 0);
 			assert(mmu[self->core->id].vtl_data_address[port_num] == uop->uinst->address);
@@ -1085,8 +1098,8 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 
 
 
-			if(uop->id == 52)
-				fatal("tans complete\n");
+			//if(uop->id == 52)
+			//	fatal("tans complete\n");
 
 			//warning("complete id %llu op %d port num %d cycle %llu vtl 0x%08x uop phy 0x%08x mmu 0x%08x\n", uop->id, uop->uinst->opcode, port_num, P_TIME, uop->uinst->address, uop->phy_addr, mmu[self->core->id].phy_data_address[port_num]);
 
@@ -1100,7 +1113,8 @@ int mmu_data_translate(X86Thread *self, struct x86_uop_t *uop){
 			mmu[self->core->id].data_valid[port_num] = 0;
 			uop->phy_addr = mmu[self->core->id].phy_data_address[port_num];
 
-			warning("MMU trans complete id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+			//warning("MMU trans complete id %llu vtl addr 0x%08x phy addr 0x%08x opcode %d cycle %llu\n", uop->id, uop->uinst->address, uop->phy_addr, uop->uinst->opcode, P_TIME);
+			//getchar();
 
 
 			//if(uop->id == 521)
@@ -1171,7 +1185,6 @@ int mmu_fetch_translate(X86Thread *self, unsigned int block){
 		return stall;
 	}
 
-
 	//compare the vtrl address to the address in the MMU
 	if((mmu[self->core->id].fetch_ready == 1) &&
 			(self->fetch_neip != mmu[self->core->id].vtl_fetch_address))
@@ -1182,7 +1195,7 @@ int mmu_fetch_translate(X86Thread *self, unsigned int block){
 		mmu[self->core->id].vtl_fetch_address = self->fetch_neip;
 		mmu[self->core->id].fetch_ready = 0;
 		mmu[self->core->id].fetch_address_space_index = self->ctx->address_space_index;
-		advance(&mmu_fetch_ec[self->core->id]);
+		advance(&mmu_ec[self->core->id]);
 		//warning("advance mmmu cycle %llu\n", P_TIME);
 		stall = 0;
 	}
@@ -1227,6 +1240,9 @@ int mmu_fetch_translate(X86Thread *self, unsigned int block){
 	return;
 }*/
 
+
+//long long step = 1;
+
 void mmu_ctrl(void){
 
 	//my_pid increments for the number of CPU cores. i.e. 0 - 4 for a quad core
@@ -1258,12 +1274,22 @@ void mmu_ctrl(void){
 
 	int victim_way = 0;
 
+	int err = 0;
+
+	//int tlb_miss = 0;
+
 	//int i_tlb = 0;
+
+	//flush(stderr);
+	//printf("mmu startup running ec %llu step %llu cycle %llu\n", mmu_ec[my_pid].count, step, P_TIME);
+	//fflush(stdout);
 
 	while(1)
 	{
 		//wait here until there is a job to do
-		await(&mmu_fetch_ec[my_pid], step); //&mmu_ec[my_pid], step);
+		await(&mmu_ec[my_pid], step); //&mmu_ec[my_pid], step);
+		//printf("mmu advance running ec %llu step %llu cycle %llu\n", mmu_ec[my_pid].count, step, P_TIME);
+		//getchar();
 
 		//printf("mmu fetc %d data %d\n", mmu[my_pid].fetch_ready, mmu[my_pid].data_ready[0]);
 
@@ -1286,6 +1312,9 @@ void mmu_ctrl(void){
 		//warning("tlb set tag %d state %d\n", i_tlbs[my_pid].sets[set].blocks[0].tag, i_tlbs[my_pid].sets[set].blocks[0].state);*/
 
 		//fatal("done\n");
+
+		//printf("mmu running cycle %llu\n", P_TIME);
+
 
 
 		//check the I_TLB
@@ -1321,6 +1350,8 @@ void mmu_ctrl(void){
 
 					mmu[my_pid].fetch_ready = 1;
 
+					mmu_set_fetch_fault_bit(&mmu[my_pid], 0);
+
 					//make this block the MRU
 					cgm_tlb_update_waylist(&i_tlbs[my_pid].sets[set], i_tlbs[my_pid].sets[set].way_tail, cache_waylist_head);
 
@@ -1344,7 +1375,9 @@ void mmu_ctrl(void){
 					//set the victim transient with state and tag (this is the vtl_tag!)
 					//cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_tlb_block_transient);
 
+
 					//proceed to PTW
+					//tlb_miss++;
 					advance(&ptw_ec[my_pid]);
 
 					break;
@@ -1362,8 +1395,11 @@ void mmu_ctrl(void){
 			if(mmu[my_pid].data_ready[i] == 0)
 			{
 
-				if(mmu[my_pid].vtl_data_address[i] == 0xbffefff4)
-					fatal("mmu D translate 0x%08x cycle %llu\n", mmu[my_pid].vtl_data_address[i], P_TIME);
+				/*if(mmu[my_pid].vtl_data_address[i] == 0xbffefff4)
+				{
+					warning("mmu D translate 0x%08x cycle %llu\n", mmu[my_pid].vtl_data_address[i], P_TIME);
+					//getchar();
+				}*/
 
 				//probe the address
 				cgm_tlb_probe_address(&d_tlbs[my_pid], mmu[my_pid].vtl_data_address[i], set_ptr, tag_ptr, offset_ptr);
@@ -1375,15 +1411,19 @@ void mmu_ctrl(void){
 				switch(*tlb_block_state_ptr)
 				{
 					case cgm_tlb_block_valid:
-						//TLB hit, build the physical address, return to fetch stage*/8
+						//TLB hit, build the physical address, return to fetch stage
 
 						//mmu[my_pid].phy_fetch_address = mmu_translate(mmu[my_pid].fetch_address_space_index, mmu[my_pid].vtl_fetch_address, mmu_access_fetch);
 						mmu[my_pid].phy_data_address[i] = ((cgm_tlb_get_ppn(&d_tlbs[my_pid], tag, set, way) << d_tlbs[my_pid].page_offset_log) ^ offset);
 
-						warning("mmu: translated address is 0x%08x\n", mmu[my_pid].phy_data_address[i]);
+						//warning("mmu: translated address is 0x%08x\n", mmu[my_pid].phy_data_address[i]);
 						//getchar();
 
 						mmu[my_pid].data_ready[i] = 1;
+
+						mmu_set_data_fault_bit(&mmu[my_pid], (i+1), 0);
+
+						//fatal("fault bit %d\n", mmu[my_pid].fault_bits[i+1]);
 
 						//make this block the MRU
 						cgm_tlb_update_waylist(&d_tlbs[my_pid].sets[set], d_tlbs[my_pid].sets[set].way_tail, cache_waylist_head);
@@ -1392,18 +1432,23 @@ void mmu_ctrl(void){
 
 					case cgm_tlb_block_invalid:
 
-						warning("D tlb miss cycle %llu\n", P_TIME);
+						/*warning("D tlb miss cycle %llu\n", P_TIME);*/
+
+						err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
+
 
 						//look for matching block in transient state
 						//if there is one break and wait for retry
-						int err = cgm_tlb_find_transient_entry(&d_tlbs[my_pid], tag_ptr, set_ptr, way_ptr);
 
-						warning("D tlb checking for transient access err %d set %d tag %d way %d cycle %llu\n", err, tag, set, way, P_TIME);
+						//warning("D tlb checking for transient access err %d set %d tag %d way %d cycle %llu\n", err, tag, set, way, P_TIME);
 
 						//break only if a match was found!
 						if(err)
 						{
-							warning("let me guess err %d !err %d cycle %llu\n", err, !err, P_TIME);
+							//warning("D tlb access is transient cycle %llu\n", P_TIME);
+
+							//decrement ec, these will get tried again on retry.
+							num_translations--;
 
 							break;
 						}
@@ -1414,7 +1459,7 @@ void mmu_ctrl(void){
 						//find a victim in the tlb
 						victim_way = cgm_tlb_get_victim(&d_tlbs[my_pid], set, tag);
 
-						warning("D tlb victim set %d tag %d way %d cycle %llu\n", set, tag, victim_way, P_TIME);
+						//warning("D tlb victim set %d tag %d way %d cycle %llu\n", set, tag, victim_way, P_TIME);
 
 						//Invalidate the victim
 						cgm_tlb_invalidate(&d_tlbs[my_pid], set, victim_way);
@@ -1425,26 +1470,27 @@ void mmu_ctrl(void){
 						//cgm_tlb_set_tran_state(&i_tlbs[my_pid], set, tag, victim_way, cgm_tlb_block_transient);
 
 						//proceed to PTW
+						//tlb_miss++;
 						advance(&ptw_ec[my_pid]);
-
-						break;
 				}
+
 
 
 				// ---------------------------------------------- for each data translation request from issue stage try to translate the address.
 
-				//int pf = 0;
-				//int *pfptr = &pf;
-				//mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store, pfptr);
-				//mmu[my_pid].data_ready[i] = 1;
+				/*int pf = 0;
+				int *pfptr = &pf;
+				mmu[my_pid].phy_data_address[i] = mmu_translate(mmu[my_pid].data_address_space_index[i], mmu[my_pid].vtl_data_address[i], mmu_access_load_store, pfptr);
+				mmu[my_pid].data_ready[i] = 1;*/
 
 
 				//proceed to PTW
 				//advance(&ptw_ec[my_pid]);
 
 				num_translations++;
-				fflush(stderr);
+				//fflush(stderr);
 				//getchar();
+
 
 			}
 
@@ -1459,6 +1505,15 @@ void mmu_ctrl(void){
 
 		//on a single TLB miss the processor will trap to OS. raise exception flag and access PTW.
 		step += num_translations;
+		//printf("mmu ending ec %llu step %llu num trans %d cycle %llu\n", mmu_ec[my_pid].count, step, num_translations, P_TIME);
+		//fflush(stdout);
+
+		//there was 1 or more misss, advance the PTW
+		//if(tlb_miss)
+		//	advance(&ptw_ec[my_pid]);
+
+		//tlb_miss = 0;
+
 		num_translations = 0;
 
 	}

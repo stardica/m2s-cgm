@@ -33,6 +33,7 @@ void cgm_tlb_set_tran_state(struct tlb_t *tlb, int set, int tag, int way, enum c
 void cgm_tlb_invalidate(struct tlb_t *tlb, int set, int way);
 void cgm_tlb_set_entry(struct tlb_t *tlb, int vtl_tag, int set, int way, unsigned int phy_tag);
 int cgm_tlb_get_ppn_tag(struct tlb_t *tlb, unsigned int addr);
+void tlb_dump_set(struct tlb_t *tlb, int set);
 
 
 

@@ -26,5 +26,7 @@ void ptw_ctrl(void);
 void ptw_init(void);
 //void ptw_create(void);
 
+void ptw_clear_mmu_fault_bits(struct mmu_t *mmu);
+
 
 #endif /* PTW_H_ */

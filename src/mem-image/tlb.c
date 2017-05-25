@@ -230,6 +230,18 @@ int cgm_tlb_get_ppn_tag(struct tlb_t *tlb, unsigned int addr){
 	return addr >> tlb->page_offset_log;
 }
 
+void tlb_dump_set(struct tlb_t *tlb, int set){
+
+	int i = 0;
+
+	for(i=0; i<tlb->assoc; i++)
+		printf("tlb id %d set %d vtl tag %d phy tag %d state %d tran tag %d tran state %d \n",
+				tlb->id, tlb->sets[set].id, tlb->sets[set].blocks[i].vtl_tag, tlb->sets[set].blocks[i].phy_page_num, tlb->sets[set].blocks[i].state,
+				tlb->sets[set].blocks[i].tran_tag, tlb->sets[set].blocks[i].transient_state);
+
+	return;
+}
+
 
 int cgm_tlb_find_transient_entry(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, int *way_ptr){
 

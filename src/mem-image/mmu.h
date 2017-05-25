@@ -118,6 +118,8 @@ struct mmu_t
 
 	long long num_processed;
 
+	long long num_coalesced;
+
 	/*CPU request in box*/
 	struct list_t *page_list;
 
@@ -143,12 +145,14 @@ extern unsigned int mmu_page_size;
 extern unsigned int mmu_page_mask;
 extern unsigned int mmu_log_page_size;
 
-extern eventcount volatile *mmu_fetch_ec;
-extern eventcount volatile *mmu_data_ec;
-extern task *mmu_fetch_task;
-extern task *mmu_data_task;
+extern eventcount volatile *mmu_ec;
+//extern eventcount volatile *mmu_data_ec;
+extern task *mmu_task;
+//extern task *mmu_data_task;
 
 extern long long mmu_access_id;
+
+//extern long long step;
 
 void mmu_init(void);
 void mmu_done(void);
@@ -187,7 +191,6 @@ void mmu_set_data_fault_bit(struct mmu_t *mmu, int row, int val);
 
 
 int can_access_mmu(void);
-
 
 
 unsigned int mmu_forward_translate_guest(int address_space_index, int guest_pid, unsigned int guest_vtl_addr);

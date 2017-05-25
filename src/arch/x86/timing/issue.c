@@ -87,8 +87,6 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 			if (!X86ThreadIsUopReady(self, store))
 			{
-
-
 				linked_list_next(sq);
 				continue;
 			}
@@ -133,6 +131,8 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 		/* create and fill the mod_client_info_t object */
 		//client_info = mod_client_info_create(self->mem_ctrl_ptr);
 		//client_info->prefetcher_eip = store->eip;
+
+		//printf("issue store id %llu cycle %llu\n", store->id, P_TIME);
 
 		//set access type
 		if(store->uinst->opcode == x86_uinst_store || store->uinst->opcode == x86_uinst_store_ex)
@@ -253,8 +253,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		if(!mmu_data_translate(self, load))
 		{
-			//translate the address
-			//warning("looping id %llu cycle %llu\n", load->id, P_TIME);
+			//translating the address for a ready
+
 			linked_list_next(lq);
 			continue;
 		}
@@ -301,7 +301,8 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 			load->protection_fault = 1;
 		}*/
 
-		printf("performing a load cycle %llu\n", P_TIME);
+		//printf("issue load id %llu cycle %llu\n", load->id, P_TIME);
+		//getchar();
 
 
 		if(load->uinst->opcode == x86_uinst_cpu_load_fence)
