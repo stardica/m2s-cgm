@@ -20,6 +20,8 @@ extern task *ptw_task;
 
 
 extern long long ptw_pid;
+extern long long pages_created;
+extern long long ptw_num_processed;
 
 void ptw_ctrl(void);
 

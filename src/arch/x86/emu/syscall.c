@@ -5669,6 +5669,9 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	we need to save away the current stats which contains the start up section stats.
 	Then reset all stats and commence taking stats for the parallel section*/
 
+	int num_cores = x86_cpu_num_cores;
+	int i = 0;
+
 	printf("---Starting parallel section stats collection cycle %llu---\n", P_TIME);
 
 	cgm_startup_stats->end_startup_section_cycle = P_TIME;
@@ -5678,6 +5681,24 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
+
+
+	for(i=0;i<num_cores;i++)
+	{
+		i_tlbs[i].misses = 0;
+		i_tlbs[i].hits = 0;
+		d_tlbs[i].misses = 0;
+		d_tlbs[i].hits = 0;
+
+		cgm_tlb_clear_block_usage(&i_tlbs[i]);
+		cgm_tlb_clear_block_usage(&d_tlbs[i]);
+	}
+
+	pages_created = 0;
+	mmu[0].num_processed = 0;
+	ptw_num_processed = 0;
+
+
 
 	///idle_stall = 0;
 	//total_dispatches = 0;
@@ -5715,16 +5736,28 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 		printf("TLB utilization:\n");
 
 		for(i=0;i<num_cores;i++)
-			printf("core %d i_tlb %0.2f d_tlb %0.2f\n", i,
-					(double)cgm_tlb_get_block_usage(&i_tlbs[i])/(double) (i_tlbs[i].num_sets * i_tlbs[i].assoc),
-					(double)cgm_tlb_get_block_usage(&d_tlbs[i])/(double) (d_tlbs[i].num_sets * d_tlbs[i].assoc));
+			printf("core %d i_tlb %0.2f%% d_tlb %0.2f%%\n", i,
+					((double)cgm_tlb_get_block_usage(&i_tlbs[i])/(double) (i_tlbs[i].num_sets * i_tlbs[i].assoc) *100),
+					((double)cgm_tlb_get_block_usage(&d_tlbs[i])/(double) (d_tlbs[i].num_sets * d_tlbs[i].assoc) *100));
 
 		printf("TLB Miss Rate:\n");
 
 		for(i=0;i<num_cores;i++)
-			printf("core %d i_tlb %0.8f d_tlb %0.8f\n", i,
-					(double)i_tlbs[i].misses/((double)(i_tlbs[i].hits - i_tlbs[i].misses)),
-					(double)d_tlbs[i].misses/((double)(d_tlbs[i].hits - d_tlbs[i].misses)));
+			printf("core %d i_tlb hit %llu miss %llu d_tlb hit %llu miss %llu\n", i,
+					i_tlbs[i].hits, i_tlbs[i].misses,
+					d_tlbs[i].hits, d_tlbs[i].misses);
+
+		for(i=0;i<num_cores;i++)
+			printf("core %d i_tlb %0.2f%% d_tlb %0.2f%%\n", i,
+					((double)i_tlbs[i].misses/((double)(i_tlbs[i].hits)- i_tlbs[i].misses) * 100),
+					((double)d_tlbs[i].misses/((double)(d_tlbs[i].hits)- d_tlbs[i].misses) * 100));
+
+		printf("page size %d created %llu\n", mmu_page_size, pages_created);
+
+		printf("mmu num proc %llu ptw num proc %llu\n", mmu[0].num_processed, ptw_num_processed);
+
+
+		//printf(num)
 
 		//printf
 

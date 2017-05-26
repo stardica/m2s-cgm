@@ -14,6 +14,9 @@ task *ptw_task;
 
 long long ptw_pid = 0;
 
+long long pages_created = 0;
+long long ptw_num_processed = 0;
+
 
 void ptw_init(void){
 
@@ -81,7 +84,7 @@ void ptw_ctrl(void){
 
 	int num_advances = 0;
 
-	int num_faults = 0;
+	//int num_faults = 0;
 
 	int err = 0;
 
@@ -134,13 +137,13 @@ void ptw_ctrl(void){
 
 			//mmu[my_pid].fault_bits[0] = 0;
 
-			if(page_fault)
-				num_faults++;
+			//if(page_fault)
+			//	num_faults++;
 
 			//warning("advancing MMU\n");
 
 			//Advance the MMU for retry
-			//advance(&mmu_ec[my_pid]);
+			advance(&mmu_ec[my_pid]);
 
 			num_advances++;
 			page_fault = 0;
@@ -193,7 +196,7 @@ void ptw_ctrl(void){
 				//warning("advancing MMU\n");
 
 				//Advance the MMU for retry
-				//advance(&mmu_ec[my_pid]);
+				advance(&mmu_ec[my_pid]);
 
 				num_advances++;
 				//page_fault = 0;
@@ -210,9 +213,10 @@ void ptw_ctrl(void){
 
 		//Advance the MMU for retry
 
-		for(i=0; i < num_advances; i++)
-			advance(&mmu_ec[my_pid]);
+		//for(i=0; i < num_advances; i++)
+		//	advance(&mmu_ec[my_pid]);
 
+		ptw_num_processed += num_advances;
 		step += num_advances;
 		//step++;
 		//assert(page_fault == 0);

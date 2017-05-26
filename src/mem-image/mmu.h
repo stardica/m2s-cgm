@@ -117,7 +117,6 @@ struct mmu_t
 	int *fault_bits;
 
 	long long num_processed;
-
 	long long num_coalesced;
 
 	/*CPU request in box*/

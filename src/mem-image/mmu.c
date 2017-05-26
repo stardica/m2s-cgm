@@ -357,6 +357,10 @@ struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr, e
 	{
 		page = mmu_create_page(address_space_index, tag, access_type, index, vtladdr);
 		*page_fault_ptr = 1;
+
+		/*stats*/
+		pages_created++;
+
 	}
 
 	/* Locate page at the head of the hash table for faster subsequent lookup */
@@ -1394,9 +1398,18 @@ void mmu_ctrl(void){
 
 		tag = set = way = 0;
 
+
+		/*if(P_TIME >= 383)
+		{
+			warning("running cycle %llu\n", P_TIME);
+			getchar();
+		}*/
+
 		//check the D_TLB
 		for(i = 0; i < mmu[my_pid].issue_width; i++)
 		{
+
+
 			if(mmu[my_pid].data_ready[i] == 0)
 			{
 
@@ -1445,6 +1458,8 @@ void mmu_ctrl(void){
 
 						/*stats*/
 						d_tlbs[my_pid].misses++;
+
+
 
 
 						//printf("core %d hits %llu misses %llu i_tlb %0.2f hits %llu misses %llu d_tlb %0.2f\n", my_pid,
@@ -1519,7 +1534,10 @@ void mmu_ctrl(void){
 		//if ALL hits charge single cycle and end
 		P_PAUSE(1);
 
+
+
 		//on a single TLB miss the processor will trap to OS. raise exception flag and access PTW.
+		mmu[my_pid].num_processed += num_translations;
 		step += num_translations;
 		//printf("mmu ending ec %llu step %llu num trans %d cycle %llu\n", mmu_ec[my_pid].count, step, num_translations, P_TIME);
 		//fflush(stdout);

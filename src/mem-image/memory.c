@@ -267,7 +267,7 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int s
 		//printf("going to crash 0x%x\n", addr);
 
 		if (mem->safe)
-			fatal("illegal access at 0x%08x: page not allocated\n", addr);
+			fatal("illegal access at 0x%08x: page not allocated, mem mode is %d\n", addr, mem->safe);
 
 		if (access == mem_access_read || access == mem_access_exec)
 		{

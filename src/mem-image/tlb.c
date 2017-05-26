@@ -264,6 +264,22 @@ int cgm_tlb_get_block_usage(struct tlb_t *tlb){
 	return count;
 }
 
+void cgm_tlb_clear_block_usage(struct tlb_t *tlb){
+
+	int set = 0;
+	int way = 0;
+
+	for (set = 0; set < tlb->num_sets; set++)
+	{
+		for (way = 0; way < tlb->assoc; way++)
+		{
+			tlb->sets[set].blocks[way].written = 0;
+		}
+	}
+
+	return;
+}
+
 
 int cgm_tlb_find_transient_entry(struct tlb_t *tlb, int *tag_ptr, int *set_ptr, int *way_ptr){
 
@@ -303,7 +319,7 @@ void cgm_tlb_probe_address(struct tlb_t *tlb, unsigned int addr, int *set_ptr, i
 	tag_size = tag_size >> (tlb->page_set_log + tlb->page_offset_log);
 
 	//warning("tag value %u tag size %u\n", *tag_ptr, tag_size);
-	assert((unsigned int)*(tag_ptr) >= 0 && (unsigned int)*(tag_ptr) < tag_size);
+	assert((unsigned int)*(tag_ptr) >= 0 && (unsigned int)*(tag_ptr) <= tag_size);
 
 	//warning("addr 0x%08x set value %u set size %u tlb page set mask 0x%08x page offset log %d\n", addr, *set_ptr, tlb->num_sets, tlb->page_set_mask, tlb->page_offset_log);
 

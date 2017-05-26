@@ -1146,6 +1146,11 @@ void cgm_configure(void){
 		warning("--SIMPLE_MEM set to 1, accesses stop at L3---\n");
 	}
 
+	if(mem_safe_mode == 0)
+	{
+		warning("---MEM_SAFE_MODE set to 0, page protection not enforced---\n");
+	}
+
 	fflush(stderr);
 
 
