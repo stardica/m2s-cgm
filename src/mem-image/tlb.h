@@ -15,6 +15,8 @@
 extern struct tlb_t *i_tlbs;
 extern struct tlb_t *d_tlbs;
 
+extern int tlb_simple;
+
 
 
 void tlb_init(void);

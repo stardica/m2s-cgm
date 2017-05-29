@@ -12,6 +12,8 @@
 struct tlb_t *i_tlbs;
 struct tlb_t *d_tlbs;
 
+int tlb_simple = 0;
+
 void tlb_init(void){
 
 	tlb_create();

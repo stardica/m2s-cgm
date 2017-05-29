@@ -540,6 +540,7 @@ int tlb_read_config(void* user, const char* section, const char* name, const cha
 	int Assoc = 0;
 	char *Policy = 0;
 	int safe_mode = 0;
+	int tlb_type = 0;
 	/*//int gpu_group_cache_num = (num_cus/4);
 
 
@@ -570,6 +571,16 @@ int tlb_read_config(void* user, const char* section, const char* name, const cha
 		for (i = 0; i < num_cores; i++)
 		{
 			mem_safe_mode = safe_mode;
+		}
+	}
+
+	/*configure tlb caches*/
+	if(MATCH("TLB", "TLB_SIMPLE"))
+	{
+		tlb_type = atoi(value);
+		for (i = 0; i < num_cores; i++)
+		{
+			tlb_simple = tlb_type;
 		}
 	}
 

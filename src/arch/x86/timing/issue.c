@@ -94,12 +94,14 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 
 		assert(store->phy_address_ready == 0);
 
-		if(!mmu_data_translate(self, store))
+		if(!tlb_simple)
 		{
-			//translate the address
-			//warning("looping id %llu cycle %llu\n", load->id, P_TIME);
-			linked_list_next(sq);
-			continue;
+			if(!mmu_data_translate(self, store))
+			{
+				//translate the address
+				linked_list_next(sq);
+				continue;
+			}
 		}
 
 
@@ -251,12 +253,14 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 			continue;
 		}
 
-		if(!mmu_data_translate(self, load))
+		if(!tlb_simple)
 		{
-			//translating the address for a ready
-
-			linked_list_next(lq);
-			continue;
+			if(!mmu_data_translate(self, load))
+			{
+				//translating the address for a ready
+				linked_list_next(lq);
+				continue;
+			}
 		}
 
 		//if(load->id == 2)

@@ -143,6 +143,100 @@ static int X86ThreadCanFetch(X86Thread *self){
 }
 
 
+void mem_access_addr_translate(X86Thread *self, struct x86_uop_t *uop){
+
+
+	/*x86_uinst_load,		//52
+	x86_uinst_store,		//53
+	x86_uinst_load_ex,		//54
+	x86_uinst_store_ex,		//55
+	x86_uinst_prefetch,		//56
+	x86_uinst_cpu_flush,	//57
+	x86_uinst_gpu_flush,	//58
+	x86_uinst_cpu_fence,	//59
+	x86_uinst_cpu_load_fence,	//60*/
+
+	/*if(uop->uinst->opcode >= 61)
+	{
+
+		core_dump_rob(x86_cpu->cores[0]);
+
+		struct x86_uop_t *uop = NULL;
+
+		uop = list_get(x86_cpu->cores[0]->rob, x86_cpu->cores[0]->threads[0]->rob_tail);
+
+		printf("\n");
+
+		thread_dump_fetch_queue(x86_cpu->cores[0]->threads[0]);
+
+		printf("\n");
+
+		thread_dump_uop_queue(x86_cpu->cores[0]->threads[0]);
+
+		dump_unist_queue(x86_uinst_list);
+
+		printf("\nrob tail id %llu\n", uop->id);
+
+		fatal("caught the drain\n");
+	}*/
+
+	//if(uop->id == 521)
+		//fatal("fetch here\n");
+
+	int pf = 0;
+	int *pfptr = &pf;
+
+	if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 60)
+	{
+		if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
+		{
+
+			fatal("fix me in mmu\n");
+			uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
+		}
+		else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
+				|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
+		{
+
+			fatal("fix me mmu need to take care of this\n");
+
+			if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
+			{
+				uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store, pfptr);
+			}
+			else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
+			{
+
+				fatal("fix me in mmu\n");
+
+				uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
+			}
+			else
+			{
+				fatal("X86ThreadFetchInst(): bad cache protocol\n");
+			}
+		}
+		else
+		{
+			uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store, pfptr);
+
+			//if(uop->id == 20204)
+				//fatal("index %d uop id %llu vtl address 0x%08x phy addr 0x%08x cycle %llu\n", self->ctx->address_space_index, uop->id, uop->uinst->address, uop->phy_addr, P_TIME);
+		}
+	}
+	else
+	{
+		fatal("X86ThreadFetchInst(): Invalid memory uop\n");
+	}
+
+	if(uop->uinst->opcode == 56)
+	{
+		fatal("caught a prefetch in fetch\n");
+	}
+
+	return;
+}
+
 void dump_unist_queue(struct list_t *queue){
 
 	int i = 0;
@@ -300,94 +394,13 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			/*x86_uinst_load,		//52
-			x86_uinst_store,		//53
-			x86_uinst_load_ex,		//54
-			x86_uinst_store_ex,		//55
-			x86_uinst_prefetch,		//56
-			x86_uinst_cpu_flush,	//57
-			x86_uinst_gpu_flush,	//58
-			x86_uinst_cpu_fence,	//59
-			x86_uinst_cpu_load_fence,	//60*/
-
-			/*if(uop->uinst->opcode >= 61)
+			if(tlb_simple)
 			{
-
-				core_dump_rob(x86_cpu->cores[0]);
-
-				struct x86_uop_t *uop = NULL;
-
-				uop = list_get(x86_cpu->cores[0]->rob, x86_cpu->cores[0]->threads[0]->rob_tail);
-
-				printf("\n");
-
-				thread_dump_fetch_queue(x86_cpu->cores[0]->threads[0]);
-
-				printf("\n");
-
-				thread_dump_uop_queue(x86_cpu->cores[0]->threads[0]);
-
-				dump_unist_queue(x86_uinst_list);
-
-				printf("\nrob tail id %llu\n", uop->id);
-
-				fatal("caught the drain\n");
-			}*/
-
-			//if(uop->id == 521)
-				//fatal("fetch here\n");
-
-			//int pf = 0;
-			//int *pfptr = &pf;
-
-			if(uop->uinst->opcode >= 52 && uop->uinst->opcode <= 60)
-			{
-				if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
-				{
-
-					fatal("fix me in mmu\n");
-					//uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
-				}
-				else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
-						|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
-				{
-
-					fatal("fix me mmu need to take care of this\n");
-
-					if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
-					{
-						//uop->phy_addr = mmu_translate(0, uop->uinst->address, mmu_access_load_store, pfptr);
-					}
-					else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
-					{
-
-						fatal("fix me in mmu\n");
-
-						//uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
-					}
-					else
-					{
-						fatal("X86ThreadFetchInst(): bad cache protocol\n");
-					}
-				}
-				else
-				{
-					//uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store, pfptr);
-
-					//if(uop->id == 20204)
-						//fatal("index %d uop id %llu vtl address 0x%08x phy addr 0x%08x cycle %llu\n", self->ctx->address_space_index, uop->id, uop->uinst->address, uop->phy_addr, P_TIME);
-				}
-			}
-			else
-			{
-				fatal("X86ThreadFetchInst(): Invalid memory uop\n");
-			}
-
-			if(uop->uinst->opcode == 56)
-			{
-				fatal("caught a prefetch in fetch\n");
+				mem_access_addr_translate(self, uop);
 			}
 		}
+
+
 
 		/* Trace */
 		if (x86_tracing())
@@ -534,7 +547,7 @@ static void X86ThreadFetch(X86Thread *self)
 	X86Context *ctx = self->ctx;
 	struct x86_uop_t *uop;
 
-	//unsigned int phy_addr;
+	unsigned int phy_addr;
 	unsigned int block;
 	unsigned int target;
 
@@ -575,30 +588,40 @@ static void X86ThreadFetch(X86Thread *self)
 		//changes here
 		//translate the address, wait for MMU to finish translation, will get run though TLB and PTW, fi faulted make no progress
 		//in the real world we would be trapping to the OS on a fault.
-		if(!mmu_fetch_translate(self, block))
-		{
-			return;
-		}
 
 		//warning("fetch vtl 0x%08x phy 0x%08x cycle %llu\n", self->fetch_neip, self->fetch_address, P_TIME);
 		//getchar();
 
-		//access the cache
-		//returns access ID
-		self->fetch_access = cgm_fetch_access(self, self->fetch_address);
-		self->btb_reads++;
+		if(!tlb_simple)
+		{
+			if(!mmu_fetch_translate(self, block))
+			{
+				return;
+			}
 
-		/*phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch);
-		self->fetch_block = block;
-		self->fetch_address = phy_addr;
+			//access the cache
+			//returns access ID
+			self->fetch_access = cgm_fetch_access(self, self->fetch_address);
+			self->btb_reads++;
+		}
+		else
+		{
+			//this runs the address translations with the original M2S code.
+			int page_fault = 0;
+			int *page_fault_ptr = &page_fault;
 
-		self->fetch_access = cgm_fetch_access(self, phy_addr);
-		self->btb_reads++;
 
-		 MMU statistics
-		if (*mmu_report_file_name)
-			mmu_access_page(phy_addr, mmu_access_execute);*/
+			phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch, page_fault_ptr);
+			self->fetch_block = block;
+			self->fetch_address = phy_addr;
 
+			self->fetch_access = cgm_fetch_access(self, phy_addr);
+			self->btb_reads++;
+
+			/*MMU statistics*/
+			if (*mmu_report_file_name)
+				mmu_access_page(&mmu[self->core->id], phy_addr, mmu_access_execute);
+		}
 
 	}
 
