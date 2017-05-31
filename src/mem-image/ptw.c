@@ -137,8 +137,11 @@ void ptw_ctrl(void){
 
 			//mmu[my_pid].fault_bits[0] = 0;
 
-			//if(page_fault)
-			//	num_faults++;
+			if(page_fault)
+				P_PAUSE(12000);
+			else
+				P_PAUSE(100);
+			//num_faults++;
 
 			//warning("advancing MMU\n");
 
@@ -161,7 +164,7 @@ void ptw_ctrl(void){
 				//translate the address, if a new page is created its a page fault (PTW is a miss and page not in main memory).
 				mmu[my_pid].phy_data_address[i-1] = mmu_translate(mmu[my_pid].data_address_space_index[i-1], mmu[my_pid].vtl_data_address[i-1], mmu_access_load_store, page_fault_ptr);
 
-				warning("PTW D translated 0x%08x to 0x%08x fault %d cycle %llu\n", mmu[my_pid].vtl_data_address[i-1], mmu[my_pid].phy_data_address[i-1], page_fault, P_TIME);
+				//warning("PTW D translated 0x%08x to 0x%08x fault %d cycle %llu\n", mmu[my_pid].vtl_data_address[i-1], mmu[my_pid].phy_data_address[i-1], page_fault, P_TIME);
 
 
 				//store results in TLB for future look up...
@@ -188,8 +191,10 @@ void ptw_ctrl(void){
 				//warning("setting phy tag %d on set %d way %d\n", cgm_tlb_get_ppn_tag(&i_tlbs[my_pid], mmu[my_pid].phy_fetch_address), set, way);
 
 
-				//if(page_fault)
-				//	num_faults++;
+				if(page_fault)
+					P_PAUSE(12000);
+				else
+					P_PAUSE(100);
 
 				//mmu[my_pid].fault_bits[i] = 0;
 
@@ -199,15 +204,15 @@ void ptw_ctrl(void){
 				advance(&mmu_ec[my_pid]);
 
 				num_advances++;
-				//page_fault = 0;
+				page_fault = 0;
 			}
 
 		}
 
-		if(page_fault > 0)
+		/*if(page_fault > 0)
 			P_PAUSE(6000);
 		else
-			P_PAUSE(8);
+			P_PAUSE(48);*/
 
 		//mmu[my_pid].fault_bits[0] = 0;
 

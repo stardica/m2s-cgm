@@ -100,11 +100,13 @@ struct mem_system_stats_t{
 };
 
 
-#define SETROUTE(packet, source, dest)															\
-								packet->src_name = source->name;								\
-								packet->src_id = str_map_string(&node_strn_map, source->name);	\
-								packet->dest_name = dest->name;									\
-								packet->dest_id = str_map_string(&node_strn_map, dest->name);
+#define SETROUTE(packet, source, dest)																	\
+									packet->src_name = source->name;									\
+									packet->src_id = str_map_string(node_strn_map, source->name);		\
+									packet->dest_name = dest->name;										\
+									packet->dest_id = str_map_string(node_strn_map, dest->name);
+
+
 
 extern struct mem_system_stats_t *mem_system_stats;
 

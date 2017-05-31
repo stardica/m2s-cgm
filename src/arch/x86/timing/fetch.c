@@ -191,14 +191,14 @@ void mem_access_addr_translate(X86Thread *self, struct x86_uop_t *uop){
 		if(uop->uinst->opcode == x86_uinst_load_ex || uop->uinst->opcode == x86_uinst_store_ex)
 		{
 
-			fatal("fix me in mmu\n");
+			warning("fix me in mmu load/store ex\n");
 			uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
 		}
 		else if(uop->uinst->opcode == x86_uinst_cpu_flush || uop->uinst->opcode == x86_uinst_gpu_flush
 				|| uop->uinst->opcode == x86_uinst_cpu_fence || uop->uinst->opcode == x86_uinst_cpu_load_fence)
 		{
 
-			fatal("fix me mmu need to take care of this\n");
+			warning("fix me mmu need to take care of this flushes\n");
 
 			if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
 			{
@@ -206,9 +206,6 @@ void mem_access_addr_translate(X86Thread *self, struct x86_uop_t *uop){
 			}
 			else if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 			{
-
-				fatal("fix me in mmu\n");
-
 				uop->phy_addr = mmu_translate(1, uop->uinst->address, mmu_access_load_store, pfptr);
 			}
 			else

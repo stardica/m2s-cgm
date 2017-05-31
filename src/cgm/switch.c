@@ -158,46 +158,71 @@ struct str_map_t gpu_l2_strn_map =
 		}
 };
 
+struct str_map_t *node_strn_map;
 
-struct str_map_t node_strn_map =
-{ node_number, {
-		{ "l2_caches[0]", l2_cache_0},
-		{ "switch[0]", switch_0},
-		{ "l3_caches[0]", l3_cache_0},
+struct str_map_t node_strn_map_p8 =
+{ node_number_p8, {
+		{ "l2_caches[0]", l2_cache_0_p8},
+		{ "switch[0]", switch_0_p8},
+		{ "l3_caches[0]", l3_cache_0_p8},
 
-		{ "l2_caches[1]", l2_cache_1},
-		{ "switch[1]", switch_1},
-		{ "l3_caches[1]", l3_cache_1},
+		{ "l2_caches[1]", l2_cache_1_p8},
+		{ "switch[1]", switch_1_p8},
+		{ "l3_caches[1]", l3_cache_1_p8},
 
-		{ "l2_caches[2]", l2_cache_2},
-		{ "switch[2]", switch_2},
-		{ "l3_caches[2]", l3_cache_2},
+		{ "l2_caches[2]", l2_cache_2_p8},
+		{ "switch[2]", switch_2_p8},
+		{ "l3_caches[2]", l3_cache_2_p8},
 
-		{ "l2_caches[3]", l2_cache_3},
-		{ "switch[3]", switch_3},
-		{ "l3_caches[3]", l3_cache_3},
+		{ "l2_caches[3]", l2_cache_3_p8},
+		{ "switch[3]", switch_3_p8},
+		{ "l3_caches[3]", l3_cache_3_p8},
 
 		/*-----------------*/
 
-		{ "l2_caches[4]", l2_cache_4},
-		{ "switch[4]", switch_4},
-		{ "l3_caches[4]", l3_cache_4},
+		{ "l2_caches[4]", l2_cache_4_p8},
+		{ "switch[4]", switch_4_p8},
+		{ "l3_caches[4]", l3_cache_4_p8},
 
-		{ "l2_caches[5]", l2_cache_5},
-		{ "switch[5]", switch_5},
-		{ "l3_caches[5]", l3_cache_5},
+		{ "l2_caches[5]", l2_cache_5_p8},
+		{ "switch[5]", switch_5_p8},
+		{ "l3_caches[5]", l3_cache_5_p8},
 
-		{ "l2_caches[6]", l2_cache_6},
-		{ "switch[6]", switch_6},
-		{ "l3_caches[6]", l3_cache_6},
+		{ "l2_caches[6]", l2_cache_6_p8},
+		{ "switch[6]", switch_6_p8},
+		{ "l3_caches[6]", l3_cache_6_p8},
 
-		{ "l2_caches[7]", l2_cache_7},
-		{ "switch[7]", switch_7},
-		{ "l3_caches[7]", l3_cache_7},
+		{ "l2_caches[7]", l2_cache_7_p8},
+		{ "switch[7]", switch_7_p8},
+		{ "l3_caches[7]", l3_cache_7_p8},
 
-		{ "hub_iommu", hub_iommu_8},
-		{ "switch[8]", switch_8},
-		{ "sys_agent", sys_agent_8},
+		{ "hub_iommu", hub_iommu_8_p8},
+		{ "switch[8]", switch_8_p8},
+		{ "sys_agent", sys_agent_8_p8},
+		}
+};
+
+struct str_map_t node_strn_map_p4 =
+{ node_number_p4, {
+		{ "l2_caches[0]", l2_cache_0_p4},
+		{ "switch[0]", switch_0_p4},
+		{ "l3_caches[0]", l3_cache_0_p4},
+
+		{ "l2_caches[1]", l2_cache_1_p4},
+		{ "switch[1]", switch_1_p4},
+		{ "l3_caches[1]", l3_cache_1_p4},
+
+		{ "l2_caches[2]", l2_cache_2_p4},
+		{ "switch[2]", switch_2_p4},
+		{ "l3_caches[2]", l3_cache_2_p4},
+
+		{ "l2_caches[3]", l2_cache_3_p4},
+		{ "switch[3]", switch_3_p4},
+		{ "l3_caches[3]", l3_cache_3_p4},
+
+		{ "hub_iommu", hub_iommu_4_p4},
+		{ "switch[4]", switch_4_p4},
+		{ "sys_agent", sys_agent_4_p4},
 		}
 };
 
@@ -526,6 +551,12 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	dest_node = message_packet->dest_id;
 	src_node = message_packet->src_id;
 
+	/*if(message_packet->access_id == 1)
+	{
+		warning("dest id %d switch id %d\n", dest_node, switch_node);
+		getchar();
+	}*/
+
 	//if dest is an L2/L3/HUB-IOMMU/SA connected to this switch.
 	if(dest_node == (switch_node - 1) || dest_node == (switch_node + 1))
 	{
@@ -539,9 +570,16 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 		{
 			tx_port = south_queue; //switches[switches->switch_id].Tx_south_queue;
 		}
+		else
+		{
+			fatal("switch_get_route() bad dest (source = dest) cycle %llu\n", P_TIME);
+		}
 	}
 	else
 	{
+		//dest should not equal the source
+		assert(dest_node != src_node);
+
 		//send packet to adjacent switch
 		//there is no transfer direction established.
 		if(switches->queue == north_queue || switches->queue == south_queue)
@@ -588,6 +626,10 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 			{//continue going east
 				tx_port = east_queue; //switches[switches->switch_id].Tx_east_queue;
 			}
+			else
+			{
+				fatal("switch_get_route() bad queue look into this cycle %llu\n", P_TIME);
+			}
 		}
 		else
 		{
@@ -600,7 +642,6 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 
 		printf("\tswtich routing id %llu block 0x%08x src %d dest %d\n",
 				message_packet->access_id, (message_packet->address & l2_caches[0].block_address_mask), src_node, dest_node);
-		getchar();
 	}
 
 	assert(tx_port != invalid_queue);
@@ -804,7 +845,6 @@ void switch_ctrl(void){
 		/*models a cross bar.
 		link as many inputs to outputs as possible*/
 		switch_crossbar_link(&switches[my_pid]);
-
 
 		//printf("made it here sw id %d cycle %llu\n", system_agent->switch_id, P_TIME);
 			//cache_dump_queue(switches[system_agent->switch_id].south_rx_reply_queue);

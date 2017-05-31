@@ -2834,12 +2834,12 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 				//fwd block to requesting core
 				//update routing headers swap dest and src
 				//requesting node
-				pending_get_getx_fwd_request->dest_name = str_map_value(&node_strn_map, pending_get_getx_fwd_request->src_id);
-				pending_get_getx_fwd_request->dest_id = str_map_string(&node_strn_map, pending_get_getx_fwd_request->src_name);
+				pending_get_getx_fwd_request->dest_name = str_map_value(node_strn_map, pending_get_getx_fwd_request->src_id);
+				pending_get_getx_fwd_request->dest_id = str_map_string(node_strn_map, pending_get_getx_fwd_request->src_name);
 
 				//owning node L2
 				pending_get_getx_fwd_request->src_name = cache->name;
-				pending_get_getx_fwd_request->src_id = str_map_string(&node_strn_map, cache->name);
+				pending_get_getx_fwd_request->src_id = str_map_string(node_strn_map, cache->name);
 
 				//transmit block to requesting node
 				pending_get_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_get_getx_fwd_request);
@@ -2991,12 +2991,13 @@ void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_pa
 			//fwd block to requesting core
 			//update routing headers swap dest and src
 			//requesting node
-			pending_get_getx_fwd_request->dest_name = str_map_value(&node_strn_map, pending_get_getx_fwd_request->src_id);
-			pending_get_getx_fwd_request->dest_id = str_map_string(&node_strn_map, pending_get_getx_fwd_request->src_name);
+			pending_get_getx_fwd_request->dest_name = str_map_value(node_strn_map, pending_get_getx_fwd_request->src_id);
+			pending_get_getx_fwd_request->dest_id = str_map_string(node_strn_map, pending_get_getx_fwd_request->src_name);
 
 			//owning node L2
-			pending_get_getx_fwd_request->src_name = cache->name;
-			pending_get_getx_fwd_request->src_id = str_map_string(&node_strn_map, cache->name);
+
+			//pending_get_getx_fwd_request->src_name = cache->name;
+			//pending_get_getx_fwd_request->src_id = str_map_string(node_strn_map, cache->name);
 
 			//transmit block to requesting node
 			pending_get_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_get_getx_fwd_request);
@@ -3289,12 +3290,12 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					//fwd block to requesting core
 					//update routing headers swap dest and src
 					//requesting node
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit block to requesting node
 					message_packet = list_remove(cache->last_queue, message_packet);
@@ -3424,12 +3425,12 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 					//fwd nack to requesting core
 					//update routing headers swap dest and src
 					//requesting node
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit nack to L2
 					cache_put_io_down_queue(cache, message_packet);

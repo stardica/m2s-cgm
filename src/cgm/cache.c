@@ -4628,8 +4628,6 @@ void l3_cache_up_io_ctrl(void){
 
 
 
-
-
 		//try to place on switches
 		if(message_packet->access_type == cgm_access_mc_load || message_packet->access_type == cgm_access_mc_store)
 		{

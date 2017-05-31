@@ -346,7 +346,7 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 				{
 					//note dest already set in protocol function.
 					message_packet->src_name = hub_iommu->name;
-					message_packet->src_id = str_map_string(&node_strn_map, hub_iommu->name);
+					message_packet->src_id = str_map_string(node_strn_map, hub_iommu->name);
 				}
 
 			}

@@ -34,50 +34,74 @@
 /*#include <cgm/sys-agent.h>*/
 
 
-//star todo add some sophistication with the scheduler and routing algorithms.
+enum node_map_p8{
 
-enum node_map{
+	l2_cache_0_p8 = 0,
+	switch_0_p8,
+	l3_cache_0_p8,
 
-	l2_cache_0 = 0,
-	switch_0,
-	l3_cache_0,
+	l2_cache_1_p8,
+	switch_1_p8,
+	l3_cache_1_p8,
 
-	l2_cache_1,
-	switch_1,
-	l3_cache_1,
+	l2_cache_2_p8,
+	switch_2_p8,
+	l3_cache_2_p8,
 
-	l2_cache_2,
-	switch_2,
-	l3_cache_2,
-
-	l2_cache_3,
-	switch_3,
-	l3_cache_3,
+	l2_cache_3_p8,
+	switch_3_p8,
+	l3_cache_3_p8,
 
 	/*--------------*/
 
-	l2_cache_4,
-	switch_4,
-	l3_cache_4,
+	l2_cache_4_p8,
+	switch_4_p8,
+	l3_cache_4_p8,
 
-	l2_cache_5,
-	switch_5,
-	l3_cache_5,
+	l2_cache_5_p8,
+	switch_5_p8,
+	l3_cache_5_p8,
 
-	l2_cache_6,
-	switch_6,
-	l3_cache_6,
+	l2_cache_6_p8,
+	switch_6_p8,
+	l3_cache_6_p8,
 
-	l2_cache_7,
-	switch_7,
-	l3_cache_7,
+	l2_cache_7_p8,
+	switch_7_p8,
+	l3_cache_7_p8,
 
-	hub_iommu_8,
-	switch_8,
-	sys_agent_8,
+	hub_iommu_8_p8,
+	switch_8_p8,
+	sys_agent_8_p8,
 
-	node_number
+	node_number_p8
 };
+
+enum node_map_p4{
+
+	l2_cache_0_p4 = 0,
+	switch_0_p4,
+	l3_cache_0_p4,
+
+	l2_cache_1_p4,
+	switch_1_p4,
+	l3_cache_1_p4,
+
+	l2_cache_2_p4,
+	switch_2_p4,
+	l3_cache_2_p4,
+
+	l2_cache_3_p4,
+	switch_3_p4,
+	l3_cache_3_p4,
+
+	hub_iommu_4_p4,
+	switch_4_p4,
+	sys_agent_4_p4,
+
+	node_number_p4
+};
+
 
 enum l1_map{
 
@@ -212,8 +236,11 @@ enum gpu_l2_map{
 };
 
 
+extern struct str_map_t node_strn_map_p8;
+extern struct str_map_t node_strn_map_p4;
 
-extern struct str_map_t node_strn_map;
+extern struct str_map_t *node_strn_map;
+
 extern struct str_map_t l1_strn_map;
 extern struct str_map_t l2_strn_map;
 extern struct str_map_t gpu_l1_strn_map;

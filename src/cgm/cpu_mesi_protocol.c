@@ -1670,11 +1670,16 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 			assert(l3_cache_ptr);
+
 			message_packet->l2_cache_id = cache->id;
 			message_packet->l2_cache_name = str_map_value(&l2_strn_map, cache->id);
 
 			//transmit to L3
 			SETROUTE(message_packet, cache, l3_cache_ptr)
+
+			//fatal("set route src %s id %d dest %s id %d\n",
+				//	message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
+
 
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s fetch miss ID %llu type %d state %d cycle %llu\n",
 					(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id,
@@ -2582,12 +2587,13 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 				//fwd block to requesting core
 				//update routing headers swap dest and src
 				//requesting node
-				pending_request->dest_name = str_map_value(&node_strn_map, pending_request->src_id);
-				pending_request->dest_id = str_map_string(&node_strn_map, pending_request->src_name);
+
+				pending_request->dest_name = str_map_value(node_strn_map, pending_request->src_id);
+				pending_request->dest_id = str_map_string(node_strn_map, pending_request->src_name);
 
 				//owning node L2
 				pending_request->src_name = cache->name;
-				pending_request->src_id = str_map_string(&node_strn_map, cache->name);
+				pending_request->src_id = str_map_string(node_strn_map, cache->name);
 
 				//transmit block to requesting node
 				pending_request = list_remove(cache->pending_request_buffer, pending_request);
@@ -2750,12 +2756,12 @@ void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 			//fwd block to requesting core
 			//update routing headers swap dest and src
 			//requesting node
-			pending_request->dest_name = str_map_value(&node_strn_map, pending_request->src_id);
-			pending_request->dest_id = str_map_string(&node_strn_map, pending_request->src_name);
+			pending_request->dest_name = str_map_value(node_strn_map, pending_request->src_id);
+			pending_request->dest_id = str_map_string(node_strn_map, pending_request->src_name);
 
 			//owning node L2
 			pending_request->src_name = cache->name;
-			pending_request->src_id = str_map_string(&node_strn_map, cache->name);
+			pending_request->src_id = str_map_string(node_strn_map, cache->name);
 
 			//transmit block to requesting node
 			pending_request = list_remove(cache->pending_request_buffer, pending_request);
@@ -2898,12 +2904,12 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 				//fwd block to requesting core
 				//update routing headers swap dest and src
 				//requesting node
-				pending_getx_fwd_request->dest_name = str_map_value(&node_strn_map, pending_getx_fwd_request->src_id);
-				pending_getx_fwd_request->dest_id = str_map_string(&node_strn_map, pending_getx_fwd_request->src_name);
+				pending_getx_fwd_request->dest_name = str_map_value(node_strn_map, pending_getx_fwd_request->src_id);
+				pending_getx_fwd_request->dest_id = str_map_string(node_strn_map, pending_getx_fwd_request->src_name);
 
 				//owning node L2
 				pending_getx_fwd_request->src_name = cache->name;
-				pending_getx_fwd_request->src_id = str_map_string(&node_strn_map, cache->name);
+				pending_getx_fwd_request->src_id = str_map_string(node_strn_map, cache->name);
 
 				//transmit block to requesting node
 				pending_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_getx_fwd_request);
@@ -3049,12 +3055,12 @@ void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *
 			//fwd block to requesting core
 			//update routing headers swap dest and src
 			//requesting node
-			pending_getx_fwd_request->dest_name = str_map_value(&node_strn_map, pending_getx_fwd_request->src_id);
-			pending_getx_fwd_request->dest_id = str_map_string(&node_strn_map, pending_getx_fwd_request->src_name);
+			pending_getx_fwd_request->dest_name = str_map_value(node_strn_map, pending_getx_fwd_request->src_id);
+			pending_getx_fwd_request->dest_id = str_map_string(node_strn_map, pending_getx_fwd_request->src_name);
 
 			//owning node L2
 			pending_getx_fwd_request->src_name = cache->name;
-			pending_getx_fwd_request->src_id = str_map_string(&node_strn_map, cache->name);
+			pending_getx_fwd_request->src_id = str_map_string(node_strn_map, cache->name);
 
 			//transmit block to requesting node
 			pending_getx_fwd_request = list_remove(cache->pending_request_buffer, pending_getx_fwd_request);
@@ -4134,12 +4140,12 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//set the block state
 					message_packet->cache_block_state = cgm_cache_block_shared;
 
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit block to requesting node
 					message_packet = list_remove(cache->last_queue, message_packet);
@@ -4267,12 +4273,12 @@ void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_pac
 					//fwd nack to requesting core
 					//update routing headers swap dest and src
 					//requesting node
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit nack to L2
 					cache_put_io_down_queue(cache, message_packet);
@@ -4396,7 +4402,7 @@ void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *messa
 		if(pending_packet)
 		{
 			/*if this went out as an upgrade there will be an upgrade packet here....*/
-			warning("*******getx_fwd_nack pending access destroyed%d\n", pending_packet->access_type);
+			warning("*******getx_fwd_nack pending access UPGRADE destroyed%d\n", pending_packet->access_type);
 
 			assert(pending_packet->access_type == cgm_access_upgrade);
 			cgm_cache_clear_block_upgrade_pending_bit(cache, message_packet->set, message_packet->way);
@@ -4600,12 +4606,12 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//fwd block to requesting core
 					//update routing headers swap dest and src
 					//requesting node
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit block to requesting node
 					message_packet = list_remove(cache->last_queue, message_packet);
@@ -4712,12 +4718,12 @@ void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_pa
 					//fwd nack to requesting core
 					//update routing headers swap dest and src
 					//requesting node
-					message_packet->dest_name = str_map_value(&node_strn_map, message_packet->src_id);
-					message_packet->dest_id = str_map_string(&node_strn_map, message_packet->src_name);
+					message_packet->dest_name = str_map_value(node_strn_map, message_packet->src_id);
+					message_packet->dest_id = str_map_string(node_strn_map, message_packet->src_name);
 
 					//owning node L2
 					message_packet->src_name = cache->name;
-					message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+					message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 					//transmit nack to L2
 					cache_put_io_down_queue(cache, message_packet);
@@ -5231,6 +5237,11 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	write_back_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
 	assert(!write_back_packet);
 
+	/*warning("l3 access id %llu in src %s id %d dest %s id %d\n",
+			message_packet->access_id, message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);*/
+
+			//"set route src %s id %d dest %s id %d\n", message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);
+
 	//get number of sharers
 	//sharers = cgm_cache_get_num_shares(cpu, cache, message_packet->set, message_packet->way);
 	//check to see if access is from an already owning core
@@ -5311,6 +5322,9 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 				assert(message_packet->cpu_access_type == cgm_access_fetch);
 
 				SETROUTE(message_packet, cache, system_agent)
+
+				/*warning("l3 access id %llu OUT src %s id %d dest %s id %d\n",
+						message_packet->access_id, message_packet->src_name, message_packet->src_id, message_packet->dest_name, message_packet->dest_id);*/
 
 				/*stats*/
 				if(!message_packet->protocol_case)
@@ -6200,7 +6214,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				//get the owning node
 				owning_cache_ptr = &l2_caches[owning_core];
 
-				if(owning_core == 8) //going to hub_iommu
+				if(owning_core == num_cores) //going to hub_iommu num cores is CPU + 1 i.e. the GPU
 				{
 					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x cycle %llu\n",
@@ -6211,6 +6225,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				}
 				else if(message_packet->src_id == 24) //comming from hub_iommu
 				{
+					fatal("here\n");
+
 					SETROUTE(message_packet, hub_iommu, owning_cache_ptr);
 				}
 				else
@@ -7381,7 +7397,7 @@ void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t
 
 	//owning node
 	message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
-	message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
+	message_packet->dest_id = str_map_string(node_strn_map, message_packet->dest_name);
 
 	//requesting node L2
 	//message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
@@ -7457,7 +7473,7 @@ void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_
 
 	//owning node
 	message_packet->dest_name = str_map_value(&l2_strn_map, xowning_core);
-	message_packet->dest_id = str_map_string(&node_strn_map, message_packet->dest_name);
+	message_packet->dest_id = str_map_string(node_strn_map, message_packet->dest_name);
 
 	//requesting node L2
 	//message_packet->src_id = str_map_string(&node_strn_map, message_packet->l2_cache_name);
@@ -8883,7 +8899,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//owning node L2
 			message_packet->src_name = cache->name;
-			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+			message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 			cache_put_io_down_queue(cache, message_packet);
 			break;
@@ -8930,7 +8946,7 @@ void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *messa
 
 			//owning node L2
 			message_packet->src_name = cache->name;
-			message_packet->src_id = str_map_string(&node_strn_map, cache->name);
+			message_packet->src_id = str_map_string(node_strn_map, cache->name);
 
 			//transmit block to requesting node
 			cache_put_io_down_queue(cache, message_packet);

@@ -241,7 +241,7 @@ void system_agent_route(struct cgm_packet_t *message_packet){
 		message_packet->dest_id = message_packet->src_id;
 		message_packet->dest_name = message_packet->src_name;
 		message_packet->src_name = system_agent->name;
-		message_packet->src_id = str_map_string(&node_strn_map, system_agent->name);
+		message_packet->src_id = str_map_string(node_strn_map, system_agent->name);
 
 
 		if(list_count(system_agent->Tx_queue_top) > QueueSize)

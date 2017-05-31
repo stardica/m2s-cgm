@@ -3181,9 +3181,11 @@ int cache_finish_create(){
 		}
 
 		//add pointer to CPU list of caches
+
+
+
 		gpu_core_id = num_cores;
 		l2_caches[num_cores + i] = gpu_l2_caches[i];
-
 		/*warning("gpu_group_cache_num = %d num_cores + i %d l2_name %s\n", gpu_group_cache_num, num_cores + i, l2_caches[num_cores + i].name);*/
 
 		//stats//stats
@@ -3439,6 +3441,16 @@ int switch_finish_create(void){
 	int i = 0;
 	float median = 0;
 
+
+	//set up the node map
+	if(num_cores == 8)
+		node_strn_map = &node_strn_map_p8;
+	else if(num_cores == 4)
+		node_strn_map = &node_strn_map_p4;
+	else
+		fatal("switch_finish_create(): unsupported number of cores add the node_string_map_px\n");
+
+
 	//create the queues
 	if(switches[0].port_num == 4)
 	{
@@ -3645,11 +3657,12 @@ int switch_finish_create(void){
 			if(i == num_cores)
 			{
 				//note this is the SA switch
-				switches[i].switch_node_number = str_map_string(&node_strn_map, "switch[8]");
+
+				switches[i].switch_node_number = str_map_string(node_strn_map, switches[i].name);
 			}
 			else
 			{
-				switches[i].switch_node_number = str_map_string(&node_strn_map, switches[i].name);
+				switches[i].switch_node_number = str_map_string(node_strn_map, switches[i].name);
 			}
 
 			/*printf("created switch %s node_number %d\n", switches[i].name, switches[i].switch_node_number);
@@ -3719,6 +3732,7 @@ int switch_finish_create(void){
 			{
 				//west queues
 				switches[i].next_west_id = num_cores + extras - 1;
+
 				/*switches[i].next_west_rx_request_queue = switches[switches[i].next_west_id].east_rx_request_queue;
 				switches[i].next_west_rx_reply_queue = switches[switches[i].next_west_id].east_rx_reply_queue;
 				switches[i].next_west_rx_coherence_queue = switches[switches[i].next_west_id].east_rx_coherence_queue;*/
@@ -3769,6 +3783,8 @@ int switch_finish_create(void){
 	{
 		fatal("switch_finish_create() port_num error\n");
 	}
+
+
 
 
 	////////////
