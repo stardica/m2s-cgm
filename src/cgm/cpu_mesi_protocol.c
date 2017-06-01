@@ -6220,12 +6220,16 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x cycle %llu\n",
 								cache->name, message_packet->address & cache->block_address_mask, P_TIME);
 
+					if(message_packet->access_id == 78741753)
+						warning("L3 forwarding message id %llu to GPU block 0x%08x cycle %llu\n"
+								, message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+
 
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
 				}
-				else if(message_packet->src_id == 24) //comming from hub_iommu
+				else if(message_packet->src_id == str_map_string(node_strn_map, hub_iommu->name)) //comming from hub_iommu
 				{
-					fatal("here\n");
+					//fatal("l3 get from GPU\n");
 
 					SETROUTE(message_packet, hub_iommu, owning_cache_ptr);
 				}
@@ -6802,7 +6806,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				//get the owning node
 				xowning_cache_ptr = &l2_caches[xowning_core];
 
-				if(xowning_core == 8) //hub_iommu
+				if(xowning_core == num_cores) //hub_iommu
 				{
 					if(cgm_gpu_cache_protocol == cgm_protocol_non_coherent)
 						warning("%s processing getx_fwd to GPU in non coherent mode blk addr0x%08x\n",
@@ -6810,8 +6814,11 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
 				}
-				else if(message_packet->src_id == 24)
+				else if(message_packet->src_id == str_map_string(node_strn_map, hub_iommu->name)) //if this request came from GPU
 				{
+
+					//fatal("l3 getx from GPU\n");
+
 					SETROUTE(message_packet, hub_iommu, xowning_cache_ptr);
 				}
 				else

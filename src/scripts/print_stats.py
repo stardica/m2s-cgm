@@ -2,7 +2,7 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 4
+num_cores = 1
 num_cus = 8
 cache_levels = 3
 gpu_stats = 1

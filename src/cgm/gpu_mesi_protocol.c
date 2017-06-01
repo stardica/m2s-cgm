@@ -3188,7 +3188,8 @@ void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *me
 	if(ort_status != cache->mshr_size)
 	{
 
-		fatal("cgm_mesi_gpu_l2_get_getx_fwd(): access conflict, but shouldn't have one of these yet...\n");
+		fatal("cgm_mesi_gpu_l2_get_getx_fwd(): access conflict, but shouldn't have one of these yet... block 0x%08x\n",
+				message_packet->address & cache->block_address_mask);
 
 		/*if there is a pending access int the ORT there better not be a block or a write back*/
 		if(*cache_block_state_ptr == cgm_cache_block_invalid)
