@@ -1508,7 +1508,7 @@ int main(int argc, char **argv)
 
 	/* Global initialization and welcome message */
 	/*m2s_init();*/
-	m2scgm_init();
+	m2scgm_init(argc, argv);
 
 	/* Classes */
 	CLASS_REGISTER(Asm);

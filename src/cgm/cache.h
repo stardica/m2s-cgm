@@ -215,7 +215,7 @@ void cgm_cache_set_block(struct cache_t *cache, int set, int way, int tag, int s
 void cgm_cache_set_block_type(struct cache_t *cache, int type, int set, int way);
 void cgm_cache_update_waylist(struct cache_set_t *set, struct cache_block_t *blk, enum cache_waylist_enum where);
 void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way);
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way);
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int pending_request, int victim_way);
 void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way);
 int cgm_cache_get_block_type(struct cache_t *cache, int set, int way, int tag);
 void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm_cache_block_state_t state);

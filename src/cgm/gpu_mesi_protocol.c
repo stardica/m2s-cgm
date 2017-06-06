@@ -820,7 +820,7 @@ void cgm_mesi_gpu_l1_v_gpu_flush(struct cache_t *cache, struct cgm_packet_t *mes
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush-flush block ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -946,7 +946,7 @@ void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *m
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block (L1) ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
@@ -1334,7 +1334,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 		/*its possible for a get to come in from an owing core to and for the block to be pending
 		this occurs if the owning core silently dropped the block and a get_fwd was processed
 		just before the owning core's request comes in send the block back to the owning core
-		a previously sent get_fwd will be joined with this put/putx*/
+		a previously sent get_fwd will be joined at the owning core with this put/putx*/
 		if(owning_core == 1)
 		{
 
@@ -1614,7 +1614,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
-							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0);
+							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0, 0);
 
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
@@ -1732,7 +1732,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//we are bringing a new block so evict the victim and flush the L1 copies
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
-							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0);
+							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0, 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
@@ -1912,6 +1912,10 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//flush the block out of the core...
 				flush_packet = packet_create();
 				init_flush_packet(cache, flush_packet, message_packet->set, message_packet->way);
+
+				//flush the block out of the pending core...
+				DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s issuing evict packet ID %llu type %d cycle %llu\n",
+						(flush_packet->address & cache->block_address_mask), cache->name, flush_packet->evict_id, flush_packet->access_type, P_TIME);
 
 				flush_packet->gpu_access_type = cgm_access_store;
 				flush_packet->l1_cache_id = owning_core;
@@ -2418,7 +2422,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way,
-							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0);
+							cgm_cache_get_num_shares(gpu, cache, write_back_packet->set, write_back_packet->l2_victim_way), 0, 0);
 
 				//clear the old directory entry
 				cgm_cache_clear_dir(cache,  write_back_packet->set, write_back_packet->l2_victim_way);
@@ -2534,7 +2538,7 @@ int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_pac
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
 					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way,
-							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0);
+							cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->l2_victim_way), 0, 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache, message_packet->set, message_packet->l2_victim_way);
@@ -3892,6 +3896,8 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 	//int l3_map = 0;
 	int ort_status = -1;
 
+	int num_pending_requests = 0;
+
 	struct cgm_packet_t *pending_request_packet = NULL;
 
 	enum cgm_cache_block_state_t victim_trainsient_state;
@@ -3984,6 +3990,10 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 					//fatal("cgm_mesi_l2_flush_block(): flush pending blk 0x%08x this is probably ok, just need to make sure its working right\n",
 					//		message_packet->address & cache->block_address_mask);
 
+					DEBUG(LEVEL == 2 || LEVEL == 3, "cgm_mesi_gpu_l2_flush_block(): (from L3) block 0x%08x %s flush is pending block ID %llu type %d state %d cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+						message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
 					//waiting on flush to finish insert into pending request buffer
 					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
 
@@ -4023,12 +4033,13 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 			we must invalidate here and send an invalidation to the L1 D cache*/
 			assert(victim_trainsient_state != cgm_cache_block_transient);
 
+
 			if(sharers == 1)
 			{
 				/*assert(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) == 0);*/
 				if(cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way) == 1)
 				{
-					int num_pending_requests = 0;
+
 
 					do
 					{	/*There are pending request for this block, we need to nack them now then evict.*/
@@ -4061,6 +4072,10 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 							//set message package size
 							pending_request_packet->size = HEADER_SIZE;
 
+							DEBUG(LEVEL == 2 || LEVEL == 3, "cgm_mesi_gpu_l2_flush_block(): (from L3) block 0x%08x %s found pending request issuing nack to l1 block ID %llu type %d state %d cycle %llu\n",
+									(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
+									message_packet->access_type, *cache_block_state_ptr, P_TIME);
+
 							/*reset mp flags*/
 							assert(pending_request_packet->coalesced == 0);
 							assert(pending_request_packet->assoc_conflict == 0);
@@ -4078,8 +4093,10 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 				}
 
 				/*evict block here*/
+
+				/*protocol bug; there is a flush packet already in the system don't send a 2nd*/
 				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way,
-						cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), 0);
+						cgm_cache_get_num_shares(gpu, cache, message_packet->set, message_packet->way), num_pending_requests, 0);
 
 				//clear the directory entry
 				cgm_cache_clear_dir(cache,  message_packet->set, message_packet->way); /*NOTE CLEARS THE PENDING BIT*/
@@ -4122,7 +4139,6 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 
 				//reply to the L3 cache
 				cache_put_io_down_queue(cache, message_packet);
-
 			}
 
 			break;
@@ -4165,7 +4181,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				/*evict block here*/
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, 0, message_packet->way);
 
 				/*block should "still" be transient*/
 				assert(victim_trainsient_state == cgm_cache_block_transient);
@@ -4176,7 +4192,7 @@ void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *mes
 				/*block is shared drop it no need to send ack to L3 as there is no pending flush in WB*/
 				/*evict block here*/
 
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, 0, message_packet->way);
 				message_packet->l2_victim_way = message_packet->way;
 
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -4216,7 +4232,16 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 
 	if(*cache_block_hit_ptr == 1)
-		assert(pending_bit == 1);
+	{
+		if(pending_bit != 1)
+		{
+				fatal("cgm_mesi_gpu_l2_flush_block_ack(): %s block hit as %s access_id %llu address 0x%08x blk_addr 0x%08x set %d tag %d way %d state %d cycle %llu\n",
+				cache->name, str_map_value(&cgm_cache_block_state_map, *cache_block_state_ptr),
+				message_packet->evict_id, message_packet->address, message_packet->address & cache->block_address_mask,
+				message_packet->set, message_packet->tag, message_packet->way, *cache_block_state_ptr, P_TIME);
+				assert(pending_bit == 1);
+		}
+	}
 
 	/*reset mp flags*/
 	assert(message_packet->coalesced == 0);
@@ -4277,8 +4302,8 @@ void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t 
 	if(wb_packet)
 	{
 
-		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack with wb in l2 flush_join %d pending bit %d ID %llu type %d state %d cycle %llu\n",
-				(message_packet->address & cache->block_address_mask), cache->name, wb_packet->L3_flush_join, pending_bit, message_packet->evict_id,
+		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack with wb in l2 id %llu flush_join %d pending bit %d ID %llu type %d state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, wb_packet->L3_flush_join, pending_bit, message_packet->evict_id,
 				message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 

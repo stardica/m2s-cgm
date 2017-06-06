@@ -1629,7 +1629,7 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 }
 
 
-void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int victim_way){
+void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int pending_request, int victim_way){
 
 
 	/*assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
@@ -1739,8 +1739,10 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	}
 
 
-	if(cache->cache_type == gpu_l2_cache_t)
+	if(cache->cache_type == gpu_l2_cache_t && !pending_request)
 	{
+		/*don't issue an evict notice if there is a pending request
+		we are already waiting on one from earlier.*/
 
 		//get the presence bits from the directory
 		bit_vector = cache->sets[set].blocks[way].directory_entry.entry;
@@ -1770,6 +1772,15 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 					flush_packet->cpu_access_type = cgm_access_load;
 					flush_packet->l1_cache_id = i;
 
+					if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+					{
+						if(LEVEL == 2 || LEVEL == 3)
+						{
+							printf("block 0x%08x %s evict packet created id %llu pending state %d cycle %llu\n",
+									cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag), cache->name, flush_packet->evict_id, pending_request, P_TIME);
+						}
+					}
+
 					list_enqueue(cache->Tx_queue_top, flush_packet);
 					advance(cache->cache_io_up_ec);
 
@@ -1786,7 +1797,7 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 		assert(num_messages == sharers);
 
 	}
-	else
+	else if (cache->cache_type == l2_cache_t)
 	{
 
 		flush_packet = packet_create();
@@ -1798,6 +1809,15 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		flush_packet->cpu_access_type = cgm_access_store;
 		flush_packet->l1_cache_id = 0;
+
+		if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+		{
+			if(LEVEL == 2 || LEVEL == 3)
+			{
+				printf("block 0x%08x %s evict packet created id %llu cycle %llu\n",
+						cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag), cache->name, flush_packet->evict_id, P_TIME);
+			}
+		}
 
 		list_enqueue(cache->Tx_queue_top, flush_packet);
 		advance(cache->cache_io_up_ec);

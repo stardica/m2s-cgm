@@ -899,7 +899,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit, int ac
 
 	/*stats*/
 	/*CU stall time*/
-	if(vector_gpu_state == stalled)// || scalar_gpu_state == stalled)// && scalar_gpu_state == stalled) // && vector_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled)
+	if(vector_gpu_state == stalled) //&& scalar_gpu_state == stalled) // && vector_gpu_state == stalled && simd_gpu_state == stalled && lds_gpu_state == stalled)
 	{
 		cpu_gpu_stats->cu_total_stalls[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 	}

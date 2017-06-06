@@ -533,13 +533,16 @@ void init_cpu_gpu_stats(void){
 
 
 
-void m2scgm_init(void){
+void m2scgm_init(int argc, char **argv){
 
 	/* Initial information*/
 	printf("---Welcome to M2S-CGM---\n");
 	printf("---A x86 Based CPU-GPU Heterogeneous Computing Simulator---\n");
 	printf("\n");
 	printf("---Simulator Init---\n");
+
+	/*if(argc < 2)
+		fatal("m2scgm_init(): missing command line params\n");*/
 
 	return;
 }
@@ -548,15 +551,15 @@ void cgm_check_config_files(char **argv){
 
 	if(!strcmp(x86_config_file_name, ""))
 	{
-		fatal("cgm_init(): x86 config file not specified\n");
+		fatal("cgm_check_config_files(): x86 config file not specified\n");
 	}
 	else if(!strcmp(si_gpu_config_file_name, ""))
 	{
-		fatal("cgm_init(): si config file not specified\n");
+		fatal("cgm_check_config_files(): si config file not specified\n");
 	}
 	else if(!strcmp(cgm_config_file_name_and_path, ""))
 	{
-		fatal("cgm_init(): mem config file not specified\n");
+		fatal("cgm_check_config_files(): mem config file not specified\n");
 	}
 
 	return;
@@ -2441,6 +2444,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
+
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)
 	{
@@ -2462,6 +2466,10 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 			printf("queue size %d cycle %llu\n", list_count(vector_mem->compute_unit->gpu_v_cache_ptr->Rx_queue_top), P_TIME);
 			getchar();
 		}*/
+
+		//if(new_packet->access_id == 121062553)
+		//	fatal("id %llu start addr 0x%08x blk addr 0x%08x\n",
+		//			new_packet->access_id, new_packet->address, new_packet->address & gpu_v_caches[id].block_address_mask);
 
 		//Drop the packet into the Rx queue
 		list_enqueue(vector_mem->compute_unit->gpu_v_cache_ptr[id].Rx_queue_top, new_packet);

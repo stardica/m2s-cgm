@@ -258,11 +258,9 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 	//get the block status
 	cache_get_block_status(cache, message_packet, cache_block_hit_ptr, cache_block_state_ptr);
 
-	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block ID %llu type %d state %d cycle %llu\n",
+	DEBUG(LEVEL == 1 || LEVEL == 3, "block 0x%08x %s GPU flush block (FROM CPU) ID %llu type %d state %d cycle %llu\n",
 			(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id,
 			message_packet->access_type, *cache_block_state_ptr, P_TIME);
-
-
 
 
 	//check the ORT table is there an outstanding access for this block we are trying to flush?
@@ -1663,7 +1661,7 @@ void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 
 			/*if the block isn't already invalid evict it*/
 			if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0, 0);
 
 			//add some routing/status data to the packet
 			message_packet->access_type = cgm_access_gets;
@@ -1820,7 +1818,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0, 0);
 
 				//now set the block
 				assert(write_back_packet->cache_block_state == cgm_cache_block_exclusive || write_back_packet->cache_block_state == cgm_cache_block_modified);
@@ -1890,7 +1888,7 @@ void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 				assert(message_packet->l2_victim_way >= 0 && message_packet->l2_victim_way < cache->assoc);
 
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0, 0);
 
 				ort_row = ort_search(cache, message_packet->tag, message_packet->set);
 				assert(ort_row < cache->mshr_size);
@@ -2205,7 +2203,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//first evict the old block if it isn't invalid already
 				if(cgm_cache_get_block_state(cache, write_back_packet->set, write_back_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0);
+					cgm_L2_cache_evict_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, 0, 0, 0);
 
 				//now set the new block
 				cgm_cache_set_block(cache, write_back_packet->set, write_back_packet->l2_victim_way, write_back_packet->tag, write_back_packet->cache_block_state);
@@ -2276,7 +2274,7 @@ int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet)
 
 				//evict the victim
 				if(cgm_cache_get_block_state(cache, message_packet->set, message_packet->l2_victim_way) != cgm_cache_block_invalid)
-					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0);
+					cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->l2_victim_way, 0, 0, 0);
 
 				assert(cgm_cache_get_block_upgrade_pending_bit(cache, message_packet->set, message_packet->l2_victim_way) == 0);
 
@@ -3254,7 +3252,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 			assert(victim_trainsient_state != cgm_cache_block_transient);
 
 			/*evict block here*/
-			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+			cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, 0, message_packet->way);
 
 			//star todo find a better way to do this...
 			wb_packet = cache_search_wb(cache, message_packet->tag, message_packet->set);
@@ -3304,7 +3302,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 						(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 				/*evict block here*/
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, 0, message_packet->way);
 
 				/*block should "still" be transient*/
 				assert(victim_trainsient_state == cgm_cache_block_transient);
@@ -3315,7 +3313,7 @@ void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message
 				/*block is shared drop it no need to send ack to L3 as there is no pending flush in WB*/
 				/*evict block here*/
 
-				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, message_packet->way);
+				cgm_L2_cache_evict_block(cache, message_packet->set, message_packet->way, 0, 0, message_packet->way);
 				message_packet->l2_victim_way = message_packet->way;
 
 				message_packet = list_remove(cache->last_queue, message_packet);
@@ -3680,8 +3678,8 @@ void cgm_mesi_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *mes
 	if(wb_packet)
 	{
 
-		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack with wb in l2 l3_flush_join %d ID %llu type %d state %d cycle %llu\n",
-				(message_packet->address & cache->block_address_mask), cache->name, wb_packet->L3_flush_join, message_packet->evict_id,
+		DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s flush blk ack with wb in l2 id %llu l3_flush_join %d ID %llu type %d state %d cycle %llu\n",
+				(message_packet->address & cache->block_address_mask), cache->name, message_packet->evict_id, wb_packet->L3_flush_join, message_packet->evict_id,
 				message_packet->access_type, *cache_block_state_ptr, P_TIME);
 
 
