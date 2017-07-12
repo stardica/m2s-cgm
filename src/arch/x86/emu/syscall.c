@@ -222,6 +222,8 @@ void x86_sys_dump_stats(FILE *f)
 	fprintf(f, "\n");
 }
 
+int num_ranges = 0;
+
 void X86ContextSyscall(X86Context *self)
 {
 	X86Emu *emu = self->emu;
@@ -236,7 +238,13 @@ void X86ContextSyscall(X86Context *self)
 	code = regs->eax;
 
 	if(regs->eax == 329)
+	{
 		warning("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
+	}
+
+	if(regs->eax == 329 && regs->ebx == 16)
+		num_ranges++;
+
 	//else
 	//	warning("CTX syscall code %d abi code %d\n", regs->eax, regs->ebx);
 
@@ -5682,6 +5690,16 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
 
+	num_ranges = 0;
+
+	branch_stalls = 0;
+	scalar_stalls = 0;
+	vector_stalls = 0;
+	simd_stalls = 0;
+	lds_stalls = 0;
+	lds_scalar_stalls = 0;
+	lds_scalar_notvector_stalls = 0;
+
 
 	for(i=0;i<num_cores;i++)
 	{
@@ -5715,8 +5733,8 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 {
 
-	int num_cores = x86_cpu_num_cores;
-	int i = 0;
+	//int num_cores = x86_cpu_num_cores;
+	//int i = 0;
 
 	/*this syscall represents the end of the parallel section of the benchmark
 	we need to save away the current stats which contains the parallel section stats.
@@ -5731,6 +5749,15 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	if(quick_dump == 1)
 	{
 		printf("---Quick Dump System Cycle %llu---\n", P_TIME);
+
+		/*printf("GPU stalls:\n");
+		printf("branch stalls: %llu\n", branch_stalls);
+		printf("scalar stalls: %llu\n", scalar_stalls);
+		printf("vector stalls: %llu\n", vector_stalls);
+		printf("simd stalls: %llu\n", simd_stalls);
+		printf("lds stalls: %llu\n", lds_stalls);
+		printf("lds_scalar stalls: %llu\n", lds_scalar_stalls);
+		printf("lds_scalar_novect stalls: %llu\n", lds_scalar_notvector_stalls);
 
 
 		printf("TLB utilization:\n");
@@ -5754,12 +5781,12 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 
 		printf("page size %d created %llu\n", mmu_page_size, pages_created);
 
-		printf("mmu num proc %llu ptw num proc %llu\n", mmu[0].num_processed, ptw_num_processed);
+		printf("mmu num proc %llu ptw num proc %llu\n", mmu[0].num_processed, ptw_num_processed);*/
 
 
 		//printf(num)
 
-		//printf
+		printf("num_ranges %d\n", num_ranges);
 
 		//printf("fetches %llu loads %llu stores %llu\n",
 		//		mem_system_stats->cpu_total_fetch_requests, mem_system_stats->cpu_total_load_requests, mem_system_stats->cpu_total_store_requests);

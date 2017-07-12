@@ -146,6 +146,7 @@ enum cgm_access_kind_t {
 			cgm_access_retry_i,//not used
 			cgm_access_cpu_flush,
 	/*60*/	cgm_access_cpu_flush_ack,
+			cgm_access_cpu_flush_nack,
 			cgm_access_cpu_flush_fwd,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
@@ -459,6 +460,7 @@ struct cache_t{
 	void (*l1_d_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l1_d_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l1_d_cpu_flush_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_cpu_fence)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l1_d_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -729,6 +731,21 @@ struct cgm_stats_t{
 	long long *cu_total_stalls;
 	long long *cu_total_mapped;
 	long long *cu_total_unmapped;
+
+	long long *cu_branch_stalls;
+	long long *cu_scalar_stalls;
+	long long *cu_vector_stalls;
+	long long *cu_simd_stalls;
+	long long *cu_lds_stalls;
+	long long *cu_lds_scalar_stalls;
+	long long *cu_lds_scalar_notvector_stalls;
+
+	long long *cu_branch_idle;
+	long long *cu_scalar_idle;
+	long long *cu_vector_idle;
+	long long *cu_simd_idle;
+	long long *cu_lds_idle;
+	long long *cu_bsslvb_idle;
 
 
 	//memory system at large

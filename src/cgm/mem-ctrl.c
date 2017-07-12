@@ -287,6 +287,14 @@ void memctrl_ctrl(void){
 				else
 				{
 					SYSTEM_PAUSE(mem_ctrl->DRAM_latency);
+
+					//tell CPU flush is complete if cpu flush with modified data
+					if(message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_gpu_flush_ack)
+					{
+						assert(message_packet->cache_block_state == cgm_cache_block_modified);
+						l1_d_caches[message_packet->flush_core].flush_tx_counter--;
+					}
+
 					message_packet = list_remove(mem_ctrl->Rx_queue_top, message_packet);
 					free(message_packet);
 				}

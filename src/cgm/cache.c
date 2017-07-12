@@ -3261,6 +3261,13 @@ void l1_d_cache_ctrl(void){
 				if(!l1_d_caches[my_pid].l1_d_cpu_flush(&(l1_d_caches[my_pid]), message_packet))
 					step--;
 			}
+			else if (access_type == cgm_access_cpu_flush_nack)
+			{
+				//Call back function (cgm_mesi_l1_d_downgrade)
+				l1_d_caches[my_pid].l1_d_cpu_flush_nack(&(l1_d_caches[my_pid]), message_packet);
+
+				step--;
+			}
 			else if (access_type == cgm_access_gpu_flush)
 			{
 				//Call back function (cgm_mesi_l1_d_downgrade)
@@ -4271,8 +4278,6 @@ void l1_d_cache_down_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack)
 
 		{
-
-			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
 			if(list_count(l2_caches[my_pid].Rx_queue_top) >= QueueSize
 					|| l2_caches[my_pid].Rx_queue_top->locked == 1)
 			{
@@ -4302,7 +4307,7 @@ void l1_d_cache_down_io_ctrl(void){
 				l2_caches[my_pid].Rx_queue_top->locked = 0;
 			}
 		}
-		else// if()
+		else
 		{
 
 			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
@@ -4330,14 +4335,9 @@ void l1_d_cache_down_io_ctrl(void){
 				l2_caches[my_pid].Coherance_Rx_queue->locked = 0;
 			}
 		}
-		/*else
-		{
-			fatal("l1_d_cache_down_io_ctrl(): invalid access type\n");
-		}*/
 
 		/*stats occupancy*/
 		l1_d_caches[my_pid].IODownOccupancy += (P_TIME - occ_start);
-
 	}
 
 	fatal("l1_d_cache_down_io_ctrl(): out of while loop\n");
@@ -4404,11 +4404,13 @@ void l2_cache_up_io_ctrl(void){
 				advance(&l1_i_cache[my_pid]);
 			}
 		}
-		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store)
+		else if (message_packet->cpu_access_type == cgm_access_load || message_packet->cpu_access_type == cgm_access_store
+				|| message_packet->cpu_access_type == cgm_access_cpu_flush)
 		{
 			if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 					|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_nack
-					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_cpu_flush_fwd)
+					|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_cpu_flush_fwd
+					|| message_packet->access_type == cgm_access_cpu_flush_nack)
 			{
 
 				if(list_count(l1_d_caches[my_pid].Rx_queue_bottom) > QueueSize)

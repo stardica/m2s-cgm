@@ -31,6 +31,8 @@
  * Additional functions
  */
 
+extern int num_ranges;
+
 void X86ContextSyscall(X86Context *self);
 
 

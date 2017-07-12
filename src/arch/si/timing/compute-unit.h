@@ -104,6 +104,14 @@ struct si_compute_unit_t
 	FILE * spatial_report_file;
 };
 
+extern long long branch_stalls;
+extern long long scalar_stalls;
+extern long long vector_stalls;
+extern long long simd_stalls;
+extern long long lds_stalls;
+extern long long lds_scalar_stalls;
+extern long long lds_scalar_notvector_stalls;
+
 struct si_compute_unit_t *si_compute_unit_create(void);
 void si_compute_unit_free(struct si_compute_unit_t *gpu_compute_unit);
 void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit, struct si_work_group_t *work_group);

@@ -231,6 +231,21 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->cu_total_mapped = (long long *)calloc(num_cus, sizeof(long long));
 	cgm_stat_container->cu_total_unmapped = (long long *)calloc(num_cus, sizeof(long long));
 
+	cgm_stat_container->cu_branch_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_scalar_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_vector_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_simd_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_lds_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_lds_scalar_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_lds_scalar_notvector_stalls = (long long *)calloc(num_cus, sizeof(long long));
+
+	cgm_stat_container->cu_branch_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_scalar_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_vector_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_simd_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_lds_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cgm_stat_container->cu_bsslvb_idle = (long long *)calloc(num_cus, sizeof(long long));
+
 	cgm_stat_container->l1_i_Occupancy = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_CacheUtilization = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l1_i_TotalAdvances = (long long *)calloc(num_cores, sizeof(long long));
@@ -523,6 +538,21 @@ void init_cpu_gpu_stats(void){
 	cpu_gpu_stats->cu_total_stalls = (long long *)calloc(num_cus, sizeof(long long));
 	cpu_gpu_stats->cu_total_mapped = (long long *)calloc(num_cus, sizeof(long long));
 	cpu_gpu_stats->cu_total_unmapped = (long long *)calloc(num_cus, sizeof(long long));
+
+	cpu_gpu_stats->cu_branch_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_scalar_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_vector_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_simd_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_lds_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_lds_scalar_stalls = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_lds_scalar_notvector_stalls = (long long *)calloc(num_cus, sizeof(long long));
+
+	cpu_gpu_stats->cu_branch_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_scalar_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_vector_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_simd_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_lds_idle = (long long *)calloc(num_cus, sizeof(long long));
+	cpu_gpu_stats->cu_bsslvb_idle = (long long *)calloc(num_cus, sizeof(long long));
 
 	cpu_gpu_stats->bandwidth = (void *)calloc(num_cores, sizeof(struct list_t *));
 	for(i = 0; i < num_cores; i ++)
@@ -1003,6 +1033,21 @@ void cpu_gpu_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->cu_total_stalls[i] = cpu_gpu_stats->cu_total_stalls[i];
 		cgm_stat_container->cu_total_mapped[i] = cpu_gpu_stats->cu_total_mapped[i];
 		cgm_stat_container->cu_total_unmapped[i] = cpu_gpu_stats->cu_total_unmapped[i];
+
+		cgm_stat_container->cu_branch_stalls[i] = cpu_gpu_stats->cu_branch_stalls[i];
+		cgm_stat_container->cu_scalar_stalls[i] = cpu_gpu_stats->cu_scalar_stalls[i];
+		cgm_stat_container->cu_vector_stalls[i] = cpu_gpu_stats->cu_vector_stalls[i];
+		cgm_stat_container->cu_simd_stalls[i] = cpu_gpu_stats->cu_simd_stalls[i];
+		cgm_stat_container->cu_lds_stalls[i] = cpu_gpu_stats->cu_lds_stalls[i];
+		cgm_stat_container->cu_lds_scalar_stalls[i] = cpu_gpu_stats->cu_lds_scalar_stalls[i];
+		cgm_stat_container->cu_lds_scalar_notvector_stalls[i] = cpu_gpu_stats->cu_lds_scalar_notvector_stalls[i];
+
+		cgm_stat_container->cu_branch_idle[i] = cpu_gpu_stats->cu_branch_idle[i];
+		cgm_stat_container->cu_scalar_idle[i] = cpu_gpu_stats->cu_scalar_idle[i];
+		cgm_stat_container->cu_vector_idle[i] = cpu_gpu_stats->cu_vector_idle[i];
+		cgm_stat_container->cu_simd_idle[i] = cpu_gpu_stats->cu_simd_idle[i];
+		cgm_stat_container->cu_lds_idle[i] = cpu_gpu_stats->cu_lds_idle[i];
+		cgm_stat_container->cu_bsslvb_idle[i] = cpu_gpu_stats->cu_bsslvb_idle[i];
 	}
 
 	return;
@@ -1079,6 +1124,21 @@ void cpu_gpu_reset_stats(void){
 		cpu_gpu_stats->cu_total_stalls[i] = 0;
 		cpu_gpu_stats->cu_total_mapped[i] = 0;
 		cpu_gpu_stats->cu_total_unmapped[i] = 0;
+
+		cpu_gpu_stats->cu_branch_stalls[i] = 0;
+		cpu_gpu_stats->cu_scalar_stalls[i] = 0;
+		cpu_gpu_stats->cu_vector_stalls[i] = 0;
+		cpu_gpu_stats->cu_simd_stalls[i] = 0;
+		cpu_gpu_stats->cu_lds_stalls[i] = 0;
+		cpu_gpu_stats->cu_lds_scalar_stalls[i] = 0;
+		cpu_gpu_stats->cu_lds_scalar_notvector_stalls[i] = 0;
+
+		cpu_gpu_stats->cu_branch_idle[i] = 0;
+		cpu_gpu_stats->cu_scalar_idle[i] = 0;
+		cpu_gpu_stats->cu_vector_idle[i] = 0;
+		cpu_gpu_stats->cu_simd_idle[i] = 0;
+		cpu_gpu_stats->cu_lds_idle[i] = 0;
+		cpu_gpu_stats->cu_bsslvb_idle[i] = 0;
 	}
 
 	return;
@@ -1538,6 +1598,22 @@ void cgm_dump_cpu_gpu_stats(struct cgm_stats_t *cgm_stat_container){
 		CGM_STATS(cgm_stats_file, "GPU_%d_TotalStalls = %llu\n", i, cgm_stat_container->cu_total_stalls[i]);
 		CGM_STATS(cgm_stats_file, "GPU_%d_TotalMapped = %llu\n", i, cgm_stat_container->cu_total_mapped[i]);
 		CGM_STATS(cgm_stats_file, "GPU_%d_TotalUnMapped = %llu\n", i, cgm_stat_container->cu_total_unmapped[i]);
+
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalBranchStalls = %llu\n", i, cgm_stat_container->cu_branch_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalScalarStalls = %llu\n", i, cgm_stat_container->cu_scalar_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalVectorStalls = %llu\n", i, cgm_stat_container->cu_vector_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalSimdStalls = %llu\n", i, cgm_stat_container->cu_simd_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalLdsStalls = %llu\n", i, cgm_stat_container->cu_lds_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalLdsScalarStalls = %llu\n", i, cgm_stat_container->cu_lds_scalar_stalls[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalLdsScalarNotVectorStalls = %llu\n", i, cgm_stat_container->cu_lds_scalar_notvector_stalls[i]);
+
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalBranchIdle = %llu\n", i, cgm_stat_container->cu_branch_idle[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalScalarIdle = %llu\n", i, cgm_stat_container->cu_scalar_idle[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalVectorIdle = %llu\n", i, cgm_stat_container->cu_vector_idle[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalSimdIdle = %llu\n", i, cgm_stat_container->cu_simd_idle[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalLdsIdle = %llu\n", i, cgm_stat_container->cu_lds_idle[i]);
+		CGM_STATS(cgm_stats_file, "GPU_%d_TotalBsslvbIdle = %llu\n", i, cgm_stat_container->cu_bsslvb_idle[i]);
+
 	}
 
 	return;

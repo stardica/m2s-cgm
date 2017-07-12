@@ -57,9 +57,9 @@
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x01387900 //0xb7e16900
+#define WATCHBLOCK (unsigned int) 0x0123f640 //0xb7e16900
 //0 = off 1 = on
-#define WATCHLINE 1
+#define WATCHLINE 0
 //Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 = L1-L3,
 #define LEVEL 3
 //dumps the system trace 0 off 1 on
@@ -270,7 +270,20 @@ struct cpu_gpu_stats_t{
 	long long *cu_total_mapped;
 	long long *cu_total_unmapped;
 
+	long long *cu_branch_stalls;
+	long long *cu_scalar_stalls;
+	long long *cu_vector_stalls;
+	long long *cu_simd_stalls;
+	long long *cu_lds_stalls;
+	long long *cu_lds_scalar_stalls;
+	long long *cu_lds_scalar_notvector_stalls;
 
+	long long *cu_branch_idle;
+	long long *cu_scalar_idle;
+	long long *cu_vector_idle;
+	long long *cu_simd_idle;
+	long long *cu_lds_idle;
+	long long *cu_bsslvb_idle;
 };
 
 extern int gpu_running;

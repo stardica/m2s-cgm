@@ -295,6 +295,14 @@ int cgm_mesi_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packe
 	return 1;
 }
 
+void cgm_mesi_cpu_flush_nack(struct cache_t *cache, struct cgm_packet_t *message_packet){
+
+
+	//nack came from L2, a flush from an evict is in progress, just rerun it.
+	message_packet->access_type = cgm_access_cpu_flush_fwd;
+
+	return;
+}
 
 
 int cgm_mesi_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet){
@@ -3507,17 +3515,33 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 				}
 				else if(wb_packet->flush_pending == 1)
 				{
-					fatal("cgm_mesi_l2_cpu_flush(): flush pending not sure what to do with this\n");
 
-					/*//waiting on flush to finish insert into pending request buffer
-					assert(wb_packet->cache_block_state == cgm_cache_block_exclusive || wb_packet->cache_block_state == cgm_cache_block_modified);
+					//A flush has come to L2 in the middle of an evict, the block is modified so we must restart the flush
+					DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load nack wb pending flush ID %llu type %d state %d cycle %llu\n",
+							(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, message_packet->access_type,
+							*cache_block_state_ptr, P_TIME);
 
-					set flush_join bit
-					wb_packet->L3_flush_join = 1;
+					warning("cgm_mesi_l2_cpu_flush(): flush pending not sure what to do with this blk addr 0x%08x cycle %llu\n",
+							wb_packet->address & cache->block_address_mask, P_TIME);
 
-					//put the message packet into the pending request buffer
-					message_packet = list_remove(cache->last_queue, message_packet);
-					list_enqueue(cache->pending_request_buffer, message_packet);*/
+
+					/*ok figured this out.... nack this back to L1 for retry, its possible for this
+					to beat a writeback because this started at the top of the L1 cache*/
+
+					message_packet->access_type = cgm_access_cpu_flush_nack;
+
+					//set message package size
+					message_packet->size = HEADER_SIZE;
+
+					/*stats*/
+					/*star todo add a stat for this*/
+
+					cache_put_io_up_queue(cache, message_packet);
+
+					//warning("nacking load back to L1, flush still pending\n");
+
+					return;
+
 				}
 				else
 				{

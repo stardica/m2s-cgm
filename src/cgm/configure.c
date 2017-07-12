@@ -2165,6 +2165,8 @@ int cache_finish_create(){
 			l1_d_caches[i].l1_d_flush_block = cgm_mesi_l1_d_flush_block;
 
 			l1_d_caches[i].l1_d_cpu_flush = cgm_mesi_cpu_flush;
+			l1_d_caches[i].l1_d_cpu_flush_nack = cgm_mesi_cpu_flush_nack;
+
 			l1_d_caches[i].l1_d_gpu_flush = cgm_mesi_gpu_flush;
 
 			l1_d_caches[i].l1_d_cpu_fence = cgm_mesi_cpu_fence;

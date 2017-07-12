@@ -961,7 +961,19 @@ def print_cu_stats(options):
 		"TotalStalls",
 		"TotalMapped",
 		"TotalUnMapped",
-		#"SCROBStalls"
+		"TotalBranchStalls",
+		"TotalScalarStalls",
+		"TotalVectorStalls",
+		"TotalSimdStalls",
+		"TotalLdsStalls",
+		"TotalLdsScalarStalls",
+		"TotalLdsScalarNotVectorStalls",
+		"TotalBranchIdle",
+		"TotalScalarIdle",
+		"TotalVectorIdle",
+		"TotalSimdIdle",
+		"TotalLdsIdle",
+		"TotalBsslvbIdle",
 		]
 
 	stat_table = [[0 for x in range(num_cus + 1)] for y in range(len(stats))]

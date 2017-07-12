@@ -74,6 +74,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_write_back", cgm_access_write_back},
 		{"cgm_access_retry_i", cgm_access_retry_i},
 		{"cgm_access_cpu_flush", cgm_access_cpu_flush},
+		{"cgm_access_cpu_flush_nack", cgm_access_cpu_flush_nack},
 		{"cgm_access_cpu_flush_ack", cgm_access_cpu_flush_ack},
 		{"cgm_access_cpu_flush_fwd", cgm_access_cpu_flush_fwd},
 		{"cgm_access_gpu_flush", cgm_access_gpu_flush},
