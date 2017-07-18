@@ -1,0 +1,222 @@
+//General Stats////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+General Stats                                                                                                        Stats
+---------------------------  ---------------------------------------------------------------------------------------------
+Benchmark                                                                                                           kmeans
+BenchmarkArgs                 -i /home/stardica/Dropbox/CDA7919DoctoralResearch/Rodinia_Benchmarks/data/kmeans/8192_34.txt
+DateTime                                                                                             Tue Jun 2017 16:48:10
+ExeSuccessful                                                                                                          Yes
+CheckPoint                                                                                                              No
+TotalCycles                                                                                                     1413897820
+ParallelSectionCycles                                                                                           1259849190
+CPURunTime(sec)                                                                                                0.353474455
+WallRunTime(sec)                                                                                                   5398.62
+SimulatedCyclesPerSec(ave)                                                                                       261899.62
+CPUNumCores                                                                                                              4
+CPUThreadsPerCore                                                                                                        1
+CPUFreqGhz                                                                                                               4
+GPUNumCUs                                                                                                                8
+GPUFreqGhz                                                                                                               1
+GPUCycFactor                                                                                                             4
+MemLatFactor                                                                                                             2
+ConfigSingleCore                                                                                                       Yes
+ConfigCPUProtocol                                                                                                     MESI
+ConfigGPUProtocol                                                                                                       NC
+ConfigGPUConnectType                                                                                                    MC
+
+//CPU Stats////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+CPU stats combined           CPU
+-------------------  -----------
+ExeTime               1259849190
+TotalBusy              137492514
+DrainTime                 148242
+IdleTime               635656685
+TotalStalls            486699991
+StallFetch                670046
+ROBStalls              446699688
+ROBStallLoad           407837867
+ROBStallStore           29311394
+ROBStallOther            9550427
+LSQStalls                      0
+LSQStallLoad                   0
+LSQStallStore                  0
+IQStalls                       0
+RenameStalls                   0
+NumSyscalls                 4090
+StallSyscall            39330257
+
+CPU Stats All Cores        Core_0
+--------------------  -----------
+ExeTime                1259849190
+TotalBusy               137492514
+DrainTime                  148242
+IdleTime                635656685
+TotalStalls             486699991
+StallFetch                 670046
+ROBStalls               446699688
+ROBStallLoad            407837867
+ROBStallStore            29311394
+ROBStallOther             9550427
+LSQStalls                       0
+LSQStallLoad                    0
+LSQStallStore                   0
+IQStalls                        0
+RenameStalls                    0
+NumSyscalls                  4090
+StallSyscall             39330257
+
+//GPU Stats////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+GPU stats             GPU
+------------  -----------
+ExeTime        1259849342
+GPURunTime      637467504
+GPUIdleTime     622381838
+
+//CUU Stats////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+CU stats                CU
+--------------  ----------
+TotalBusy          8677381
+TotalStalls      592990721
+TotalMapped      601668103
+TotalUnMapped     35799401
+
+//Cache Stats//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Cache stats combined                  I$                D$               L2$               L3$
+---------------------  ----------------- ----------------- ----------------- -----------------
+CacheUtilization                    0.02              0.12              0.09              0.02
+Occupancy                        2003926         112609156          15787780           3601972
+OccupancyPct                       0.002             0.089             0.013             0.003
+
+Cache stats individual          I_0
+-----------------------  ----------
+CacheUtilization              0.180
+Occupancy                   2003926
+OccupancyPct                  0.002
+
+Cache stats individual          D_0
+-----------------------  ----------
+CacheUtilization              1.000
+Occupancy                 112609156
+OccupancyPct                  0.089
+
+Cache stats individual         L2_0
+-----------------------  ----------
+CacheUtilization              0.746
+Occupancy                  15787780
+OccupancyPct                  0.013
+
+Cache stats individual         L3_0
+-----------------------  ----------
+CacheUtilization              0.173
+Occupancy                   3601972
+OccupancyPct                  0.003
+
+
+//Cache IO Stats///////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Cache stats combined                      I$                 D$                L2$                L3$
+------------------------  ------------------ ------------------ ------------------ ------------------
+IOUpOccupancy                              0                  0           21143982            9849050
+IOUpOccupancyPct                       0.000              0.000              0.017              0.008
+IODownOccupancy                         8129            7308921            9925664                  0
+IOdownOccupancyPct                     0.000              0.006              0.008              0.000
+
+Cache IO stats individual         I_0
+--------------------------  ---------
+IOUpOccupancy                       0
+IOUpOccupancyPct                    0
+IODownOccupancy                  8129
+IOdownOccupancyPct              0.000
+
+Cache IO stats individual         D_0
+--------------------------  ---------
+IOUpOccupancy                       0
+IOUpOccupancyPct                    0
+IODownOccupancy               7308921
+IOdownOccupancyPct              0.006
+
+Cache IO stats individual        L2_0
+--------------------------  ---------
+IOUpOccupancy                21143982
+IOUpOccupancyPct                0.017
+IODownOccupancy               9925664
+IOdownOccupancyPct              0.008
+
+Cache IO stats individual        L3_0
+--------------------------  ---------
+IOUpOccupancy                 9849050
+IOUpOccupancyPct                0.008
+IODownOccupancy                     0
+IOdownOccupancyPct              0.000
+
+
+//Switch Stats/////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Switch stats combined                 SW
+----------------------  ----------------
+Occupancy                       33275458
+OccupancyPct                       0.026
+
+Switch stats individual         S_0       S_1
+------------------------  --------- ---------
+Occupancy                  44964380  21586536
+OccupancyPct                  0.036     0.017
+
+//Switch IO Stats//////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Switch IO stats combined                  SW
+-------------------------  -----------------
+IONorthOccupancy                    18831045
+IONorthOccupancyPct                    0.015
+IOEastOccupancy                      4751209
+IOEastOccupancyPct                     0.004
+IOSouthOccupancy                     5299029
+IOSouthOccupancyPct                    0.004
+IOWestOccupancy                     11786476
+IOWestOccupancyPct                     0.009
+
+Switch IO stats individual         S_0       S_1
+---------------------------  --------- ---------
+IONorthOccupancy              37662090         0
+IONorthOccupancyPct              0.030     0.000
+IOEastOccupancy                7382136   2120282
+IOEastOccupancyPct               0.006     0.002
+IOSouthOccupancy               5336204   5261854
+IOSouthOccupancyPct              0.004     0.004
+IOWestOccupancy                4385298  19187654
+IOWestOccupancyPct               0.003     0.015
+
+//System Agent Stats///////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+System agent stats           SA
+-------------------  ----------
+Occupancy              81144476
+OccupancyPct              0.064
+IOUpOccupancy         181776564
+IOUpOccupancyPct          0.144
+IODownOccupancy        21585296
+IODownOccupancyPct        0.017
+
+//Memory Ctrl Stats////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Memory ctrl stats           MC
+------------------  ----------
+Occupancy             41486636
+OccupancyPct             0.033
+IOUpOccupancy        181776564
+IOUpOccupancyPct         0.144
+
