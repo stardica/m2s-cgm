@@ -206,6 +206,8 @@ body {font-size:16px;}
 <!-- W3.CSS Container -->
 <div class="w3-light-grey w3-container w3-padding-24" style="margin-top:75px;padding-right:58px">
 <p id="lastmod"></p>
+<p id="numvisit"></p>
+
 </div>
 
 <script>
@@ -224,6 +226,29 @@ function w3_close() {
 (function () {
     document.getElementById("lastmod").innerHTML = "Last Modified " + document.lastModified + "";
     document.getElementById("lastmod").style.textAlign = "right";
+})();
+
+(function () {
+    
+    if(typeof(Storage) !== "undefined") 
+    {
+        if (localStorage.accesscount) 
+        {
+            localStorage.accesscount = Number(localStorage.accesscount)+1;
+        } 
+        else 
+        {
+            localStorage.accesscount = 1;
+        }
+        
+        document.getElementById("numvisit").innerHTML = "Page Visits " + localStorage.accesscount + "";
+    } 
+    else 
+    {
+        document.getElementById("numvisit").innerHTML = "Sorry, your browser does not support web storage...";
+    }
+    
+    document.getElementById("numvisit").style.textAlign = "right";
 })();
 
 </script>
