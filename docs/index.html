@@ -202,11 +202,7 @@ body {font-size:16px;}
 
 <!-- W3.CSS Container -->
 <div class="w3-light-grey w3-container w3-padding-24" style="margin-top:75px;padding-right:58px">
-<p class="w3-right"> <script type="text/javascript">
-document.write("Last Modified " + document.lastModified + "");
-</script>
-</p>
-
+<p id="lastmod"></p>
 </div>
 
 <script>
@@ -221,6 +217,11 @@ function w3_close() {
     document.getElementById("mySidebar").style.display = "none";
     document.getElementById("myOverlay").style.display = "none";
 }
+
+(function () {
+    document.getElementById("lastmod").innerHTML = "Last Modified " + document.lastModified + "";
+    document.getElementById("lastmod").style.textAlign = "right";
+})();
 
 </script>
 
