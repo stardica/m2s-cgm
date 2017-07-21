@@ -15,7 +15,7 @@ body {font-size:16px;}
 <body>
 
 <!-- Sidebar/menu -->
-<nav class="w3-sidebar w3-red w3-collapse w3-top w3-large w3-padding" style="z-index:3;width:225px;font-weight:bold;" id="mySidebar"><br>
+<nav class="w3-sidebar w3-red w3-collapse w3-top w3-large w3-padding w3-opacity-min" style="z-index:3;width:225px;font-weight:bold;" id="mySidebar"><br>
   <a href="javascript:void(0)" onclick="w3_close()" class="w3-button w3-hide-large w3-display-topleft" style="width:100%;font-size:22px">Close Menu</a>
     <div class="w3-bar-block">
     <a href="#" onclick="w3_close()" class="w3-bar-item w3-button w3-hover-white"><i class="w3-xxlarge fa fa-home"></i></a>
@@ -31,7 +31,7 @@ body {font-size:16px;}
 </nav>
 
 <!-- Top menu on small screens -->
-<header class="w3-container w3-top w3-hide-large w3-red w3-xlarge w3-padding">
+<header class="w3-container w3-top w3-hide-large w3-red w3-xlarge w3-padding w3-opacity-min">
   <a href="javascript:void(0)" class="w3-button w3-red w3-margin-right" onclick="w3_open()">☰</a>
   <span>Contents</span>
 </header>
@@ -40,23 +40,44 @@ body {font-size:16px;}
 <div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
 
 <!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:340px;margin-right:40px">
+<div class="w3-main" style="margin-left:250px;margin-right:40px">
 
-  <!-- Header -->
-  <div class="w3-container" style="margin-top:80px" id="Title">
-    <h1 class="w3-jumbo" style="text-align:center;"><b>M2S-CGM</b></h1>
-    <h1 class="w3-xxxlarge w3-text-red" style="text-align:center;"><b>A Detailed Architectural Simulator for Coherent CPU-GPU Systems</b></h1>
+
+  <!-- Header 1-->
+  <div class="w3-display-container w3-hide-small" id="Title" style="max-width:1240px;margin-top:80px">
+	<img src="mb.jpg" alt="Lights" class="w3-image w3-opacity-max" style="min-width:820px">
+  		<div class="w3-display-left w3-center" style="max-width:1240px;width:100%;">
+  			<h1 class="w3-jumbo"><b>M2S-CGM</b></h1>
+  			<h1 class="w3-xxlarge w3-text-red"><b>A Detailed Architectural Simulator for Coherent CPU-GPU Systems</b></h1>	
+  			<br>
+    		<div class="w3-center">
+    			<a href="https://github.com/stardica/m2s-cgm" target="_blank" class="w3-btn w3-red">View on Github <i class="fa fa-github-alt"></i></a>
+    			<a href="https://github.com/stardica/m2s-cgm/archive/master.zip" target="_blank" class="w3-btn w3-red">Download .zip</a>
+    			<a href="https://github.com/stardica/m2s-cgm/archive/master.tar.gz" target="_blank" class="w3-btn w3-red">Download tar.gz</a>
+    		</div>
+		</div>
+  </div>
+  
+  <!-- Header 2-->
+  <div class="w3-container w3-hide-medium w3-hide-large" style="margin-top:80px" id="Title">
+    <h1 class="w3-xxlarge" style="text-align:center;"><b>M2S-CGM</b></h1>
+    <h1 class="w3-xlarge w3-text-red" style="text-align:center;"><b>A Detailed Architectural Simulator for Coherent CPU-GPU Systems</b></h1>
     <!-- <hr style="width:50px;border:5px solid red" class="w3-round"> -->
     <br>
     <div class="w3-center">
     	<a href="https://github.com/stardica/m2s-cgm" target="_blank" class="w3-btn w3-red">View on Github <i class="fa fa-github-alt"></i></a>
+    	<br>
+    	<br>
     	<a href="https://github.com/stardica/m2s-cgm/archive/master.zip" target="_blank" class="w3-btn w3-red">Download .zip</a>
+    	<br>
+    	<br>
     	<a href="https://github.com/stardica/m2s-cgm/archive/master.tar.gz" target="_blank" class="w3-btn w3-red">Download tar.gz</a>
     </div>
   </div>
+  
    
   <!-- About -->
-  <div class="w3-container" id="About" style="margin-top:75px">
+  <div class="w3-container" id="About" style="max-width:1240px;margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>About</b></h1>
     <hr style="width:150px;border:2px solid red" class="w3-round">
     <p>
@@ -73,12 +94,14 @@ body {font-size:16px;}
 	and can run select benchmarks from established heterogeneous bench-
 	mark collections. This allows us to experiment with different coherent
 	CPU-GPU configurations and propose effective future improvements in
-	these systems.
+	these systems. The following figure shows a typical configuration for
+	heterogenous system simulation.
     </p>
+    <img class="w3-image" src="SystemArch.jpg" alt="Lights" style="align:center;width:700px;">
   </div>
   
   <!-- Publications & Technical Reports -->
-  <div class="w3-container" id="Publications & Technical Reports" style="margin-top:75px">
+  <div class="w3-container" id="Publications & Technical Reports" style="max-width:1240px;margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Publications & Technical Reports</b></h1>
     <hr style="width:150px;border:2px solid red" class="w3-round">
     
@@ -148,7 +171,7 @@ body {font-size:16px;}
   </div>
   
    <!-- Citation -->
-  <div class="w3-container" id="Citation" style="margin-top:75px">
+  <div class="w3-container" id="Citation" style="max-width:1240px;margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Citation</b></h1>
     <hr style="width:150px;border:2px solid red" class="w3-round">
     <p>
@@ -163,7 +186,7 @@ body {font-size:16px;}
   </div>
   
   <!-- Contributors -->
-  <div class="w3-container" id="Contributors" style="margin-top:75px">
+  <div class="w3-container" id="Contributors" style="max-width:1240px;margin-top:75px">
     <h1 class="w3-xxxlarge w3-text-red"><b>Contributors</b></h1>
     <hr style="width:150px;border:2px solid red" class="w3-round">
     
