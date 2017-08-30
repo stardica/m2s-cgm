@@ -1,10 +1,3 @@
-/*
- * lds.c
- *
- *  Created on: Apr 24, 2015
- *      Author: stardica
- */
-
 
 #include <cgm/cache.h>
 

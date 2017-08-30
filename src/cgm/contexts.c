@@ -1,20 +1,3 @@
-/*************************************************************************
- *
- *  (c) 1998-1999 Cornell University
- *  Computer Systems Laboratory
- *  Ithaca, NY 14853.
- *  All Rights Reserved
- *
- *
- *  (c) 1996-1998 California Institute of Technology
- *  Department of Computer Science
- *  Pasadena, CA 91125.
- *  All Rights Reserved
- *
- *  $Id: contexts.c,v 1.1.1.1 2003/01/16 19:49:43 heinrich Exp $
- *
- *************************************************************************/
-
 
 #include <stdio.h>
 #include <signal.h>
@@ -214,14 +197,19 @@ void context_disable (void)
  */
 void context_switch (process_t *p)
 {
-  if (!current_process || !_setjmp (current_process->c.buf)) {
-    current_process = p;
-    _longjmp (p->c.buf,1);
-  }
-  if (terminated_process) {
-    context_destroy (terminated_process);
-    terminated_process = NULL;
-  }
+
+	if (!current_process || !_setjmp (current_process->c.buf))
+	{
+		current_process = p;
+		_longjmp (p->c.buf,1);
+	}
+
+	if (terminated_process)
+	{
+		context_destroy (terminated_process);
+		terminated_process = NULL;
+	}
+
   context_enable ();
 }
 

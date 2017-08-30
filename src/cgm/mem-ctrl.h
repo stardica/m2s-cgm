@@ -1,9 +1,4 @@
-/*
- * mem-ctrl.h
- *
- *  Created on: Nov 25, 2014
- *      Author: stardica
- */
+
 #ifndef MEMCTRL_H_
 #define MEMCTRL_H_
 

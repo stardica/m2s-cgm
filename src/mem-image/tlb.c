@@ -1,10 +1,3 @@
-/*
- * tlb.c
- *
- *  Created on: Jan 27, 2016
- *      Author: stardica
- */
-
 
 #include <mem-image/tlb.h>
 

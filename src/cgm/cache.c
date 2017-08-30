@@ -1,11 +1,3 @@
-/*
- * cache.c
- *
- *  Created on: Nov 25, 2014
- *      Author: stardica
- */
-
-
 #include <cgm/cache.h>
 
 

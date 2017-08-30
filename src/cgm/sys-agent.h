@@ -1,10 +1,3 @@
-/*
- * sys-agent.h
- *
- *  Created on: Dec 1, 2014
- *      Author: stardica
- */
-
 
 #ifndef SYSAGENT_H_
 #define SYSAGENT_H_

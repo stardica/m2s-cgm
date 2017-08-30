@@ -1,34 +1,3 @@
-/*
- * Copyright 1988 MIPS Computer Systems Inc.  All Rights Reserved.
- *
- * Permission to use, copy, modify, and distribute this software and its
- * documentation for any purpose and without fee is hereby granted, provided
- * that the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of MIPS not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  MIPS makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty or support of any kind.
- */
-
-/* tasking.s, Earl Killian, October 1987. */
-
-/* modified to permit stack size checking, Todd Mowry, March 1990. */
-
-/* split tasking.s into tasking.c and switch.s, only state-saving routines
- * kept in assembly, Jim Laudon, January 1994. */
-
-/* tasking.c, C version of tasking.s routines, Jim Laudon, January 1994. */
-
-/* Modified create_task() so that new tasks can take an argument, 
- * Mark Heinrich and David Ofelt, 1995 */
-
-/* Added a thread ID to the threads which can sometimes be useful, Mark
-   Heinrich, 1996 */
-
-/* Rewritten to eliminate all .s files, ported to context library, 
-   Rajit Manohar, 1999 */
 
 #include <stddef.h>
 #include <stdio.h>

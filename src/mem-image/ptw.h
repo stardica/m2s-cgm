@@ -1,9 +1,3 @@
-/*
- * ptw.h
- *
- *  Created on: May 16, 2017
- *      Author: stardica
- */
 
 #ifndef PTW_H_
 #define PTW_H_

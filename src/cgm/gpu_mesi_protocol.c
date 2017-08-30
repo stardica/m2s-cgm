@@ -1,9 +1,3 @@
-/*
- * gpu_mesi_protocol.c
- *
- *  Created on: Jan 29, 2016
- *      Author: stardica
- */
 
 //////////////////////
 /////GPU MESI protocol

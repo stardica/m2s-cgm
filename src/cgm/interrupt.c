@@ -1,11 +1,3 @@
-/*
- * interrupt.c
- *
- *  Created on: Mar 28, 2015
- *      Author: stardica
- */
-
-
 
 #include <cgm/interrupt.h>
 

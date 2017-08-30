@@ -235,6 +235,9 @@ void X86ContextSyscall(X86Context *self)
 	int err;
 
 	/* Get system call code from 'eax' */
+
+	fatal("first sys call code %d\n", code = regs->eax);
+
 	code = regs->eax;
 
 	if(regs->eax == 329)

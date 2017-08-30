@@ -1,18 +1,5 @@
-/*************************************************************************
- *
- *  (c) 1998-1999 Cornell University
- *  Computer Systems Laboratory
- *  Ithaca, NY 14853.
- *  All Rights Reserved
- *
- *  (c) 1996-98 California Institute of Technology
- *  Department of Computer Science
- *  Pasadena, CA 91125.
- *  All Rights Reserved
- *
- *  $Id: contexts.h,v 1.1.1.1 2003/01/16 19:49:43 heinrich Exp $
- *
- *************************************************************************/
+
+
 #ifndef __CONTEXTS_H__
 #define __CONTEXTS_H__
 

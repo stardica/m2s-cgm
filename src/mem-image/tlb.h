@@ -1,10 +1,3 @@
-/*
- * tlb.h
- *
- *  Created on: Jan 27, 2016
- *      Author: stardica
- */
-
 #ifndef TLB_H_
 #define TLB_H_
 

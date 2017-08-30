@@ -1,9 +1,3 @@
-/*
- * ptw.c
- *
- *  Created on: May 16, 2017
- *      Author: stardica
- */
 
 #include <mem-image/ptw.h>
 

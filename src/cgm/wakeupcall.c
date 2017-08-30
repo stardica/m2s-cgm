@@ -1,10 +1,3 @@
-/*
- * --- WAKEUPCALL.C ---
- *
- * Chris Holt <xris@ebola.stanford.edu>, 
- * 	based on code written by Steve Woo <swoo@gonzo.stanford.edu>
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

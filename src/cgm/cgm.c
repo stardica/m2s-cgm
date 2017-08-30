@@ -1,13 +1,3 @@
-/*
- * queue.c
- *
- *  Created on: Nov 23, 2014
- *      Author: stardica
- */
-
-
-
-
 #include <arch/common/arch.h>
 
 #include <stdio.h>

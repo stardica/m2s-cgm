@@ -1,9 +1,3 @@
-/*
- * cache.h
- *
- *  Created on: Nov 25, 2014
- *      Author: stardica
- */
 
 #ifndef CACHE_H_
 #define CACHE_H_

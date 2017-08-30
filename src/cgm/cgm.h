@@ -1,9 +1,3 @@
-/*
- * cgm-mem.h
- *
- *  Created on: Nov 24, 2014
- *      Author: stardica
- */
 
 #ifndef CGM_H_
 #define CGM_H_
@@ -139,7 +133,6 @@ extern int Histograms;
 extern char *cgm_debug_output_path;
 extern char *cgm_stats_output_path;
 extern char *cgm_stats_file_name;
-
 
 //memctrl_debug || sysagent_debug switch_debug )
 

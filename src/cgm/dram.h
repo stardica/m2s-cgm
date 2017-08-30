@@ -1,9 +1,3 @@
-/*
- * dram.h
- *
- *  Created on: Jan 26, 2016
- *      Author: stardica
- */
 
 #ifndef DRAM_H_
 #define DRAM_H_

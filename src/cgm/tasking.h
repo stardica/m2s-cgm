@@ -1,31 +1,3 @@
-/*************************************************************************
- *
- *  Copyright (c) 1999 Cornell University
- *  Computer Systems Laboratory
- *  Ithaca, NY 14853
- *  All Rights Reserved
- *
- *  $Id: tasking.h,v 1.1.1.1 2003/01/16 19:49:43 heinrich Exp $
- *
- *************************************************************************/
-
-/*
- * Copyright 1988 MIPS Computer Systems Inc.  All Rights Reserved.
- *
- * Permission to use, copy, modify, and distribute this software and its
- * documentation for any purpose and without fee is hereby granted, provided
- * that the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of MIPS not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  MIPS makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty or support of any kind.
- */
-
-/* tasking.h, Earl Killian, October 1987. */
-
-/* modified to permit stack size checking, Todd Mowry, March 1990. */
 
 #ifndef __TASKING_H__
 #define __TASKING_H__

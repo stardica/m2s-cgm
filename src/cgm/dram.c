@@ -1,10 +1,3 @@
-/*
- * dram.c
- *
- *  Created on: Jan 26, 2016
- *      Author: stardica
- */
-
 #include <cgm/dram.h>
 #include <arch/x86/timing/cpu.h>
 

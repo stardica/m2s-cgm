@@ -1,10 +1,3 @@
-/*
- * cgm-struct.h
- *
- *  Created on: Sep 6, 2015
- *      Author: stardica
- */
-
 
 #ifndef CGMSTRUCT_H_
 #define CGMSTRUCT_H_
