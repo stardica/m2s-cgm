@@ -313,8 +313,6 @@ extern unsigned int last_committed_fetch_access_blk;
 
 extern double last_time;
 
-
-
 //set up related
 void m2scgm_init(int argc, char **argv);
 void cgm_init(int argc, char **argv);
