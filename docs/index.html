@@ -81,21 +81,12 @@ body {font-size:16px;}
     <h1 class="w3-xxxlarge w3-text-red"><b>About</b></h1>
     <hr style="width:150px;border:2px solid red" class="w3-round">
     <p>
-    M2S-CGM is a detailed architectural simulator
-	that models the interactions between CPUs and GPUs operating in
-	heterogeneous compute environments. M2S-CGM extends an existing
-	and established x86 CPU model and Southern Islands GPU model,
-	adds a new custom-built memory system model and switching fabric
-	called CGM, and incorporates a well-known SDRAM model. The CGM
-	memory system simulator provides configurable end-to-end system sim-
-	ulation and can support a range of non-coherent and coherent CPU-
-	GPU configurations. M2S-CGM supports the runtime for OpenCL-based
-	benchmarks in addition to traditional multithreaded CPU benchmarks
-	and can run select benchmarks from established heterogeneous bench-
-	mark collections. This allows us to experiment with different coherent
-	CPU-GPU configurations and propose effective future improvements in
-	these systems. The following figure shows a typical configuration for
-	heterogenous system simulation.
+    M2S-CGM is a detailed architectural simulator that models the interactions between CPUs and GPUs operating in heterogeneous compute environments. 
+    M2S-CGM extends an existing and established x86 CPU model and Southern Islands GPU model, adds a new custom built memory system model and switching fabric called CGM, and incorporates a well known SDRAM model. 
+    The CGM memory system simulator provides configurable end-to-end system simulation and can support a range of non-coherent and coherent CPU-GPU configurations. 
+    M2S-CGM supports the runtime for OpenCL-based benchmarks in addition to traditional multithreaded CPU benchmarks and can run select benchmarks from established heterogeneous benchmark collections. 
+    This allows us to experiment with different coherent CPU-GPU configurations and propose effective future improvements in these systems. 
+    The following figure shows a typical configuration for heterogenous system simulation.
     </p>
     <img class="w3-image" src="SystemArch.jpg" alt="Lights" style="align:center;width:700px;">
   </div>
@@ -107,10 +98,20 @@ body {font-size:16px;}
     
     <h2><b>In Submission.</b></h2>
     
-    <p>DESim: A Framework and Methodology for Detailed Computer Architectural Simulation</p>
+     <a href="DESim_ISPASS.pdf" target="_blank" style="font-size:125%;" class="w3-hover-opacity"> 
+    DESim: A Framework and Methodology for Detailed Computer Architectural Simulation</a>
+    
     
     <p>
-    <b>Abstract:</b> Comming soon.
+    <b>Abstract:</b> We introduce DESim; a framework and methodology for detailed computer architectural simulation.
+    DESim extends an existing, but little discussed computer architectural simulation methodology and incorporates enhancements that allow the framework to run in modern 32bit and 64bit Linux environments. 
+    As a framework, DESim provides the tools necessary to create fine-grained cycle-level computer architectural simulations. 
+    Researchers can utilize DESim’s built-in functions to rapidly develop both small-scale and large-scale functional and power computer architectural simulation models. 
+    As a methodology, DESim provides the means for researchers to model complete computational systems as a collection of their connected individual discrete system elements. 
+    DESim’s modeling methodology focuses on the modeling of each individual element and utilizes an advance and await mechanism for simulation execution. 
+    Thus DESim’s modeling methodology does not rely on predetermined events and event execution times for the start of modeled system element tasks. 
+    This methodology readily lends itself to the efficacy of computer architectural modeling and provides a platform to accurately model physical system elements, element interactions, and system-wide occupancy and contention. 
+    In this paper, we discuss DESim’s implementation approach and provide a detailed example of a modeled switching fabric to highlight the power, scalability, and ease of use of DESim’s modeling methodology in computer architectural simulations.
     </p>
         
     <hr style="border:1px solid gray" class="w3-square">
@@ -123,29 +124,14 @@ body {font-size:16px;}
     2017 IEEE 35th International Conference on Computer Design (ICCD), Boston, MA, 2017, pp. XX-XX.</a>
     
     <p>
-    <b>Abstract:</b> We introduce M2S-CGM a detailed architectural
-	simulator that models the interactions between CPUs and GPUs
-	operating in coherent heterogeneous compute environments.
-	M2S-CGM extends an existing and established x86 CPU model
-	and Southern Islands GPU model, adds a new custom-built
-	memory system model and switching fabric called CGM, and
-	incorporates a well-known SDRAM model. The CGM memory
-	system simulator provides configurable entire system simulation
-	and can support a range of non-coherent and coherent CPU-GPU
-	configurations. M2S-CGM supports the runtime for OpenCL-
-	based benchmarks in addition to traditional multithreaded CPU
-	benchmarks and can run benchmarks from established hetero-
-	geneous benchmark collections. This allows us to experiment with
-	different coherent CPU-GPU configurations and propose effective
-	future improvements in these systems. We present the makeup of
-	M2S-CGM’s software architectural design, provide a validation
-	of the simulator, and provide coherent CPU-GPU execution
-	results. Our validation results show average differences between
-	our physical test system and M2S-CGM, of 10.4%, 22%, and
-	6.4% for 2 threaded, 4 threaded, and heterogeneous benchmark
-	runs respectively. Our coherent CPU-GPU experimental results
-	show an average speedup of 2.8 for our benchmarks over the
-	baseline noncoherent system.
+    <b>Abstract:</b> We introduce M2S-CGM a detailed architectural simulator that models the interactions between CPUs and GPUs operating in coherent heterogeneous compute environments.
+	M2S-CGM extends an existing and established x86 CPU model and Southern Islands GPU model, adds a new custom-built memory system model and switching fabric called CGM, and incorporates a well-known SDRAM model. 
+	The CGM memory system simulator provides configurable entire system simulation and can support a range of non-coherent and coherent CPU-GPU configurations. 
+	M2S-CGM supports the runtime for OpenCL-based benchmarks in addition to traditional multithreaded CPU benchmarks and can run benchmarks from established heterogeneous benchmark collections. 
+	This allows us to experiment with different coherent CPU-GPU configurations and propose effective future improvements in these systems. 
+	We present the makeup of M2S-CGM’s software architectural design, provide a validation of the simulator, and provide coherent CPU-GPU execution results. 
+	Our validation results show average differences between our physical test system and M2S-CGM, of 10.4%, 22%, and 6.4% for 2 threaded, 4 threaded, and heterogeneous benchmark runs respectively. 
+	Our coherent CPU-GPU experimental results show an average speedup of 2.8 for our benchmarks over the baseline noncoherent system.
     </p>
     
     <hr style="border:1px solid gray" class="w3-square">
@@ -159,23 +145,12 @@ body {font-size:16px;}
    	[Online]. Available: http://stardica.github.io/m2s-cgm/</a>
     
     <p>
-    <b>Abstract:</b> We introduce M2S-CGM a detailed architectural simulator
-	that models the interactions between CPUs and GPUs operating in
-	heterogeneous compute environments. M2S-CGM extends an existing
-	and established x86 CPU model and Southern Islands GPU model,
-	adds a new custom-built memory system model and switching fabric
-	called CGM, and incorporates a well-known SDRAM model. The CGM
-	memory system simulator provides configurable end-to-end system sim-
-	ulation and can support a range of non-coherent and coherent CPU-
-	GPU configurations. M2S-CGM supports the runtime for OpenCL-based
-	benchmarks in addition to traditional multithreaded CPU benchmarks
-	and can run select benchmarks from established heterogeneous bench-
-	mark collections. This allows us to experiment with different coherent
-	CPU-GPU configurations and propose effective future improvements in
-	these systems. We present the makeup of M2S-CGM’s software archi-
-	tectural design and validate the simulator with preliminary evaluations.
-	We also discuss our current research efforts where we plan to utilize
-	M2S-CGM.
+    <b>Abstract:</b> We introduce M2S-CGM a detailed architectural simulator that models the interactions between CPUs and GPUs operating in heterogeneous compute environments. 
+    M2S-CGM extends an existing and established x86 CPU model and Southern Islands GPU model, adds a new custom-built memory system model and switching fabric called CGM, and incorporates a well-known SDRAM model. 
+    The CGM memory system simulator provides configurable end-to-end system simulation and can support a range of non-coherent and coherent CPU-GPU configurations. 
+    M2S-CGM supports the runtime for OpenCL-based benchmarks in addition to traditional multithreaded CPU benchmarks and can run select benchmarks from established heterogeneous benchmark collections. 
+    This allows us to experiment with different coherent CPU-GPU configurations and propose effective future improvements in these systems. 
+    We present the makeup of M2S-CGM’s software architectural design and validate the simulator with preliminary evaluations. We also discuss our current research efforts where we plan to utilize M2S-CGM.
     </p>
   </div>
   
