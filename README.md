@@ -1,3 +1,3 @@
 Main webpage is here...
 
-http://stardica.github.io/m2s-cgm/
+http://www.knightsim.dx.am/
