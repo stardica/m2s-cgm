@@ -162,11 +162,12 @@ void cpu_configure(Timing *self, struct config_t *config){
 	}
 	//getchar();
 
+	if(!(num_cores == 4 || num_cores == 8
+			|| num_cores == 16 || num_cores == 18
+			|| num_cores == 22 || num_cores == 32
+			|| num_cores == 34))
+		fatal("For now, number of cores must be between 1 - 16\n");
 
-	if(num_cores <= 0 || num_cores > 8)
-	{
-		fatal("For now, number of cores must be between 1 - 8\n");
-	}
 
 	return;
 }
@@ -503,11 +504,12 @@ int stats_finish_create(void){
 		memset (buff_file,'\0' , 250);
 		sprintf(buff_path, "%s", cgm_stats_output_path);
 
-		sprintf(buff_file, "%s_%s_%s.txt", cgm_stat->benchmark_name, sim_id, cgm_stat->date_time_file);
+		sprintf(buff_file, "%s_%s_%s_%s.txt", cgm_stat->benchmark_name, cgm_stat->args, sim_id, cgm_stat->date_time_file);
 
 		sprintf(buff_path + strlen(buff_path), "%s", buff_file);
 		cgm_stat->stat_file_name = strdup(buff_file);
-		cgm_stats_file = fopen (buff_path, "w+");
+		cgm_stat->fopen_path = strdup(buff_path);
+		//cgm_stats_file = fopen (buff_path, "w+");
 
 	}
 
@@ -3437,15 +3439,28 @@ int switch_finish_create(void){
 	int i = 0;
 	float median = 0;
 
+	assert(num_cores == 4 || num_cores == 8
+			|| num_cores == 16 || num_cores == 18
+			|| num_cores == 22 || num_cores == 32
+			|| num_cores == 34);
 
 	//set up the node map
-	if(num_cores == 8)
-		node_strn_map = &node_strn_map_p8;
-	else if(num_cores == 4)
+	if(num_cores == 4)
 		node_strn_map = &node_strn_map_p4;
+	else if(num_cores == 8)
+		node_strn_map = &node_strn_map_p8;
+	else if(num_cores == 16)
+		node_strn_map = &node_strn_map_p16;
+	else if(num_cores == 18)
+		node_strn_map = &node_strn_map_p18;
+	else if(num_cores == 22)
+		node_strn_map = &node_strn_map_p22;
+	else if(num_cores == 32)
+		node_strn_map = &node_strn_map_p32;
+	else if(num_cores == 34)
+		node_strn_map = &node_strn_map_p34;
 	else
 		fatal("switch_finish_create(): unsupported number of cores add the node_string_map_px\n");
-
 
 	//create the queues
 	if(switches[0].port_num == 4)
@@ -3793,14 +3808,12 @@ int switch_finish_create(void){
 	hub_iommu->name = strdup(buff);
 
 	hub_iommu->id = 0;
-
-
 	hub_iommu->gpu_l2_num = gpu_group_cache_num;
-
 
 	//create one Rx and Tx queue for each gpu l2 caches
 	hub_iommu->Rx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
 	hub_iommu->Tx_queue_top = (void *) calloc(gpu_group_cache_num, sizeof(struct list_t));
+	hub_iommu->hub_up_io_occupance = (long long *) calloc(gpu_group_cache_num, sizeof(long long));
 
 	for(i = 0; i < gpu_group_cache_num; i ++)
 	{
@@ -3901,6 +3914,7 @@ int switch_finish_create(void){
 
 	hub_iommu_create_tasks(hub_iommu_ctrl);
 
+
 	/*//configure correct routing function
 	if(hub_iommu_connection_type == hub_to_mc)
 	{
@@ -3963,7 +3977,7 @@ int sys_agent_config(void* user, const char* section, const char* name, const ch
 		}
 	}
 
-	if(MATCH("Bus", "Switches"))
+	if(MATCH("Bus", "MC-SA"))
 	{
 		Up_Bus_width = atoi(value);
 		system_agent->up_bus_width = Up_Bus_width;

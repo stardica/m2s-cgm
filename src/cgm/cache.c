@@ -1307,9 +1307,7 @@ struct cache_t *cgm_l3_cache_map(int set){
 	}
 	else if (map_type == 1)
 	{
-		//map = *(set) % num_cores;
-		//star this is a faster way to do the look up.
-		map = (unsigned int) set & (unsigned int) (num_cores - 1);
+		map = (unsigned int) set % (unsigned int) (num_cores);
 	}
 	// individual non shared L3 caches
 	else if (map_type < 0 || map_type >= 2)
@@ -2740,6 +2738,8 @@ void cache_dump_stats(struct cgm_stats_t *cgm_stat_container){
 	//int gpu_group_cache_num = (num_cus/4);
 	int i = 0;
 	//int blocks_written = 0;
+
+	assert(cgm_stat_container->stats_type == parallelSection);
 
 	/*CPU caches*/
 	for(i = 0; i < num_cores; i++)

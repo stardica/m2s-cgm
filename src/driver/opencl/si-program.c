@@ -141,12 +141,10 @@ static void opencl_si_program_initialize_constant_buffers(struct opencl_si_progr
 			symbol->name, symbol->size);
 
 		/* Copy constant buffer into device memory */
-		mem_write(si_emu->video_mem, si_emu->video_mem_top,
-			symbol->size, elf_buffer.ptr);
+		mem_write(si_emu->video_mem, si_emu->video_mem_top, symbol->size, elf_buffer.ptr);
 
 		/* Create buffer */
-		constant_buffer = opencl_si_constant_buffer_create(i,
-			si_emu->video_mem_top, symbol->size);
+		constant_buffer = opencl_si_constant_buffer_create(i, si_emu->video_mem_top, symbol->size);
 		si_emu->video_mem_top += symbol->size;
 
 		/* Add the constant buffer to the list */

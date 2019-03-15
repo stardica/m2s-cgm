@@ -244,6 +244,7 @@ char *si_gpu_report_file_name = "";
 int si_trace_category;
 
 int si_gpu_fused_device;
+int collaborative_device;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
 unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
@@ -1118,6 +1119,8 @@ int SIGpuRun(Timing *self)
 {
 	SIGpu *gpu = asSIGpu(self);
 
+
+
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
@@ -1126,10 +1129,18 @@ int SIGpuRun(Timing *self)
 
 	long work_group_id;
 	
+
+	/*printf("GPU runs every cycle dude %llu\n", P_TIME);
+	getchar();*/
+
+
+
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->waiting_work_groups) && !list_count(si_emu->running_work_groups))
 	{
+		//printf("gpu idle size %d %llu\n", list_count(si_emu->waiting_work_groups), P_TIME);
+
 		cpu_gpu_stats->gpu_idle_cycles++;
 
 		/*printf("gpu idle time %llu ptime %llu\n", cpu_gpu_stats->gpu_idle_cycles, P_TIME);
@@ -1139,6 +1150,8 @@ int SIGpuRun(Timing *self)
 	}
 
 
+	/*printf("gpu running size %d %llu\n", list_count(si_emu->waiting_work_groups), P_TIME);
+	getchar();*/
 
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
@@ -1166,7 +1179,7 @@ int SIGpuRun(Timing *self)
 	/* One more cycle */
 	asTiming(si_gpu)->cycle++;
 
-	/*warning("GPU start time %llu\n", P_TIME);
+	/*printf("GPU running cycle %llu\n", P_TIME);
 	getchar();*/
 
 	//stats collect the number of GPU cycles...

@@ -219,9 +219,10 @@ void mem_access_addr_translate(X86Thread *self, struct x86_uop_t *uop){
 		{
 			uop->phy_addr = mmu_translate(self->ctx->address_space_index, uop->uinst->address, mmu_access_load_store, pfptr);
 
-			//if(uop->id == 20204)
-				//fatal("index %d uop id %llu vtl address 0x%08x phy addr 0x%08x cycle %llu\n", self->ctx->address_space_index, uop->id, uop->uinst->address, uop->phy_addr, P_TIME);
+			/*if(uop->uinst->address >= 0x8122eb8 && uop->uinst->address <= 0x8132eb8)
+				printf("accessing the array address 0x%08x\n", uop->uinst->address);*/
 		}
+
 	}
 	else
 	{
@@ -551,6 +552,11 @@ static void X86ThreadFetch(X86Thread *self)
 	unsigned int target;
 
 	int taken;
+
+
+	/*if(self->ctx->pid == 101 || self->ctx->pid == 102 || self->ctx->pid == 103)//self->ctx->pid == 100 ||
+		printf("Thread %d running on core %d\n", self->ctx->pid, self->core->id);*/
+
 
 	/* Try to fetch from trace cache first */
 	//star no trace cache this is ignored.

@@ -1314,7 +1314,7 @@ void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_pac
 
 	/*assumption block is never shared in GPU v caches*/
 	if(sharers > 1)
-		warning("cgm_mesi_gpu_l2_get(): sharers = %d\n", sharers);
+		fatal("cgm_mesi_gpu_l2_get(): sharers = %d\n", sharers);
 
 	//update cache way list for cache replacement policies.
 	if(*cache_block_hit_ptr == 1)

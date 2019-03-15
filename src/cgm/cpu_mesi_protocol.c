@@ -5266,7 +5266,7 @@ void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet
 	pending_bit = cgm_cache_get_dir_pending_bit(cache, message_packet->set, message_packet->way);
 
 	/*checck the pending bit state... the block should never be pending,
-	however if it is make sure the cache line ins't a hit*/
+	however if it is make sure the cache line ins't a hit. This can happen if the block is invalid*/
 	assert(pending_bit == 0 || (pending_bit == 1 && *cache_block_state_ptr == 0));
 
 	//update cache way list for cache replacement policies.
@@ -5741,7 +5741,7 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 			DEBUG(LEVEL == 2 || LEVEL == 3, "block 0x%08x %s load pending at L3 owning core putx/put_clnx back to L2 id %llu num_sharers %d own_core %d state %d cycle %llu\n",
 				(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, sharers, owning_core, *cache_block_state_ptr, P_TIME);
 
-			/*there should be only be the owning core in the directory and the pending bit set*/
+			/*there should only be the owning core in the directory and the pending bit set*/
 			assert(sharers == 1 && owning_core == 1);
 
 			/*The block MUST be in the E or M state*/
@@ -6236,9 +6236,9 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 						warning("%s starting get_fwd to GPU in non coherent mode blk addr0x%08x cycle %llu\n",
 								cache->name, message_packet->address & cache->block_address_mask, P_TIME);
 
-					if(message_packet->access_id == 78741753)
-						warning("L3 forwarding message id %llu to GPU block 0x%08x cycle %llu\n"
-								, message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
+					//if(message_packet->access_id == 78741753)
+					//	warning("L3 forwarding message id %llu to GPU block 0x%08x cycle %llu\n"
+					//			, message_packet->access_id, message_packet->address & cache->block_address_mask, P_TIME);
 
 
 					SETROUTE(message_packet, l2_cache_ptr, hub_iommu);
@@ -6315,6 +6315,8 @@ void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	return;
 }
 
+int warn_message = 0;
+
 void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet){
 
 	int cache_block_hit;
@@ -6380,7 +6382,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 	if(pending_bit == 1 && *cache_block_hit_ptr == 1)
 	{
 
-		assert(message_packet->src_id != 24); //hub_iommu
+		assert(message_packet->src_id != str_map_string(node_strn_map, hub_iommu->name)); //hub_iommu
 
 		if(owning_core == 1)
 		{
@@ -6401,10 +6403,14 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 			//set cache block state modified
 			message_packet->cache_block_state = cgm_cache_block_modified;
 
+			if(!warn_message)// only show this once.
+			{
+				warning("cgm_mesi_l3_getx(): might need to set the block modified in the L3 cache\nHowever block is exclusive to core\n");
+				warn_message = 1;
+			}
+
 			// update message packet size
 			message_packet->size = packet_set_size(l2_caches[str_map_string(&l2_strn_map, message_packet->l2_cache_name)].block_size);
-
-			//don't change the directory entries, the downgrade ack will come back and clean things up.
 
 			//set the l3_pending bit in the packet, this is required to resolve some protocol issues.
 			message_packet->l3_pending = 1;
@@ -6727,7 +6733,7 @@ void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet
 				cache_coalesed_retry(cache, message_packet->tag, message_packet->set, message_packet->access_id);
 			}
 
-			//if it is a new access (L2 retry) or a repeat access from an already owning core.
+			//if it is a new access (L3 retry) or a repeat access from an already owning core.
 			if(sharers == 0 || owning_core == 1)
 			{
 				//if the block is in the E state set M before sending up
@@ -7283,7 +7289,7 @@ void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *messag
 			//fatal("ack from GPU, need to make the special case l2 cache id %d name %s\n", message_packet->l2_cache_id, message_packet->l2_cache_name);
 
 			//special case get_getx_fwd coming from GPU
-			if(message_packet->src_id == 24)
+			if(message_packet->src_id == str_map_string(node_strn_map, hub_iommu->name))
 			{
 				/*warning("%s received get_getx_fwd_ack from GPU blk address 0x%08x\n", cache->name, message_packet->address & cache->block_address_mask);*/
 
@@ -9931,7 +9937,7 @@ int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_pack
 
 	assert(message_packet->size == HEADER_SIZE);
 
-	/*NOTE: rare protocol case... it is possible for the block to be transient if L3 has evcited AND a new line is being brought in
+	/*NOTE: rare protocol case... it is possible for the block to be transient if L3 has evicted AND a new line is being brought in
 	In this case nack the upgrade request back to the requesting L2 so the L2 can clear the sate and request the L2 cache will receive an
 	eviction from L3 before this nack makes it back, the access will have to be retried.*/
 

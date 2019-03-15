@@ -51,9 +51,15 @@ enum hub_connect_type_t
 	Thub_connect_type_num
 };
 
+struct hub_iommu_stats_t{
+
+	long long HubCtrlOccupancy;
+	long long IoUpOccupancy;
+	long long IoDownOccupancy;
+};
+
 extern struct str_map_t Rx_queue_strn_map;
 extern struct str_map_t Tx_queue_strn_map;
-
 
 
 extern struct hub_iommu_t *hub_iommu;
@@ -97,5 +103,9 @@ void iommu_clear_translation_table(int row);
 int iommu_translation_table_insert_address(unsigned int address);
 unsigned int iommu_translation_table_get_address(int id);
 int iommu_get_translation_table_size(void);
+
+void hub_dump_stats(struct cgm_stats_t *cgm_stat_container);
+void hub_store_stats(struct cgm_stats_t *cgm_stat_container);
+void hub_reset_stats(void);
 
 #endif /* __IOMMU_H__ */

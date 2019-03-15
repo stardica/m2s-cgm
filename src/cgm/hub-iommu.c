@@ -453,12 +453,16 @@ void hub_iommu_ctrl_func(void){
 	struct cgm_packet_t *message_packet;
 	long long step = 1;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		//we have received a packet
 		await(hub_iommu_ec, step);
+
+		occ_start = P_TIME;
 
 		//if we made it here we should have a packet.
 		message_packet = hub_iommu_get_from_queue();
@@ -473,6 +477,9 @@ void hub_iommu_ctrl_func(void){
 		{
 			GPU_PAUSE(1);
 		}
+
+		/*stats occupancy*/
+		hub_iommu->hub_occupance += (P_TIME - occ_start);
 
 	}
 
@@ -697,12 +704,16 @@ void hub_iommu_io_up_ctrl(void){
 	int transfer_time = 0;
 	long long step = 1;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 	while(1)
 	{
 		await(hub_iommu->hub_iommu_io_up_ec[my_pid], step);
 		//step++;
+
+		occ_start = P_TIME;
 
 		message_packet = list_get(hub_iommu->Tx_queue_top[my_pid], 0);
 		assert(message_packet);
@@ -777,7 +788,8 @@ void hub_iommu_io_up_ctrl(void){
 
 		//===================================================
 
-
+		/*stats occupancy*/
+		hub_iommu->hub_up_io_occupance[my_pid] += (P_TIME - occ_start);
 
 		/*list_enqueue(gpu_l2_caches[my_pid].Rx_queue_bottom, message_packet);
 		advance(&gpu_l2_cache[my_pid]);*/
@@ -793,6 +805,8 @@ void hub_iommu_io_down_ctrl(void){
 	int transfer_time = 0;
 	long long step = 1;
 
+	long long occ_start = 0;
+
 	set_id((unsigned int)my_pid);
 
 
@@ -800,6 +814,8 @@ void hub_iommu_io_down_ctrl(void){
 	{
 
 		await(hub_iommu->hub_iommu_io_down_ec, step);
+
+		occ_start = P_TIME;
 
 		message_packet = list_get(hub_iommu->Tx_queue_bottom, 0);
 		assert(message_packet);
@@ -882,13 +898,65 @@ void hub_iommu_io_down_ctrl(void){
 			fatal("hub_iommu_io_down_ctrl(): invalid access type as %s\n", str_map_value(&cgm_mem_access_strn_map, message_packet->access_type));
 		}
 
-			//list_enqueue(hub_iommu->switch_queue, message_packet);
-			//advance(&switches_ec[hub_iommu->switch_id]);
-		//	list_enqueue(switches[hub_iommu->switch_id].north_rx_request_queue, message_packet);
-		//	advance(&switches_ec[hub_iommu->switch_id]);
+		hub_iommu->hub_down_io_occupance += (P_TIME - occ_start);
 
 	}
 
 	return;
 }
 
+void hub_store_stats(struct cgm_stats_t *cgm_stat_container){
+
+	int i =0;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+
+	cgm_stat_container->hub_occupance = hub_iommu->hub_occupance;
+	cgm_stat_container->hub_down_io_occupance = hub_iommu->hub_down_io_occupance;
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+		cgm_stat_container->hub_up_io_occupance[i] = hub_iommu->hub_up_io_occupance[i];
+
+	return;
+}
+
+
+void hub_dump_stats(struct cgm_stats_t *cgm_stat_container){
+
+	assert(cgm_stat_container->stats_type == parallelSection);
+
+	int i =0;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+
+	CGM_STATS(cgm_stats_file, "hub_Occupancy = %llu\n", cgm_stat_container->hub_occupance);
+
+	CGM_STATS(cgm_stats_file, "hub_IODownOccupancy = %llu\n", cgm_stat_container->hub_down_io_occupance);
+	CGM_STATS(cgm_stats_file, "hub_IODownOccupancyPct = %0.6f\n", (((double) cgm_stat_container->hub_down_io_occupance)/((double) cgm_stat_container->gpu_total_cycles)));
+
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+	{
+		CGM_STATS(cgm_stats_file, "hub_%d_IOUpOccupancy = %llu\n", i, cgm_stat_container->hub_up_io_occupance[i]);
+		CGM_STATS(cgm_stats_file, "hub_%d_IOUpOccupancyPct = %0.6f\n",
+				i, (((double) cgm_stat_container->hub_up_io_occupance[i])/((double) cgm_stat_container->gpu_total_cycles)));
+	}
+
+
+	return;
+}
+
+void hub_reset_stats(void){
+
+	int i =0;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+
+	hub_iommu->hub_occupance = 0;
+	hub_iommu->hub_down_io_occupance = 0;
+
+	for(i = 0; i < gpu_group_cache_num; i++)
+		hub_iommu->hub_up_io_occupance[i] = 0;
+
+	return;
+}

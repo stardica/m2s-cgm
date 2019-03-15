@@ -11,6 +11,8 @@ task *mem_ctrl_io_task;
 int mem_ctrl_pid = 0;
 int mem_ctrl_io_pid = 0;
 
+int max_inflight = 512;
+
 void memctrl_init(void){
 
 	memctrl_create();
@@ -209,7 +211,7 @@ void memctrl_ctrl(void){
 
 		num_accesses = list_count(mem_ctrl->pending_accesses) + list_count(mem_ctrl->Tx_queue_top);
 
-		if(num_accesses >= 32)	//!sys_agent_can_access_bottom())
+		if(num_accesses >= max_inflight)	//!sys_agent_can_access_bottom())
 		{
 			//warning("MC stalling dram ctrl full cycle size %d %llu\n", list_count(mem_ctrl->pending_accesses), P_TIME);
 			SYSTEM_PAUSE(1);

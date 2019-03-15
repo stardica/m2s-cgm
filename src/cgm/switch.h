@@ -27,6 +27,596 @@
 /*#include <cgm/cache.h>*/
 /*#include <cgm/sys-agent.h>*/
 
+enum node_map_p34{
+
+	l2_cache_0_p34 = 0,
+	switch_0_p34,
+	l3_cache_0_p34,
+
+	l2_cache_1_p34,
+	switch_1_p34,
+	l3_cache_1_p34,
+
+	l2_cache_2_p34,
+	switch_2_p34,
+	l3_cache_2_p34,
+
+	l2_cache_3_p34,
+	switch_3_p34,
+	l3_cache_3_p34,
+
+	/*--------------*/
+
+	l2_cache_4_p34,
+	switch_4_p34,
+	l3_cache_4_p34,
+
+	l2_cache_5_p34,
+	switch_5_p34,
+	l3_cache_5_p34,
+
+	l2_cache_6_p34,
+	switch_6_p34,
+	l3_cache_6_p34,
+
+	l2_cache_7_p34,
+	switch_7_p34,
+	l3_cache_7_p34,
+
+	/*--------------*/
+
+	l2_cache_8_p34,
+	switch_8_p34,
+	l3_cache_8_p34,
+
+	l2_cache_9_p34,
+	switch_9_p34,
+	l3_cache_9_p34,
+
+	l2_cache_10_p34,
+	switch_10_p34,
+	l3_cache_10_p34,
+
+	l2_cache_11_p34,
+	switch_11_p34,
+	l3_cache_11_p34,
+
+	/*--------------*/
+
+	l2_cache_12_p34,
+	switch_12_p34,
+	l3_cache_12_p34,
+
+	l2_cache_13_p34,
+	switch_13_p34,
+	l3_cache_13_p34,
+
+	l2_cache_14_p34,
+	switch_14_p34,
+	l3_cache_14_p34,
+
+	l2_cache_15_p34,
+	switch_15_p34,
+	l3_cache_15_p34,
+
+	/*--------------*/
+
+	l2_cache_16_p34,
+	switch_16_p34,
+	l3_cache_16_p34,
+
+	l2_cache_17_p34,
+	switch_17_p34,
+	l3_cache_17_p34,
+
+	l2_cache_18_p34,
+	switch_18_p34,
+	l3_cache_18_p34,
+
+	l2_cache_19_p34,
+	switch_19_p34,
+	l3_cache_19_p34,
+
+	/*--------------*/
+
+	l2_cache_20_p34,
+	switch_20_p34,
+	l3_cache_20_p34,
+
+	l2_cache_21_p34,
+	switch_21_p34,
+	l3_cache_21_p34,
+
+	l2_cache_22_p34,
+	switch_22_p34,
+	l3_cache_22_p34,
+
+	l2_cache_23_p34,
+	switch_23_p34,
+	l3_cache_23_p34,
+
+	/*--------------*/
+
+	l2_cache_24_p34,
+	switch_24_p34,
+	l3_cache_24_p34,
+
+	l2_cache_25_p34,
+	switch_25_p34,
+	l3_cache_25_p34,
+
+	l2_cache_26_p34,
+	switch_26_p34,
+	l3_cache_26_p34,
+
+	l2_cache_27_p34,
+	switch_27_p34,
+	l3_cache_27_p34,
+
+	/*--------------*/
+
+	l2_cache_28_p34,
+	switch_28_p34,
+	l3_cache_28_p34,
+
+	l2_cache_29_p34,
+	switch_29_p34,
+	l3_cache_29_p34,
+
+	l2_cache_30_p34,
+	switch_30_p34,
+	l3_cache_30_p34,
+
+	l2_cache_31_p34,
+	switch_31_p34,
+	l3_cache_31_p34,
+
+	l2_cache_32_p34,
+	switch_32_p34,
+	l3_cache_32_p34,
+
+	l2_cache_33_p34,
+	switch_33_p34,
+	l3_cache_33_p34,
+
+	/*--------------*/
+
+	hub_iommu_34_p34,
+	switch_34_p34,
+	sys_agent_34_p34,
+
+	node_number_p34
+};
+
+enum node_map_p32{
+
+	l2_cache_0_p32 = 0,
+	switch_0_p32,
+	l3_cache_0_p32,
+
+	l2_cache_1_p32,
+	switch_1_p32,
+	l3_cache_1_p32,
+
+	l2_cache_2_p32,
+	switch_2_p32,
+	l3_cache_2_p32,
+
+	l2_cache_3_p32,
+	switch_3_p32,
+	l3_cache_3_p32,
+
+	/*--------------*/
+
+	l2_cache_4_p32,
+	switch_4_p32,
+	l3_cache_4_p32,
+
+	l2_cache_5_p32,
+	switch_5_p32,
+	l3_cache_5_p32,
+
+	l2_cache_6_p32,
+	switch_6_p32,
+	l3_cache_6_p32,
+
+	l2_cache_7_p32,
+	switch_7_p32,
+	l3_cache_7_p32,
+
+	/*--------------*/
+
+	l2_cache_8_p32,
+	switch_8_p32,
+	l3_cache_8_p32,
+
+	l2_cache_9_p32,
+	switch_9_p32,
+	l3_cache_9_p32,
+
+	l2_cache_10_p32,
+	switch_10_p32,
+	l3_cache_10_p32,
+
+	l2_cache_11_p32,
+	switch_11_p32,
+	l3_cache_11_p32,
+
+	/*--------------*/
+
+	l2_cache_12_p32,
+	switch_12_p32,
+	l3_cache_12_p32,
+
+	l2_cache_13_p32,
+	switch_13_p32,
+	l3_cache_13_p32,
+
+	l2_cache_14_p32,
+	switch_14_p32,
+	l3_cache_14_p32,
+
+	l2_cache_15_p32,
+	switch_15_p32,
+	l3_cache_15_p32,
+
+	/*--------------*/
+
+	l2_cache_16_p32,
+	switch_16_p32,
+	l3_cache_16_p32,
+
+	l2_cache_17_p32,
+	switch_17_p32,
+	l3_cache_17_p32,
+
+	l2_cache_18_p32,
+	switch_18_p32,
+	l3_cache_18_p32,
+
+	l2_cache_19_p32,
+	switch_19_p32,
+	l3_cache_19_p32,
+
+	/*--------------*/
+
+	l2_cache_20_p32,
+	switch_20_p32,
+	l3_cache_20_p32,
+
+	l2_cache_21_p32,
+	switch_21_p32,
+	l3_cache_21_p32,
+
+	l2_cache_22_p32,
+	switch_22_p32,
+	l3_cache_22_p32,
+
+	l2_cache_23_p32,
+	switch_23_p32,
+	l3_cache_23_p32,
+
+	/*--------------*/
+
+	l2_cache_24_p32,
+	switch_24_p32,
+	l3_cache_24_p32,
+
+	l2_cache_25_p32,
+	switch_25_p32,
+	l3_cache_25_p32,
+
+	l2_cache_26_p32,
+	switch_26_p32,
+	l3_cache_26_p32,
+
+	l2_cache_27_p32,
+	switch_27_p32,
+	l3_cache_27_p32,
+
+	/*--------------*/
+
+	l2_cache_28_p32,
+	switch_28_p32,
+	l3_cache_28_p32,
+
+	l2_cache_29_p32,
+	switch_29_p32,
+	l3_cache_29_p32,
+
+	l2_cache_30_p32,
+	switch_30_p32,
+	l3_cache_30_p32,
+
+	l2_cache_31_p32,
+	switch_31_p32,
+	l3_cache_31_p32,
+
+	/*--------------*/
+
+	hub_iommu_32_p32,
+	switch_32_p32,
+	sys_agent_32_p32,
+
+	node_number_p32
+};
+
+
+enum node_map_p22{
+
+	l2_cache_0_p22 = 0,
+	switch_0_p22,
+	l3_cache_0_p22,
+
+	l2_cache_1_p22,
+	switch_1_p22,
+	l3_cache_1_p22,
+
+	l2_cache_2_p22,
+	switch_2_p22,
+	l3_cache_2_p22,
+
+	l2_cache_3_p22,
+	switch_3_p22,
+	l3_cache_3_p22,
+
+	/*--------------*/
+
+	l2_cache_4_p22,
+	switch_4_p22,
+	l3_cache_4_p22,
+
+	l2_cache_5_p22,
+	switch_5_p22,
+	l3_cache_5_p22,
+
+	l2_cache_6_p22,
+	switch_6_p22,
+	l3_cache_6_p22,
+
+	l2_cache_7_p22,
+	switch_7_p22,
+	l3_cache_7_p22,
+
+	/*--------------*/
+
+	l2_cache_8_p22,
+	switch_8_p22,
+	l3_cache_8_p22,
+
+	l2_cache_9_p22,
+	switch_9_p22,
+	l3_cache_9_p22,
+
+	l2_cache_10_p22,
+	switch_10_p22,
+	l3_cache_10_p22,
+
+	l2_cache_11_p22,
+	switch_11_p22,
+	l3_cache_11_p22,
+
+	/*--------------*/
+
+	l2_cache_12_p22,
+	switch_12_p22,
+	l3_cache_12_p22,
+
+	l2_cache_13_p22,
+	switch_13_p22,
+	l3_cache_13_p22,
+
+	l2_cache_14_p22,
+	switch_14_p22,
+	l3_cache_14_p22,
+
+	l2_cache_15_p22,
+	switch_15_p22,
+	l3_cache_15_p22,
+
+	/*--------------*/
+
+	l2_cache_16_p22,
+	switch_16_p22,
+	l3_cache_16_p22,
+
+	l2_cache_17_p22,
+	switch_17_p22,
+	l3_cache_17_p22,
+
+	l2_cache_18_p22,
+	switch_18_p22,
+	l3_cache_18_p22,
+
+	l2_cache_19_p22,
+	switch_19_p22,
+	l3_cache_19_p22,
+
+	/*--------------*/
+
+	l2_cache_20_p22,
+	switch_20_p22,
+	l3_cache_20_p22,
+
+	l2_cache_21_p22,
+	switch_21_p22,
+	l3_cache_21_p22,
+
+	/*--------------*/
+
+	hub_iommu_22_p22,
+	switch_22_p22,
+	sys_agent_22_p22,
+
+	node_number_p22
+};
+
+enum node_map_p18{
+
+	l2_cache_0_p18 = 0,
+	switch_0_p18,
+	l3_cache_0_p18,
+
+	l2_cache_1_p18,
+	switch_1_p18,
+	l3_cache_1_p18,
+
+	l2_cache_2_p18,
+	switch_2_p18,
+	l3_cache_2_p18,
+
+	l2_cache_3_p18,
+	switch_3_p18,
+	l3_cache_3_p18,
+
+	/*--------------*/
+
+	l2_cache_4_p18,
+	switch_4_p18,
+	l3_cache_4_p18,
+
+	l2_cache_5_p18,
+	switch_5_p18,
+	l3_cache_5_p18,
+
+	l2_cache_6_p18,
+	switch_6_p18,
+	l3_cache_6_p18,
+
+	l2_cache_7_p18,
+	switch_7_p18,
+	l3_cache_7_p18,
+
+	/*--------------*/
+
+	l2_cache_8_p18,
+	switch_8_p18,
+	l3_cache_8_p18,
+
+	l2_cache_9_p18,
+	switch_9_p18,
+	l3_cache_9_p18,
+
+	l2_cache_10_p18,
+	switch_10_p18,
+	l3_cache_10_p18,
+
+	l2_cache_11_p18,
+	switch_11_p18,
+	l3_cache_11_p18,
+
+	/*--------------*/
+
+	l2_cache_12_p18,
+	switch_12_p18,
+	l3_cache_12_p18,
+
+	l2_cache_13_p18,
+	switch_13_p18,
+	l3_cache_13_p18,
+
+	l2_cache_14_p18,
+	switch_14_p18,
+	l3_cache_14_p18,
+
+	l2_cache_15_p18,
+	switch_15_p18,
+	l3_cache_15_p18,
+
+	l2_cache_16_p18,
+	switch_16_p18,
+	l3_cache_16_p18,
+
+	l2_cache_17_p18,
+	switch_17_p18,
+	l3_cache_17_p18,
+
+	hub_iommu_18_p18,
+	switch_18_p18,
+	sys_agent_18_p18,
+
+	node_number_p18
+};
+
+enum node_map_p16{
+
+	l2_cache_0_p16 = 0,
+	switch_0_p16,
+	l3_cache_0_p16,
+
+	l2_cache_1_p16,
+	switch_1_p16,
+	l3_cache_1_p16,
+
+	l2_cache_2_p16,
+	switch_2_p16,
+	l3_cache_2_p16,
+
+	l2_cache_3_p16,
+	switch_3_p16,
+	l3_cache_3_p16,
+
+	/*--------------*/
+
+	l2_cache_4_p16,
+	switch_4_p16,
+	l3_cache_4_p16,
+
+	l2_cache_5_p16,
+	switch_5_p16,
+	l3_cache_5_p16,
+
+	l2_cache_6_p16,
+	switch_6_p16,
+	l3_cache_6_p16,
+
+	l2_cache_7_p16,
+	switch_7_p16,
+	l3_cache_7_p16,
+
+	/*--------------*/
+
+	l2_cache_8_p16,
+	switch_8_p16,
+	l3_cache_8_p16,
+
+	l2_cache_9_p16,
+	switch_9_p16,
+	l3_cache_9_p16,
+
+	l2_cache_10_p16,
+	switch_10_p16,
+	l3_cache_10_p16,
+
+	l2_cache_11_p16,
+	switch_11_p16,
+	l3_cache_11_p16,
+
+	/*--------------*/
+
+	l2_cache_12_p16,
+	switch_12_p16,
+	l3_cache_12_p16,
+
+	l2_cache_13_p16,
+	switch_13_p16,
+	l3_cache_13_p16,
+
+	l2_cache_14_p16,
+	switch_14_p16,
+	l3_cache_14_p16,
+
+	l2_cache_15_p16,
+	switch_15_p16,
+	l3_cache_15_p16,
+
+	hub_iommu_16_p16,
+	switch_16_p16,
+	sys_agent_16_p16,
+
+	node_number_p16
+};
+
 
 enum node_map_p8{
 
@@ -123,6 +713,90 @@ enum l1_map{
 	l1_i_cache_7,
 	l1_d_cache_7,
 
+	/*----------*/
+
+	l1_i_cache_8,
+	l1_d_cache_8,
+
+	l1_i_cache_9,
+	l1_d_cache_9,
+
+	l1_i_cache_10,
+	l1_d_cache_10,
+
+	l1_i_cache_11,
+	l1_d_cache_11,
+
+	l1_i_cache_12,
+	l1_d_cache_12,
+
+	l1_i_cache_13,
+	l1_d_cache_13,
+
+	l1_i_cache_14,
+	l1_d_cache_14,
+
+	l1_i_cache_15,
+	l1_d_cache_15,
+
+	/*----------*/
+
+	l1_i_cache_16,
+	l1_d_cache_16,
+
+	l1_i_cache_17,
+	l1_d_cache_17,
+
+	l1_i_cache_18,
+	l1_d_cache_18,
+
+	l1_i_cache_19,
+	l1_d_cache_19,
+
+	l1_i_cache_20,
+	l1_d_cache_20,
+
+	l1_i_cache_21,
+	l1_d_cache_21,
+
+	l1_i_cache_22,
+	l1_d_cache_22,
+
+	l1_i_cache_23,
+	l1_d_cache_23,
+
+	/*----------*/
+
+	l1_i_cache_24,
+	l1_d_cache_24,
+
+	l1_i_cache_25,
+	l1_d_cache_25,
+
+	l1_i_cache_26,
+	l1_d_cache_26,
+
+	l1_i_cache_27,
+	l1_d_cache_27,
+
+	l1_i_cache_28,
+	l1_d_cache_28,
+
+	l1_i_cache_29,
+	l1_d_cache_29,
+
+	l1_i_cache_30,
+	l1_d_cache_30,
+
+	l1_i_cache_31,
+	l1_d_cache_31,
+
+	l1_i_cache_32,
+	l1_d_cache_32,
+
+	l1_i_cache_33,
+	l1_d_cache_33,
+
 	l1_number
 
 };
@@ -136,6 +810,36 @@ enum cpu_l2_map{
 		l2_caches_5,
 		l2_caches_6,
 		l2_caches_7,
+
+		l2_caches_8,
+		l2_caches_9,
+		l2_caches_10,
+		l2_caches_11,
+		l2_caches_12,
+		l2_caches_13,
+		l2_caches_14,
+		l2_caches_15,
+
+		l2_caches_16,
+		l2_caches_17,
+		l2_caches_18,
+		l2_caches_19,
+		l2_caches_20,
+		l2_caches_21,
+		l2_caches_22,
+		l2_caches_23,
+
+		l2_caches_24,
+		l2_caches_25,
+		l2_caches_26,
+		l2_caches_27,
+		l2_caches_28,
+		l2_caches_29,
+		l2_caches_30,
+		l2_caches_31,
+
+		l2_caches_32,
+		l2_caches_33,
 
 		gpu_l2_caches_0_c,
 		gpu_l2_caches_1_c,
@@ -230,6 +934,11 @@ enum gpu_l2_map{
 };
 
 
+extern struct str_map_t node_strn_map_p34;
+extern struct str_map_t node_strn_map_p32;
+extern struct str_map_t node_strn_map_p22;
+extern struct str_map_t node_strn_map_p18;
+extern struct str_map_t node_strn_map_p16;
 extern struct str_map_t node_strn_map_p8;
 extern struct str_map_t node_strn_map_p4;
 

@@ -29,8 +29,6 @@
 
 #include <cgm/cgm.h>
 
-
-
 /*
  * Class 'X86Core'
  */

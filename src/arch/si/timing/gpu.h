@@ -37,6 +37,7 @@ extern char *si_gpu_calc_file_name;
 
 /* FIXME - remove */
 extern int si_gpu_fused_device;
+extern int collaborative_device;
 
 
 /* OpenCL Device Info */

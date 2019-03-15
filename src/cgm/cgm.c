@@ -12,6 +12,7 @@
 
 #include <cgm/cgm.h>
 #include <cgm/configure.h>
+#include <cgm/contexts.h>
 
 /*#include <cgm/dram.h>*/
 
@@ -154,7 +155,12 @@ void init_cgm_stats(int argc, char **argv){
 
 	//now get the benchamrk's args
 	while(i < argc)
-		sprintf(buff + strlen(buff), "%s ", argv[i++]);
+	{
+		if( i < (argc -1))
+			sprintf(buff + strlen(buff), "%s_", argv[i++]);
+		else
+			sprintf(buff + strlen(buff), "%s", argv[i++]);
+	}
 
 	cgm_stat->args = strdup(buff);
 
@@ -178,7 +184,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
-	//int gpu_group_cache_num = (num_cus/4);
+	int gpu_group_cache_num = (num_cus/4);
 
 	/*configure data structures that are arrays*/
 
@@ -473,6 +479,9 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->switch_east_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_south_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
 	cgm_stat_container->switch_west_io_occupance = (long long *)calloc(num_cores + 1, sizeof(long long));
+
+	//GPU hub
+	cgm_stat_container->hub_up_io_occupance = (long long *)calloc(gpu_group_cache_num, sizeof(long long));
 
 	return;
 }
@@ -961,6 +970,7 @@ void cgm_store_stats(struct cgm_stats_t *cgm_stat_container){
 	switch_store_stats(cgm_stat_container);
 	sys_agent_store_stats(cgm_stat_container);
 	memctrl_store_stats(cgm_stat_container);
+	hub_store_stats(cgm_stat_container);
 
 	return;
 }
@@ -1051,6 +1061,7 @@ void cgm_reset_stats(void){
 	switch_reset_stats();
 	sys_agent_reset_stats();
 	memctrl_reset_stats();
+	hub_reset_stats();
 
 	return;
 }
@@ -1199,6 +1210,11 @@ void cgm_configure(void){
 		warning("--SIMPLE_MEM set to 1, accesses stop at L3---\n");
 	}
 
+	if(quick_dump == 1)
+	{
+		warning("--Quick dump set, parallel section stats will dump at end of parallel section.---\n");
+	}
+
 	if(mem_safe_mode == 0)
 	{
 		warning("---MEM_SAFE_MODE set to 0, page protection not enforced---\n");
@@ -1215,9 +1231,9 @@ void cgm_create_tasks(void){
 	char buff[100];
 
 	//eventcounts
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_start");
-	sim_start = new_eventcount(strdup(buff));
+	sim_start = new_eventcount(strdup(buff));*/
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "sim_finish");
@@ -1232,9 +1248,9 @@ void cgm_create_tasks(void){
 	snprintf(buff, 100, "cpu_gpu_run");
 	create_task(cpu_gpu_run, DEFAULT_STACK_SIZE, strdup(buff));
 
-	memset(buff,'\0' , 100);
+	/*memset(buff,'\0' , 100);
 	snprintf(buff, 100, "cgm_start");
-	create_task(cgm_mem_run, DEFAULT_STACK_SIZE, strdup(buff));
+	create_task(cgm_mem_run, DEFAULT_STACK_SIZE, strdup(buff));*/
 
 	memset(buff,'\0' , 100);
 	snprintf(buff, 100, "watchdog");
@@ -1707,9 +1723,45 @@ void cgm_dump_histograms(void){
 
 #define ADDSTATS(stat) (cgm_parallel_stats->stat[0] + cgm_parallel_stats->stat[1] + cgm_parallel_stats->stat[2] + cgm_parallel_stats->stat[3])
 
+void cgm_quick_dump_summary(void){
+
+	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
+	cgm_stats_file = fopen (cgm_stat->fopen_path, "w+");
+
+	/*finalize the cgm stats structure i.e. consolidate all stats
+	we did this because in simulation you may only want to instrument certain sections of a benchmark
+	for example, this gives us the flexibility to pull stats from only the parallel section of a benchmark*/
+
+	cgm_dump_general_stats();
+
+
+	/*dump the full Run stats*/
+	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
+
+	/*parallel section stats*/
+	CGM_STATS(cgm_stats_file, "[ParallelStats]\n");
+	cgm_dump_parallel_section_stats(cgm_parallel_stats);
+	cgm_dump_cpu_gpu_stats(cgm_parallel_stats);
+	mem_system_dump_stats(cgm_parallel_stats);
+	cache_dump_stats(cgm_parallel_stats);
+	switch_dump_stats(cgm_parallel_stats);
+	hub_dump_stats(cgm_parallel_stats);
+	sys_agent_dump_stats(cgm_parallel_stats);
+	memctrl_dump_stats(cgm_parallel_stats);
+	CGM_STATS(cgm_stats_file, "\n");
+
+
+
+	CLOSE_FILES;
+
+}
+
 void cgm_dump_summary(void){
 
 	printf("\n---Printing Stats to file %s---\n", cgm_stat->stat_file_name);
+	cgm_stats_file = fopen (cgm_stat->fopen_path, "w+");
+
+	/*printf("***Number of events %llu max events %llu cycles %llu\n", num_contexts, max_contexts, P_TIME);*/
 
 	/*finalize the cgm stats structure i.e. consolidate all stats
 	we did this because in simulation you may only want to instrument certain sections of a benchmark
@@ -1760,9 +1812,6 @@ void cgm_dump_summary(void){
 	printf("l3_upgrade_ %llu\n", ADDSTATS(l3_upgrade_));
 	printf("l3_upgrade_ack_ %llu\n", ADDSTATS(l3_upgrade_ack_));*/
 
-	//this sets up the full system dump in cgm_stat
-	cgm_consolidate_stats();
-
 	cgm_dump_general_stats();
 
 	//dump_stat_bandwidth();
@@ -1772,6 +1821,8 @@ void cgm_dump_summary(void){
 
 	/*dump the full Run stats*/
 	CGM_STATS(cgm_stats_file, ";Don't try to read this, use the python scripts to generate easy to read output.\n");
+	/*//this sets up the full system dump in cgm_stat
+	cgm_consolidate_stats();
 	CGM_STATS(cgm_stats_file, "[FullRunStats]\n");
 	cgm_dump_cpu_gpu_stats(cgm_stat);
 	mem_system_dump_stats(cgm_stat);
@@ -1779,7 +1830,7 @@ void cgm_dump_summary(void){
 	switch_dump_stats(cgm_stat);
 	sys_agent_dump_stats(cgm_stat);
 	memctrl_dump_stats(cgm_stat);
-	CGM_STATS(cgm_stats_file, "\n");
+	CGM_STATS(cgm_stats_file, "\n");*/
 
 
 	/*parallel section stats*/
@@ -1793,6 +1844,7 @@ void cgm_dump_summary(void){
 	memctrl_dump_stats(cgm_parallel_stats);
 	CGM_STATS(cgm_stats_file, "\n");
 
+
 	/*dump specific areas of interest*/
 	CGM_STATS(cgm_stats_file, "[StartupStats]\n");
 	cgm_dump_startup_section_stats(cgm_startup_stats);
@@ -1803,7 +1855,7 @@ void cgm_dump_summary(void){
 	cgm_dump_wrapup_section_stats(cgm_wrapup_stats);
 	CGM_STATS(cgm_stats_file, "\n");
 
-	/*star todo dump histograms for the various sections that we are intrested in*/
+	/*star todo dump histograms for the various sections that we are interested in*/
 
 	/*dump the histograms*/
 	if(Histograms == 1)
@@ -1814,40 +1866,35 @@ void cgm_dump_summary(void){
 	return;
 }
 
-void cgm_mem_run(void){
+/*void cgm_mem_run(void){
 
-	advance(sim_start);
+	//advance(sim_start);
 	//simulation execution
 
-	await(sim_finish, 1);
+	//await(sim_finish, 1);
 	//dump stats on exit.
 	return;
-}
+}*/
 
 void cpu_gpu_run(void){
 
 	long long t_1 = 1;
 
-	while(1)
-	{
+	//for simulated cycles per second
+	last_time = get_wall_time();
 
-		await(sim_start, t_1);
-		t_1++;
+	m2s_loop();
 
-		//for simulated cycles per second
-		last_time = get_wall_time();
+	/*star todo there is a bug here
+	sim_finsih has to be advanced to 1 + the last cycle
+	but you don't know out of all the final threads (threads package threads)
+	which one will run the longest until its done.
+	if you play with the delay number you will eventually find
+	the correct delay and the simulation will finish correctly.*/
 
-		m2s_loop();
-
-		/*star todo there is a bug here
-		sim_finsih has to be advanced to 1 + the last cycle
-		but you don't know out of all the final threads
-		which one will run the longest until its done.
-		if you play with the delay number you will eventually find
-		the correct delay and the simulation will finish correctly.*/
-		future_advance(sim_finish, (etime.count + 2));
-		//advance(sim_finish);
-	}
+	//just make sure this is the last context to execute
+	future_advance(sim_finish, (etime.count + 100));
+	await(sim_finish, t_1);
 
 	return;
 }
@@ -2019,6 +2066,8 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 		packet_destroy(new_packet);
 		return access_id;
 	}*/
+
+	//fatal("nope\n");
 
 	/*int i = 0;
 	for(i = 0; i < num_cores; i++)
@@ -2362,6 +2411,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 		return;
 	}
 
+
+	/*fatal("nope 2\n");*/
+
 	/*if(new_packet->cpu_access_type == cgm_access_store)
 	{
 		//put back on the core event queue to end memory system access.
@@ -2381,6 +2433,12 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	//get the core ID number should be <= number of cores
 	id = thread->core->id;
 	assert(id < num_cores);
+
+	/*if(id == num_cores - 1)
+	{
+		printf("num cores %d issueing load/store from %d addr 0x%08x\n", num_cores, id, addr);
+		getchar();
+	}*/
 
 	/*stats*/
 	l1_d_caches[id].TotalAcesses++;
@@ -2510,6 +2568,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 		return;
 	}
 
+	/*fatal("nope 3\n");*/
 
 	//Add to the target L1 Cache Rx Queue
 	if(access_kind == cgm_access_load || access_kind == cgm_access_store || access_kind == cgm_access_nc_store)

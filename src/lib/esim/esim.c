@@ -652,6 +652,7 @@ void esim_process_events(int forward)
 		heap_extract(esim_event_heap, NULL);
 		event_info = list_get(esim_event_info_list, event->id);
 		assert(event_info && event_info->handler);
+
 		//printf("ID: %d\n", event->id);
 		printf("running\n");
 		event_info->handler(event->id, event->data);

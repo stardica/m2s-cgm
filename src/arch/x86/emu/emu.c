@@ -598,7 +598,7 @@ int X86EmuRun(Emu *self)
 	X86Emu *emu = asX86Emu(self);
 	X86Context *ctx;
 
-	fatal("emu run\n");
+	fatal("X86EmuRun(): What? \n");
 
 	/* Stop if there is no context running */
 	if (emu->finished_list_count >= emu->context_list_count)

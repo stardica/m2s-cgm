@@ -70,7 +70,7 @@ void cgm_tlb_invalidate(struct tlb_t *tlb, int set, int way){
 }
 
 
-//this is terrible...sigh... same funcion as the cache version. need to consolidate somehow.
+//this is terrible...sigh... same function as the cache version. need to consolidate somehow.
 void cgm_tlb_update_waylist(struct tlb_set_t *set, struct tlb_block_t *blk, enum cache_waylist_enum where){
 
 	if (!blk->way_prev && !blk->way_next)

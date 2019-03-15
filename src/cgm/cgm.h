@@ -322,6 +322,7 @@ void cgm_create_tasks(void);
 void cgm_mem_run(void);
 void cpu_gpu_run(void);
 
+void cgm_quick_dump_summary(void);
 void cgm_dump_summary(void);
 void cgm_dump_section_stats(struct cgm_stats_t *cgm_stat_container);
 void cgm_dump_general_stats(void);

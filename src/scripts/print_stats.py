@@ -2,7 +2,7 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 1
+num_cores = 6
 num_cus = 8
 cache_levels = 3
 gpu_stats = 1
@@ -61,7 +61,52 @@ def get_margins(table, title, element):
 
 	return max_title_length, max_element_length
 
+def print_hub_stats(options):
 
+	hub_stats_dict = get_stats(options)
+	
+	var = ""
+	hub_stats = 	[
+			"Occupancy",
+			"IODownOccupancy",
+			"IODownOccupancyPct"
+			]
+
+	
+	hub_stats_table = [[0 for x in range(2)] for y in range(len(hub_stats))]
+
+	for i in range (0,len(hub_stats)):
+		hub_stats_table[i][0] = hub_stats[i]
+		var = "hub_" + hub_stats[i]
+		hub_stats_table[i][1] = hub_stats_dict[var]
+
+	f = open(options.OutFileName, 'a')
+
+	f.write("//Hub Stats////////////////////////////////////////////////////" + '\n')
+	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
+		
+
+	max_title_length, max_element_length = get_margins(hub_stats_table, 'Hub stats', "")
+
+	title_bar = '-' * (max_title_length - 1)
+	data_bar = '-' * (max_element_length - 1)
+
+	#print the title and bars
+	f.write("{:<{title_width}}{:>{data_width}}".format("Hub stats",'HUB', title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
+
+	#print the table's data
+	for tup in hub_stats_table:
+		if isinstance(tup[1], int):
+			f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+		else:
+			f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
+	f.write('\n')
+
+
+	f.close
+
+	return
 
 def print_switch_io_stats(options):
 	
@@ -1217,7 +1262,6 @@ def print_general_stats(options):
 	f.write("//General Stats////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
-	#combined swtich stats
 	max_title_length, max_element_length = get_margins(table_general_data, 'General Stats', 'Stats')
 
 	title_bar = '-' * (max_title_length - 1)
@@ -1258,7 +1302,8 @@ print_gpu_stats(options)
 print_cu_stats(options)
 print_cache_stats(options)
 print_cache_io_stats(options)
-#print_mem_system_stats(options)
+print_mem_system_stats(options)
 print_switch_stats(options)
 print_switch_io_stats(options)
+print_hub_stats(options)
 print_samc_stats(options)

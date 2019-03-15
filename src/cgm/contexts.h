@@ -18,6 +18,9 @@
 #define LARGE_STACK_SIZE (0x1000 * 16)
 #endif
 
+extern long long num_contexts;
+extern long long max_contexts;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

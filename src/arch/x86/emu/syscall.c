@@ -236,13 +236,13 @@ void X86ContextSyscall(X86Context *self)
 
 	/* Get system call code from 'eax' */
 
-	//fatal("first sys call code %d\n", code = regs->eax);
+	/*fatal("first sys call code %d\n", code = regs->eax);*/
 
 	code = regs->eax;
 
 	if(regs->eax == 329)
 	{
-		warning("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
+		printf("CTX X86ContextSyscall() code %d abi code %d\n", regs->eax, regs->ebx);
 	}
 
 	if(regs->eax == 329 && regs->ebx == 16)
@@ -2876,6 +2876,8 @@ static int x86_sys_clone_impl(X86Context *ctx)
 	new_ctx->regs->esp = new_esp;
 	new_ctx->regs->eax = 0;
 
+	//printf("OMP CLONE PID %d\n", new_ctx->pid);
+
 	/* Return PID of the new context */
 	x86_sys_debug("  context created with pid %d\n", new_ctx->pid);
 	return new_ctx->pid;
@@ -2898,6 +2900,7 @@ struct sim_utsname
 	char domainname[65];
 } __attribute__((packed));
 
+
 static struct sim_utsname sim_utsname =
 {
 	"Linux",
@@ -2907,8 +2910,6 @@ static struct sim_utsname sim_utsname =
 	"i686"
 	""
 };
-
-
 
 static int x86_sys_newuname_impl(X86Context *ctx){
 
@@ -5181,6 +5182,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 		{
 			if(SINGLE_CORE == 1)
 			{
+				//fatal("set single core\n");
 				//schedule all threads on a single core despite number of available cores...
 				if(i == 0)
 					bit_map_set(target_ctx->affinity, i, 1, 1);
@@ -5693,6 +5695,9 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	cgm_parallel_stats->start_parallel_section_cycle = P_TIME;
 	cgm_reset_stats();
 
+	num_contexts = 0;
+	max_contexts = 0;
+
 	num_ranges = 0;
 
 	branch_stalls = 0;
@@ -5718,8 +5723,6 @@ static int x86_sys_cgm_stats_begin_parallel_section_impl(X86Context *ctx)
 	pages_created = 0;
 	mmu[0].num_processed = 0;
 	ptw_num_processed = 0;
-
-
 
 	///idle_stall = 0;
 	//total_dispatches = 0;
@@ -5749,9 +5752,14 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	cgm_parallel_stats->end_parallel_section_cycle =  P_TIME;
 	cgm_parallel_stats->total_parallel_section_cycles = cgm_parallel_stats->end_parallel_section_cycle - cgm_parallel_stats->start_parallel_section_cycle;
 
+	//store the stats
+	cgm_store_stats(cgm_parallel_stats);
+
 	if(quick_dump == 1)
 	{
 		printf("---Quick Dump System Cycle %llu---\n", P_TIME);
+
+		/*printf("***Number of events %llu max events %llu cycles %llu\n", num_contexts, max_contexts, cgm_parallel_stats->total_parallel_section_cycles);*/
 
 		/*printf("GPU stalls:\n");
 		printf("branch stalls: %llu\n", branch_stalls);
@@ -5789,7 +5797,7 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 
 		//printf(num)
 
-		printf("num_ranges %d\n", num_ranges);
+		/*printf("num_ranges %d\n", num_ranges);*/
 
 		//printf("fetches %llu loads %llu stores %llu\n",
 		//		mem_system_stats->cpu_total_fetch_requests, mem_system_stats->cpu_total_load_requests, mem_system_stats->cpu_total_store_requests);
@@ -5797,11 +5805,8 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 		//mark that sim finished successfully
 		cgm_stat->execution_success = 1;
 
-		//store the stats
-		cgm_store_stats(cgm_parallel_stats);
-
 		/* Dump statistics summary */
-		cgm_dump_summary();
+		cgm_quick_dump_summary();
 
 		printf("---Simulation End :)---\n\n");
 
@@ -5811,7 +5816,7 @@ static int x86_sys_cgm_stats_end_parallel_section_impl(X86Context *ctx)
 	{
 		printf("---Quick Dump skipped cycle %llu---\n", P_TIME);
 
-		cgm_store_stats(cgm_parallel_stats);
+		/*cgm_store_stats(cgm_parallel_stats);*/
 
 		cgm_reset_stats();
 

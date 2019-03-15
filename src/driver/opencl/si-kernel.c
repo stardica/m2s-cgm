@@ -560,6 +560,31 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			continue;
 		}
 
+		/* printfid
+		 * Format: privateid:<id>
+		 * Observed first in version 3:1:104 of metadata.
+		 * Not sure what this entry is for.
+		 */
+		if (!strcmp(token, "printfid"))
+		{
+			/* Expect 2 tokens */
+			opencl_si_kernel_expect_count(kernel, token_list, 2);
+
+			/* Next */
+			str_token_list_free(token_list);
+			continue;
+		}
+
+		if (!strcmp(token, "cbid"))
+		{
+			/* Expect 2 tokens */
+			opencl_si_kernel_expect_count(kernel, token_list, 2);
+
+			/* Next */
+			str_token_list_free(token_list);
+			continue;
+		}
+
 		/* Crash when uninterpreted entries appear */
 		fatal("kernel '%s': unknown metadata entry '%s'",
 			kernel->name, token);
@@ -826,7 +851,7 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(struct si_ndrange_t *ndrang
 
 	/* FIXME Offset in the global buffer where data segment exists */
 	/* FIXME Offset in buffer for printf support */
-	/* FIXME Size of the printf buffer */
+	/* FIXME Size of the printf buffer*/
 }
 
 void opencl_si_kernel_create_ndrange_tables(struct si_ndrange_t *ndrange)

@@ -413,7 +413,8 @@ task * create_task(void (*func)(void), unsigned stacksize, char *name){
 	tptr->count = etime.count;
 	tptr->name = name;
 
-	assert (tptr->c.stack = (char *)malloc(stacksize));
+	tptr->c.stack = (char *)malloc(stacksize);
+	assert(tptr->c.stack);
 	tptr->c.sz = stacksize;
 
 	context_init ((process_t*)&tptr->c, func);

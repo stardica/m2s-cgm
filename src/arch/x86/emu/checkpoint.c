@@ -479,7 +479,7 @@ static void save_sets(struct cache_t *cache){
 
 	int set = 0;
 	int way = 0;
-	char buff[25];
+	char buff[64];
 
 	unsigned int directory_top = 0;
 	unsigned int directory_bottom = 0;
@@ -491,7 +491,7 @@ static void save_sets(struct cache_t *cache){
 	{
 		for(way = 0; way < cache->assoc; way++)
 		{
-			memset(buff, '\0', 25);
+			memset(buff, '\0', 64);
 			sprintf(buff, "set[%d]way[%d]", set, way);
 
 			cfg_push(buff);
@@ -594,7 +594,7 @@ static void load_sets(struct cache_t *cache){
 	unsigned long long directory_bottom = 0;
 	unsigned long long directory = 0;
 
-	char buff[25];
+	char buff[64];
 
 	for(set = 0; set < cache->num_sets; set++)
 	{
@@ -602,7 +602,7 @@ static void load_sets(struct cache_t *cache){
 		{
 			//printf("way %d sets %d ways %d\n", way,cache->num_sets, cache->assoc);
 
-			memset(buff, '\0', 25);
+			memset(buff, '\0', 64);
 			sprintf(buff, "set[%d]way[%d]", set, way);
 			cfg_descend(buff);
 

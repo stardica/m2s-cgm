@@ -253,7 +253,8 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	opencl_debug("\tsize = %u\n", size);
 
 	/*star changed this... here we make the GPU's vtl memory accesses equal to the CPUs.
-	in non-coherent mode the GPU has its own memory address space*/
+	in non-coherent mode the GPU has its own memory address
+	space despite using the same vtrl memory addresses*/
 	device_ptr = host_ptr;
 
 
@@ -266,7 +267,7 @@ static int opencl_abi_si_mem_alloc_impl(X86Context *ctx){
 	//this will turn shared memory on and off as set in the ini file.
 	/*link this GPU memory segment to the corresponding host memory space*/
 	//if(cgm_gpu_cache_protocol == cgm_protocol_mesi)
-	//mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
+	//	mmu_add_guest(ctx->address_space_index, si_emu->pid, device_ptr, host_ptr, size);
 
 	if(GPU_HUB_IOMMU == 1)
 	{
@@ -1007,8 +1008,16 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	unsigned int global_size[3];
 	unsigned int local_size[3];
 
+
+	//this doesn't seem to work
 	if (si_gpu_fused_device)
 		si_emu->global_mem = ctx->mem;
+
+	//star added this, this seems to work...
+	if (collaborative_device)
+		si_emu->global_mem = ctx->mem;
+
+	printf("opencl_abi_si_ndrange_initialize_impl(): fused %d col %d\n", si_gpu_fused_device, collaborative_device);
 
 	if(INT == 1)
 	{
@@ -1023,10 +1032,12 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	local_size_ptr = regs->ebp;
 	opencl_debug("\tkernel_id=%d, work_dim=%d\n", kernel_id, work_dim);
 	opencl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, "
-		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, 
-		local_size_ptr);
+		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, local_size_ptr);
 	
+
+
 	/* Debug */
+	//printf("opencl_abi_si_ndrange_initialize_impl() work dim %d\n", work_dim);
 	assert(IN_RANGE(work_dim, 1, 3));
 	mem_read(mem, global_offset_ptr, work_dim * 4, global_offset);
 	mem_read(mem, global_size_ptr, work_dim * 4, global_size);
@@ -1038,6 +1049,8 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	for (i = 0; i < work_dim; i++)
 		opencl_debug("\tlocal_size[%d] = %u\n", i, local_size[i]);
 
+	//printf("OCL Driver: offset %d\n", global_offset[0]);
+
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
 	if (!kernel)
@@ -1046,19 +1059,14 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	/* Create ND-Range */
 	ndrange = si_ndrange_create();
 	ndrange->local_mem_top = kernel->mem_size_local;
-	ndrange->num_sgpr_used = kernel->bin_file->
-		enc_dict_entry_southern_islands->num_sgpr_used;
-	ndrange->num_vgpr_used = kernel->bin_file->
-		enc_dict_entry_southern_islands->num_vgpr_used;
-	ndrange->wg_id_sgpr = kernel->bin_file->
-		enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
+	ndrange->num_sgpr_used = kernel->bin_file->enc_dict_entry_southern_islands->num_sgpr_used;
+	ndrange->num_vgpr_used = kernel->bin_file->enc_dict_entry_southern_islands->num_vgpr_used;
+	ndrange->wg_id_sgpr = kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
 	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
 
 	/* Copy user elements from kernel to ND-Range */
-	user_element_count = kernel->bin_file->
-		enc_dict_entry_southern_islands->userElementCount;
-	user_elements = kernel->bin_file->enc_dict_entry_southern_islands->
-		userElements;
+	user_element_count = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
+	user_elements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
 	ndrange->userElementCount = user_element_count;
 	for (i = 0; i < user_element_count; i++)
 	{
@@ -1067,13 +1075,11 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->
-		sec_text_buffer;
+	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 
-	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
-		elf_buffer->size, 0);
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
 
 	assert(!driver_state.kernel);
 	driver_state.kernel = kernel;
@@ -1381,9 +1387,16 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 
 static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 {
+
 	struct x86_regs_t *regs = ctx->regs;
 
-	si_gpu_fused_device = regs->ecx;
+	if(regs->ecx == 1)
+		si_gpu_fused_device = 1;
+
+	if(regs->ecx == 2)
+		collaborative_device = 1;
+
+	/*printf("setting GPU as fused device val %d\n", si_gpu_fused_device);*/
 
 	return 0;
 }

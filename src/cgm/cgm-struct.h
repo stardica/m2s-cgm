@@ -649,6 +649,7 @@ struct cgm_stats_t{
 	}stats_type;
 
 	char *stat_file_name;
+	char *fopen_path;
 	char *date_time_file;
 	char *date_time_pretty;
 	char *check_point_file_name;
@@ -974,7 +975,6 @@ struct cgm_stats_t{
 	long long *l3_upgrade_;
 	long long *l3_upgrade_ack_;
 
-
 	//switches
 	long long *switch_occupance;
 
@@ -1087,6 +1087,10 @@ struct cgm_stats_t{
 	long long sa_down_io_occupance;
 	long long mc_up_io_occupance;
 
+	//gpu hub
+	long long hub_occupance;
+	long long *hub_up_io_occupance;
+	long long hub_down_io_occupance;
 };
 
 
@@ -1135,6 +1139,10 @@ struct hub_iommu_t{
 	struct list_t *ort_list;
 	int max_coal;
 
+	//stats
+	long long hub_occupance;
+	long long *hub_up_io_occupance;
+	long long hub_down_io_occupance;
 
 };
 

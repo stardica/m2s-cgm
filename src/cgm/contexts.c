@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <cgm/contexts.h>
+#include <cgm/cgm.h>
+#include <cgm/rdtsc.h>
 
 
 struct process_record {
@@ -12,6 +14,9 @@ struct process_record {
 /* current process */
 process_t *current_process = NULL;
 static process_t *terminated_process = NULL;
+
+long long num_contexts = 0;
+long long max_contexts = 0;
 
 #define ENCODE_JMPBUF(j) j
 
@@ -195,12 +200,48 @@ void context_disable (void)
  *
  *------------------------------------------------------------------------
  */
+
+long long current_cycle = 0;
+long long max_num_contexts = 0;
+
+unsigned long long set_start = 0;
+unsigned long long set_time = 0;
+
 void context_switch (process_t *p)
 {
-
 	if (!current_process || !_setjmp (current_process->c.buf))
 	{
 		current_process = p;
+
+		/*if(current_cycle == P_TIME && P_TIME > 0)
+		{
+			if(max_num_contexts > max_contexts)
+				max_contexts = max_num_contexts;
+		}
+		else
+		{
+			if(num_contexts)
+				printf("time A %llu events %llu\n", (rdtsc() - set_start)/num_contexts, num_contexts);
+			else
+				printf("time B %llu events %llu\n", rdtsc() - set_start, num_contexts);
+
+			if(num_contexts)
+				printf("%llu\n", (rdtsc() - set_start)/num_contexts);
+
+
+			if(P_TIME == 100)
+				getchar();
+
+			set_start = rdtsc();
+
+			current_cycle = P_TIME;
+			max_num_contexts = 0;
+			num_contexts = 0;
+		}
+
+		num_contexts++;
+		max_num_contexts++;*/
+
 		_longjmp (p->c.buf,1);
 	}
 

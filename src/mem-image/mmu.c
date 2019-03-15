@@ -1249,7 +1249,7 @@ int mmu_fetch_translate(X86Thread *self, unsigned int block){
 
 void mmu_ctrl(void){
 
-	//my_pid increments for the number of CPU cores. i.e. 0 - 4 for a quad core
+	//my_pid increments for the number of CPU cores. i.e. 0 - 3 for a quad core
 	int my_pid = mmu_fetch_pid++;
 	int num_cores = x86_cpu_num_cores;
 	long long step = 1;
