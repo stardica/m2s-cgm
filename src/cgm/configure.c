@@ -311,6 +311,11 @@ int debug_read_config(void* user, const char* section, const char* name, const c
 		simple_mem_cycles = atoi(value);
 	}
 
+	if(MATCH("Debug", "Config_Override"))
+	{
+		config_override = atoi(value);
+	}
+
 	if(MATCH("Debug", "Path"))
 	{
 		cgm_debug_output_path = strdup(value);
@@ -789,6 +794,15 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	{
 		GPUQueueSize = atoi(value);
 	}
+
+	if(MATCH("Queue", "L3QueueSize"))
+	{
+		L3QueueSize = atoi(value);
+
+		//fatal("size is %d\n", L3QueueSize);
+	}
+
+
 
 	if(MATCH("Debug", "MEM_SYSTEM_OFF"))
 	{
@@ -1870,6 +1884,30 @@ int cache_read_config(void* user, const char* section, const char* name, const c
 	}
 
 
+	/*some experiments*/
+	if(config_override == 1)
+	{
+
+		for (i = 0; i < num_cus; i++)
+		{
+			gpu_v_caches[i].bus_width = 32;
+			gpu_v_caches[i].latency = 1;
+			gpu_v_caches[i].mshr_size = 16;
+			gpu_v_caches[i].max_coal = 64;
+		}
+
+
+		for (i = 0; i < gpu_group_cache_num; i++)
+		{
+			gpu_l2_caches[i].bus_width = 32;
+			gpu_l2_caches[i].latency = 3;
+			gpu_l2_caches[i].mshr_size = 32;
+			gpu_l2_caches[i].max_coal = 64;
+		}
+	}
+
+
+
 	return 0;
 }
 
@@ -2426,6 +2464,7 @@ int cache_finish_create(){
 		memset (buff,'\0' , 100);
 		snprintf(buff, 100, "l3_caches[%d].Rx_queue_top", i);
 		l3_caches[i].Rx_queue_top->name = strdup(buff);
+		l3_caches[i].Rx_queue_top->max_size = L3QueueSize;
 
 		l3_caches[i].Rx_queue_bottom = list_create();
 		memset (buff,'\0' , 100);
@@ -2546,10 +2585,13 @@ int cache_finish_create(){
 			l3_caches[i].l3_write_block = cgm_mesi_l3_write_block;
 			l3_caches[i].l3_write_back = cgm_mesi_l3_write_back;
 			l3_caches[i].l3_flush_block_ack = cgm_mesi_l3_flush_block_ack;
+			l3_caches[i].l3_flush_block_nack = cgm_mesi_l3_flush_block_nack;
 
 			l3_caches[i].l3_cpu_flush = cgm_mesi_l3_cpu_flush;
 			//l3_caches[i].l3_gpu_flush = cgm_mesi_l3_gpu_flush;
 			l3_caches[i].l3_gpu_flush_ack = cgm_mesi_l3_gpu_flush_ack;
+			l3_caches[i].l3_force_nack = cgm_mesi_l3_force_nack;
+
 		}
 		else
 		{
@@ -2891,7 +2933,8 @@ int cache_finish_create(){
 			gpu_v_caches[i].gpu_v_flush_block = cgm_mesi_gpu_l1_v_flush_block;
 			gpu_v_caches[i].gpu_v_load_nack = cgm_mesi_gpu_l1_v_load_nack;
 			gpu_v_caches[i].gpu_v_store_nack = cgm_mesi_gpu_l1_v_store_nack;
-
+			gpu_v_caches[i].gpu_v_downgrade = cgm_mesi_gpu_l1_v_downgrade;
+			gpu_v_caches[i].gpu_v_getx_inval = cgm_mesi_gpu_l1_v_getx_inval;
 			gpu_v_caches[i].gpu_v_gpu_flush = cgm_mesi_gpu_l1_v_gpu_flush;
 			gpu_v_caches[i].gpu_v_get_getx_fwd_inval = cgm_mesi_gpu_l1_v_get_getx_fwd_inval;
 
@@ -3156,6 +3199,8 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_write_back = cgm_mesi_gpu_l2_write_back;
 			gpu_l2_caches[i].gpu_l2_flush_block = cgm_mesi_gpu_l2_flush_block;
 			gpu_l2_caches[i].gpu_l2_flush_block_ack = cgm_mesi_gpu_l2_flush_block_ack;
+			gpu_l2_caches[i].gpu_l2_getx_inval_ack = cgm_mesi_gpu_l2_getx_inval_ack;
+			gpu_l2_caches[i].gpu_l2_downgrade_ack = cgm_mesi_gpu_l2_downgrade_ack;
 
 			gpu_l2_caches[i].gpu_l2_get_nack = cgm_mesi_gpu_l2_get_nack;
 			gpu_l2_caches[i].gpu_l2_getx_nack = cgm_mesi_gpu_l2_getx_nack;
@@ -3166,6 +3211,15 @@ int cache_finish_create(){
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd = cgm_mesi_gpu_l2_get_getx_fwd;
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd_nack = cgm_mesi_gpu_l2_get_getx_fwd_nack;
 			gpu_l2_caches[i].gpu_l2_get_getx_fwd_inval_ack = cgm_mesi_gpu_l2_get_getx_fwd_inval_ack;
+
+			gpu_l2_caches[i].gpu_l2_get_fwd = cgm_mesi_gpu_l2_get_fwd;
+			gpu_l2_caches[i].gpu_l2_getx_fwd = cgm_mesi_gpu_l2_getx_fwd;
+			gpu_l2_caches[i].gpu_l2_upgrade_putx_n = cgm_mesi_gpu_l2_upgrade_putx_n;
+
+			gpu_l2_caches[i].gpu_l2_downgrade_nack = cgm_mesi_gpu_l2_downgrade_nack;
+			gpu_l2_caches[i].gpu_l2_getx_fwd_nack = cgm_mesi_gpu_l2_getx_fwd_nack;
+
+			gpu_l2_caches[i].gpu_l2_upgrade_inval = cgm_mesi_gpu_l2_upgrade_inval;
 
 		}
 		/*else if()
@@ -3218,6 +3272,17 @@ int cache_finish_create(){
 			}
 		}
 	}
+
+	if(config_override == 1)
+	{
+		for (i = 0; i < num_cores; i++)
+		{
+			l3_caches[i].latency = 4;
+			l3_caches[i].bus_width = 8;
+		}
+	}
+
+
 
 	return 0;
 }
@@ -3911,9 +3976,26 @@ int switch_finish_create(void){
 
 	assert(cgm_gpu_cache_protocol == cgm_protocol_non_coherent || cgm_gpu_cache_protocol == cgm_protocol_mesi);
 
-
 	hub_iommu_create_tasks(hub_iommu_ctrl);
 
+
+	/*some experiments*/
+	if(config_override == 1)
+	{
+		//4 GHZ zone
+		for (i = 0; i < (num_cores + extras); i++)
+		{
+			switches[i].bus_width = 72;
+			switches[i].latency = 1;
+		}
+	}
+
+
+	//fatal("settings SA bus width %d bandwidth %d\n", system_agent->up_bus_width, system_agent->up_bus_width * SYSTEM_LATENCY_FACTOR);
+
+
+
+	//fatal("%d and %d\n", switches[num_cores].bus_width, hub_iommu->bus_width);
 
 	/*//configure correct routing function
 	if(hub_iommu_connection_type == hub_to_mc)

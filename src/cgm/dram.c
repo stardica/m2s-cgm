@@ -113,7 +113,7 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 		message_packet = list_get(mem_ctrl->pending_accesses, i);
 
 		//found block in write back buffer
-		if(GET_BLOCK(message_packet->address) == (unsigned int)address)
+		if(GET_BLOCK(message_packet->address) == (unsigned int)address && message_packet->access_type == cgm_access_mc_load)
 		{
 			hit = 1;
 			break;
@@ -122,6 +122,15 @@ void dramsim_read_complete(unsigned id, long long address, long long clock_cycle
 
 	assert(hit == 1);
 	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
+
+	if(message_packet->access_type != cgm_access_mc_load)
+	{
+		warning("dram.c crashing %s:%d ", __FILE__, __LINE__);
+
+		warning("block 0x%08x %s DRAM access complete (Read) ID %llu type %d cycle %llu\n",
+			(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
+	}
+
 	assert(message_packet->access_type == cgm_access_mc_load);
 
 	//printf("load msaddr 0x%08x\n dsaddr 0x%08x\n", message_packet->address, (unsigned int)address);
@@ -172,7 +181,10 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 		//get pointer to access in queue and check it's status.
 		message_packet = list_get(mem_ctrl->pending_accesses, i);
 
-		if(GET_BLOCK(message_packet->address) == (unsigned int)address)
+		if(GET_BLOCK(message_packet->address) == (unsigned int)address &&
+				(message_packet->access_type == cgm_access_mc_store
+				|| message_packet->access_type == cgm_access_cpu_flush_ack
+				|| message_packet->access_type == cgm_access_gpu_flush_ack))
 		{
 			hit = 1;
 			break;
@@ -181,6 +193,16 @@ void dramsim_write_complete(unsigned id, long long address, long long clock_cycl
 
 	assert(hit == 1);
 	assert(GET_BLOCK(message_packet->address) == (unsigned int)address);
+
+	if(message_packet->access_type != cgm_access_mc_store && message_packet->access_type != cgm_access_cpu_flush_ack
+			&& message_packet->access_type != cgm_access_gpu_flush_ack)
+	{
+		warning("dram.c crashing %s:%d ", __FILE__, __LINE__);
+
+		warning("block 0x%08x %s DRAM access complete (Read) ID %llu type %d cycle %llu\n",
+			(message_packet->address & ~mem_ctrl->block_mask), mem_ctrl->name, message_packet->access_id, message_packet->access_type, P_TIME);
+	}
+
 	assert(message_packet->access_type == cgm_access_mc_store || message_packet->access_type == cgm_access_cpu_flush_ack
 			|| message_packet->access_type == cgm_access_gpu_flush_ack);
 

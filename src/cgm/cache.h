@@ -34,6 +34,7 @@ extern struct str_map_t cgm_mem_access_strn_map;
 
 extern int QueueSize;
 extern int GPUQueueSize;
+extern int L3QueueSize;
 extern int l1_i_inf;
 extern int l1_d_inf;
 extern int l2_inf;
@@ -166,6 +167,8 @@ unsigned int cgm_cache_build_address(struct cache_t *cache, int set, int tag);
 
 //Directory Manipulations
 void cgm_cache_clear_dir(struct cache_t *cache, int set, int way);
+void cgm_cache_set_dir_dirty_bit(struct cache_t *cache, int set, int way);
+void cgm_cache_clear_dir_dirty_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_set_dir_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_dir_pending_bit(struct cache_t *cache, int set, int way);
@@ -182,6 +185,7 @@ int cache_search_wb_dup_packets(struct cache_t *cache, int tag, int set);
 struct cgm_packet_t *cache_search_wb_not_pending_flush(struct cache_t *cache);
 int cache_search_for_free_way(struct cache_t *cache, struct cgm_packet_t *new_message);
 void cache_dump_write_back(struct cache_t *cache);
+int cache_write_back_all_pending(struct cache_t *cache);
 
 //Pending Request Buffer Manipulations
 void cgm_cache_insert_pending_request_buffer(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -220,6 +224,11 @@ void cgm_cache_clear_block_upgrade_pending_bit(struct cache_t *cache, int set, i
 int cgm_cache_get_block_upgrade_pending_bit(struct cache_t *cache, int set, int way);
 void cgm_cache_clear_block_flush_pending_bit(struct cache_t *cache, int set, int way);
 int cgm_cache_get_block_flush_pending_bit(struct cache_t *cache, int set, int way);
+
+void cgm_cache_set_block_dirty_in_core_bit(struct cache_t *cache, int set, int way);
+void cgm_cache_clear_block_dirty_in_core_bit(struct cache_t *cache, int set, int way);
+int cgm_cache_get_block_dirty_in_core_bit(struct cache_t *cache, int set, int way);
+
 /*enum cgm_cache_block_state_t cgm_cache_get_block_state(struct cache_t *cache, int set, int way);*/
 void cgm_cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 void cgm_cache_access_block(struct cache_t *cache, int set, int way);
@@ -259,5 +268,6 @@ int ort_get_num_coal(struct cache_t *cache, int tag, int set);
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr);
 int cache_validate_block_flushed_from_l1(struct cache_t *cache, int core_id, unsigned int addr);
 int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned int addr);
+int cache_validate_block_flushed_from_gpu_l2(struct cache_t *caches, unsigned int addr);
 
 #endif /*CACHE_H_*/

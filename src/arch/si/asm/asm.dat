@@ -3,6 +3,11 @@
  */
 
 DEFINST(S_ADD_U32, " s_add_u32     %SDST, %SSRC0, %SSRC1", SOP2, 0, 4, 0)
+
+//star added this START
+DEFINST(S_SUB_U32, " s_sub_u32     %SDST, %SSRC0, %SSRC1", SOP2, 1, 4, 0)
+//star added this END
+
 DEFINST(S_ADD_I32, " s_add_i32     %SDST, %SSRC0, %SSRC1", SOP2, 2, 4, 0)
 DEFINST(S_SUB_I32, " s_sub_i32     %SDST, %SSRC0, %SSRC1", SOP2, 3, 4, 0)
 DEFINST(S_MIN_U32, " s_min_u32     %SDST, %SSRC0, %SSRC1", SOP2, 7, 4, 0)

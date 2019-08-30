@@ -96,9 +96,11 @@ enum cgm_access_kind_t {
 			cgm_access_get_fwd_nack,
 			cgm_access_get_fwd_upgrade_nack,
 			cgm_access_getx_fwd,
-			cgm_access_getx_fwd_nack,
+			cgm_access_getx_inval,
+			cgm_access_getx_inval_ack,
+	/*20*/		cgm_access_getx_fwd_nack,
 			cgm_access_getx_fwd_upgrade_nack,
-	/*20*/	cgm_access_getx_fwd_ack,
+			cgm_access_getx_fwd_ack,
 			cgm_access_getx_fwd_inval,
 			cgm_access_getx_fwd_inval_ack,
 			cgm_access_gets_s, //get shared specific to s caches
@@ -106,45 +108,46 @@ enum cgm_access_kind_t {
 			cgm_access_getx, //get exclusive (or get with intent to write)
 			cgm_access_getx_nack,
 			cgm_access_inv,  //invalidation request
-			cgm_access_flush_block,
+	/*30*/	cgm_access_flush_block,
 			cgm_access_flush_block_ack,
-	/*30*/	cgm_access_inv_ack,
+			cgm_access_flush_block_nack,
+			cgm_access_inv_ack,
 			cgm_access_upgrade, //upgrade request
 			cgm_access_upgrade_ack,
 			cgm_access_upgrade_nack,
 			cgm_access_upgrade_putx_n,
 			cgm_access_upgrade_getx_fwd,
 			cgm_access_upgrade_inval,
-			cgm_access_upgrade_inval_ack,
+	/*40*/	cgm_access_upgrade_inval_ack,
 			cgm_access_upgrade_putx,
 			cgm_access_downgrade, //downgrade request
-	/*40*/	cgm_access_downgrade_ack,
+			cgm_access_downgrade_ack,
 			cgm_access_downgrade_nack,
 			cgm_access_mc_load,	//request sent to system agent/memory controller
 			cgm_access_mc_store,	//request sent to system agent/memory controller
 			cgm_access_mc_put,	//reply from system agent/memory controller
 			cgm_access_put_clnx, //put block in clean exclusive state
-	/*46*/	cgm_access_putx, //put block in modified state
-			cgm_access_puts, //put block in shared state.
+			cgm_access_putx, //put block in modified state
+	/*50*/	cgm_access_puts, //put block in shared state.
 			cgm_access_puto, //put block in owned state.
 			cgm_access_puto_shared, //request for write back of cache block in owned state but other sharers of the block exist.
-	/*50*/	cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
+			cgm_access_unblock, //message to unblock next cache level/directory for blocking protocols.
 			cgm_access_retry,
 			cgm_access_fetch_retry,
 			cgm_access_load_retry,
 			cgm_access_store_retry,
 			cgm_access_loadx_retry, /*gpu mesi mode*/
 			cgm_access_storex_retry, /*gpu mesi mode*/
-			cgm_access_write_back,
+	/*60*/	cgm_access_write_back,
 			cgm_access_retry_i,//not used
 			cgm_access_cpu_flush,
-	/*60*/	cgm_access_cpu_flush_ack,
+			cgm_access_cpu_flush_ack,
 			cgm_access_cpu_flush_nack,
 			cgm_access_cpu_flush_fwd,
 			cgm_access_gpu_flush,
 			cgm_access_gpu_flush_ack,
 			cgm_access_cpu_fence,
-			cgm_access_cpu_load_fence,
+	/*69*/	cgm_access_cpu_load_fence,
 			num_access_types
 };
 
@@ -172,7 +175,10 @@ struct cgm_packet_t{
 	long long access_id;
 	long long write_back_id;
 	long long evict_id;
+	long long downgrade_id;
+	long long getx_inval_id;
 	unsigned int address;
+	unsigned int vtladdress;
 	unsigned int vtl_index;
 	unsigned int block_address;
 	int set;
@@ -183,6 +189,7 @@ struct cgm_packet_t{
 	int coalesced;
 	int assoc_conflict;
 	int translation_id;
+	int force_nack;
 
 	//for evictions, write backs, downgrades, upgrades
 	int flush_pending;
@@ -193,6 +200,7 @@ struct cgm_packet_t{
 	int inval;
 	int inval_pending;
 	int inval_ack;
+	int getx_inval_n;
 	int upgrade;
 	int upgrade_putx_n;
 	int upgrade_ack;
@@ -247,6 +255,7 @@ struct cache_block_t{
 	int prefetched;
 	int flush_pending;
 	int upgrade_pending;
+	int dirty_in_core;
 	unsigned int address;
 	int written;
 
@@ -505,9 +514,11 @@ struct cache_t{
 	void (*l3_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*l3_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_flush_block_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_cpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	//void (*l3_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*l3_gpu_flush_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*l3_force_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//GPU S cache protocol virtual functions
 	void (*gpu_s_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -516,6 +527,7 @@ struct cache_t{
 	//GPU V cache protocol virtual functions
 	void (*gpu_v_load)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_store)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_downgrade)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_load_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_store_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	int (*gpu_v_write_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -523,6 +535,7 @@ struct cache_t{
 	void (*gpu_v_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_get_getx_fwd_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_v_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_v_getx_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 	//GPU L2 cache protocol virtual functions
@@ -536,12 +549,22 @@ struct cache_t{
 	int (*gpu_l2_write_back)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_flush_block)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_flush_block_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_getx_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_downgrade_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_gpu_flush)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_gpu_flush_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd_inval_ack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 	void (*gpu_l2_get_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+	void (*gpu_l2_downgrade_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_getx_fwd_nack)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	void (*gpu_l2_get_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	void (*gpu_l2_getx_fwd)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+	int (*gpu_l2_upgrade_putx_n)(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+	void (*gpu_l2_upgrade_inval)(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 	//watch dog
 	/*unsigned int *outstanding_addresses;*/
@@ -621,6 +644,7 @@ struct cache_t{
 	long long l3_getx_;
 	long long l3_write_back_;
 	long long l3_flush_block_ack_;
+	long long l3_flush_block_nack_;
 	long long l3_write_block_;
 	long long l3_downgrade_ack_;
 	long long l3_downgrade_nack_;
@@ -965,6 +989,7 @@ struct cgm_stats_t{
 	long long *l3_getx_;
 	long long *l3_write_back_;
 	long long *l3_flush_block_ack_;
+	long long *l3_flush_block_nack_;
 	long long *l3_write_block_;
 	long long *l3_downgrade_ack_;
 	long long *l3_downgrade_nack_;

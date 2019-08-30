@@ -1266,6 +1266,17 @@ enum port_name switch_get_route(struct switch_t *switches, struct cgm_packet_t *
 	else
 	{
 		//dest should not equal the source
+
+		if(dest_node == src_node)
+		{
+			fatal("crashing switch dest_node == src_node id %llu phy addr 0x%08x vtl addr 0x%08x src %d dest %d\n",
+				message_packet->access_id,
+				(message_packet->address & l2_caches[0].block_address_mask),
+				(message_packet->vtladdress & l2_caches[0].block_address_mask),
+				src_node,
+				dest_node);
+		}
+
 		assert(dest_node != src_node);
 
 		//send packet to adjacent switch
@@ -1361,6 +1372,20 @@ void switch_crossbar_link(struct switch_t *switches){
 				tx_port = switch_get_route(switches, packet);
 
 				//try to assign the link
+				/*if(P_TIME > 466500000)
+				{
+					printf("Switch id %d setting link for blk 0x%08x and blk 0x%08x id %llu type %d\n",
+						 switches->switch_id,
+						 packet->address & l2_caches[0].block_address_mask,
+						 packet->vtladdress & l2_caches[0].block_address_mask,
+						 packet->access_id,
+						 packet->access_type);
+
+					fflush(stdout);
+					fflush(stderr);
+				}*/
+
+
 				switch_set_link(switches, tx_port);
 			}
 
@@ -1556,7 +1581,7 @@ void switch_ctrl(void){
 						(message_packet->address & ~mem_ctrl->block_mask), switches[my_pid].name, switches[my_pid].crossbar->current_port, message_packet->access_id, message_packet->access_type, P_TIME);
 
 				out_queue = switch_get_tx_queue(&switches[my_pid], switches[my_pid].crossbar->current_port);
-
+				assert(out_queue);
 
 
 				/*if(message_packet->access_id == 1)
@@ -1565,6 +1590,16 @@ void switch_ctrl(void){
 
 				if(list_count(out_queue) > QueueSize)
 					warning("%s size = %d\n", out_queue->name, list_count(out_queue));
+
+				/*if(message_packet->evict_id == 203170)
+					printf("block 0x%08x %s routing %d access evict id %llu type %d out queue %s cycle %llu\n",
+						(message_packet->address & ~mem_ctrl->block_mask),
+						switches[my_pid].name,
+						switches[my_pid].crossbar->current_port,
+						message_packet->evict_id,
+						message_packet->access_type,
+						out_queue->name,
+						P_TIME);*/
 
 				list_enqueue(out_queue, message_packet);
 				advance(switch_get_io_ec_counter(&switches[my_pid]));
@@ -2520,6 +2555,13 @@ void switch_north_io_ctrl(void){
 		if(transfer_time == 0)
 			transfer_time = 1;
 
+		/*if(message_packet->evict_id == 203170)
+			printf("block 0x%08x North IO routing access evict id %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask),
+				message_packet->evict_id,
+				message_packet->access_type,
+				P_TIME);*/
+
 		//try to send
 		//L2 switches
 		if(my_pid < num_cores)
@@ -2527,6 +2569,38 @@ void switch_north_io_ctrl(void){
 
 			switch (current_lane)
 			{
+
+				//funnel everything into the bottom request/reply queue
+				case io_request:
+
+					/*warning("switch_north_io_ctrl(): routing packing along request lane %s id %llu addr 0x%08x access type %d cycle %llu\n",
+							switches[my_pid].name,
+							message_packet->access_id,
+							(message_packet->address & l2_caches[my_pid].block_address_mask),
+							message_packet->access_type,
+							P_TIME);*/
+
+					if(list_count(l2_caches[my_pid].Rx_queue_bottom) >= QueueSize)
+					{
+						SYSTEM_PAUSE(1);
+					}
+					else
+					{
+						step++;
+
+						SYSTEM_PAUSE(transfer_time);
+
+						if(list_count(l2_caches[my_pid].Rx_queue_bottom) > QueueSize)
+							warning("switch_north_io_ctrl(): %s %s size exceeded %d\n",
+									l2_caches[my_pid].name, l2_caches[my_pid].Rx_queue_bottom->name, list_count(l2_caches[my_pid].Rx_queue_bottom));
+
+						message_packet = list_remove(switches[my_pid].north_tx_request_queue, message_packet);
+						list_enqueue(l2_caches[my_pid].Rx_queue_bottom, message_packet);
+						advance(&l2_cache[my_pid]);
+
+					}
+					break;
+
 
 				case io_reply:
 
@@ -2573,10 +2647,14 @@ void switch_north_io_ctrl(void){
 					}
 					break;
 
-				case io_request:
 				case io_invalid_lane:
 				default:
-					fatal("switch_north_io_ctrl(): bad lane\n");
+					fatal("switch_north_io_ctrl(): bad CPU L2 lane type %s id %llu addr 0x%08x access type %d cycle %llu\n",
+							switches[my_pid].name,
+							message_packet->access_id,
+							(message_packet->address & l2_caches[my_pid].block_address_mask),
+							message_packet->access_type,
+							P_TIME);
 					break;
 
 				/*stats*/
@@ -2623,7 +2701,7 @@ void switch_north_io_ctrl(void){
 				}
 				else
 				{
-					fatal("switch_north_io_ctrl(): bad lane type\n");
+					fatal("switch_north_io_ctrl(): bad GPU hub lane type\n");
 				}
 
 				/*stats*/
@@ -2695,6 +2773,13 @@ void switch_east_io_ctrl(void){
 
 		if(transfer_time == 0)
 			transfer_time = 1;
+
+		/*if(message_packet->evict_id == 203170)
+			printf("block 0x%08x East IO routing access evict id %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask),
+				message_packet->evict_id,
+				message_packet->access_type,
+				P_TIME);*/
 
 
 		switch(current_lane)
@@ -2918,6 +3003,14 @@ void switch_west_io_ctrl(void){
 			transfer_time = 1;
 
 
+		/*if(message_packet->evict_id == 203170)
+			printf("block 0x%08x West IO routing access evict id %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask),
+				message_packet->evict_id,
+				message_packet->access_type,
+				P_TIME);*/
+
+
 		switch(current_lane)
 		{
 
@@ -3137,6 +3230,13 @@ void switch_south_io_ctrl(void){
 
 		if(transfer_time == 0)
 			transfer_time = 1;
+
+		/*if(message_packet->evict_id == 203170)
+			printf("block 0x%08x South IO routing access evict id %llu type %d cycle %llu\n",
+				(message_packet->address & ~mem_ctrl->block_mask),
+				message_packet->evict_id,
+				message_packet->access_type,
+				P_TIME);*/
 
 		//try to send
 		//L3 caches

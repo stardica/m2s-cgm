@@ -263,8 +263,8 @@ static char x86_signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 void X86ContextRunSignalHandler(X86Context *ctx, int sig)
 {
-	printf("X86ContextRunSignalHandler\n");
-	fatal("X86ContextRunSignalHandler(); check this\n");
+	//printf("X86ContextRunSignalHandler\n");
+	warning("---x86 Context Run Signal Handler---\n");
 
 	unsigned int handler;
 	struct x86_sigframe sigframe;

@@ -5135,6 +5135,8 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 	if (!IN_RANGE(size, 0, 1 << 10))
 		fatal("%s: invalid range for 'size' (%d)", __FUNCTION__, size);
 
+	printf("---simulator setting afinity---\n");
+
 	/* Read mask */
 	mask = xcalloc(1, size);
 	mem_read(mem, mask_ptr, size, mask);
@@ -5844,8 +5846,8 @@ static int x86_sys_check_point_impl(X86Context *ctx)
 		printf("---Saving Checkpoint to %s cycle %llu---\n", x86_save_checkpoint_file_name, P_TIME);
 		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
 		warning("---Checkpoint Saved cycle %llu---\n", P_TIME);
-		warning("---Exiting cycle %llu---\n", P_TIME);
-		exit(0);
+		//warning("---Exiting cycle %llu---\n", P_TIME);
+		//exit(0);
 	}
 	else
 	{

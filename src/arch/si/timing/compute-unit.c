@@ -1421,6 +1421,9 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	{
 		cpu_gpu_stats->cu_total_unmapped[compute_unit->id] += (1 * (x86_cpu_frequency/si_gpu_frequency));
 
+		//printf("CU %d unmapped cycle %llu\n", compute_unit->id, P_TIME);
+		//getchar();
+
 		return;
 	}
 

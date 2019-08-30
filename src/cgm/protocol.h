@@ -126,6 +126,7 @@ void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int a
 /*void init_upgrade_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);*/
 void init_getx_fwd_inval_packet(struct cgm_packet_t *downgrade_packet, unsigned int address);
 void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
+void init_getx_inval_packet(struct cgm_packet_t *getx_inval_packet, unsigned int address);
 void init_upgrade_inval_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
 void init_upgrade_putx_n_inval_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address);
 void init_downgrade_nack_packet(struct cgm_packet_t *nack_packet, unsigned int address);
@@ -174,9 +175,11 @@ void cgm_mesi_l1_d_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *messa
 void cgm_mesi_l1_d_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
+
 void cgm_mesi_l2_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 int cgm_mesi_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -185,18 +188,17 @@ void cgm_mesi_l2_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_p
 void cgm_mesi_l2_cpu_flush_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
 void cgm_mesi_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
-void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet); /*note this need to be changed to get_fwd_ack and nack*/
-void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-
 void cgm_mesi_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+/*note this need to be changed to get_fwd_ack and nack*/
+void cgm_mesi_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet); //get_fwd_ack
+void cgm_mesi_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet); //get_fwd_nack
+
 void cgm_mesi_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l2_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 
 int cgm_mesi_l2_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l2_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -205,34 +207,42 @@ void cgm_mesi_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *mess
 void cgm_mesi_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
+
+
 void cgm_mesi_l3_gets(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_l3_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_l3_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_l3_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_flush_block_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_l3_cpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 /*void cgm_mesi_l3_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);*/
 void cgm_mesi_l3_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_l3_force_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+//get_fwd code
 void cgm_mesi_l3_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+//getx_fwd code
 void cgm_mesi_l3_getx_fwd_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_l3_getx_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_l3_get_fwd_upgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-int cgm_mesi_l3_upgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
 
-//////////////////////
+///////////////////
 //GPU MESI protocol
-//////////////////////
+///////////////////
 
 void cgm_mesi_gpu_s_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 
 void cgm_mesi_gpu_l1_v_load(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message_packet);
@@ -240,37 +250,57 @@ void cgm_mesi_gpu_l1_v_store(struct cache_t *cache, struct cgm_packet_t *message
 void cgm_mesi_gpu_l1_v_load_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l1_v_store_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+void cgm_mesi_gpu_l1_v_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_gpu_l1_v_getx_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 int cgm_mesi_gpu_l1_v_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l1_v_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_gpu_l1_v_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_gpu_l1_v_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_gpu_l1_v_get_getx_fwd_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 
-//void cgm_mesi_gpu_l1_v_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
-//void cgm_mesi_gpu_l1_v_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
-//void cgm_mesi_gpu_l1_v_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
-
 
 void cgm_mesi_gpu_l2_get(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_gpu_l2_getx(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 int cgm_mesi_gpu_l2_write_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 int cgm_mesi_gpu_l2_write_back(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
 void cgm_mesi_gpu_l2_flush_block(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_flush_block_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+void cgm_mesi_gpu_l2_getx_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_gpu_l2_downgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 void cgm_mesi_gpu_l2_get_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_getx_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+void cgm_mesi_gpu_l2_get_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_gpu_l2_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
+int cgm_mesi_gpu_l2_upgrade_putx_n(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+void cgm_mesi_gpu_l2_downgrade_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+void cgm_mesi_gpu_l2_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+//need this because the CPU may send it
+void cgm_mesi_gpu_l2_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
+
+
+//protocol functions supporting non-coherent CPU-GPU interaction
 void cgm_mesi_gpu_l2_gpu_flush(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_gpu_flush_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
+//old MEI based protocol functions
 void cgm_mesi_gpu_l2_get_getx_fwd(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_get_getx_fwd_nack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 void cgm_mesi_gpu_l2_get_getx_fwd_inval_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
-
+//void cgm_mesi_gpu_l1_v_downgrade(struct cache_t *cache, struct cgm_packet_t *message_packet);
+//void cgm_mesi_gpu_l1_v_upgrade_ack(struct cache_t *cache, struct cgm_packet_t *message_packet);
+//void cgm_mesi_gpu_l1_v_upgrade_inval(struct cache_t *cache, struct cgm_packet_t *message_packet);
 
 #endif /*PROTOCOL_H_*/

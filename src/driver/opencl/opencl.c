@@ -986,6 +986,8 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
  *	Unique kernel ID.
  */
 
+long long execution_count = 0;
+
 static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 {
 	struct elf_buffer_t *elf_buffer;
@@ -1017,12 +1019,14 @@ static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	if (collaborative_device)
 		si_emu->global_mem = ctx->mem;
 
-	printf("opencl_abi_si_ndrange_initialize_impl(): fused %d col %d\n", si_gpu_fused_device, collaborative_device);
+	//printf("opencl_abi_si_ndrange_initialize_impl(): fused %d col %d\n", si_gpu_fused_device, collaborative_device);
 
 	if(INT == 1)
 	{
 		printf("opencl_abi_si_ndrange_initialize_impl() code 14 size\n");
 	}
+
+	printf("---Starting NDRange Count %lld---\n", execution_count++);
 
 	/* Arguments */
 	kernel_id = regs->ecx;

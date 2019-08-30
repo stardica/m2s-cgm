@@ -330,6 +330,43 @@ void si_isa_S_ADD_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = S0.u - S1.u. SCC = carry out.*/
+#define INST SI_INST_SOP2
+void si_isa_S_SUB_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t dif;
+	union si_reg_t carry;
+
+	 /*Load operands from registers or as a literal constant.*/
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_sreg(work_item, INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1.as_uint = INST.lit_cnst;
+	else
+		s1.as_uint = si_isa_read_sreg(work_item, INST.ssrc1);
+
+	 /*Calculate the sum and carry out.*/
+	dif.as_uint = s0.as_uint - s1.as_uint;
+	carry.as_uint = ((unsigned long long) s0.as_uint - (unsigned long long) s1.as_uint) >> 32;
+
+	/* Write the results.*/
+	si_isa_write_sreg(work_item, INST.sdst, dif.as_uint);
+	si_isa_write_sreg(work_item, SI_SCC, carry.as_uint);
+
+	/* Print isa debug information.*/
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%u) ", INST.sdst, dif.as_uint);
+		si_isa_debug("scc<=(%u) ", carry.as_uint);
+	}
+}
+#undef INST
+
 /* D.u = S0.i + S1.i. scc = overflow. */
 #define INST SI_INST_SOP2
 void si_isa_S_ADD_I32_impl(struct si_work_item_t *work_item,

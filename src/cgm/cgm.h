@@ -42,16 +42,24 @@
 
 
 #define P_TIME (etime.count >> 1)
-#define P_PAUSE(p_delay)	epause((p_delay)<<1)
+#define P_PAUSE(p_delay) epause((p_delay)<<1)
 #define SYSTEM_LATENCY_FACTOR 2
 #define GPU_LATENCY_FACTOR (x86_cpu_frequency/si_gpu_frequency)
-#define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
 #define GPU_PAUSE(p_delay) P_PAUSE(p_delay * GPU_LATENCY_FACTOR)
+
+#define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay)
+//#define SYSTEM_PAUSE(p_delay) P_PAUSE(p_delay * SYSTEM_LATENCY_FACTOR)
 
 #define AWAIT_P_PHI0 if (etime.count & 0x1) epause(1)
 #define AWAIT_P_PHI1 if (!(etime.count & 0x1)) epause(1)
 #define PRINT(message, ...)	printf(message, __VA_ARGS__); fflush(stdout)
-#define WATCHBLOCK (unsigned int) 0x0123f640 //0xb7e16900
+
+#define GPU_HUB_IOMMU 0
+
+//1 0.1
+#define CPUWATCHBLOCK (unsigned int) 0x0012a500 //phy address
+#define GPUWATCHBLOCK (unsigned int) 0xb737dc00 //vtl address
+
 //0 = off 1 = on
 #define WATCHLINE 0
 //Level 0 = no blk trace, 1 = L1-L2, 2 = L2-L3, 3 = L1-L3,
@@ -65,13 +73,23 @@
 extern int SINGLE_CORE;
 
 //#define DEBUG_TRACE
-#define DEBUG(level, message, ...)\
-if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
+#define GPUDEBUG(level, message, ...)\
+if((((message_packet->address & cache->block_address_mask) == GPUWATCHBLOCK) && WATCHLINE) || DUMP)\
 	if(level)\
 		printf(message, __VA_ARGS__)
 
+#define CPUDEBUG(level, message, ...)\
+if((((message_packet->address & cache->block_address_mask) == CPUWATCHBLOCK) && WATCHLINE) || DUMP)\
+	if(level)\
+		printf(message, __VA_ARGS__)
+/*
+#define DEBUG(level, message, ...)\
+if((((message_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
+	if(level)\
+		printf(message, __VA_ARGS__)*/
+
 #define DEBUGSYS(level, message, ...)\
-if((((message_packet->address & ~mem_ctrl->block_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)\
+if((((message_packet->address & ~mem_ctrl->block_mask) == CPUWATCHBLOCK) && WATCHLINE) || DUMP)\
 	if(level)\
 		printf(message, __VA_ARGS__)
 
@@ -127,6 +145,7 @@ extern int dump_gpu;
 extern int dump_cpu;
 extern int simple_mem;
 extern int simple_mem_cycles;
+extern int config_override;
 
 extern int Histograms;
 
@@ -165,8 +184,9 @@ extern char *cgm_stats_file_name;
 					if(cgm_stats == 1){fclose (cgm_stats_file);}\
 					if(mem_trace == 1){fclose (mem_trace_file);}
 
-#define STOP 	CLOSE_FILES;\
-				fatal("STOP!\n");
+#define STOP fatal("STOP!\n");
+
+	/*CLOSE_FILES*/
 
 enum stats_dump_config_t{
 

@@ -2,10 +2,11 @@
 import ConfigParser
 from optparse import OptionParser
 
-num_cores = 6
+num_cores = 1
 num_cus = 8
 cache_levels = 3
 gpu_stats = 1
+
 
 def get_stats(options):
 
@@ -61,52 +62,7 @@ def get_margins(table, title, element):
 
 	return max_title_length, max_element_length
 
-def print_hub_stats(options):
 
-	hub_stats_dict = get_stats(options)
-	
-	var = ""
-	hub_stats = 	[
-			"Occupancy",
-			"IODownOccupancy",
-			"IODownOccupancyPct"
-			]
-
-	
-	hub_stats_table = [[0 for x in range(2)] for y in range(len(hub_stats))]
-
-	for i in range (0,len(hub_stats)):
-		hub_stats_table[i][0] = hub_stats[i]
-		var = "hub_" + hub_stats[i]
-		hub_stats_table[i][1] = hub_stats_dict[var]
-
-	f = open(options.OutFileName, 'a')
-
-	f.write("//Hub Stats////////////////////////////////////////////////////" + '\n')
-	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
-		
-
-	max_title_length, max_element_length = get_margins(hub_stats_table, 'Hub stats', "")
-
-	title_bar = '-' * (max_title_length - 1)
-	data_bar = '-' * (max_element_length - 1)
-
-	#print the title and bars
-	f.write("{:<{title_width}}{:>{data_width}}".format("Hub stats",'HUB', title_width=max_title_length, data_width=max_element_length) + '\n')
-	f.write("{:<{title_width}}{:>{data_width}}".format(title_bar, data_bar, title_width=max_title_length, data_width=max_element_length) + '\n')
-
-	#print the table's data
-	for tup in hub_stats_table:
-		if isinstance(tup[1], int):
-			f.write("{:<{title_width}s}{:>{data_width}}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
-		else:
-			f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
-	f.write('\n')
-
-
-	f.close
-
-	return
 
 def print_switch_io_stats(options):
 	
@@ -955,8 +911,9 @@ def print_gpu_stats(options):
 			var = "GPU_" + stats[i]
 			stat_table[i][(j+1)] = gpu_stats[var]
 
-	
-
+	#for graphs
+	global gpuIdleTime
+	gpuIdleTime = stat_table[2][1]
 
 	#stats_table_combined = [[0 for x in range(2)] for y in range(len(stats))]
 
@@ -1075,6 +1032,17 @@ def print_cu_stats(options):
 				f.write("{:<{title_width}s}{:>{data_width}.3f}".format(tup[0], tup[1], title_width=max_title_length, data_width=max_element_length) + '\n')
 	f.write('\n')
 
+	proc_busy = stats_table_combined[0][1]
+	proc_stall = stats_table_combined[1][1]
+	proc_idle = gpuIdleTime + stats_table_combined[3][1]
+	sys_busy = 0
+
+	f.write("collab Graphs:" + '\n')
+	f.write("{0}, {1}, {2}, {3}".format(cpu_proc_busy, cpu_proc_stall, cpu_proc_idle, cpu_sys_busy) + '\n')
+	f.write("{0}, {1}, {2}, {3}".format(proc_busy, proc_stall, proc_idle, sys_busy) + '\n')
+
+	f.write('\n')
+
 	return
 
 
@@ -1137,8 +1105,6 @@ def print_cpu_stats(options):
 			stat_table[i][(j+1)] = cpu_stats[var]
 
 	
-
-
 	stats_table_combined = [[0 for x in range(2)] for y in range(len(stats))]
 
 	#need to account for ave stats here...
@@ -1155,7 +1121,7 @@ def print_cpu_stats(options):
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
 
-	#combined swtich stats
+	#combined cpu stats
 	max_title_length, max_element_length = get_margins(stats_table_combined, 'CPU stats combined', "CPU")
 
 	
@@ -1176,7 +1142,22 @@ def print_cpu_stats(options):
 	f.write('\n')
 
 
+	global cpu_proc_busy
+	global cpu_proc_stall
+	global cpu_proc_idle
+	global cpu_sys_busy
 
+	cpu_proc_busy = stats_table_combined[1][1] + stats_table_combined[5][1] + stats_table_combined[9][1] + stats_table_combined[14][1]
+	cpu_proc_stall = stats_table_combined[7][1] + stats_table_combined[8][1]
+	cpu_proc_idle = stats_table_combined[3][1]
+	cpu_sys_busy = stats_table_combined[16][1]
+
+
+	#f.write("collab Graphs:" + '\n')
+	#f.write("{0}, {1}, {2}, {3}".format(proc_busy, proc_stall, proc_idle, sys_busy) + '\n')
+
+	f.write('\n')
+	
 	#Individual CPU stats
 	max_title_length, max_element_length = get_margins(stat_table, 'CPU Stats All Cores', "Core_0")
 
@@ -1262,6 +1243,7 @@ def print_general_stats(options):
 	f.write("//General Stats////////////////////////////////////////////////" + '\n')
 	f.write("///////////////////////////////////////////////////////////////"  + '\n\n')
 
+	#combined swtich stats
 	max_title_length, max_element_length = get_margins(table_general_data, 'General Stats', 'Stats')
 
 	title_bar = '-' * (max_title_length - 1)
@@ -1282,10 +1264,13 @@ def print_general_stats(options):
 
 
 parser = OptionParser()
-parser.usage = "%prog -s section (ParallelStats) -i inputfile -o outputfile"
+parser.usage = "%prog -s section (ParallelStats) -i inputfile -o outputfile -c num_cores"
+#parser.usage = "%prog -s section (ParallelStats) -i inputfile -o outputfile"
 parser.add_option("-s", "--section", dest="PrintSection", default="", help="Specifiy the stats section to parse.")
 parser.add_option("-i", "--infile", dest="InFileName", default="", help="Specifiy the stats file and path to parse.")
 parser.add_option("-o", "--outfile", dest="OutFileName", default="sim_stats.txt", help="Specifiy the outputfile name and path.")
+parser.add_option("-c", "--cores", dest="cores", default="", help="Specifiy the number of cores.")
+
 (options, args) = parser.parse_args()
 
 if not options.PrintSection:
@@ -1296,6 +1281,8 @@ if not options.InFileName:
 	parser.print_usage()
 	exit(0)
 
+num_cores = int(options.cores)
+
 print_general_stats(options)
 print_cpu_stats(options)
 print_gpu_stats(options)
@@ -1305,5 +1292,4 @@ print_cache_io_stats(options)
 print_mem_system_stats(options)
 print_switch_stats(options)
 print_switch_io_stats(options)
-print_hub_stats(options)
 print_samc_stats(options)

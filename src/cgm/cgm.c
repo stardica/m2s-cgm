@@ -67,6 +67,7 @@ int dump_gpu = 0;
 int dump_cpu = 0;
 int simple_mem = 0;
 int simple_mem_cycles = 0;
+int config_override = 0;
 
 
 
@@ -414,6 +415,7 @@ void cgm_stats_alloc(struct cgm_stats_t *cgm_stat_container){
 	cgm_stat_container->l3_getx_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_write_back_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_flush_block_ack_ = (long long *)calloc(num_cores, sizeof(long long));
+	cgm_stat_container->l3_flush_block_nack_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_write_block_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_downgrade_ack_ = (long long *)calloc(num_cores, sizeof(long long));
 	cgm_stat_container->l3_downgrade_nack_ = (long long *)calloc(num_cores, sizeof(long long));
@@ -854,6 +856,7 @@ void cgm_consolidate_stats(void){
 		cgm_stat->l3_getx_[i] = JOINLL(l3_getx_[i]);
 		cgm_stat->l3_write_back_[i] = JOINLL(l3_write_back_[i]);
 		cgm_stat->l3_flush_block_ack_[i] = JOINLL(l3_flush_block_ack_[i]);
+		cgm_stat->l3_flush_block_nack_[i] = JOINLL(l3_flush_block_nack_[i]);
 		cgm_stat->l3_write_block_[i] = JOINLL(l3_write_block_[i]);
 		cgm_stat->l3_downgrade_ack_[i] = JOINLL(l3_downgrade_ack_[i]);
 		cgm_stat->l3_downgrade_nack_[i] = JOINLL(l3_downgrade_nack_[i]);
@@ -1185,6 +1188,10 @@ void cgm_init(int argc, char **argv){
 void cgm_configure(void){
 
 	int error = 0;
+	int num_cores = x86_cpu_num_cores;
+	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
+	int i = 0;
 
 	error = cgm_mem_configure();
 	if (error) {fatal("cgm_mem_configure() failed\n");}
@@ -1222,6 +1229,103 @@ void cgm_configure(void){
 
 	fflush(stderr);
 
+
+	if(config_override == 1)
+	{
+
+		//1 GHz zone
+		hub_iommu->bus_width = 32;
+		hub_iommu->latency = 1;
+
+		//2GHz running at 4GHz
+		//system_agent->latency = 4;
+		//system_agent->up_bus_width = 8;
+		//system_agent->down_bus_width = 8;
+
+		//mem_ctrl->latency = 2;
+		//mem_ctrl->bus_width = 8;
+
+		//2GHz Domain
+		system_agent->latency = 4;
+		system_agent->up_bus_width = 8;
+		system_agent->down_bus_width = 8;
+
+		mem_ctrl->latency = 4;
+		mem_ctrl->bus_width = 8;
+
+
+		for (i = 0; i < num_cores; i++)
+		{
+			printf("L1[%d] latency %d bus width %d bandwidth %dGB/s mshr %d coal %d\n",
+				i, l1_d_caches[i].latency, l1_d_caches[i].bus_width, l1_d_caches[i].bus_width * 4, l1_d_caches[i].mshr_size,
+				l1_d_caches[i].max_coal);
+		}
+
+		printf("\n");
+
+		for (i = 0; i < num_cores; i++)
+		{
+			printf("L2[%d] latency %d bus width %d bandwidth %dGB/s mshr %d coal %d\n",
+				i, l2_caches[i].latency, l2_caches[i].bus_width, l2_caches[i].bus_width * 4, l2_caches[i].mshr_size,
+				l2_caches[i].max_coal);
+		}
+
+		printf("\n");
+
+		for (i = 0; i < num_cores; i++)
+		{
+			printf("L3[%d] latency %d bus width %d bandwidth %dGB/s mshr %d coal %d\n",
+				i, l3_caches[i].latency, l3_caches[i].bus_width, l3_caches[i].bus_width * 4, l3_caches[i].mshr_size,
+				l3_caches[i].max_coal);
+		}
+
+		printf("\n");
+
+		for (i = 0; i < num_cores + 1; i++)
+		{
+			printf("SW[%d] latency %d bus width %d bandwidth %dGB/s\n",
+					i, switches[i].latency, switches[i].bus_width, switches[i].bus_width * 4);
+		}
+
+		printf("\n");
+
+		printf("SA latency %d bus width %d bandwidth %dGB/s\n",
+				system_agent->latency, system_agent->up_bus_width, system_agent->up_bus_width * 4);
+
+		printf("\n");
+
+		printf("MC latency %d bus width %d bandwidth %dGB/s\n",
+				mem_ctrl->latency, mem_ctrl->bus_width, mem_ctrl->bus_width * 4);
+
+		printf("\n");
+
+		printf("hub latency %d bus width %d bandwidth %dGB/s\n",
+				hub_iommu->latency, hub_iommu->bus_width, hub_iommu->bus_width * 1);
+
+		printf("\n");
+
+		for (i = 0; i < gpu_group_cache_num; i++)
+		{
+			printf("GPUL2[%d] latency %d bus width %d bandwidth %dGB/s mshr %d coal %d\n", i,
+				gpu_l2_caches[i].latency, gpu_l2_caches[i].bus_width, gpu_l2_caches[i].bus_width * 1, gpu_l2_caches[i].mshr_size,
+				gpu_l2_caches[i].max_coal);
+		}
+
+		printf("\n");
+
+		for (i = 0; i < num_cus; i++)
+		{
+			printf("GPUV[%d] latency %d bus width %d bandwidth %dGB/s mshr %d coal %d\n", i,
+				gpu_v_caches[i].latency, gpu_v_caches[i].bus_width, gpu_v_caches[i].bus_width * 1, gpu_v_caches[i].mshr_size,
+				gpu_v_caches[i].max_coal);
+		}
+
+		printf("\n");
+
+		fflush(stderr);
+
+		//STOP;
+	}
 
 	return;
 }
@@ -2032,6 +2136,9 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	new_packet->access_type = access_kind;
 	new_packet->access_id = access_id;
 	new_packet->address = addr;
+
+	new_packet->vtladdress = mmu_reverse_translate_guest(0, 0, new_packet->address);
+
 	new_packet->name = strdup(buff);
 	new_packet->cache_block_state = cgm_cache_block_null;
 
@@ -2102,7 +2209,7 @@ long long cgm_fetch_access(X86Thread *self, unsigned int addr){
 	//Add (2) to the target L1 I Cache Rx Queue
 	if(access_kind == cgm_access_fetch)
 	{
-		if((((addr & l1_i_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		if((((addr & l1_i_caches[0].block_address_mask) == CPUWATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			if(LEVEL == 1 || LEVEL == 3)
 			{
@@ -2377,6 +2484,9 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 	struct cgm_packet_t *new_packet = packet_create();
 	new_packet->access_type = access_kind;
 	new_packet->address = addr;
+
+	new_packet->vtladdress = mmu_reverse_translate_guest(0, 0, new_packet->address);
+
 	new_packet->event_queue = event_queue;
 	new_packet->data = event_queue_item;
 	//new_packet->in_flight = 1;
@@ -2387,6 +2497,19 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 
 	new_packet->start_cycle = P_TIME;
 	new_packet->cpu_access_type = access_kind;
+
+	//give me vtl addr
+	/*if((new_packet->address & l1_d_caches[0].block_address_mask) == 0x00b63180)
+		fatal("phy 0x%08x vtl 0x%08x\n",
+				new_packet->address & l1_d_caches[0].block_address_mask,
+				new_packet->vtladdress & l1_d_caches[0].block_address_mask);*/
+
+	//give me phy addr
+	/*if((new_packet->vtladdress & l1_d_caches[0].block_address_mask) == 0xb737dc00)
+		fatal("phy 0x%08x vtl 0x%08x\n",
+				new_packet->address & l1_d_caches[0].block_address_mask,
+				new_packet->vtladdress & l1_d_caches[0].block_address_mask);*/
+
 
 	/*if(uop_id == 788)
 		warning("its load access id %llu start %llu\n", new_packet->access_id, new_packet->start_cycle);*/
@@ -2467,14 +2590,14 @@ void cgm_issue_lspq_access(X86Thread *self, enum cgm_access_kind_t access_kind, 
 			|| access_kind == cgm_access_cpu_fence || access_kind == cgm_access_cpu_load_fence)
 	{
 
-		if((((addr & l1_d_caches[0].block_address_mask) == WATCHBLOCK) && WATCHLINE) || DUMP)
+		/*if((((addr & l1_d_caches[0].block_address_mask) == CPUWATCHBLOCK) && WATCHLINE) || DUMP)
 		{
 			if(LEVEL == 1 || LEVEL == 3)
 			{
 				printf("block 0x%08x %s id %llu type %d start cycle %llu\n",
 						(addr & l1_d_caches[0].block_address_mask), thread->d_cache_ptr[id].name, new_packet->access_id, new_packet->cpu_access_type, P_TIME);
 			}
-		}
+		}*/
 
 		//Drop the packet into the L1 D Cache Rx queue
 		list_enqueue(thread->d_cache_ptr[id].Rx_queue_top, new_packet);
@@ -2533,6 +2656,7 @@ int remove_from_global(long long id){
 			break;
 		}
 	}
+
 	return 1;
 }
 
@@ -2553,6 +2677,7 @@ void cgm_vector_access(struct si_vector_mem_unit_t *vector_mem, enum cgm_access_
 	new_packet->gpu_access_type = access_kind;
 	new_packet->cpu_access_type = access_kind;
 	new_packet->address = addr;
+	new_packet->vtladdress = addr;
 	new_packet->witness_ptr = witness_ptr;
 	//new_packet->in_flight = 1;
 	new_packet->size = packet_set_size(0);

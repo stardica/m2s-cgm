@@ -351,7 +351,7 @@ void X86ContextSetEip(X86Context *self, unsigned int eip)
 	/* Entering specmode */
 	if (self->regs->eip != eip && !X86ContextGetState(self, X86ContextSpecMode))
 	{
-		printf("spec mode\n");
+		warning("something is going on: spec mode\n");
 		X86ContextSetState(self, X86ContextSpecMode);
 		//star >> backs up the registers.
 		x86_regs_copy(self->backup_regs, self->regs);

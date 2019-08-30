@@ -28,6 +28,7 @@ struct str_map_t cgm_cache_policy_map =
 
 int QueueSize = 0;
 int GPUQueueSize = 0;
+int L3QueueSize = 0;
 int l1_i_inf = 0;
 int l1_d_inf = 0;
 int l2_inf = 0;
@@ -383,12 +384,12 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 	/*printf warnings if a size is exceeded debugging*/
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
-			|| cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t
+			|| cache->cache_type == l2_cache_t
 			|| cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t)
 	{
 		//assert(rx_top_queue_size <= QueueSize);
 		//if(rx_top_queue_size > QueueSize)
-		//	warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+			//warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
 
 		if(ort_status > cache->mshr_size)
 			warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
@@ -402,7 +403,7 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		if(retry_queue_size > QueueSize)
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
 
-		if(pending_queue_size > QueueSize)
+		if(pending_queue_size > QueueSize + 2)
 			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->pending_request_buffer->name, list_count(cache->pending_request_buffer), P_TIME);
 
 		if(write_back_queue_size > QueueSize)
@@ -415,6 +416,36 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			err_msg_cohere_1++;
 		}
 
+	}
+	else if(cache->cache_type == l3_cache_t)
+	{
+		if(rx_top_queue_size > L3QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+
+		if(ort_status > cache->mshr_size)
+			warning("cache_get_message(): %s MSHR table exceeded size 16 cycle %llu\n", cache->name, P_TIME);
+
+		if(ort_coalesce_size > (cache->max_coal + 1))
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->ort_list->name, list_count(cache->ort_list), P_TIME);
+
+		if(rx_bottom_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_bottom->name, list_count(cache->Rx_queue_bottom), P_TIME);
+
+		if(retry_queue_size > QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->retry_queue->name, list_count(cache->retry_queue), P_TIME);
+
+		if(pending_queue_size > L3QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Rx_queue_top->name, list_count(cache->Rx_queue_top), P_TIME);
+
+		if(write_back_queue_size > L3QueueSize)
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->write_back_buffer->name, list_count(cache->write_back_buffer), P_TIME);
+
+		if(coherence_queue_size > QueueSize && err_msg_cohere_2)
+		{
+			warning("cache_get_message(): %s %s exceeded size %d cycle %llu\n", cache->name, cache->Coherance_Rx_queue->name, list_count(cache->Coherance_Rx_queue), P_TIME);
+
+			err_msg_cohere_2++;
+		}
 	}
 	else if(cache->cache_type == gpu_l2_cache_t)
 	{
@@ -446,13 +477,14 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			err_msg_cohere_2++;
 		}
 	}
+	else
+	{
+		fatal("what?\n");
+	}
 
 	//check to see if there is a free way in the cache...
-
-
-
 	if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t
-			|| cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t
+			|| cache->cache_type == l2_cache_t
 			|| cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t)
 	{
 		if(ort_status >= cache->mshr_size)
@@ -472,6 +504,26 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 
 		//assert(rx_top_queue_size <= QueueSize);
 		if(pending_queue_size >= QueueSize)
+			state = schedule_cant_process;
+	}
+	else if(cache->cache_type == l3_cache_t)
+	{
+		if(ort_status >= cache->mshr_size)
+			state = schedule_cant_process;
+
+		if(ort_coalesce_size >= cache->max_coal)
+			state = schedule_cant_process;
+
+		if(write_back_queue_size >= L3QueueSize)
+			state = schedule_cant_process;
+
+		if(retry_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
+		if(tx_bottom_queue_size >= QueueSize)
+			state = schedule_cant_process;
+
+		if(pending_queue_size >= L3QueueSize)
 			state = schedule_cant_process;
 	}
 	else if(cache->cache_type == gpu_l2_cache_t)
@@ -504,7 +556,10 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	if(state == schedule_can_process)
 	{
 		//check the cache's set
-		if(cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t)
+		if(cache->cache_type == l1_i_cache_t
+				|| cache->cache_type == l1_d_cache_t
+				|| cache->cache_type == l2_cache_t
+				|| cache->cache_type == l3_cache_t)
 		{
 			if(retry_queue_size > 0)
 			{
@@ -573,7 +628,9 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 		}
 		else
 		{
-			assert(cache->cache_type == gpu_s_cache_t || cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t);
+			assert(cache->cache_type == gpu_s_cache_t
+					|| cache->cache_type == gpu_v_cache_t
+					|| cache->cache_type == gpu_l2_cache_t);
 
 			if(retry_queue_size > 0)
 			{
@@ -646,7 +703,8 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 	}
 	else
 	{
-		/*there is an element in the cache that is full, so we can't process a request wait for replies or do something else*/
+		/*there is an element in the cache that is full, so we can't process a request
+		 * wait for replies or do something else*/
 		assert(state == schedule_cant_process);
 
 		/*if the write back queue has a write back clear a write back*/
@@ -678,6 +736,44 @@ struct cgm_packet_t *cache_get_message(struct cache_t *cache){
 			cache->last_queue = cache->Coherance_Rx_queue;
 			assert(new_message);
 		}
+		/*else if(write_back_queue_size >= QueueSize && !new_message)
+		{
+			ok if we are here the WB queue is full and all entries are pending flush
+			this can result in a deadlock when the CPU core counts are higher
+			to keep from deadlocking we need to nack back requests so the
+			top rx request queue can drain. WBs or flush block acks can be processed as
+			normal
+
+			//this should only occur in L3 caches...
+			printf("cache schdule %d\n", cache->cache_type);
+			//assert(cache->cache_type == l3_cache_t);
+
+			//get the top request message
+			new_message = list_get(cache->Rx_queue_top, 0);
+
+			//should just be the L3 caches
+			if(new_message && cache->cache_type == l3_cache_t)
+			{
+				warning("caught deadlock special case with request packets\n");
+
+				assert(new_message->force_nack == 0);
+				if(new_message->access_type == cgm_access_gets
+						|| new_message->access_type == cgm_access_get
+						|| new_message->access_type == cgm_access_getx
+						|| new_message->access_type == cgm_access_upgrade)
+				{
+					new_message->force_nack = 1;
+				}
+
+				cache->last_queue = cache->Rx_queue_top;
+			}
+			else
+			{
+				//warning("caught deadlock special case with no request packets\n");
+				state = schedule_stall;
+			}
+
+		}*/
 		else
 		{
 			state = schedule_stall;
@@ -860,6 +956,21 @@ void cache_dump_queue(struct list_t *queue){
 	return;
 }
 
+int cache_write_back_all_pending(struct cache_t *cache){
+
+	int i = 0;
+	int num_pending = 0;
+	struct cgm_packet_t *wb_packet = NULL;
+
+	LIST_FOR_EACH(cache->write_back_buffer, i)
+	{
+		//get pointer to access in queue and check it's status.
+		wb_packet = list_get(cache->write_back_buffer, i);
+		num_pending += wb_packet->flush_pending;
+	}
+
+	return (num_pending >= QueueSize) ? 1 : 0;
+}
 
 void cache_dump_write_back(struct cache_t *cache){
 
@@ -1478,6 +1589,8 @@ int cgm_cache_find_transient_block(struct cache_t *cache, int *tag_ptr, int *set
 		}
 	}
 
+	cgm_cache_dump_set(cache, set);
+
 	//if here something is wrong
 	fatal("cgm_cache_find_transient_block(): blk 0x%08x transient block not found as it should be %s set %d tag %d way %d cycle %llu\n",
 			cgm_cache_build_address(cache, set, tag), cache->name, set, tag, way, P_TIME);
@@ -1588,6 +1701,9 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 	enum cgm_cache_block_state_t victim_state;
 
+	int WATCHBLOCK = 0;
+	WATCHBLOCK = (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t) ? GPUWATCHBLOCK : CPUWATCHBLOCK;
+
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
 
@@ -1620,7 +1736,6 @@ void cgm_L1_cache_evict_block(struct cache_t *cache, int set, int way){
 
 
 void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int sharers, int pending_request, int victim_way){
-
 
 	/*assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 
@@ -1688,6 +1803,9 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	unsigned long long bit_vector;
 	int num_cus = si_gpu_num_compute_units;
 
+	int WATCHBLOCK = 0;
+	WATCHBLOCK = (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t) ? GPUWATCHBLOCK : CPUWATCHBLOCK;
+
 	assert(cache->cache_type == l2_cache_t || cache->cache_type == gpu_l2_cache_t);
 	assert(cache->share_mask > 0);
 
@@ -1696,31 +1814,63 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	enum cgm_cache_block_state_t victim_state;
 
+	int dirty_in_core = 0;
+
+	//check the dirty in core bit
+	dirty_in_core = cgm_cache_get_block_dirty_in_core_bit(cache, set, way);
+	/*if(dirty_in_core == 1)
+		fatal("caught error here blk addr 0x%08x\n", cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag));*/
+	assert(dirty_in_core == 0 || dirty_in_core == 1);
+	//need to handle this case here
+	//create a write-back packet.
+	//if dirty in core it will only be dirty in L2
+	//no flush required because L1s will have block shared only.
+
 	//get the victim's state
 	victim_state = cgm_cache_get_block_state(cache, set, way);
+
 
 	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
 		if(LEVEL == 2 || LEVEL == 3)
 		{
-			printf("block 0x%08x %s evicted cycle %llu\n",
-					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag), cache->name, P_TIME);
+			printf("block 0x%08x %s evicted state %d dic %d sharers %d cycle %llu\n",
+					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+					cache->name,
+					victim_state,
+					dirty_in_core,
+					sharers,
+					P_TIME);
 		}
 	}
 
 	//if dirty data is found
-	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive)
+	if (victim_state == cgm_cache_block_modified || victim_state == cgm_cache_block_exclusive || dirty_in_core == 1)
 	{
 		//move the block to the WB buffer
 		write_back_packet = packet_create();
 
-		init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
+		//GPU L2 case where modified block was shared across multiple CUs...
+		if(dirty_in_core)
+			init_write_back_packet(cache, write_back_packet, set, way, 0, cgm_cache_block_modified);
+		else
+			init_write_back_packet(cache, write_back_packet, set, way, 0, victim_state);
 
-		if(cache->cache_type == gpu_l2_cache_t && sharers == 0)
-			write_back_packet->flush_pending = 0;
+		//at WB init flush pending is zero, change to 1 if a flush needs to happen
+		assert(write_back_packet->flush_pending == 0);
 
-		if(cache->cache_type == gpu_l2_cache_t && sharers == 1)
+
+		/*if(cache->cache_type == gpu_l2_cache_t && sharers == 0)
+			write_back_packet->flush_pending = 0;*/
+
+		//for GPU L2. If WB is created
+		if(cache->cache_type == gpu_l2_cache_t && sharers >= 1 && victim_state != cgm_cache_block_shared)
+		{
+			/*block maybe dirty in core and shared so might
+			need to collect more than one ack*/
 			write_back_packet->flush_pending = 1;
+			write_back_packet->inval_ack = sharers;
+		}
 
 		if(cache->cache_type == l2_cache_t)
 			write_back_packet->flush_pending = 1;
@@ -1742,7 +1892,6 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		//assert(sharers == 1);
 
-
 		//only run the loop if the bit vector has a bit set.
 		if(bit_vector > 0)
 		{
@@ -1761,13 +1910,18 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 					flush_packet->cpu_access_type = cgm_access_load;
 					flush_packet->l1_cache_id = i;
+					flush_packet->cache_block_state = victim_state;
+					assert(flush_packet->cache_block_state == cgm_cache_block_modified
+						|| flush_packet->cache_block_state == cgm_cache_block_exclusive
+						|| flush_packet->cache_block_state == cgm_cache_block_shared);
 
 					if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 					{
 						if(LEVEL == 2 || LEVEL == 3)
 						{
-							printf("block 0x%08x %s evict packet created id %llu pending state %d cycle %llu\n",
-									cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag), cache->name, flush_packet->evict_id, pending_request, P_TIME);
+							printf("block 0x%08x %s evict packet created id %llu pending_request state %d dest [%d] cycle %llu\n",
+									cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+									cache->name, flush_packet->evict_id, pending_request, flush_packet->l1_cache_id, P_TIME);
 						}
 					}
 
@@ -1799,6 +1953,10 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 		flush_packet->cpu_access_type = cgm_access_store;
 		flush_packet->l1_cache_id = 0;
+		flush_packet->cache_block_state = victim_state;
+		assert(flush_packet->cache_block_state == cgm_cache_block_modified
+			|| flush_packet->cache_block_state == cgm_cache_block_exclusive
+			|| flush_packet->cache_block_state == cgm_cache_block_shared);
 
 		if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 		{
@@ -1816,6 +1974,9 @@ void cgm_L2_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	//set the block state to invalid
 	cgm_cache_set_block_state(cache, set, way, cgm_cache_block_invalid);
+
+	//clear dirty in core if needed
+	cgm_cache_clear_block_dirty_in_core_bit(cache, set, way);
 
 	return;
 }
@@ -1836,6 +1997,9 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 	assert(sharers >= 0 && sharers <= num_cores);
 	assert(cache->cache_type == l3_cache_t);
 	assert(cache->share_mask > 0);
+
+	int WATCHBLOCK = 0;
+	WATCHBLOCK = (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t) ? GPUWATCHBLOCK : CPUWATCHBLOCK;
 
 	if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
 	{
@@ -1893,7 +2057,15 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 				init_flush_packet(cache, flush_packet, set, way);
 
+				//routing info
 				flush_packet->cpu_access_type = cgm_access_store;
+
+				//tell the upper level cache what the lower level cache state was
+				//should not be invalid!
+				flush_packet->cache_block_state = victim_state;
+				assert(flush_packet->cache_block_state == cgm_cache_block_modified
+						|| flush_packet->cache_block_state == cgm_cache_block_exclusive
+						|| flush_packet->cache_block_state == cgm_cache_block_shared);
 
 				if(victim_way)
 					flush_packet->l3_victim_way = victim_way;
@@ -1911,15 +2083,37 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 					l2_cache_ptr = &l2_caches[i];
 
 					SETROUTE(flush_packet, cache, l2_cache_ptr);
+
+					if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+					{
+						if(LEVEL == 2 || LEVEL == 3)
+						{
+							printf("block 0x%08x %s sending flush block to CPU core %d cycle %llu\n",
+									cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+									cache->name, l2_cache_ptr->id, P_TIME);
+						}
+					}
+
 				}
 				else
 				{
 					//route to hub_iommu
 					assert(i == (total_cores - 1));
 
+					//tell GPU what the block state is at L3
+					//flush_packet->cache_block_state = victim_state; *** done above now ***
 
 					SETROUTE(flush_packet, cache, hub_iommu);
 
+					if((((cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag) == WATCHBLOCK) && WATCHLINE)) || DUMP)
+					{
+						if(LEVEL == 2 || LEVEL == 3)
+						{
+							printf("block 0x%08x %s sending flush block to GPU id %llu (flush addr 0x%08x) src %d dest %d cycle %llu\n",
+									cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
+									cache->name, flush_packet->evict_id, flush_packet->address, flush_packet->src_id, flush_packet->dest_id, P_TIME);
+						}
+					}
 				}
 
 				list_enqueue(cache->Tx_queue_top, flush_packet);
@@ -1935,7 +2129,7 @@ void cgm_L3_cache_evict_block(struct cache_t *cache, int set, int way, int share
 
 	if(num_messages != sharers)
 	{
-		printf("block 0x%08x %s evicted num_sharers %d cycle %llu\n",
+		fatal("block 0x%08x %s evicted num_sharers %d cycle %llu\n",
 					cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag),
 					cache->name, sharers, P_TIME);
 	}
@@ -2092,7 +2286,7 @@ int cgm_cache_search_way(struct cache_t *cache, int set){
 		//get the tail block.
 		block = cache->sets[set].way_tail;
 
-		//the block should not be in the transient state.
+		//the block should not be in the transient state and should not be pending.
 		for(i = 0; i < cache->assoc; i++)
 		{
 			assert(block->transient_state == cgm_cache_block_invalid || block->transient_state == cgm_cache_block_transient);
@@ -2493,6 +2687,7 @@ void cache_store_stats(struct cgm_stats_t *cgm_stat_container){
 		cgm_stat_container->l3_getx_[i] = l3_caches[i].l3_getx_;
 		cgm_stat_container->l3_write_back_[i] = l3_caches[i].l3_write_back_;
 		cgm_stat_container->l3_flush_block_ack_[i] = l3_caches[i].l3_flush_block_ack_;
+		cgm_stat_container->l3_flush_block_nack_[i] = l3_caches[i].l3_flush_block_nack_;
 		cgm_stat_container->l3_write_block_[i] = l3_caches[i].l3_write_block_;
 		cgm_stat_container->l3_downgrade_ack_[i] = l3_caches[i].l3_downgrade_ack_;
 		cgm_stat_container->l3_downgrade_nack_[i] = l3_caches[i].l3_downgrade_nack_;
@@ -2707,6 +2902,7 @@ void cache_reset_stats(void){
 		l3_caches[i].l3_getx_ = 0;
 		l3_caches[i].l3_write_back_ = 0;
 		l3_caches[i].l3_flush_block_ack_ = 0;
+		l3_caches[i].l3_flush_block_nack_ = 0;
 		l3_caches[i].l3_write_block_ = 0;
 		l3_caches[i].l3_downgrade_ack_ = 0;
 		l3_caches[i].l3_downgrade_nack_ = 0;
@@ -3649,21 +3845,40 @@ void l3_cache_ctrl(void){
 		//get the message out of the queue
 		message_packet = cache_get_message(&(l3_caches[my_pid]));
 
-		if (message_packet == NULL || !cache_can_access_Tx_bottom(&(l3_caches[my_pid])) || !cache_can_access_Tx_top(&(l3_caches[my_pid])))
+		if (message_packet == NULL
+				|| !cache_can_access_Tx_bottom(&(l3_caches[my_pid]))
+				|| !cache_can_access_Tx_top(&(l3_caches[my_pid])))
 		{
-			//star todo add more detail here look for replies/request, process them is there respective queue is ok.
 			//the cache state is preventing the cache from working this cycle stall.
 			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
 
-			/*if(P_TIME > 106034981)
-				printf("%s stalling\n", l3_caches[my_pid].name);*/
+			/*deadlock protocol issue can pop up here. L3 WB is full and all entries are pending flush
+			* nack request back while waiting for a flush block ack to come back*/
+			/*if(cache_write_back_all_pending(&(l3_caches[my_pid])))
+			{
+				warning("%s maybe caught the L3 deadlock issue, need to nack requests cycle %llu\n", l3_caches[my_pid].name, P_TIME);
 
+				P_PAUSE(l3_caches[my_pid].latency);
 
-			l3_caches[my_pid].Stalls++;
+				//fix me if these pop up.
+				assert(cache_can_access_Tx_bottom(&(l3_caches[my_pid])));
+				assert(cache_can_access_Tx_top(&(l3_caches[my_pid])));
 
-			//warning("l3_cache_ctrl(): %s stalling \n", l3_caches[my_pid].name);
+				pull from the cpu side
+				message_packet = list_get(l3_caches[my_pid].Rx_queue_top, 0);
+				l3_caches[my_pid].last_queue = l3_caches[my_pid].Rx_queue_top;
+				assert(message_packet);
 
-			P_PAUSE(1);
+				l3_caches[my_pid].l3_force_nack(&(l3_caches[my_pid]), message_packet);
+
+				//nacked a packet so advance the step counter
+				step++;
+			}
+			else
+			{*/
+				l3_caches[my_pid].Stalls++;
+				P_PAUSE(1);
+			/*}*/
 		}
 		else
 		{
@@ -3688,6 +3903,11 @@ void l3_cache_ctrl(void){
 			/*printf("%s running id %llu type %s cycle %llu\n",
 					l3_caches[my_pid].name, message_packet->access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);*/
 
+			/*if(message_packet->force_nack == 1)
+			{
+				//scheduler mandated a nack
+				l3_caches[my_pid].l3_force_nack(&(l3_caches[my_pid]), message_packet);
+			}*/
 			if(access_type == cgm_access_gets || access_type == cgm_access_fetch_retry)
 			{
 				//via call back function (cgm_mesi_l3_gets)
@@ -3728,6 +3948,14 @@ void l3_cache_ctrl(void){
 				//run again and pull the message_packet as a new access
 
 				l3_caches[my_pid].l3_flush_block_ack_++;
+			}
+			else if(access_type == cgm_access_flush_block_nack)
+			{
+				//via call back function (cgm_mesi_l3_get_fwd_nack)
+				l3_caches[my_pid].l3_flush_block_nack(&(l3_caches[my_pid]), message_packet);
+				//run again and pull the message_packet as a new access
+
+				l3_caches[my_pid].l3_flush_block_nack_++;
 			}
 			else if (access_type == cgm_access_mc_put)
 			{
@@ -3808,7 +4036,7 @@ void l3_cache_ctrl(void){
 			}*/
 			else
 			{
-				fatal("l3_cache_ctrl_0(): access_id %llu bad access type %s at cycle %llu\n",
+				fatal("l3_cache_ctrl(): access_id %llu bad access type %s at cycle %llu\n",
 						access_id, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), P_TIME);
 			}
 		}
@@ -3969,7 +4197,17 @@ void gpu_v_cache_ctrl(void){
 				//Call back function (gpu_l1_cache_access_store)
 				gpu_v_caches[my_pid].gpu_v_store(&(gpu_v_caches[my_pid]), message_packet);
 			}
-			else if (access_type == cgm_access_put_clnx || access_type == cgm_access_putx)
+			else if (access_type == cgm_access_downgrade)
+			{
+				//Call back function (gpu_l1_cache_access_store)
+				gpu_v_caches[my_pid].gpu_v_downgrade(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_getx_inval)
+			{
+				//Call back function (gpu_l1_cache_access_store)
+				gpu_v_caches[my_pid].gpu_v_getx_inval(&(gpu_v_caches[my_pid]), message_packet);
+			}
+			else if (access_type == cgm_access_puts || access_type == cgm_access_put_clnx || access_type == cgm_access_putx)
 			{
 				/*//Call back function (gpu_cache_access_put)
 				gpu_v_caches[my_pid].gpu_v_write_block(&(gpu_v_caches[my_pid]), message_packet);
@@ -4018,6 +4256,7 @@ void gpu_v_cache_ctrl(void){
 		/*stats occupancy*/
 		gpu_v_caches[my_pid].Occupancy += (P_TIME - occ_start);
 	}
+
 	//should never get here
 	fatal("gpu_v_cache_ctrl task is broken\n");
 	return;
@@ -4095,12 +4334,12 @@ void gpu_l2_cache_ctrl(void){
 				if(!gpu_l2_caches[my_pid].gpu_l2_getx(&gpu_l2_caches[my_pid], message_packet))
 					step--;
 			}
-			else if(access_type == cgm_access_mc_put || access_type == cgm_access_putx
-					|| access_type == cgm_access_put_clnx)
+			else if(access_type == cgm_access_mc_put || access_type == cgm_access_puts
+					|| access_type == cgm_access_putx || access_type == cgm_access_put_clnx)
 			{
 				//Call back function (gpu_cache_access_put)
 				if(!gpu_l2_caches[my_pid].gpu_l2_write_block(&gpu_l2_caches[my_pid], message_packet))
-						step--;
+					step--;
 				//entered retry state run again.
 
 			}
@@ -4115,10 +4354,15 @@ void gpu_l2_cache_ctrl(void){
 			}
 			else if(access_type == cgm_access_flush_block_ack)
 			{
-				//fatal("gpu l2 flush block ack\n");
-
-				//Call back function (cgm_mesi_gpu_l2_getx)
 				gpu_l2_caches[my_pid].gpu_l2_flush_block_ack(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx_inval_ack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_getx_inval_ack(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_downgrade_ack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_downgrade_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
 			else if(access_type == cgm_access_gpu_flush)
 			{
@@ -4128,22 +4372,50 @@ void gpu_l2_cache_ctrl(void){
 			{
 				gpu_l2_caches[my_pid].gpu_l2_gpu_flush_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
-			else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
+			else if(access_type == cgm_access_upgrade_inval)
 			{
+				gpu_l2_caches[my_pid].gpu_l2_upgrade_inval(&gpu_l2_caches[my_pid], message_packet);
+			}
+			/*else if(access_type == cgm_access_get_fwd || access_type == cgm_access_getx_fwd)
+			{
+				fatal("WTD dawg... gawd i wanna graduate\n");
 
 				if((message_packet->address & gpu_l2_caches[my_pid].block_address_mask) == 0x081c7e40)
 					warning("%s blk 0x%08x get_fwd in gpu cycle %llu\n", gpu_l2_caches[my_pid].name, (message_packet->address & gpu_l2_caches[my_pid].block_address_mask), P_TIME);
 
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd(&gpu_l2_caches[my_pid], message_packet);
+			}*/
+			else if(access_type == cgm_access_get_fwd)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_get_fwd(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_getx_fwd)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_getx_fwd(&gpu_l2_caches[my_pid], message_packet);
+			}
+			else if(access_type == cgm_access_upgrade_putx_n)
+			{
+				if(!gpu_l2_caches[my_pid].gpu_l2_upgrade_putx_n(&gpu_l2_caches[my_pid], message_packet))
+					step--;
 			}
 			else if(access_type == cgm_access_getx_fwd_inval_ack)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_inval_ack(&gpu_l2_caches[my_pid], message_packet);
 			}
+			else if(access_type == cgm_access_downgrade_nack)
+			{
+				gpu_l2_caches[my_pid].gpu_l2_downgrade_nack(&gpu_l2_caches[my_pid], message_packet);
+			}
 			else if(access_type == cgm_access_getx_fwd_nack)
 			{
-				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_nack(&gpu_l2_caches[my_pid], message_packet);
+				gpu_l2_caches[my_pid].gpu_l2_getx_fwd_nack(&gpu_l2_caches[my_pid], message_packet);
 			}
+			/*else if(access_type == cgm_access_getx_fwd_nack)
+			{
+				fatal("bad fix me\n");
+
+				gpu_l2_caches[my_pid].gpu_l2_get_getx_fwd_nack(&gpu_l2_caches[my_pid], message_packet);
+			}*/
 			else if(access_type == cgm_access_get_nack)
 			{
 				gpu_l2_caches[my_pid].gpu_l2_get_nack(&gpu_l2_caches[my_pid], message_packet);
@@ -4495,7 +4767,8 @@ void l2_cache_down_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_getx || message_packet->access_type == cgm_access_upgrade
 				|| message_packet->access_type == cgm_access_cpu_flush || message_packet->access_type == cgm_access_gpu_flush
 				|| message_packet->access_type == cgm_access_write_back || message_packet->access_type == cgm_access_flush_block_ack
-				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack) //moved these two from reply queue
+				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_downgrade_nack
+				|| message_packet->access_type == cgm_access_getx_fwd_inval_ack) //moved these two from reply queue
 		{
 
 			//star fixme, don't know why but sometimes queue size will be overrun by 1. "QueueSize - 1" fixes the problem...
@@ -4536,9 +4809,9 @@ void l2_cache_down_io_ctrl(void){
 			}
 		}
 		else if(message_packet->access_type == cgm_access_upgrade_ack || message_packet->access_type == cgm_access_getx_fwd_ack
-				|| message_packet->access_type == cgm_access_downgrade_nack || message_packet->access_type == cgm_access_getx_fwd_nack
-				|| message_packet->access_type == cgm_access_getx_fwd_upgrade_nack || message_packet->access_type == cgm_access_get_fwd_upgrade_nack)
-				/*|| message_packet->access_type == cgm_access_gpu_flush_ack)*/
+				|| message_packet->access_type == cgm_access_getx_fwd_nack || message_packet->access_type == cgm_access_getx_fwd_upgrade_nack
+				|| message_packet->access_type == cgm_access_get_fwd_upgrade_nack)
+				/*|| message_packet->access_type == cgm_access_downgrade_nack || message_packet->access_type == cgm_access_gpu_flush_ack)*/
 		{
 
 			if(list_count(switches[my_pid].north_rx_coherence_queue) >= QueueSize)
@@ -4664,10 +4937,16 @@ void l3_cache_up_io_ctrl(void){
 			}
 
 		}
-		else if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+		//changes here
+		/*else if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
 				|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
 				|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_get_nack
 				|| message_packet->access_type == cgm_access_getx_nack || message_packet->access_type == cgm_access_upgrade_getx_fwd
+				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush_fwd)
+		{*/
+		else if(message_packet->access_type == cgm_access_puts || message_packet->access_type == cgm_access_putx
+				|| message_packet->access_type == cgm_access_put_clnx || message_packet->access_type == cgm_access_get_fwd
+				|| message_packet->access_type == cgm_access_getx_fwd || message_packet->access_type == cgm_access_upgrade_getx_fwd
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_cpu_flush_fwd)
 		{
 			if(list_count(switches[my_pid].south_rx_reply_queue) >= QueueSize)
@@ -4698,7 +4977,8 @@ void l3_cache_up_io_ctrl(void){
 				|| message_packet->access_type == cgm_access_upgrade_nack || message_packet->access_type == cgm_access_upgrade_inval
 				|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_downgrade_nack
 				|| message_packet->access_type == cgm_access_getx_fwd_nack || message_packet->access_type == cgm_access_gpu_flush_ack
-				|| message_packet->access_type == cgm_access_cpu_flush_ack)
+				|| message_packet->access_type == cgm_access_cpu_flush_ack || message_packet->access_type == cgm_access_get_nack
+				|| message_packet->access_type == cgm_access_getx_nack)
 		{
 			if(list_count(switches[my_pid].south_rx_coherence_queue) >= QueueSize)
 			{
@@ -4945,7 +5225,9 @@ void gpu_v_cache_down_io_ctrl(void){
 		//drop into the next correct virtual lane/queue.
 		if(message_packet->access_type == cgm_access_get || message_packet->access_type == cgm_access_getx
 				|| message_packet->access_type == cgm_access_upgrade || message_packet->access_type == cgm_access_write_back
-				|| message_packet->access_type == cgm_access_flush_block_ack)
+				|| message_packet->access_type == cgm_access_flush_block_ack || message_packet->access_type == cgm_access_getx_inval_ack
+				|| message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
+				|| message_packet->access_type == cgm_access_gpu_flush_ack)
 		{
 			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top) >= GPUQueueSize
 					|| gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Rx_queue_top->locked == 1)
@@ -4977,9 +5259,9 @@ void gpu_v_cache_down_io_ctrl(void){
 
 			}
 		}
-		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
-				|| message_packet->access_type == cgm_access_gpu_flush_ack)
+		else
 		{
+			fatal("gpu_v_cache_down_io_ctrl(): bad access type\n");
 
 			if(list_count(gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue) >= QueueSize
 					|| gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue->locked == 1)
@@ -5006,10 +5288,6 @@ void gpu_v_cache_down_io_ctrl(void){
 				gpu_l2_caches[cgm_gpu_cache_map(&gpu_v_caches[my_pid], message_packet->address)].Coherance_Rx_queue->locked = 0;
 
 			}
-		}
-		else
-		{
-			fatal("gpu_v_cache_down_io_ctrl(): invalid access type\n");
 		}
 	}
 
@@ -5076,7 +5354,8 @@ void gpu_l2_cache_up_io_ctrl(void){
 		}
 		else if(message_packet->access_type == cgm_access_flush_block || message_packet->access_type == cgm_access_upgrade_ack
 				|| message_packet->access_type == cgm_access_downgrade || message_packet->access_type == cgm_access_getx_fwd_inval
-				|| message_packet->access_type == cgm_access_upgrade_inval || message_packet->access_type == cgm_access_getx_fwd_inval)
+				|| message_packet->access_type == cgm_access_upgrade_inval || message_packet->access_type == cgm_access_getx_fwd_inval
+				|| message_packet->access_type == cgm_access_getx_inval)
 		{
 
 			if(list_count(gpu_v_caches[message_packet->l1_cache_id].Coherance_Rx_queue) >= QueueSize
@@ -5517,6 +5796,10 @@ void cache_check_ORT(struct cache_t *cache, struct cgm_packet_t *message_packet)
 	int *num_sets_ptr = &num_sets;
 	int *ort_size_ptr = &ort_size;
 
+	if(message_packet->coalesced != 0)
+		printf("block 0x%08x %s crashing on coal 0 %llu cycle %llu\n",
+						(message_packet->address & cache->block_address_mask), cache->name, message_packet->access_id, P_TIME);
+
 	assert(message_packet->coalesced == 0);
 
 	//get the status of the ORT
@@ -5727,6 +6010,9 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 	int i = 0;
 	long long oldest_packet = 0;
 
+	int WATCHBLOCK = 0;
+	WATCHBLOCK = (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t) ? GPUWATCHBLOCK : CPUWATCHBLOCK;
+
 	//first look for merged accesses
 	LIST_FOR_EACH(cache->ort_list, i)
 	{
@@ -5751,13 +6037,13 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 
 				if((LEVEL == 1 || LEVEL == 3) && (cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t))
 				{
-					printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
-					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+					printf("block 0x%08x %s ort pull ID %llu assoc conflict %d type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->assoc_conflict, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 				}
 				else if((LEVEL == 2 || LEVEL == 3) && (cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t))
 				{
-					printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
-					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+					printf("block 0x%08x %s ort pull ID %llu assoc conflict %d type %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->assoc_conflict, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 				}
 			}
 
@@ -5784,10 +6070,10 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 		if(ort_packet->set == set && ort_packet->assoc_conflict == 1)
 		{
 
-			if(ort_packet->access_id == 5643812)
+			/*if(ort_packet->access_id == 5643812)
 			{
 				warning("found it i was accessed by %llu on %llu\n", access_id, P_TIME);
-			}
+			}*/
 
 			assert(ort_packet->start_cycle >= oldest_packet);
 
@@ -5812,8 +6098,8 @@ void cache_coalesed_retry(struct cache_t *cache, int tag, int set, long long acc
 
 			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
 			{
-				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
-					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+				printf("block 0x%08x %s ort pull ID %llu type %d assoc conflict %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->assoc_conflict, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 			}
 
 			list_enqueue(cache->retry_queue, ort_packet);
@@ -5883,10 +6169,10 @@ void gpu_cache_coalesed_retry(struct cache_t *cache, int tag, int set){
 			ort_packet->assoc_conflict = 1;
 			ort_packet->access_type = cgm_gpu_cache_get_retry_state(ort_packet->gpu_access_type);
 
-			if(((ort_packet->address & cache->block_address_mask) == WATCHBLOCK) && WATCHLINE)
+			if(((ort_packet->address & cache->block_address_mask) == GPUWATCHBLOCK) && WATCHLINE)
 			{
-				printf("block 0x%08x %s ort pull ID %llu type %d state %d cycle %llu\n",
-					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
+				printf("block 0x%08x %s ort pull ID %llu type %d assoc conflict %d state %d cycle %llu\n",
+					(ort_packet->address & cache->block_address_mask), cache->name, ort_packet->access_id, ort_packet->assoc_conflict, ort_packet->access_type, ort_packet->cache_block_state, P_TIME);
 			}
 
 			list_enqueue(cache->retry_queue, ort_packet);
@@ -5919,6 +6205,9 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 	//int num_cores = x86_cpu_num_cores;
 	/*unsigned long long position = 0;
 	unsigned long long bit_set = 1;*/
+
+	if(cache_id < 0 || cache_id > 31)
+		fatal("cgm_cache_set_dir() cache_id something other than 0 - 31\n");
 
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -6012,6 +6301,21 @@ void cgm_cache_set_dir(struct cache_t *cache, int set, int way, int cache_id){
 
 	return;
 }
+
+void cgm_cache_clear_dir_dirty_bit(struct cache_t *cache, int set, int way){
+
+	cache->sets[set].blocks[way].directory_entry.entry_bits.dirty = 0;
+
+	return;
+}
+
+void cgm_cache_set_dir_dirty_bit(struct cache_t *cache, int set, int way){
+
+	cache->sets[set].blocks[way].directory_entry.entry_bits.dirty = 1;
+
+	return;
+}
+
 
 int cgm_cache_get_dir_dirty_bit(struct cache_t *cache, int set, int way){
 
@@ -6250,7 +6554,7 @@ int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t 
 	int num_cores = x86_cpu_num_cores;
 	int num_cus = si_gpu_num_compute_units;
 
-	int total_cores =  num_cores + 1;
+	int total_cores =  num_cores + 1; //+1 to add in GPU.
 
 	//cycles through the core and try to match the core id with the share
 
@@ -6285,7 +6589,17 @@ int cgm_cache_get_xown_core(enum cgm_processor_kind_t processor, struct cache_t 
 
 
 	//if j is greater than 1 the block is in more than one core; BAD!!!
-	assert(j == 1);
+	/*if(j != 1)
+	{
+		printf("error j is %d processor kind %d\n", j, processor);
+		fflush(stdout);
+	}*/
+
+
+	assert(j == 0 || j == 1);
+
+
+
 	if(processor == gpu)
 	{
 		assert(xowner >= 0 && xowner < num_cus);
@@ -6317,6 +6631,36 @@ void cgm_cache_set_block_state(struct cache_t *cache, int set, int way, enum cgm
 
 	return block_state;
 }*/
+
+
+void cgm_cache_set_block_dirty_in_core_bit(struct cache_t *cache, int set, int way){
+
+	//set the bit
+	cache->sets[set].blocks[way].dirty_in_core = 1;
+
+	return;
+}
+
+void cgm_cache_clear_block_dirty_in_core_bit(struct cache_t *cache, int set, int way){
+
+	//set the bit
+	cache->sets[set].blocks[way].dirty_in_core = 0;
+
+	return;
+}
+
+int cgm_cache_get_block_dirty_in_core_bit(struct cache_t *cache, int set, int way){
+
+	int bit;
+
+	bit = cache->sets[set].blocks[way].dirty_in_core;
+
+	//bit should be between 0 and 1;
+	assert(bit >= 0 && bit <= 1);
+
+	return bit;
+}
+
 
 void cgm_cache_set_block_flush_pending_bit(struct cache_t *cache, int set, int way){
 
@@ -6518,6 +6862,7 @@ enum cgm_access_kind_t cgm_cache_get_retry_state(enum cgm_access_kind_t r_state)
 	return retry_state;
 }
 
+
 int cache_validate_block_flushed_from_core(int core_id, unsigned int addr){
 
 	struct cgm_packet_t *l1_write_back_packet = NULL;
@@ -6680,14 +7025,14 @@ int cache_validate_block_flushed_from_l1(struct cache_t *caches, int core_id, un
 	return hit;
 }
 
-
-int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned int addr){
+int cache_validate_block_flushed_from_gpu_l2(struct cache_t *caches, unsigned int addr){
 
 	int hit = 0;
 	int i = 0;
 	struct cgm_packet_t *write_back_packet = NULL;
 
 	int num_cus = si_gpu_num_compute_units;
+	int gpu_group_cache_num = (num_cus/4);
 
 	int set = 0;
 	int tag = 0;
@@ -6704,7 +7049,7 @@ int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned in
 	int *cache_block_hit_ptr = &cache_block_hit;
 	int *cache_block_state_ptr = &cache_block_state;
 
-	for(i = 0; i < num_cus; i++)
+	for(i = 0; i < gpu_group_cache_num; i++)
 	{
 		//probe the address for set, tag, and offset.
 		cgm_cache_probe_address(&caches[i], addr, set_ptr, tag_ptr, offset_ptr);
@@ -6735,15 +7080,63 @@ int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned in
 		}
 	}
 
-	/*if(hit == 1)
+	return hit;
+}
+
+
+int cache_validate_block_flushed_from_gpu_l1(struct cache_t *caches, unsigned int addr){
+
+	int hit = 0;
+	int i = 0;
+	struct cgm_packet_t *write_back_packet = NULL;
+	int num_cus = si_gpu_num_compute_units;
+
+	int set = 0;
+	int tag = 0;
+	unsigned int offset = 0;
+	int way = 0;
+
+	int *set_ptr = &set;
+	int *tag_ptr = &tag;
+	unsigned int *offset_ptr = &offset;
+	int *way_ptr = &way;
+
+	int cache_block_hit;
+	int cache_block_state;
+	int *cache_block_hit_ptr = &cache_block_hit;
+	int *cache_block_state_ptr = &cache_block_state;
+
+	for(i = 0; i < num_cus; i++)
 	{
+		//probe the address for set, tag, and offset.
+		cgm_cache_probe_address(&caches[i], addr, set_ptr, tag_ptr, offset_ptr);
 
+		//look for the block in the cache
+		*(cache_block_hit_ptr) = cgm_cache_find_block(&caches[i], tag_ptr, set_ptr, offset_ptr, way_ptr, cache_block_state_ptr);
 
-		else
+		//search the WB buffer for the data if in WB the block is either in the E or M state so return
+		write_back_packet = cache_search_wb(&caches[i], tag, set);
+
+		if((*cache_block_hit_ptr == 1 || write_back_packet) && *cache_block_state_ptr != cgm_cache_block_shared)
 		{
-			printf("l1 no wb found\n");
+			hit = 1;
+
+			/*fatal("\terror check l1_hit %d l2_hit %d cycle %llu\n", l1_hit, l2_hit, P_TIME);*/
+			printf("\t%s error check l1_hit_ptr %d l1_state_ptr %d L1_wb %s\n",
+				  caches[i].name, *cache_block_hit_ptr, *cache_block_state_ptr, write_back_packet ? "1" : "0");
+
+			printf("\tblock 0x%08x searching for set %d tag %d\n", addr, set, tag);
+			cgm_cache_print_set_tag(&caches[i], addr);
+			cgm_cache_dump_set(&caches[i], set);
+			if(write_back_packet)
+			{
+				printf("block 0x%08x l1 wb_addr 0x%08x id %llu wb_set %d wb_tag %d\n",
+					addr, write_back_packet->address, write_back_packet->write_back_id, write_back_packet->set, write_back_packet->tag);
+			}
+
+			printf("\n");
 		}
-	}*/
+	}
 
 	return hit;
 }

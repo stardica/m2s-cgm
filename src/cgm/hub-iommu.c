@@ -323,24 +323,52 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 			{
 				//update routing headers for the packet
 
-				if(message_packet->access_type != cgm_access_put_clnx && message_packet->access_type != cgm_access_putx)
+				//the problem is here
+
+				if(message_packet->access_type != cgm_access_put_clnx
+						&& message_packet->access_type != cgm_access_putx
+						&& message_packet->access_type != cgm_access_puts
+						&& message_packet->downgrade_ack != 2
+						&& message_packet->inval_ack != 2
+						&& message_packet->access_type != cgm_access_upgrade_ack
+						&& message_packet->access_type != cgm_access_upgrade_putx_n)
 				{
 
-					hub_probe_address(&l2_caches[0], message_packet);
+						hub_probe_address(&l2_caches[0], message_packet);
+						l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
 
-					l3_cache_ptr = cgm_l3_cache_map(message_packet->set);
+						//change src name and id
+						SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
 
-					//message_packet->l2_cache_id = hub_iommu->switch_id;
-					//message_packet->l2_cache_name = hub_iommu->name;
+						//message_packet->l2_cache_id = hub_iommu->switch_id;
+						//message_packet->l2_cache_name = hub_iommu->name;
 
-					//change src name and id
-					SETROUTE(message_packet, hub_iommu, l3_cache_ptr);
+						/*hub_probe_address(&l3_caches[0], message_packet);
+						if(message_packet->set == 1156)
+						{
+							printf("hub iommu 1\n");
+							cgm_cache_dump_set(&l3_caches[0], 1156);
+							printf("\n");
+						}*/
 				}
 				else
 				{
+
+					/*if(message_packet->evict_id == 203170)
+						printf("HUB IOMMU sending packet to L3\n");*/
+
 					//note dest already set in protocol function.
 					message_packet->src_name = hub_iommu->name;
 					message_packet->src_id = str_map_string(node_strn_map, hub_iommu->name);
+
+					/*hub_probe_address(&l3_caches[0], message_packet);
+					if(message_packet->set == 1156)
+					{
+						printf("hub iommu 2\n");
+						cgm_cache_dump_set(&l3_caches[0], 1156);
+						printf("\n");
+					}*/
+
 				}
 
 			}
@@ -351,6 +379,11 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 
 			message_packet = list_remove(hub_iommu->last_queue, message_packet);
 			assert(message_packet);
+
+			/*if(message_packet->access_type == cgm_access_get)
+				warning("Hub load id %llu phy address 0x%08x!\n",
+							message_packet->access_id, get_block_address(message_packet->address, ~0x3F));
+				fflush(stderr);*/
 
 			list_enqueue(hub_iommu->Tx_queue_bottom, message_packet);
 			advance(hub_iommu->hub_iommu_io_down_ec);
@@ -384,6 +417,10 @@ int hub_iommu_put_next_queue_func(struct cgm_packet_t *message_packet){
 			{
 				fatal("hub_iommu_put_next_queue_func(): invalid hub-iommu coherence type\n");
 			}
+
+			/*if(message_packet->evict_id == 203170)
+						printf("HUB IOMMU received packet from L3\n");*/
+
 
 			message_packet = list_remove(hub_iommu->last_queue, message_packet);
 			list_enqueue(hub_iommu->Tx_queue_top[cgm_gpu_cache_map(&gpu_v_caches[0], message_packet->address)], message_packet);
@@ -565,7 +602,9 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS vtl address in 0x%08x access type %s id %llu\n",
 					message_packet->address, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
 		message_packet->address = mmu_translate(1, message_packet->address, mmu_access_gpu, pfptr);
+
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC ACCESS phy address out 0x%08x\n", message_packet->address);
 	}
@@ -575,7 +614,9 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return phy address in 0x%08x access type %s id %llu\n",
 					message_packet->address, str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
 		message_packet->address = mmu_reverse_translate(1, message_packet->address, mmu_access_gpu);
+
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu NC return vtl address out 0x%08x\n", message_packet->address);
 	}
@@ -586,6 +627,9 @@ void iommu_nc_translate(struct cgm_packet_t *message_packet){
 
 	return;
 }
+
+int tran_flag = 0;
+unsigned int tran_addr = 0x0;
 
 void iommu_translate(struct cgm_packet_t *message_packet){
 
@@ -604,12 +648,21 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 					message_packet->address, get_block_address(message_packet->address, ~0x3F),
 					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
 
+		/*if(message_packet->address == 0xb7f90cc0)
+		{
+			tran_flag = 1;
+			tran_addr = message_packet->address;
+		}*/
+
 		message_packet->address = mmu_forward_translate_guest(0, si_emu->pid, message_packet->address);
 
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu C ACCESS phy address out 0x%08x blk addr 0x%08x access type %s id %llu\n",
 					message_packet->address, get_block_address(message_packet->address, ~0x3F),
 					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
+		/*if(tran_flag == 1)
+			fatal("caught translate vtl 0x%08x phy 0x%08x\n", tran_addr, message_packet->address);*/
 
 	}
 	else if(last_queue_num == Rx_queue_bottom)
@@ -620,12 +673,18 @@ void iommu_translate(struct cgm_packet_t *message_packet){
 					message_packet->address, get_block_address(message_packet->address, ~0x3F),
 					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
 
+		/*tran_addr = message_packet->address;*/
+
 		message_packet->address = mmu_reverse_translate_guest(0, si_emu->pid, message_packet->address);
 
 		if(GPU_HUB_IOMMU == 1)
 			printf("hub-iommu C RETURN vtl address out 0x%08x blk addr 0x%08x access type %s id %llu\n",
 					message_packet->address, get_block_address(message_packet->address, ~0x3F),
 					str_map_value(&cgm_mem_access_strn_map, message_packet->access_type), message_packet->access_id);
+
+		/*if(message_packet->address == 0xb7f90cc0)
+			fatal("caught translate vtl 0x%08x phy 0x%08x\n", message_packet->address, tran_addr);*/
+
 	}
 	else
 	{
@@ -853,7 +912,8 @@ void hub_iommu_io_down_ctrl(void){
 				advance(&switches_ec[hub_iommu->switch_id]);
 			}
 		}
-		else if(message_packet->access_type == cgm_access_gpu_flush_ack || message_packet->access_type == cgm_access_putx)
+		else if(message_packet->access_type == cgm_access_gpu_flush_ack || message_packet->access_type == cgm_access_putx
+				|| message_packet->access_type == cgm_access_puts)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_reply_queue) >= QueueSize)
@@ -874,7 +934,8 @@ void hub_iommu_io_down_ctrl(void){
 		}
 		else if(message_packet->access_type == cgm_access_downgrade_ack || message_packet->access_type == cgm_access_getx_fwd_inval_ack
 				|| message_packet->access_type == cgm_access_getx_fwd_ack || message_packet->access_type == cgm_access_downgrade_nack
-				|| message_packet->access_type == cgm_access_getx_fwd_nack)
+				|| message_packet->access_type == cgm_access_getx_fwd_nack || message_packet->access_type == cgm_access_upgrade_ack
+				|| message_packet->access_type == cgm_access_upgrade_putx_n || message_packet->access_type == cgm_access_flush_block_nack)
 		{
 
 			if(list_count(switches[hub_iommu->switch_id].north_rx_coherence_queue) >= QueueSize)

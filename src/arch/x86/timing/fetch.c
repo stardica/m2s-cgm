@@ -615,7 +615,6 @@ static void X86ThreadFetch(X86Thread *self)
 			int page_fault = 0;
 			int *page_fault_ptr = &page_fault;
 
-
 			phy_addr = mmu_translate(self->ctx->address_space_index, self->fetch_neip, mmu_access_fetch, page_fault_ptr);
 			self->fetch_block = block;
 			self->fetch_address = phy_addr;

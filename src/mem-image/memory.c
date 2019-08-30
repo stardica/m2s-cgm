@@ -248,6 +248,7 @@ void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size, enum mem_ac
 	return page->data + offset;
 }
 
+int page_boundary_warning = 0;
 
 /* Access memory without exceeding page boundaries. */
 static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int size, void *buf, enum mem_access_t access)
@@ -266,7 +267,11 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr, int s
 	{
 		if (mem->safe)
 		{
-			warning("illegal access at 0x%08x: page not allocated, mem mode is %d\n", addr, mem->safe);
+
+			page_boundary_warning++;
+
+			if(page_boundary_warning < 5)
+				warning("illegal access at 0x%08x: page not allocated, mem mode is %d\n", addr, mem->safe);
 			//fatal("illegal access at 0x%08x: page not allocated, mem mode is %d\n", addr, mem->safe);
 		}
 

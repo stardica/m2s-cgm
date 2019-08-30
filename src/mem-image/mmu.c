@@ -1708,10 +1708,15 @@ unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr, enum 
 	}
 
 	/*for future reverse translations*/
-	if(access_type == mmu_access_gpu)
+	if(access_type == mmu_access_gpu
+			|| access_type == mmu_access_fetch
+			|| access_type == mmu_access_load_store)
+
 	{
 		vtl_index = ((vtl_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 		phy_index = ((phy_addr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
+
+		/*printf("storing vtl_index %d phy_index %d\n", vtl_index, phy_index);*/
 
 		hub_iommu->page_hash_table[phy_index] = vtl_index;
 	}

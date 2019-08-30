@@ -30,6 +30,8 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_get_fwd_nack", cgm_access_get_fwd_nack},
 		{"cgm_access_get_fwd_upgrade_nack", cgm_access_get_fwd_upgrade_nack},
 		{"cgm_access_getx_fwd", cgm_access_getx_fwd},
+		{"cgm_access_getx_inval", cgm_access_getx_inval},
+		{"cgm_access_getx_inval_ack", cgm_access_getx_inval_ack},
 		{"cgm_access_getx_fwd_nack", cgm_access_getx_fwd_nack},
 		{"cgm_access_getx_fwd_upgrade_nack", cgm_access_getx_fwd_upgrade_nack},
 		{"cgm_access_getx_fwd_ack", cgm_access_getx_fwd_ack},
@@ -42,6 +44,7 @@ struct str_map_t cgm_mem_access_strn_map =
 		{"cgm_access_inv", cgm_access_inv},
 		{"cgm_access_flush_block", cgm_access_flush_block},
 		{"cgm_access_flush_block_ack", cgm_access_flush_block_ack},
+		{"cgm_access_flush_block_nack", cgm_access_flush_block_nack},
 		{"cgm_access_inv_ack", cgm_access_inv_ack},
 		{"cgm_access_upgrade", cgm_access_upgrade},
 		{"cgm_access_upgrade_ack", cgm_access_upgrade_ack},
@@ -86,6 +89,8 @@ struct mem_system_stats_t *mem_system_stats;
 /*long long temp_access_id = 0;*/
 long long write_back_id = 1;
 long long evict_id = 1;
+long long downgrade_id = 1;
+long long getx_inval_id = 1;
 
 enum protocol_kind_t cgm_cache_protocol;
 enum protocol_kind_t cgm_gpu_cache_protocol;
@@ -398,6 +403,9 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	//int l2_error = 0;
 	//int l3_error = 0;
 
+	int WATCHBLOCK = 0;
+	WATCHBLOCK = (cache->cache_type == gpu_v_cache_t || cache->cache_type == gpu_l2_cache_t) ? GPUWATCHBLOCK : CPUWATCHBLOCK;
+
 	write_back_packet->access_type = cgm_access_write_back;
 	write_back_packet->flush_pending = pending;
 	write_back_packet->cache_block_state = victim_state;
@@ -408,6 +416,7 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 	//reconstruct the address from the set and tag
 	//write_back_packet->address = cache->sets[set].blocks[way].address;
 	write_back_packet->address = cgm_cache_build_address(cache, cache->sets[set].id, cache->sets[set].blocks[way].tag);
+	//write_back_packet->vtladdress = mmu_reverse_translate_guest(0, 0, write_back_packet->address);
 
 	//if(cache->cache_type != gpu_v_cache_t && cache->cache_type != gpu_l2_cache_t)
 		//assert(write_back_packet->address != 0);
@@ -421,12 +430,12 @@ void init_write_back_packet(struct cache_t *cache, struct cgm_packet_t *write_ba
 		l2_error = cache_search_wb_dup_packets(&l2_caches[cache->id], cache->sets[set].blocks[way].tag, set);
 		l3_error = cache_search_wb_dup_packets(&l3_caches[cgm_l3_cache_map(set)], cache->sets[set].blocks[way].tag, set);*/
 
-		if((LEVEL == 1 || LEVEL == 3) && (cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t))
+		if((LEVEL == 1 || LEVEL == 3) && (cache->cache_type == gpu_v_cache_t || cache->cache_type == l1_i_cache_t || cache->cache_type == l1_d_cache_t))
 		{
 			printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
 					(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
 		}
-		else if((LEVEL == 2 || LEVEL == 3) && (cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t))
+		else if((LEVEL == 2 || LEVEL == 3) && (cache->cache_type == gpu_l2_cache_t || cache->cache_type == l2_cache_t || cache->cache_type == l3_cache_t))
 		{
 			printf("block 0x%08x %s wb packet created ID %llu cycle %llu\n",
 					(write_back_packet->address & cache->block_address_mask), cache->name, write_back_packet->write_back_id, P_TIME);
@@ -504,21 +513,23 @@ void init_downgrade_packet(struct cgm_packet_t *downgrade_packet, unsigned int a
 
 	downgrade_packet->access_type = cgm_access_downgrade;
 	downgrade_packet->downgrade = 1;
+	downgrade_packet->downgrade_id = downgrade_id++;
 	downgrade_packet->size = HEADER_SIZE;
 	downgrade_packet->address = address;
 	downgrade_packet->start_cycle = P_TIME;
 	return;
 }
 
-/*void init_upgrade_inval_packet(struct cgm_packet_t *inval_packet, unsigned int address){
+void init_getx_inval_packet(struct cgm_packet_t *getx_inval_packet, unsigned int address){
 
-	inval_packet->access_type = cgm_access_upgrade;
-	inval_packet->inval = 1;
-	inval_packet->size = 1;
-	inval_packet->address = address;
+	getx_inval_packet->access_type = cgm_access_getx_inval;
+	getx_inval_packet->inval = 1;
+	getx_inval_packet->size = HEADER_SIZE;
+	getx_inval_packet->address = address;
+	getx_inval_packet->downgrade_id = getx_inval_id++;
 
 	return;
-}*/
+}
 
 void init_upgrade_request_packet(struct cgm_packet_t *upgrade_request_packet, unsigned int address){
 
