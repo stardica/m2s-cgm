@@ -1,3 +1,3 @@
 Main webpage is here...
 
-http://www.knightsim.dx.am/
+To run m2s-cgm you will also need to clone DRAMSIM and the OpenCL Runtime.
